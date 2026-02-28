@@ -181,7 +181,7 @@ export default function SimulatorPage() {
         <div>
           <h1 className="text-xl font-semibold text-slate-50">FTMO 2-Step Simulator</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Check your trading against FTMO 2-Step Challenge rules. Select an account and review Phase 1 & Phase 2.
+            Check your trading against FTMO 2-Step Challenge rules. Select an account and review Phase 1 and Phase 2.
           </p>
         </div>
         <select
