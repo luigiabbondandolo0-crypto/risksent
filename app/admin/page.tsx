@@ -42,8 +42,9 @@ export default function AdminPage() {
           return;
         }
         if (!statsRes.ok || !usersRes.ok) {
-          const body = await statsRes.ok ? usersRes.json() : statsRes.json().catch(() => ({}));
-          const msg = body?.error ?? `Server error ${statsRes.ok ? usersRes.status : statsRes.status}. Check Vercel env (SUPABASE_SERVICE_ROLE_KEY, Supabase URL) and that tables app_user, trading_account exist.`;
+          const failedRes = statsRes.ok ? usersRes : statsRes;
+          const body = await failedRes.json().catch(() => ({}));
+          const msg = body?.error ?? `Server error ${failedRes.status}. Check Vercel env (SUPABASE_SERVICE_ROLE_KEY, Supabase URL) and that tables app_user, trading_account exist.`;
           setServerError(msg);
           return;
         }
