@@ -123,7 +123,7 @@ export default function MetaApiTestPage() {
                     [{log.ts}] [{log.level}]
                   </span>{" "}
                   {log.message}
-                  {log.data && (
+                  {log.data != null && (
                     <pre className="mt-1 text-amber-100/80 overflow-x-auto">
                       {JSON.stringify(log.data, null, 2)}
                     </pre>
