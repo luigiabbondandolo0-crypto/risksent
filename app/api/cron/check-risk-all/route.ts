@@ -5,7 +5,7 @@ import { runRiskCheckForAccount } from "@/lib/riskCheckRun";
 /**
  * GET/POST /api/cron/check-risk-all
  * Esegue il risk check per tutti gli account collegati (LIVE polling).
- * Protetto da CRON_SECRET (header x-cron-secret o query secret).
+ * Protetto da CRON_SECRET (Authorization: Bearer, header x-cron-secret, o query ?secret=).
  * Da chiamare ogni 1–2 minuti tramite Vercel Cron o altro scheduler.
  */
 export async function GET(req: NextRequest) {
@@ -19,10 +19,13 @@ export async function POST(req: NextRequest) {
 async function runCron(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
+    const authHeader = req.headers.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
     const headerSecret = req.headers.get("x-cron-secret");
     const url = new URL(req.url);
     const querySecret = url.searchParams.get("secret");
-    if (headerSecret !== secret && querySecret !== secret) {
+    const valid = bearerToken === secret || headerSecret === secret || querySecret === secret;
+    if (!valid) {
       return NextResponse.json({ ok: false, reason: "Unauthorized" }, { status: 401 });
     }
   }
