@@ -69,12 +69,20 @@ export function Topbar() {
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/30 transition-colors"
-            >
-              Log in
-            </Link>
+            <>
+              <Link
+                href="/dashboard"
+                className="rounded-lg border border-slate-600 bg-slate-800/40 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700/50 hover:border-cyan-500/50 hover:text-cyan-200 transition-all duration-200"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/30 transition-colors"
+              >
+                Log in
+              </Link>
+            </>
           )}
         </div>
       </div>

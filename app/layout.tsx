@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Topbar } from "@/components/Topbar";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,12 +23,7 @@ export default function RootLayout({
       >
         <div className="min-h-screen flex flex-col">
           <Topbar />
-          <div className="flex flex-1 w-full">
-            <Sidebar />
-            <main className="flex-1 w-full min-w-0 px-6 py-6">
-              {children}
-            </main>
-          </div>
+          <AppShell>{children}</AppShell>
         </div>
       </body>
     </html>
