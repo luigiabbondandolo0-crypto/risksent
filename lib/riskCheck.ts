@@ -147,7 +147,7 @@ function getRevengeAdvice(level: RiskLevel, consecutive: number, threshold: numb
     case "lieve":
       return "Stai vicino alla soglia di revenge trading. Fai una pausa di almeno 30 minuti prima del prossimo trade e rispetta la tua dimensione di posizione.";
     case "medio":
-      return "Possibile revenge trading: troppe perdite consecutive. Fermati per oggi, non cercare di "recuperare" con trade impulsivi. Riprendi domani con le regole chiare.";
+      return "Possibile revenge trading: troppe perdite consecutive. Fermati per oggi, non cercare di recuperare con trade impulsivi. Riprendi domani con le regole chiare.";
     case "alto":
       return "Pattern da revenge trading evidente. Sospendi il trading per oggi e domani. Rivedi il piano e le regole in RiskSent → Rules prima di riprendere.";
     default:
