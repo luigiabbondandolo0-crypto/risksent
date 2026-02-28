@@ -52,14 +52,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  if (text === "/help" || text === "aiuto") {
+  if (text === "/help" || text === "help" || text === "aiuto") {
     await sendTelegramMessage(
       token,
       chatId,
       "RiskSent Alert Bot\n\n" +
-        "• /start — Collega questa chat al tuo account (usa il link da RiskSent → Rules)\n" +
-        "• /help — Questo messaggio\n\n" +
-        "Dopo il collegamento riceverai qui gli alert su rischio, drawdown e revenge trading. Non serve scrivere altri comandi."
+        "• /start — Link this chat to your account (use the link from RiskSent → Rules)\n" +
+        "• /help — This message\n\n" +
+        "After linking you will receive risk, drawdown and revenge-trading alerts here. No other commands needed."
     );
     return NextResponse.json({ ok: true });
   }
@@ -75,12 +75,12 @@ export async function POST(req: NextRequest) {
     await sendTelegramMessage(
       token,
       chatId,
-      "Ciao! Sono il bot RiskSent per gli alert di rischio.\n\n" +
-        "Per collegare questa chat al tuo account:\n" +
-        "1. Vai su risksent.com → Rules → Collega Telegram\n" +
-        "2. Clicca \"Collega ora\" e apri il link che si apre\n" +
-        "3. Torna qui e invia di nuovo /start (usando quel link, non scrivere solo /start)\n\n" +
-        "Scrivi /help per altri comandi."
+      "Hi! I'm the RiskSent risk-alert bot.\n\n" +
+        "To link this chat to your account:\n" +
+        "1. Go to risksent.com → Rules → Link Telegram\n" +
+        "2. Click \"Link now\" and open the link that appears\n" +
+        "3. Come back here and send /start again (using that link, don't type /start only)\n\n" +
+        "Type /help for more commands."
     );
     return NextResponse.json({ ok: true });
   }
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       chatId,
       tokenPrefix: startParam.slice(0, 6) + "..."
     });
-    await sendTelegramMessage(token, chatId, "Link non valido o scaduto. Vai su RiskSent → Rules → Collega Telegram e genera un nuovo link.");
+    await sendTelegramMessage(token, chatId, "Link invalid or expired. Go to RiskSent → Rules → Link Telegram and generate a new link.");
     return NextResponse.json({ ok: true });
   }
 
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 
   if (updateErr && (updateErr as { code?: string }).code !== "PGRST116") {
     console.warn(LOG_PREFIX, "link failed: app_user update error", updateErr.message);
-    await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
+    await sendTelegramMessage(token, chatId, "Link failed. Try again from RiskSent.");
     return NextResponse.json({ ok: true });
   }
 
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     });
     if (insertErr) {
       console.warn(LOG_PREFIX, "[verbose] app_user insert failed", { error: insertErr.message, code: (insertErr as { code?: string })?.code });
-      await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
+      await sendTelegramMessage(token, chatId, "Link failed. Try again from RiskSent.");
       return NextResponse.json({ ok: true });
     }
     console.log(LOG_PREFIX, "[verbose] app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
@@ -160,10 +160,10 @@ export async function POST(req: NextRequest) {
   await sendTelegramMessage(
     token,
     chatId,
-    "✅ Chat collegata!\n\n" +
-      "Collegamento unico: non serve fare altro. Riceverai qui gli alert su rischio, drawdown e revenge trading.\n" +
-      "Gli stessi alert li vedi anche su RiskSent → Rules → Alerts Center.\n\n" +
-      "Scrivi /help per info."
+    "✅ Chat linked!\n\n" +
+      "One-time link: nothing else to do. You will receive risk, drawdown and revenge-trading alerts here.\n" +
+      "The same alerts appear in RiskSent → Rules → Alerts Center.\n\n" +
+      "Type /help for info."
   );
 
   return NextResponse.json({ ok: true });

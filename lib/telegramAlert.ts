@@ -33,7 +33,7 @@ export async function sendAlertToTelegram(params: SendAlertParams): Promise<{ ok
   }
 
   const severityLabel = severity === "high" ? "HIGH" : "MEDIUM";
-  const solutionLine = solution ? `\n\nSoluzione: ${solution}` : "";
+  const solutionLine = solution ? `\n\nSolution: ${solution}` : "";
   const text = `<b>${severityLabel} ALERT</b>\n\n${message}${solutionLine}`;
 
   const supabase = createSupabaseAdmin();

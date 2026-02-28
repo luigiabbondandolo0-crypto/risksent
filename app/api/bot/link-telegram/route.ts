@@ -60,6 +60,6 @@ export async function POST() {
   return NextResponse.json({
     token: row.token,
     link,
-    message: "Apri il link, invia /start al bot, poi clicca Verifica collegamento."
+    message: "Open the link, send /start to the bot, then click Verify link."
   });
 }

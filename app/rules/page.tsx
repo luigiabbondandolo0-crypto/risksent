@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent, ChangeEvent, useRef } from "react";
-import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, Send, RefreshCw, X, Loader2, Wrench } from "lucide-react";
+import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, RefreshCw } from "lucide-react";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
@@ -77,15 +77,7 @@ export default function RulesPage() {
   const [exceedAlert, setExceedAlert] = useState<ExceedAlert | null>(null);
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [telegramLinking, setTelegramLinking] = useState(false);
-  const [testAlertSending, setTestAlertSending] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [showConnectionCheckCard, setShowConnectionCheckCard] = useState(false);
-  const [connectionCheck, setConnectionCheck] = useState<{
-    summary: string;
-    checks: { id: string; name: string; status: string; message: string; detail?: string }[];
-    webhookUrl?: string;
-  } | null>(null);
-  const [connectionCheckLoading, setConnectionCheckLoading] = useState(false);
   const pollLinkRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refetchRules = async () => {
@@ -367,19 +359,19 @@ export default function RulesPage() {
           <div className="rounded-xl border border-slate-800 bg-surface p-5">
             <div className="flex items-center gap-2 mb-1">
               <Link2 className="h-4 w-4 text-slate-500" />
-              <h2 className="text-sm font-medium text-slate-200">Collega Telegram</h2>
+              <h2 className="text-sm font-medium text-slate-200">Link Telegram</h2>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              Collegamento unico: apri il link, invia /start al bot. Da allora riceverai qui tutti gli alert (notifiche). Non serve scrivere altri comandi.
+              One-time link: open the link and send /start to the bot. You will then receive the same alerts here and on Telegram. No other commands needed.
             </p>
             <div className="space-y-3">
               {rules.telegram_chat_id ? (
                 <p className="text-sm text-emerald-400 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
-                  Chat collegata. Riceverai gli alert su Telegram e qui sotto nello stesso elenco.
+                  Chat linked. You will receive alerts on Telegram and in Alerts Center below.
                 </p>
               ) : (
-                <p className="text-xs text-slate-400">Nessuna chat collegata. Usa &quot;Collega ora&quot; e completa /start nel bot.</p>
+                <p className="text-xs text-slate-400">No chat linked. Use &quot;Link now&quot; and complete /start in the bot.</p>
               )}
               <div className="flex flex-wrap gap-2">
                 <button
@@ -399,7 +391,7 @@ export default function RulesPage() {
                       if (res.ok && data.link) {
                         setTelegramLink(data.link);
                         window.open(data.link, "_blank");
-                        setTelegramMessage({ type: "success", text: "Apri il link, invia /start. Lo stato si aggiorna da solo." });
+                        setTelegramMessage({ type: "success", text: "Open the link and send /start. Status will update automatically." });
                         let elapsed = 0;
                         const POLL_MS = 2000;
                         const MAX_MS = 30000;
@@ -409,7 +401,7 @@ export default function RulesPage() {
                           if (chatId) {
                             if (pollLinkRef.current) clearInterval(pollLinkRef.current);
                             pollLinkRef.current = null;
-                            setTelegramMessage({ type: "success", text: "Chat collegata. Puoi usare Test per verificare." });
+                            setTelegramMessage({ type: "success", text: "Chat linked." });
                             return;
                           }
                           if (elapsed >= MAX_MS && pollLinkRef.current) {
@@ -418,10 +410,10 @@ export default function RulesPage() {
                           }
                         }, POLL_MS);
                       } else {
-                        setTelegramMessage({ type: "error", text: data.error ?? "Errore creazione link" });
+                        setTelegramMessage({ type: "error", text: data.error ?? "Failed to create link" });
                       }
                     } catch {
-                      setTelegramMessage({ type: "error", text: "Errore di rete" });
+                      setTelegramMessage({ type: "error", text: "Network error" });
                     } finally {
                       setTelegramLinking(false);
                     }
@@ -429,7 +421,7 @@ export default function RulesPage() {
                   className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
                 >
                   <Link2 className="h-4 w-4" />
-                  {telegramLinking ? "Generazione…" : "Collega ora"}
+                  {telegramLinking ? "Generating…" : "Link now"}
                 </button>
                 <button
                   type="button"
@@ -437,53 +429,14 @@ export default function RulesPage() {
                     setTelegramMessage(null);
                     const chatId = await refetchRules();
                     if (!chatId) {
-                      setTelegramMessage({ type: "error", text: "Nessuna chat collegata. Usa Collega ora e invia /start nel bot." });
+                      setTelegramMessage({ type: "error", text: "No chat linked. Use Link now and send /start in the bot." });
                       return;
                     }
-                    setTelegramMessage({ type: "success", text: "Chat collegata." });
+                    setTelegramMessage({ type: "success", text: "Chat linked." });
                   }}
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
                 >
-                  Verifica collegamento
-                </button>
-                <button
-                  type="button"
-                  disabled={testAlertSending}
-                  onClick={async () => {
-                    setShowConnectionCheckCard(true);
-                    setConnectionCheck(null);
-                    setConnectionCheckLoading(true);
-                    setTelegramMessage(null);
-                    try {
-                      const res = await fetch("/api/bot/connection-check", { cache: "no-store" });
-                      const data = await res.json();
-                      console.log("[Rules] connection-check result", { ok: res.ok, summary: data.summary, checks: data.checks, userId: data.userId });
-                      if (res.ok && data.checks) {
-                        setConnectionCheck({
-                          summary: data.summary ?? "fail",
-                          checks: data.checks,
-                          webhookUrl: data.webhookUrl
-                        });
-                      } else {
-                        setConnectionCheck({
-                          summary: "fail",
-                          checks: [{ id: "error", name: "Controllo", status: "fail", message: data.error ?? "Errore caricamento controlli" }],
-                          webhookUrl: data.webhookUrl
-                        });
-                      }
-                    } catch {
-                      setConnectionCheck({
-                        summary: "fail",
-                        checks: [{ id: "error", name: "Rete", status: "fail", message: "Errore di rete durante il controllo" }]
-                      });
-                    } finally {
-                      setConnectionCheckLoading(false);
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50 disabled:opacity-50"
-                >
-                  <Wrench className="h-4 w-4" />
-                  Test collegamento
+                  Verify link
                 </button>
               </div>
               {telegramMessage && (
@@ -498,123 +451,6 @@ export default function RulesPage() {
               )}
             </div>
           </div>
-
-          {showConnectionCheckCard && (
-            <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-5">
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <h2 className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-cyan-400" />
-                  Controllo collegamento Telegram
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowConnectionCheckCard(false)}
-                  className="rounded p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50"
-                  aria-label="Chiudi"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              {connectionCheckLoading ? (
-                <div className="flex items-center gap-2 text-slate-400 py-4">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-sm">Esecuzione controlli…</span>
-                </div>
-              ) : connectionCheck ? (
-                <div className="space-y-4">
-                  <ul className="space-y-2">
-                    {connectionCheck.checks.map((c) => (
-                      <li key={c.id} className="flex items-start gap-2 text-sm">
-                        <span className="flex-shrink-0 mt-0.5">
-                          {c.status === "ok" && <CheckCircle className="h-4 w-4 text-emerald-400" />}
-                          {c.status === "fail" && <AlertCircle className="h-4 w-4 text-red-400" />}
-                          {c.status === "warn" && <AlertCircle className="h-4 w-4 text-amber-400" />}
-                        </span>
-                        <span className={c.status === "ok" ? "text-slate-300" : c.status === "fail" ? "text-red-300" : "text-amber-300"}>
-                          <span className="font-medium">{c.name}:</span> {c.message}
-                          {c.detail && <span className="block text-xs text-slate-500 mt-0.5">{c.detail}</span>}
-                          {c.id === "db_telegram_chat_id" && c.status === "fail" && connectionCheck.webhookUrl && (
-                            <span className="block text-xs text-cyan-400 mt-1 break-all">
-                              URL webhook da impostare in BotFather: {connectionCheck.webhookUrl}
-                            </span>
-                          )}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-700">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setConnectionCheck(null);
-                        setConnectionCheckLoading(true);
-                        try {
-                          const res = await fetch("/api/bot/connection-check", { cache: "no-store" });
-                          const data = await res.json();
-                          if (res.ok && data.checks) setConnectionCheck({ summary: data.summary ?? "fail", checks: data.checks, webhookUrl: data.webhookUrl });
-                        } finally {
-                          setConnectionCheckLoading(false);
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700/50"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      Riesegui controllo
-                    </button>
-                    <button
-                      type="button"
-                      disabled={testAlertSending}
-                      onClick={async () => {
-                        setTestAlertSending(true);
-                        setTelegramMessage(null);
-                        try {
-                          const chatId = await refetchRules();
-                          if (!chatId) {
-                            setTelegramMessage({ type: "error", text: "Collega prima la chat con Collega ora e invia /start nel bot." });
-                            setTestAlertSending(false);
-                            return;
-                          }
-                          const res = await fetch("/api/alerts", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              message: "Questo è un alert di test da RiskSent.",
-                              severity: "medium",
-                              solution: "Se lo vedi su Telegram, il collegamento funziona."
-                            })
-                          });
-                          const data = await res.json();
-                          if (res.ok) {
-                            setTelegramMessage({ type: "success", text: "Messaggio inviato. Controlla Telegram e l'elenco sotto." });
-                            const aRes = await fetch("/api/alerts", { cache: "no-store" });
-                            if (aRes.ok) {
-                              const a = await aRes.json();
-                              setAlerts(a.alerts ?? []);
-                            }
-                          } else {
-                            setTelegramMessage({ type: "error", text: data.error ?? "Invio fallito" });
-                          }
-                        } catch {
-                          setTelegramMessage({ type: "error", text: "Errore di rete" });
-                        } finally {
-                          setTestAlertSending(false);
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
-                    >
-                      <Send className="h-4 w-4" />
-                      {testAlertSending ? "Invio…" : "Invia messaggio di test"}
-                    </button>
-                  </div>
-                  {telegramMessage && (
-                    <p className={`text-sm ${telegramMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
-                      {telegramMessage.text}
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          )}
         </div>
 
         <div className="space-y-4">
@@ -675,11 +511,11 @@ export default function RulesPage() {
                 }}
                 className="inline-flex items-center gap-1 rounded border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs text-slate-400 hover:bg-slate-700/50"
               >
-                <RefreshCw className="h-3 w-3" /> Aggiorna
+                <RefreshCw className="h-3 w-3" /> Refresh
               </button>
             </div>
             <p className="text-xs text-slate-500 mb-3">
-              Stessi alert che ricevi su Telegram (notifiche). Qui li vedi tutti; risolvi subito quelli ad alta gravità.
+              Same notifications you receive on Telegram. Shown here for history; address high-severity alerts first.
             </p>
             <div className="flex gap-3 mb-3">
               <span className="flex items-center gap-1.5 text-[10px] text-red-400"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> High</span>
