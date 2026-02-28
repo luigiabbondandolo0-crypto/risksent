@@ -175,6 +175,116 @@ export default function SimulatorPage() {
     );
   }
 
+  const mainContent = !selectedUuid ? (
+    <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
+      Select an account to run the FTMO 2-Step simulator.
+    </div>
+  ) : !stats ? (
+    <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
+      No trade data yet. Connect an account and close some trades to see results.
+    </div>
+  ) : (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="text-sm font-medium text-slate-200 mb-1 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          Phase 1 - FTMO Challenge
+        </h2>
+        <p className="text-xs text-slate-500 mb-4">Profit target 10%, daily loss 5%, max loss 10%, min 4 trading days.</p>
+        <ul className="space-y-2 text-sm">
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Profit target ≥ {FTMO_PHASE1.profit_target_pct}%</span>
+            {stats.profit_pct >= FTMO_PHASE1.profit_target_pct ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.profit_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Daily loss limit ≤ {FTMO_PHASE1.daily_loss_limit_pct}%</span>
+            {!stats.daily_loss_breach ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> Worst day: {stats.worst_daily_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Max loss ≤ {FTMO_PHASE1.max_loss_pct}%</span>
+            {!stats.max_loss_breach ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> DD: {stats.max_drawdown_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Min trading days ≥ {FTMO_PHASE1.min_trading_days}</span>
+            {stats.trading_days >= FTMO_PHASE1.min_trading_days ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass ({stats.trading_days})</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.trading_days} days</span>
+            )}
+          </li>
+        </ul>
+        <div className="mt-4 pt-4 border-t border-slate-800">
+          {phase1Pass ? (
+            <p className="text-sm font-medium text-emerald-400 flex items-center gap-2"><Check className="h-4 w-4" /> Phase 1 passed</p>
+          ) : (
+            <p className="text-sm text-amber-400 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> Phase 1 not passed</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="text-sm font-medium text-slate-200 mb-1 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-500" />
+          Phase 2 - Verification
+        </h2>
+        <p className="text-xs text-slate-500 mb-4">Profit target 5%, daily loss 5%, max loss 10%, min 4 trading days.</p>
+        <ul className="space-y-2 text-sm">
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Profit target ≥ {FTMO_PHASE2.profit_target_pct}%</span>
+            {stats.profit_pct >= FTMO_PHASE2.profit_target_pct ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.profit_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Daily loss limit ≤ {FTMO_PHASE2.daily_loss_limit_pct}%</span>
+            {!stats.daily_loss_breach ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> Worst day: {stats.worst_daily_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Max loss ≤ {FTMO_PHASE2.max_loss_pct}%</span>
+            {!stats.max_loss_breach ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> DD: {stats.max_drawdown_pct.toFixed(2)}%</span>
+            )}
+          </li>
+          <li className="flex items-center justify-between">
+            <span className="text-slate-400">Min trading days ≥ {FTMO_PHASE2.min_trading_days}</span>
+            {stats.trading_days >= FTMO_PHASE2.min_trading_days ? (
+              <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass ({stats.trading_days})</span>
+            ) : (
+              <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.trading_days} days</span>
+            )}
+          </li>
+        </ul>
+        <div className="mt-4 pt-4 border-t border-slate-800">
+          {phase2Pass ? (
+            <p className="text-sm font-medium text-emerald-400 flex items-center gap-2"><Check className="h-4 w-4" /> Phase 2 passed</p>
+          ) : (
+            <p className="text-sm text-amber-400 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> Phase 2 not passed</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -200,115 +310,7 @@ export default function SimulatorPage() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {!selectedUuid ? (
-        <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-          Select an account to run the FTMO 2-Step simulator.
-        </div>
-      ) : !stats ? (
-        <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-          No trade data yet. Connect an account and close some trades to see results.
-        </div>
-      ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <h2 className="text-sm font-medium text-slate-200 mb-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              Phase 1 — FTMO Challenge
-            </h2>
-            <p className="text-xs text-slate-500 mb-4">Profit target 10%, daily loss 5%, max loss 10%, min 4 trading days.</p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Profit target ≥ {FTMO_PHASE1.profit_target_pct}%</span>
-                {stats.profit_pct >= FTMO_PHASE1.profit_target_pct ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.profit_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Daily loss limit ≤ {FTMO_PHASE1.daily_loss_limit_pct}%</span>
-                {!stats.daily_loss_breach ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> Worst day: {stats.worst_daily_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Max loss ≤ {FTMO_PHASE1.max_loss_pct}%</span>
-                {!stats.max_loss_breach ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> DD: {stats.max_drawdown_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Min trading days ≥ {FTMO_PHASE1.min_trading_days}</span>
-                {stats.trading_days >= FTMO_PHASE1.min_trading_days ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass ({stats.trading_days})</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.trading_days} days</span>
-                )}
-              </li>
-            </ul>
-            <div className="mt-4 pt-4 border-t border-slate-800">
-              {phase1Pass ? (
-                <p className="text-sm font-medium text-emerald-400 flex items-center gap-2"><Check className="h-4 w-4" /> Phase 1 passed</p>
-              ) : (
-                <p className="text-sm text-amber-400 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> Phase 1 not passed</p>
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <h2 className="text-sm font-medium text-slate-200 mb-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-500" />
-              Phase 2 — Verification
-            </h2>
-            <p className="text-xs text-slate-500 mb-4">Profit target 5%, daily loss 5%, max loss 10%, min 4 trading days.</p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Profit target ≥ {FTMO_PHASE2.profit_target_pct}%</span>
-                {stats.profit_pct >= FTMO_PHASE2.profit_target_pct ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.profit_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Daily loss limit ≤ {FTMO_PHASE2.daily_loss_limit_pct}%</span>
-                {!stats.daily_loss_breach ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> Worst day: {stats.worst_daily_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Max loss ≤ {FTMO_PHASE2.max_loss_pct}%</span>
-                {!stats.max_loss_breach ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> DD: {stats.max_drawdown_pct.toFixed(2)}%</span>
-                )}
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-slate-400">Min trading days ≥ {FTMO_PHASE2.min_trading_days}</span>
-                {stats.trading_days >= FTMO_PHASE2.min_trading_days ? (
-                  <span className="text-emerald-400 flex items-center gap-1"><Check className="h-4 w-4" /> Pass ({stats.trading_days})</span>
-                ) : (
-                  <span className="text-red-400 flex items-center gap-1"><X className="h-4 w-4" /> {stats.trading_days} days</span>
-                )}
-              </li>
-            </ul>
-            <div className="mt-4 pt-4 border-t border-slate-800">
-              {phase2Pass ? (
-                <p className="text-sm font-medium text-emerald-400 flex items-center gap-2"><Check className="h-4 w-4" /> Phase 2 passed</p>
-              ) : (
-                <p className="text-sm text-amber-400 flex items-center gap-2"><AlertCircle className="h-4 w-4" /> Phase 2 not passed</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {mainContent}
 
       {stats && (
         <div className="rounded-xl border border-slate-800 bg-surface p-4">
