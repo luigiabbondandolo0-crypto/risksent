@@ -195,6 +195,7 @@ export async function runRiskCheckForAccount(params: {
   };
 
   const stats = buildStatsForRisk(balance, orders);
+  const useEquity = equity > 0 ? equity : balance;
   const currentExposurePct =
     openPositions.length > 0
       ? openPositions.reduce((s, p) => s + (p.riskPct ?? 0), 0)
