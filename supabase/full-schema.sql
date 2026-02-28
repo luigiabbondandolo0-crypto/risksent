@@ -33,6 +33,8 @@ create table if not exists public.trading_account (
   unique (user_id, broker_type, account_number)
 );
 
+alter table public.trading_account add column if not exists account_name text;
+
 -- 3) trade
 create table if not exists public.trade (
   id uuid primary key default gen_random_uuid(),

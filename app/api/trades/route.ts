@@ -77,26 +77,36 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`,
-      { headers: { "x-api-key": apiKey, Accept: "application/json" } }
-    );
-    if (!res.ok) {
-      const err = await res.text();
+    const [closedRes, summaryRes] = await Promise.all([
+      fetch(
+        `${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`,
+        { headers: { "x-api-key": apiKey, Accept: "application/json" } }
+      ),
+      fetch(
+        `${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`,
+        { headers: { "x-api-key": apiKey, Accept: "application/json" } }
+      )
+    ]);
+    if (!closedRes.ok) {
+      const err = await closedRes.text();
       return NextResponse.json(
-        { error: `MetatraderApi: ${res.status} ${err}`, trades: [] },
+        { error: `MetatraderApi: ${closedRes.status} ${err}`, trades: [] },
         { status: 502 }
       );
     }
-    const raw = await res.json();
+    const raw = await closedRes.json();
     const trades = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
-    // Sort by close time descending (newest first)
     trades.sort(
       (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
     );
+    let currency = "EUR";
+    if (summaryRes.ok) {
+      const summary = await summaryRes.json();
+      if (summary?.currency) currency = String(summary.currency);
+    }
     return NextResponse.json({
       trades,
-      currency: "EUR"
+      currency
     });
   } catch (e) {
     return NextResponse.json(

@@ -14,9 +14,16 @@ type Account = {
   id: string;
   broker_type: string;
   account_number: string;
+  account_name?: string | null;
   metaapi_account_id: string | null;
   created_at: string;
 };
+
+function accountLabel(a: Account): string {
+  const login = a.account_number ?? "";
+  const name = a.account_name?.trim();
+  return name ? `${login} · ${name}` : login;
+}
 
 type Stats = {
   balance: number;
@@ -154,7 +161,7 @@ export default function DashboardPage() {
           <option value="">Select account</option>
           {accounts.map((a: Account) => (
             <option key={a.id} value={a.metaapi_account_id ?? ""}>
-              {a.broker_type} • {a.account_number.slice(-4)}
+              {accountLabel(a)}
             </option>
           ))}
         </select>

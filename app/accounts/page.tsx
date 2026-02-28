@@ -8,6 +8,7 @@ type Account = {
   id: string;
   broker_type: string;
   account_number: string;
+  account_name?: string | null;
   metaapi_account_id: string | null;
   created_at: string;
 };
@@ -101,7 +102,7 @@ export default function ManageAccountsPage() {
             <thead>
               <tr className="border-b border-slate-800 text-left text-xs text-slate-400 uppercase tracking-wide">
                 <th className="px-4 py-3">Platform</th>
-                <th className="px-4 py-3">Account (masked)</th>
+                <th className="px-4 py-3">Login · Name</th>
                 <th className="px-4 py-3">Provider ID</th>
                 <th className="px-4 py-3">Added</th>
                 <th className="px-4 py-3 w-20"></th>
@@ -112,7 +113,10 @@ export default function ManageAccountsPage() {
                 <tr key={a.id} className="border-b border-slate-800/60 last:border-0">
                   <td className="px-4 py-3 text-slate-200">{a.broker_type}</td>
                   <td className="px-4 py-3 text-slate-400">
-                    ****{a.account_number.slice(-4)}
+                    {a.account_number}
+                    {a.account_name?.trim() ? (
+                      <span className="text-slate-500 ml-1">· {a.account_name.trim()}</span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-500 truncate max-w-[180px]">
                     {a.metaapi_account_id ?? "—"}

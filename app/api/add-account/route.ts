@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       broker_type: brokerType,
       account_number: accountNumber,
+      account_name: name || null,
       investor_password_encrypted: encryptedPassword,
       metaapi_account_id: accountId
     });

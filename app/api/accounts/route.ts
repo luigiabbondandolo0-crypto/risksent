@@ -15,7 +15,7 @@ export async function GET() {
 
     const { data: accounts, error } = await supabase
       .from("trading_account")
-      .select("id, broker_type, account_number, metaapi_account_id, created_at")
+      .select("id, broker_type, account_number, account_name, metaapi_account_id, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
