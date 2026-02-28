@@ -212,7 +212,19 @@ export default function TradesPage() {
 
       <div className="rounded-xl border border-slate-800 bg-surface overflow-hidden">
         {loading && selectedUuid !== null ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Loading…</div>
+          <div className="p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]">
+            <div className="relative w-10 h-10">
+              <div className="absolute inset-0 rounded-full border-2 border-slate-700" />
+              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-cyan-500 animate-spin" />
+              <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-cyan-400 animate-spin" style={{ animationDuration: "0.8s", animationDirection: "reverse" }} />
+            </div>
+            <p className="text-sm text-slate-400 animate-pulse">Loading trades…</p>
+            <div className="flex gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-500/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-cyan-500/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-cyan-500/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
         ) : filteredTrades.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">
             {trades.length === 0 && !error
@@ -231,7 +243,7 @@ export default function TradesPage() {
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
-                  <th className="px-4 py-3 font-medium">P/L % of balance</th>
+                  <th className="px-4 py-3 font-medium">VAR %</th>
                 </tr>
               </thead>
               <tbody>
