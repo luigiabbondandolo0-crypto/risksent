@@ -31,7 +31,7 @@ CRON_SECRET=...          # optional; if set, GET/POST /api/cron/check-risk-all r
 ```
 Set Telegram webhook to `https://your-domain.com/api/telegram-webhook` (BotFather: /setwebhook).
 
-**Live risk alerts:** A Vercel Cron job calls `/api/cron/check-risk-all` every 2 minutes (`vercel.json`). Set `CRON_SECRET` in Vercel so only the cron invoker can call it.
+**Live risk alerts:** A Vercel Cron job calls `/api/cron/check-risk-all` every 2 minutes (`vercel.json`; requires Vercel Pro for sub-daily cron). Set `CRON_SECRET` in Vercel so only the cron invoker can call it.
 
 Then, mirror these values in your Vercel project settings under **Environment Variables**.
 
