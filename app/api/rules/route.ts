@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
   const supabase = createSupabaseRouteClient();
@@ -12,31 +13,30 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: row, error } = await supabase
+  const admin = createSupabaseAdmin();
+  const { data: row, error } = await admin
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades, telegram_chat_id")
     .eq("id", user.id)
     .single();
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      return NextResponse.json({
-        daily_loss_pct: 2,
-        max_risk_per_trade_pct: 1,
-        max_exposure_pct: 15,
-        revenge_threshold_trades: 2,
-        telegram_chat_id: null
-      });
-    }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !row) {
+    return NextResponse.json({
+      daily_loss_pct: 2,
+      max_risk_per_trade_pct: 1,
+      max_exposure_pct: 15,
+      revenge_threshold_trades: 2,
+      telegram_chat_id: null
+    });
   }
 
+  const chatId = row.telegram_chat_id;
   return NextResponse.json({
-    daily_loss_pct: Number(row?.daily_loss_pct) ?? 2,
-    max_risk_per_trade_pct: Number(row?.max_risk_per_trade_pct) ?? 1,
-    max_exposure_pct: Number(row?.max_exposure_pct) ?? 15,
-    revenge_threshold_trades: Number(row?.revenge_threshold_trades) ?? 2,
-    telegram_chat_id: row?.telegram_chat_id ?? null
+    daily_loss_pct: Number(row.daily_loss_pct) ?? 2,
+    max_risk_per_trade_pct: Number(row.max_risk_per_trade_pct) ?? 1,
+    max_exposure_pct: Number(row.max_exposure_pct) ?? 15,
+    revenge_threshold_trades: Number(row.revenge_threshold_trades) ?? 2,
+    telegram_chat_id: chatId != null && chatId !== "" ? String(chatId) : null
   });
 }
 

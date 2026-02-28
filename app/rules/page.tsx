@@ -78,6 +78,7 @@ export default function RulesPage() {
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [telegramLinking, setTelegramLinking] = useState(false);
   const [testAlertSending, setTestAlertSending] = useState(false);
+  const [telegramMessage, setTelegramMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const pollLinkRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refetchRules = async () => {
@@ -380,7 +381,7 @@ export default function RulesPage() {
                   onClick={async () => {
                     setTelegramLinking(true);
                     setTelegramLink(null);
-                    setMessage(null);
+                    setTelegramMessage(null);
                     if (pollLinkRef.current) {
                       clearInterval(pollLinkRef.current);
                       pollLinkRef.current = null;
@@ -391,7 +392,7 @@ export default function RulesPage() {
                       if (res.ok && data.link) {
                         setTelegramLink(data.link);
                         window.open(data.link, "_blank");
-                        setMessage({ type: "success", text: "Apri il link, invia /start. Lo stato si aggiorna da solo." });
+                        setTelegramMessage({ type: "success", text: "Apri il link, invia /start. Lo stato si aggiorna da solo." });
                         let elapsed = 0;
                         const POLL_MS = 2000;
                         const MAX_MS = 30000;
@@ -401,7 +402,7 @@ export default function RulesPage() {
                           if (chatId) {
                             if (pollLinkRef.current) clearInterval(pollLinkRef.current);
                             pollLinkRef.current = null;
-                            setMessage({ type: "success", text: "Chat collegata. Puoi usare Test per verificare." });
+                            setTelegramMessage({ type: "success", text: "Chat collegata. Puoi usare Test per verificare." });
                             return;
                           }
                           if (elapsed >= MAX_MS && pollLinkRef.current) {
@@ -410,10 +411,10 @@ export default function RulesPage() {
                           }
                         }, POLL_MS);
                       } else {
-                        setMessage({ type: "error", text: data.error ?? "Errore creazione link" });
+                        setTelegramMessage({ type: "error", text: data.error ?? "Errore creazione link" });
                       }
                     } catch {
-                      setMessage({ type: "error", text: "Errore di rete" });
+                      setTelegramMessage({ type: "error", text: "Errore di rete" });
                     } finally {
                       setTelegramLinking(false);
                     }
@@ -426,13 +427,13 @@ export default function RulesPage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    setMessage(null);
+                    setTelegramMessage(null);
                     const chatId = await refetchRules();
                     if (!chatId) {
-                      setMessage({ type: "error", text: "Nessuna chat collegata. Usa Collega ora e invia /start nel bot." });
+                      setTelegramMessage({ type: "error", text: "Nessuna chat collegata. Usa Collega ora e invia /start nel bot." });
                       return;
                     }
-                    setMessage({ type: "success", text: "Stato aggiornato." });
+                    setTelegramMessage({ type: "success", text: "Chat collegata." });
                   }}
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
                 >
@@ -443,11 +444,11 @@ export default function RulesPage() {
                   disabled={testAlertSending}
                   onClick={async () => {
                     setTestAlertSending(true);
-                    setMessage(null);
+                    setTelegramMessage(null);
                     try {
                       const chatId = await refetchRules();
                       if (!chatId) {
-                        setMessage({ type: "error", text: "Collega prima la chat con Collega ora e invia /start nel bot." });
+                        setTelegramMessage({ type: "error", text: "Collega prima la chat con Collega ora e invia /start nel bot." });
                         setTestAlertSending(false);
                         return;
                       }
@@ -462,17 +463,17 @@ export default function RulesPage() {
                       });
                       const data = await res.json();
                       if (res.ok) {
-                        setMessage({ type: "success", text: "Messaggio inviato. Controlla Telegram e l'elenco sotto." });
+                        setTelegramMessage({ type: "success", text: "Messaggio inviato. Controlla Telegram e l'elenco sotto." });
                         const aRes = await fetch("/api/alerts", { cache: "no-store" });
                         if (aRes.ok) {
                           const a = await aRes.json();
                           setAlerts(a.alerts ?? []);
                         }
                       } else {
-                        setMessage({ type: "error", text: data.error ?? "Invio fallito" });
+                        setTelegramMessage({ type: "error", text: data.error ?? "Invio fallito" });
                       }
                     } catch {
-                      setMessage({ type: "error", text: "Errore di rete" });
+                      setTelegramMessage({ type: "error", text: "Errore di rete" });
                     } finally {
                       setTestAlertSending(false);
                     }
@@ -483,6 +484,11 @@ export default function RulesPage() {
                   {testAlertSending ? "Invio…" : "Test collegamento"}
                 </button>
               </div>
+              {telegramMessage && (
+                <p className={`text-sm ${telegramMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                  {telegramMessage.text}
+                </p>
+              )}
               {telegramLink && (
                 <p className="text-xs text-slate-400 break-all">
                   Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{telegramLink}</a>

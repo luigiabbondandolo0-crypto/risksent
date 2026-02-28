@@ -54,7 +54,11 @@ export async function sendAlertToTelegram(params: SendAlertParams): Promise<{ ok
   if (channelId) {
     const channelText = `[Alert utente]\n${text}`;
     const res = await sendTelegramMessage(token, channelId, channelText);
-    console.log(LOG_PREFIX, "send to channel", res.ok ? "ok" : "fail", res.ok ? "" : res.reason);
+    if (res.ok) {
+      console.log(LOG_PREFIX, "send to channel ok");
+    } else {
+      console.warn(LOG_PREFIX, "channel send failed:", res.reason, "(add bot as admin to channel?)");
+    }
   }
 
   return { ok: true };
