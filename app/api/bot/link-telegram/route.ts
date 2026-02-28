@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTelegramBotLinkUsername } from "@/lib/telegramAlert";
 
 const LOG_PREFIX = "[Telegram link]";
@@ -8,6 +9,7 @@ const LOG_PREFIX = "[Telegram link]";
  * POST /api/bot/link-telegram
  * Crea un token one-time e restituisce il link per collegare la chat Telegram.
  * L'utente apre il link, invia /start, il webhook associa chat_id al user_id.
+ * Insert con admin client per evitare RLS (auth.uid() non sempre disponibile in route handler).
  */
 export async function POST() {
   const supabase = createSupabaseRouteClient();
@@ -26,7 +28,8 @@ export async function POST() {
     botUsername
   });
 
-  const { data: row, error } = await supabase
+  const admin = createSupabaseAdmin();
+  const { data: row, error } = await admin
     .from("telegram_link_token")
     .insert({ user_id: user.id })
     .select("token")
