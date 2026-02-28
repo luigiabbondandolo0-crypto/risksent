@@ -73,6 +73,7 @@ Senza questo passo il bot non può inviare alert nel canale.
 | `TELEGRAM_BOT_TOKEN` | Token da BotFather | Production (e Preview se usi) |
 | `TELEGRAM_BOT_USERNAME` | Es. `RiskSentAlertsBot` | Production (e Preview) |
 | `TELEGRAM_ALERT_CHANNEL_ID` | Es. `-1001234567890` (chat_id canale) | Production (e Preview) |
+| `TELEGRAM_WEBHOOK_BASE_URL` | (Opzionale) Base URL per il webhook mostrato in app (es. `https://risksent.com`). Se non impostato, viene usato `https://risksent.com`. | Production |
 
 3. **Save** e rifai un **redeploy** se l’app era già in esecuzione.
 
@@ -80,12 +81,19 @@ Senza questo passo il bot non può inviare alert nel canale.
 
 ## 6. Webhook (per collegare la chat personale dei clienti)
 
+Il webhook **non si imposta da BotFather** (non esiste un comando /setwebhook lì), ma tramite l’**API Telegram**.
+
 Per il flusso “Collega Telegram” in app (link con /start):
 
-1. Apri @BotFather.
-2. Invia: `/setwebhook`
-3. Quando richiesto, invia l’URL:  
-   **`https://risksent.com/api/telegram-webhook`**  
-   (sostituisci il dominio se il tuo sito è diverso.)
+1. Scegli l’URL del webhook (es. produzione): **`https://risksent.com/api/telegram-webhook`** (sostituisci il dominio se il tuo sito è diverso).
+2. Apri nel browser (sostituisci `BOT_TOKEN` con il token del bot da BotFather):
+   ```text
+   https://api.telegram.org/botBOT_TOKEN/setWebhook?url=https://risksent.com/api/telegram-webhook
+   ```
+   Oppure da terminale (curl):
+   ```bash
+   curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://risksent.com/api/telegram-webhook"
+   ```
+3. La risposta deve contenere `"ok":true`. Se vedi errori, controlla che l’URL sia HTTPS e raggiungibile da Internet.
 
 Dopo questo, quando un utente clicca “Collega ora” e invia /start al bot, RiskSent può associare la sua chat e inviargli gli alert in privato. Il canale (con `TELEGRAM_ALERT_CHANNEL_ID`) resta per gli alert aggregati al gestore.

@@ -110,8 +110,8 @@ export async function GET() {
       detail:
         "1) Clicca Collega ora, apri il link che si apre (t.me/...?start=...). " +
         "2) Avvia la chat dal link (o invia /start). " +
-        "3) Se hai già fatto così: in BotFather invia /setwebhook e imposta l'URL https://risksent.com/api/telegram-webhook. " +
-        "Nei log del server devono comparire voci [Telegram webhook] quando scrivi al bot."
+        "3) Se hai già fatto così: il webhook si imposta tramite l'API Telegram (non da BotFather). " +
+        "Apri nel browser (sostituisci BOT_TOKEN): https://api.telegram.org/botBOT_TOKEN/setWebhook?url=URL_WEBHOOK — nei log del server devono comparire voci [Telegram webhook] quando scrivi al bot."
     });
   }
 
@@ -153,10 +153,10 @@ export async function GET() {
   console.log(LOG_PREFIX, "[verbose] result", { summary, failCount, warnCount, checks: checks.map((c) => `${c.id}:${c.status}`) });
 
   const baseUrl =
+    process.env.TELEGRAM_WEBHOOK_BASE_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.VERCEL_URL?.replace(/^https?:\/\//, "https://") ||
     "https://risksent.com";
-  const webhookUrl = `${baseUrl.replace(/\/$/, "")}/api/telegram-webhook`;
+  const webhookUrl = `${String(baseUrl).replace(/\/$/, "")}/api/telegram-webhook`;
 
   return NextResponse.json({
     summary,
