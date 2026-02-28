@@ -7,6 +7,7 @@ import {
   Bot,
   PlusCircle,
   Zap,
+  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
 const secondaryItems = [
   { href: "/add-account", label: "Add Account", icon: PlusCircle },
   { href: "/metaapi-test", label: "MetaApi Test", icon: Zap },
+  { href: "/metatraderapi-test", label: "MetatraderApi Test", icon: Activity },
 ] as const;
 
 export function Sidebar() {
