@@ -55,13 +55,13 @@ export function getRiskFindings(
   const { initialBalance, dailyStats, highestDdPct, consecutiveLossesAtEnd } = stats;
   const { openPositions = [], equity, currentExposurePct } = options ?? {};
 
-  // --- Perdita giornaliera ---
+  // --- Daily loss ---
   if (initialBalance > 0 && dailyStats.length > 0) {
     const worstDayPct = Math.min(
       ...dailyStats.map((d) => (d.profit / initialBalance) * 100)
     );
     const limit = rules.daily_loss_pct;
-    const approachLimit = -limit * APPROACH_THRESHOLD; // es. -4% se limit 5%
+    const approachLimit = -limit * APPROACH_THRESHOLD;
 
     if (worstDayPct <= -limit) {
       const ratio = Math.abs(worstDayPct / limit);
@@ -69,7 +69,7 @@ export function getRiskFindings(
       findings.push({
         type: "daily_loss",
         level,
-        message: `Perdita giornaliera: ${worstDayPct.toFixed(2)}% (limite ${limit}%).`,
+        message: `Daily loss: ${worstDayPct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDailyLossAdvice(level, worstDayPct, limit),
         severity: level === "alto" ? "high" : "medium"
       });
@@ -77,7 +77,7 @@ export function getRiskFindings(
       findings.push({
         type: "daily_loss",
         level: "lieve",
-        message: `Ti stai avvicinando al limite di perdita giornaliera: peggior giorno ${worstDayPct.toFixed(2)}% (limite ${limit}%).`,
+        message: `Approaching daily loss limit: worst day ${worstDayPct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDailyLossAdvice("lieve", worstDayPct, limit),
         severity: "medium"
       });
@@ -95,15 +95,15 @@ export function getRiskFindings(
         findings.push({
           type: "max_risk_per_trade",
           level,
-          message: `Rischio sul trade ${pos.symbol}: ${riskPct.toFixed(2)}% (limite ${limit}%). Riduci lo stop loss o il lot size.`,
-          advice: "Chiudi o ridimensiona la posizione per rispettare il rischio massimo per trade. Controlla le regole in RiskSent → Rules.",
+          message: `Risk on trade ${pos.symbol}: ${riskPct.toFixed(2)}% (limit ${limit}%). Reduce stop loss or lot size.`,
+          advice: "Close or downsize the position to respect max risk per trade. Check RiskSent → Rules.",
           severity: level === "alto" ? "high" : "medium"
         });
       }
     }
   }
 
-  // --- Esposizione attuale (da posizioni aperte) ---
+  // --- Current exposure (from open positions) ---
   if (currentExposurePct != null && rules.max_exposure_pct > 0) {
     const limit = rules.max_exposure_pct;
     const approachLimit = limit * APPROACH_THRESHOLD;
@@ -113,7 +113,7 @@ export function getRiskFindings(
       findings.push({
         type: "max_drawdown",
         level,
-        message: `Esposizione attuale: ${currentExposurePct.toFixed(2)}% (limite ${limit}%).`,
+        message: `Current exposure: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice(level, currentExposurePct, limit),
         severity: level === "alto" ? "high" : "medium"
       });
@@ -121,14 +121,14 @@ export function getRiskFindings(
       findings.push({
         type: "max_drawdown",
         level: "lieve",
-        message: `Esposizione in avvicinamento al limite: ${currentExposurePct.toFixed(2)}% (limite ${limit}%).`,
+        message: `Exposure approaching limit: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice("lieve", currentExposurePct, limit),
         severity: "medium"
       });
     }
   }
 
-  // --- Drawdown massimo (storico da curve) ---
+  // --- Max drawdown (historical from curve) ---
   if (highestDdPct != null && rules.max_exposure_pct > 0) {
     const limit = rules.max_exposure_pct;
     const approachLimit = limit * APPROACH_THRESHOLD;
@@ -139,7 +139,7 @@ export function getRiskFindings(
       findings.push({
         type: "max_drawdown",
         level,
-        message: `Drawdown massimo: ${highestDdPct.toFixed(2)}% (limite esposizione ${limit}%).`,
+        message: `Max drawdown: ${highestDdPct.toFixed(2)}% (exposure limit ${limit}%).`,
         advice: getDrawdownAdvice(level, highestDdPct, limit),
         severity: level === "alto" ? "high" : "medium"
       });
@@ -147,14 +147,14 @@ export function getRiskFindings(
       findings.push({
         type: "max_drawdown",
         level: "lieve",
-        message: `Drawdown in avvicinamento al limite: ${highestDdPct.toFixed(2)}% (limite ${limit}%).`,
+        message: `Drawdown approaching limit: ${highestDdPct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice("lieve", highestDdPct, limit),
         severity: "medium"
       });
     }
   }
 
-  // --- Revenge trading (perdite consecutive) ---
+  // --- Revenge trading (consecutive losses) ---
   const threshold = rules.revenge_threshold_trades;
   if (threshold > 0 && consecutiveLossesAtEnd >= threshold) {
     const level: RiskLevel =
@@ -162,7 +162,7 @@ export function getRiskFindings(
     findings.push({
       type: "revenge_trading",
       level,
-      message: `${consecutiveLossesAtEnd} perdite consecutive (soglia ${threshold}). Possibile revenge trading.`,
+      message: `${consecutiveLossesAtEnd} consecutive losses (threshold ${threshold}). Possible revenge trading.`,
       advice: getRevengeAdvice(level, consecutiveLossesAtEnd, threshold),
       severity: level === "alto" ? "high" : "medium"
     });
@@ -170,7 +170,7 @@ export function getRiskFindings(
     findings.push({
       type: "revenge_trading",
       level: "lieve",
-      message: `${consecutiveLossesAtEnd} perdite consecutive: una in più e raggiungi la soglia (${threshold}).`,
+      message: `${consecutiveLossesAtEnd} consecutive losses: one more and you reach the threshold (${threshold}).`,
       advice: getRevengeAdvice("lieve", consecutiveLossesAtEnd, threshold),
       severity: "medium"
     });
@@ -182,38 +182,38 @@ export function getRiskFindings(
 function getDailyLossAdvice(level: RiskLevel, currentPct: number, limit: number): string {
   switch (level) {
     case "lieve":
-      return "Riduci la dimensione delle posizioni o evita nuovi ingressi fino a domani. Controlla le regole in RiskSent → Rules.";
+      return "Reduce position size or avoid new entries until tomorrow. Check RiskSent → Rules.";
     case "medio":
-      return "Hai superato il limite di perdita giornaliera. Sospendi il trading per oggi, chiudi eventuali posizioni a rischio e rivedi le regole domani.";
+      return "Daily loss limit exceeded. Stop trading for today, close any at-risk positions and review rules tomorrow.";
     case "alto":
-      return "Perdita giornaliera molto oltre il limite. Non aprire nuovi trade; chiudi le posizioni a rischio e considera una pausa di un giorno per rivedere la strategia.";
+      return "Daily loss far above limit. Do not open new trades; close at-risk positions and consider a one-day break to review strategy.";
     default:
-      return "Rivedi le regole in RiskSent → Rules e adatta il rischio.";
+      return "Review rules in RiskSent → Rules and adjust risk.";
   }
 }
 
 function getDrawdownAdvice(level: RiskLevel, currentPct: number, limit: number): string {
   switch (level) {
     case "lieve":
-      return "L'esposizione si sta avvicinando al massimo. Riduci le dimensioni delle posizioni aperte o chiudi parte dell'esposizione.";
+      return "Exposure is approaching the maximum. Reduce open position sizes or close part of the exposure.";
     case "medio":
-      return "Hai superato il limite di esposizione/drawdown. Riduci subito le posizioni aperte e non aprire nuovi trade fino a rientrare sotto il limite.";
+      return "Exposure/drawdown limit exceeded. Reduce open positions now and do not open new trades until back under the limit.";
     case "alto":
-      return "Drawdown molto oltre il limite. Riduci immediatamente l'esposizione, chiudi le posizioni più in perdita e sospendi nuovi ingressi.";
+      return "Drawdown far above limit. Reduce exposure immediately, close worst positions and suspend new entries.";
     default:
-      return "Controlla l'esposizione in RiskSent → Dashboard e riduci il rischio.";
+      return "Check exposure in RiskSent → Dashboard and reduce risk.";
   }
 }
 
 function getRevengeAdvice(level: RiskLevel, consecutive: number, threshold: number): string {
   switch (level) {
     case "lieve":
-      return "Stai vicino alla soglia di revenge trading. Fai una pausa di almeno 30 minuti prima del prossimo trade e rispetta la tua dimensione di posizione.";
+      return "Near revenge-trading threshold. Take at least a 30-minute break before the next trade and respect position size.";
     case "medio":
-      return "Possibile revenge trading: troppe perdite consecutive. Fermati per oggi, non cercare di recuperare con trade impulsivi. Riprendi domani con le regole chiare.";
+      return "Possible revenge trading: too many consecutive losses. Stop for today; do not try to recover with impulsive trades. Resume tomorrow with clear rules.";
     case "alto":
-      return "Pattern da revenge trading evidente. Sospendi il trading per oggi e domani. Rivedi il piano e le regole in RiskSent → Rules prima di riprendere.";
+      return "Clear revenge-trading pattern. Stop trading for today and tomorrow. Review plan and rules in RiskSent → Rules before resuming.";
     default:
-      return "Rispetta la soglia di perdite consecutive impostata in Rules e fai pause tra una serie di loss e l'altra.";
+      return "Respect the consecutive-loss threshold set in Rules and take breaks between loss runs.";
   }
 }

@@ -231,9 +231,10 @@ export async function runRiskCheckForAccount(params: {
       .single();
 
     if (alertRow) {
+      const levelLabel = { lieve: "MILD", medio: "MEDIUM", alto: "HIGH" }[f.level] ?? f.level.toUpperCase();
       await sendAlertToTelegram({
         user_id: userId,
-        message: `[${f.level.toUpperCase()}] ${f.message}`,
+        message: `[${levelLabel}] ${f.message}`,
         severity: f.severity,
         solution: f.advice
       });
@@ -241,4 +242,153 @@ export async function runRiskCheckForAccount(params: {
   }
 
   return { ok: true, findings };
+}
+
+export type RiskCheckDryRunResult = {
+  ok: boolean;
+  error?: string;
+  timestamp: string;
+  uuid: string;
+  connection: {
+    accountSummary: { ok: boolean; status?: number; error?: string };
+    closedOrders: { ok: boolean; status?: number; error?: string };
+    openOrders: { ok: boolean; status?: number; error?: string };
+  };
+  raw?: {
+    accountSummary: unknown;
+    closedOrders: unknown;
+    openOrders: unknown;
+  };
+  balance: number;
+  equity: number;
+  closedOrdersCount: number;
+  openPositionsCount: number;
+  rules: RiskRules;
+  stats: StatsForRisk;
+  openPositions: OpenPositionForRisk[];
+  currentExposurePct: number | null;
+  findings: RiskFinding[];
+};
+
+/**
+ * Run risk check without creating alerts or sending Telegram. Returns full detail for monitoring/debug.
+ */
+export async function runRiskCheckDryRun(params: {
+  userId: string;
+  uuid: string;
+  supabase: SupabaseClient;
+  apiKey: string;
+  includeRaw?: boolean;
+}): Promise<RiskCheckDryRunResult> {
+  const { userId, uuid, supabase, apiKey, includeRaw = true } = params;
+
+  const headers = { "x-api-key": apiKey, Accept: "application/json" };
+  const connection = {
+    accountSummary: { ok: false, status: 0 as number | undefined, error: "" },
+    closedOrders: { ok: false, status: 0 as number | undefined, error: "" },
+    openOrders: { ok: false, status: 0 as number | undefined, error: "" }
+  };
+  let balance = 0;
+  let equity = 0;
+  let orders: ClosedOrder[] = [];
+  let openPositions: OpenPositionForRisk[] = [];
+  let rawSummary: unknown;
+  let rawClosed: unknown;
+  let rawOpen: unknown;
+
+  try {
+    const [summaryRes, closedRes] = await Promise.all([
+      fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(uuid)}`, { headers }),
+      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`, { headers })
+    ]);
+
+    connection.accountSummary = { ok: summaryRes.ok, status: summaryRes.status };
+    if (!summaryRes.ok) connection.accountSummary.error = await summaryRes.text().catch(() => "Unknown");
+    else {
+      rawSummary = await summaryRes.json();
+      const s = rawSummary as { balance?: number; equity?: number };
+      balance = Number(s?.balance) ?? 0;
+      equity = Number(s?.equity) ?? balance;
+    }
+
+    connection.closedOrders = { ok: closedRes.ok, status: closedRes.status };
+    if (!closedRes.ok) connection.closedOrders.error = await closedRes.text().catch(() => "Unknown");
+    else {
+      rawClosed = await closedRes.json();
+      orders = parseOrders(Array.isArray(rawClosed) ? rawClosed : (rawClosed as { orders?: unknown })?.orders ?? rawClosed ?? []);
+    }
+
+    const useEquity = equity > 0 ? equity : balance;
+    try {
+      const openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      connection.openOrders = { ok: openRes.ok, status: openRes.status };
+      if (!openRes.ok) connection.openOrders.error = await openRes.text().catch(() => "Unknown");
+      else if (openRes.ok) {
+        rawOpen = await openRes.json();
+        const rawList = Array.isArray(rawOpen) ? rawOpen : (rawOpen as { orders?: unknown })?.orders ?? (rawOpen as { positions?: unknown })?.positions ?? rawOpen ?? [];
+        openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
+      }
+    } catch (e) {
+      connection.openOrders.error = e instanceof Error ? e.message : "Request failed";
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Failed to fetch",
+      timestamp: new Date().toISOString(),
+      uuid,
+      connection,
+      balance: 0,
+      equity: 0,
+      closedOrdersCount: 0,
+      openPositionsCount: 0,
+      rules: { daily_loss_pct: 0, max_risk_per_trade_pct: 0, max_exposure_pct: 0, revenge_threshold_trades: 0 },
+      stats: { initialBalance: 0, dailyStats: [], highestDdPct: null, consecutiveLossesAtEnd: 0 },
+      openPositions: [],
+      currentExposurePct: null,
+      findings: []
+    };
+  }
+
+  const { data: appUser } = await supabase
+    .from("app_user")
+    .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
+    .eq("id", userId)
+    .single();
+
+  const rules: RiskRules = {
+    daily_loss_pct: Number(appUser?.daily_loss_pct) ?? 5,
+    max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
+    max_exposure_pct: Number(appUser?.max_exposure_pct) ?? 6,
+    revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 3
+  };
+
+  const stats = buildStatsForRisk(balance, orders);
+  const useEquityOut = equity > 0 ? equity : balance;
+  const currentExposurePct =
+    openPositions.length > 0
+      ? openPositions.reduce((s, p) => s + (p.riskPct ?? 0), 0)
+      : null;
+  const findings = getRiskFindings(rules, stats, {
+    openPositions,
+    equity: useEquityOut,
+    currentExposurePct
+  });
+
+  return {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    uuid,
+    connection,
+    raw: includeRaw ? { accountSummary: rawSummary, closedOrders: rawClosed, openOrders: rawOpen } : undefined,
+    balance,
+    equity,
+    closedOrdersCount: orders.length,
+    openPositionsCount: openPositions.length,
+    rules,
+    stats,
+    openPositions,
+    currentExposurePct,
+    findings
+  };
 }

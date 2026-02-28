@@ -10,7 +10,8 @@ const PROTECTED_PATHS = [
   "/ai-coach",
   "/add-account",
   "/accounts",
-  "/admin"
+  "/admin",
+  "/live-monitoring"
 ];
 
 export async function middleware(req: NextRequest) {
