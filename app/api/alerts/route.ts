@@ -15,7 +15,7 @@ export async function GET() {
 
   const { data: alerts, error } = await supabase
     .from("alert")
-    .select("id, message, severity, solution, alert_date, read")
+    .select("id, message, severity, solution, alert_date, read, rule_type")
     .eq("user_id", user.id)
     .order("alert_date", { ascending: false })
     .limit(50);

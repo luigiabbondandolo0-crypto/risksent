@@ -20,21 +20,40 @@ export type StatsForRisk = {
 export type RiskLevel = "lieve" | "medio" | "alto";
 
 export type RiskFinding = {
-  type: "daily_loss" | "max_drawdown" | "revenge_trading";
+  type: "daily_loss" | "max_drawdown" | "max_risk_per_trade" | "revenge_trading";
   level: RiskLevel;
   message: string;
   advice: string;
   severity: "medium" | "high";
 };
 
+/** Open position with optional stop loss for max risk per trade check. riskPct = risk if SL hits as % of equity (caller should set). */
+export type OpenPositionForRisk = {
+  symbol: string;
+  volume: number;
+  openPrice: number;
+  stopLoss?: number | null;
+  type?: "buy" | "sell";
+  riskPct?: number | null;
+};
+
 const APPROACH_THRESHOLD = 0.8; // consideriamo "in avvicinamento" a 80% del limite
+
+export type RiskCheckOptions = {
+  openPositions?: OpenPositionForRisk[];
+  equity?: number;
+  /** Current exposure as % of equity (from open positions). If set, checked against max_exposure_pct. */
+  currentExposurePct?: number | null;
+};
 
 export function getRiskFindings(
   rules: RiskRules,
-  stats: StatsForRisk
+  stats: StatsForRisk,
+  options?: RiskCheckOptions
 ): RiskFinding[] {
   const findings: RiskFinding[] = [];
   const { initialBalance, dailyStats, highestDdPct, consecutiveLossesAtEnd } = stats;
+  const { openPositions = [], equity, currentExposurePct } = options ?? {};
 
   // --- Perdita giornaliera ---
   if (initialBalance > 0 && dailyStats.length > 0) {
@@ -65,7 +84,51 @@ export function getRiskFindings(
     }
   }
 
-  // --- Drawdown massimo ---
+  // --- Max risk per trade (da posizioni aperte con SL) ---
+  if (rules.max_risk_per_trade_pct > 0 && openPositions.length > 0) {
+    const limit = rules.max_risk_per_trade_pct;
+    for (const pos of openPositions) {
+      const riskPct = pos.riskPct;
+      if (riskPct != null && riskPct > limit) {
+        const ratio = riskPct / limit;
+        const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
+        findings.push({
+          type: "max_risk_per_trade",
+          level,
+          message: `Rischio sul trade ${pos.symbol}: ${riskPct.toFixed(2)}% (limite ${limit}%). Riduci lo stop loss o il lot size.`,
+          advice: "Chiudi o ridimensiona la posizione per rispettare il rischio massimo per trade. Controlla le regole in RiskSent → Rules.",
+          severity: level === "alto" ? "high" : "medium"
+        });
+      }
+    }
+  }
+
+  // --- Esposizione attuale (da posizioni aperte) ---
+  if (currentExposurePct != null && rules.max_exposure_pct > 0) {
+    const limit = rules.max_exposure_pct;
+    const approachLimit = limit * APPROACH_THRESHOLD;
+    if (currentExposurePct >= limit) {
+      const ratio = currentExposurePct / limit;
+      const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
+      findings.push({
+        type: "max_drawdown",
+        level,
+        message: `Esposizione attuale: ${currentExposurePct.toFixed(2)}% (limite ${limit}%).`,
+        advice: getDrawdownAdvice(level, currentExposurePct, limit),
+        severity: level === "alto" ? "high" : "medium"
+      });
+    } else if (currentExposurePct >= approachLimit) {
+      findings.push({
+        type: "max_drawdown",
+        level: "lieve",
+        message: `Esposizione in avvicinamento al limite: ${currentExposurePct.toFixed(2)}% (limite ${limit}%).`,
+        advice: getDrawdownAdvice("lieve", currentExposurePct, limit),
+        severity: "medium"
+      });
+    }
+  }
+
+  // --- Drawdown massimo (storico da curve) ---
   if (highestDdPct != null && rules.max_exposure_pct > 0) {
     const limit = rules.max_exposure_pct;
     const approachLimit = limit * APPROACH_THRESHOLD;

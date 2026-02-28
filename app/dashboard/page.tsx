@@ -53,7 +53,7 @@ type RiskRules = {
 };
 
 const POLL_MS = 45_000;
-const CHECK_RISK_THROTTLE_MS = 5 * 60 * 1000; // 5 min
+const CHECK_RISK_THROTTLE_MS = 1 * 60 * 1000; // 1 min — live-ish when dashboard open; cron runs every 2 min for all accounts
 
 function PctLabel({ value }: { value: number | null }) {
   if (value == null) return null;
