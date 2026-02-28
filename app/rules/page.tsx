@@ -83,6 +83,7 @@ export default function RulesPage() {
   const [connectionCheck, setConnectionCheck] = useState<{
     summary: string;
     checks: { id: string; name: string; status: string; message: string; detail?: string }[];
+    webhookUrl?: string;
   } | null>(null);
   const [connectionCheckLoading, setConnectionCheckLoading] = useState(false);
   const pollLinkRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -458,11 +459,16 @@ export default function RulesPage() {
                       const data = await res.json();
                       console.log("[Rules] connection-check result", { ok: res.ok, summary: data.summary, checks: data.checks, userId: data.userId });
                       if (res.ok && data.checks) {
-                        setConnectionCheck({ summary: data.summary ?? "fail", checks: data.checks });
+                        setConnectionCheck({
+                          summary: data.summary ?? "fail",
+                          checks: data.checks,
+                          webhookUrl: data.webhookUrl
+                        });
                       } else {
                         setConnectionCheck({
                           summary: "fail",
-                          checks: [{ id: "error", name: "Controllo", status: "fail", message: data.error ?? "Errore caricamento controlli" }]
+                          checks: [{ id: "error", name: "Controllo", status: "fail", message: data.error ?? "Errore caricamento controlli" }],
+                          webhookUrl: data.webhookUrl
                         });
                       }
                     } catch {
@@ -527,6 +533,11 @@ export default function RulesPage() {
                         <span className={c.status === "ok" ? "text-slate-300" : c.status === "fail" ? "text-red-300" : "text-amber-300"}>
                           <span className="font-medium">{c.name}:</span> {c.message}
                           {c.detail && <span className="block text-xs text-slate-500 mt-0.5">{c.detail}</span>}
+                          {c.id === "db_telegram_chat_id" && c.status === "fail" && connectionCheck.webhookUrl && (
+                            <span className="block text-xs text-cyan-400 mt-1 break-all">
+                              URL webhook da impostare in BotFather: {connectionCheck.webhookUrl}
+                            </span>
+                          )}
                         </span>
                       </li>
                     ))}
@@ -540,7 +551,7 @@ export default function RulesPage() {
                         try {
                           const res = await fetch("/api/bot/connection-check", { cache: "no-store" });
                           const data = await res.json();
-                          if (res.ok && data.checks) setConnectionCheck({ summary: data.summary ?? "fail", checks: data.checks });
+                          if (res.ok && data.checks) setConnectionCheck({ summary: data.summary ?? "fail", checks: data.checks, webhookUrl: data.webhookUrl });
                         } finally {
                           setConnectionCheckLoading(false);
                         }

@@ -107,7 +107,11 @@ export async function GET() {
       name: "Chat Telegram collegata",
       status: "fail",
       message: "Nessun telegram_chat_id in app_user",
-      detail: "Usa Collega ora, apri il link e invia /start al bot"
+      detail:
+        "1) Clicca Collega ora, apri il link che si apre (t.me/...?start=...). " +
+        "2) Avvia la chat dal link (o invia /start). " +
+        "3) Se hai già fatto così: in BotFather invia /setwebhook e imposta l'URL https://risksent.com/api/telegram-webhook. " +
+        "Nei log del server devono comparire voci [Telegram webhook] quando scrivi al bot."
     });
   }
 
@@ -148,9 +152,16 @@ export async function GET() {
 
   console.log(LOG_PREFIX, "[verbose] result", { summary, failCount, warnCount, checks: checks.map((c) => `${c.id}:${c.status}`) });
 
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_URL?.replace(/^https?:\/\//, "https://") ||
+    "https://risksent.com";
+  const webhookUrl = `${baseUrl.replace(/\/$/, "")}/api/telegram-webhook`;
+
   return NextResponse.json({
     summary,
     checks,
-    userId: userId.slice(0, 8) + "..."
+    userId: userId.slice(0, 8) + "...",
+    webhookUrl
   });
 }

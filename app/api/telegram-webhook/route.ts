@@ -18,6 +18,8 @@ type TelegramUpdate = {
 const LOG_PREFIX = "[Telegram webhook]";
 
 export async function POST(req: NextRequest) {
+  console.log(LOG_PREFIX, "[verbose] webhook POST received", { url: req.url });
+
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const channelId = process.env.TELEGRAM_ALERT_CHANNEL_ID?.trim();
   const username = process.env.TELEGRAM_BOT_USERNAME?.trim();
@@ -36,7 +38,8 @@ export async function POST(req: NextRequest) {
   let update: TelegramUpdate;
   try {
     update = await req.json();
-  } catch {
+  } catch (e) {
+    console.warn(LOG_PREFIX, "[verbose] parse body failed", e);
     return NextResponse.json({ ok: true });
   }
 
