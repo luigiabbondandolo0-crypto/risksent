@@ -302,8 +302,11 @@ export async function runRiskCheckDryRun(params: {
       fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`, { headers })
     ]);
 
-    connection.accountSummary = { ok: summaryRes.ok, status: summaryRes.status };
-    if (!summaryRes.ok) connection.accountSummary.error = await summaryRes.text().catch(() => "Unknown");
+    connection.accountSummary = {
+      ok: summaryRes.ok,
+      status: summaryRes.status,
+      error: summaryRes.ok ? "" : (await summaryRes.text().catch(() => "Unknown"))
+    };
     else {
       rawSummary = await summaryRes.json();
       const s = rawSummary as { balance?: number; equity?: number };
@@ -311,8 +314,11 @@ export async function runRiskCheckDryRun(params: {
       equity = Number(s?.equity) ?? balance;
     }
 
-    connection.closedOrders = { ok: closedRes.ok, status: closedRes.status };
-    if (!closedRes.ok) connection.closedOrders.error = await closedRes.text().catch(() => "Unknown");
+    connection.closedOrders = {
+      ok: closedRes.ok,
+      status: closedRes.status,
+      error: closedRes.ok ? "" : (await closedRes.text().catch(() => "Unknown"))
+    };
     else {
       rawClosed = await closedRes.json();
       orders = parseOrders(Array.isArray(rawClosed) ? rawClosed : (rawClosed as { orders?: unknown })?.orders ?? rawClosed ?? []);
@@ -321,9 +327,12 @@ export async function runRiskCheckDryRun(params: {
     const useEquity = equity > 0 ? equity : balance;
     try {
       const openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
-      connection.openOrders = { ok: openRes.ok, status: openRes.status };
-      if (!openRes.ok) connection.openOrders.error = await openRes.text().catch(() => "Unknown");
-      else if (openRes.ok) {
+      connection.openOrders = {
+        ok: openRes.ok,
+        status: openRes.status,
+        error: openRes.ok ? "" : (await openRes.text().catch(() => "Unknown"))
+      };
+      if (openRes.ok) {
         rawOpen = await openRes.json();
         const rawList = Array.isArray(rawOpen) ? rawOpen : (rawOpen as { orders?: unknown })?.orders ?? (rawOpen as { positions?: unknown })?.positions ?? rawOpen ?? [];
         openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
