@@ -95,18 +95,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const { error: updateErr } = await supabase
+  const updatedAt = new Date().toISOString();
+  const { data: updatedRow, error: updateErr } = await supabase
     .from("app_user")
     .update({
       telegram_chat_id: String(chatId),
-      updated_at: new Date().toISOString()
+      updated_at: updatedAt
     })
-    .eq("id", linkRow.user_id);
+    .eq("id", linkRow.user_id)
+    .select("id")
+    .single();
 
-  if (updateErr) {
+  if (updateErr && (updateErr as { code?: string }).code !== "PGRST116") {
     console.warn(LOG_PREFIX, "link failed: app_user update error", updateErr.message);
     await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
     return NextResponse.json({ ok: true });
+  }
+
+  if (!updatedRow) {
+    const { error: insertErr } = await supabase.from("app_user").insert({
+      id: linkRow.user_id,
+      role: "customer",
+      daily_loss_pct: 5,
+      max_risk_per_trade_pct: 1,
+      max_exposure_pct: 6,
+      revenge_threshold_trades: 3,
+      telegram_chat_id: String(chatId),
+      updated_at: updatedAt
+    });
+    if (insertErr) {
+      console.warn(LOG_PREFIX, "link failed: app_user insert error", insertErr.message);
+      await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
+      return NextResponse.json({ ok: true });
+    }
+    console.log(LOG_PREFIX, "app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
   }
 
   await supabase.from("telegram_link_token").delete().eq("token", startParam);
