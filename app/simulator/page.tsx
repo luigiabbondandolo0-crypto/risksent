@@ -285,7 +285,7 @@ export default function SimulatorPage() {
     </div>
   );
 
-  return (
+  const pageContent = (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -326,4 +326,6 @@ export default function SimulatorPage() {
       )}
     </div>
   );
+
+  return pageContent;
 }
