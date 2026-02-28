@@ -66,17 +66,22 @@ export default function TradesPage() {
   useEffect(() => {
     (async () => {
       try {
+        console.log("[Trades] Fetching /api/accounts...");
         const accRes = await fetch("/api/accounts");
+        const body = await accRes.json().catch(() => ({}));
+        console.log("[Trades] /api/accounts response:", { status: accRes.status, ok: accRes.ok, body });
         if (!accRes.ok) {
-          setError("Failed to load accounts");
+          console.error("[Trades] /api/accounts failed:", accRes.status, body);
+          setError(body?.error ?? "Failed to load accounts");
           return;
         }
-        const { accounts: list } = await accRes.json();
-        setAccounts(list ?? []);
+        const list = body.accounts ?? [];
+        setAccounts(list);
         const first = list?.[0];
         if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
         else setSelectedUuid("");
-      } catch {
+      } catch (e) {
+        console.error("[Trades] /api/accounts exception:", e);
         setError("Failed to load accounts");
       } finally {
         setLoading(false);

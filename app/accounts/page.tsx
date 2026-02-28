@@ -23,14 +23,18 @@ export default function ManageAccountsPage() {
     setLoading(true);
     setError(null);
     try {
+      console.log("[Accounts] Fetching /api/accounts...");
       const res = await fetch("/api/accounts");
       const data = await res.json().catch(() => ({}));
+      console.log("[Accounts] /api/accounts response:", { status: res.status, ok: res.ok, data });
       if (!res.ok) {
+        console.error("[Accounts] /api/accounts failed:", res.status, data);
         setError(data?.error ?? "Failed to load accounts");
         return;
       }
       setAccounts(data.accounts ?? []);
-    } catch {
+    } catch (e) {
+      console.error("[Accounts] /api/accounts exception:", e);
       setError("Failed to load accounts");
     } finally {
       setLoading(false);
