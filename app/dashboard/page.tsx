@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   XAxis,
   YAxis,
@@ -44,6 +45,13 @@ type Stats = {
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
 
+type RiskRules = {
+  daily_loss_pct: number;
+  max_risk_per_trade_pct: number;
+  max_exposure_pct: number;
+  revenge_threshold_trades: number;
+};
+
 const POLL_MS = 45_000;
 
 function PctLabel({ value }: { value: number | null }) {
@@ -61,6 +69,7 @@ export default function DashboardPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +121,27 @@ export default function DashboardPage() {
         setError("Failed to load accounts");
       } finally {
         setLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/rules");
+        if (res.ok) {
+          const r = await res.json();
+          setRiskRules({
+            daily_loss_pct: Number(r.daily_loss_pct) ?? 5,
+            max_risk_per_trade_pct: Number(r.max_risk_per_trade_pct) ?? 1,
+            max_exposure_pct: Number(r.max_exposure_pct) ?? 6,
+            revenge_threshold_trades: Number(r.revenge_threshold_trades) ?? 3
+          });
+        } else {
+          setRiskRules(null);
+        }
+      } catch {
+        setRiskRules(null);
       }
     })();
   }, []);
@@ -173,6 +203,31 @@ export default function DashboardPage() {
       </header>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
+
+      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-surface px-4 py-3">
+        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Active risk rules</span>
+        {riskRules ? (
+          <>
+            <span className="text-slate-500">·</span>
+            <span className="text-xs text-slate-300">
+              Daily loss: {riskRules.daily_loss_pct}% · Risk/trade: {riskRules.max_risk_per_trade_pct}% · Exposure: {riskRules.max_exposure_pct}% · Revenge: {riskRules.revenge_threshold_trades}
+            </span>
+            <Link
+              href="/rules"
+              className="ml-auto text-xs font-medium text-cyan-400 hover:text-cyan-300"
+            >
+              Edit
+            </Link>
+          </>
+        ) : (
+          <Link
+            href="/rules"
+            className="inline-flex items-center rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30"
+          >
+            Set rules
+          </Link>
+        )}
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-xl border border-slate-800 bg-surface p-5">
