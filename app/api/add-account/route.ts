@@ -1,82 +1,144 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { encrypt } from "@/lib/encrypt";
+
+const METAAPI_BASE = "https://api.metatraderapi.dev";
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = createSupabaseRouteClient();
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const brokerType = String(body.brokerType ?? "").toUpperCase();
-    const accountNumber = String(body.accountNumber ?? "");
-    const investorPassword = String(body.investorPassword ?? "");
+    const server = String(body.server ?? "").trim();
+    const accountNumber = String(body.accountNumber ?? "").trim();
+    const password = String(body.investorPassword ?? body.password ?? "").trim();
+    const name = String(body.name ?? "").trim();
 
-    const apiKey = process.env.METATRADER_API_KEY;
-
-    const problems: string[] = [];
-
-    if (!apiKey) {
-      problems.push("Missing METATRADER_API_KEY env on server.");
-    }
-
-    if (!brokerType || !["MT4", "MT5", "CTRADER", "TRADLOCKER"].includes(brokerType)) {
-      problems.push("Unsupported or missing broker type.");
-    }
-
-    if (!accountNumber) {
-      problems.push("Missing account number.");
-    }
-
-    if (!investorPassword) {
-      problems.push("Missing investor (read-only) password.");
-    }
-
-    // Here is where the real MetaApi integration will live.
-    // For now we only log potential issues and return a mock response.
-    if (problems.length > 0) {
-      console.error("[MetaTrader AddAccount] Potential connection issues:", {
-        brokerType,
-        accountNumber,
-        hasInvestorPassword: investorPassword.length > 0,
-        problems
-      });
-
+    if (!["MT4", "MT5"].includes(brokerType)) {
       return NextResponse.json(
-        {
-          ok: false,
-          message: "Mock connection check failed.",
-          problems
-        },
+        { ok: false, message: "Only MT4 and MT5 are supported.", problems: ["Unsupported broker type."] },
+        { status: 400 }
+      );
+    }
+    if (!server) {
+      return NextResponse.json(
+        { ok: false, message: "Server is required.", problems: ["Missing broker server name."] },
+        { status: 400 }
+      );
+    }
+    if (!accountNumber) {
+      return NextResponse.json(
+        { ok: false, message: "Account number is required.", problems: ["Missing account number."] },
+        { status: 400 }
+      );
+    }
+    if (!password) {
+      return NextResponse.json(
+        { ok: false, message: "Password is required.", problems: ["Missing password."] },
         { status: 400 }
       );
     }
 
-    console.log("[MetaTrader AddAccount] Mock connection successful:", {
-      brokerType,
-      accountNumberMasked:
-        accountNumber.length > 4
-          ? `${"*".repeat(accountNumber.length - 4)}${accountNumber.slice(-4)}`
-          : accountNumber,
-      hasInvestorPassword: investorPassword.length > 0
+    const apiKey = process.env.METATRADERAPI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { ok: false, message: "Server misconfiguration: API key not set.", problems: ["METATRADERAPI_API_KEY missing."] },
+        { status: 500 }
+      );
+    }
+
+    const typeParam = brokerType === "MT5" ? "Metatrader 5" : "Metatrader 4";
+    const params = new URLSearchParams({
+      type: typeParam,
+      server,
+      user: accountNumber,
+      password,
+      name: name || `${brokerType}-${accountNumber.slice(-4)}`
+    });
+    const registerUrl = `${METAAPI_BASE}/RegisterAccount?${params.toString()}`;
+
+    const res = await fetch(registerUrl, {
+      method: "GET",
+      headers: { "x-api-key": apiKey, Accept: "application/json" }
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const errMsg = data.error ?? data.message ?? res.statusText;
+      return NextResponse.json(
+        { ok: false, message: errMsg, problems: [String(errMsg)] },
+        { status: 400 }
+      );
+    }
+
+    const accountId = data.id;
+    if (!accountId) {
+      return NextResponse.json(
+        { ok: false, message: "No account id returned.", problems: ["Invalid response from provider."] },
+        { status: 502 }
+      );
+    }
+
+    // Ensure app_user exists
+    await supabase.from("app_user").upsert(
+      { id: user.id, updated_at: new Date().toISOString() },
+      { onConflict: "id" }
+    );
+
+    let encryptedPassword: string;
+    try {
+      encryptedPassword = encrypt(password);
+    } catch (e) {
+      return NextResponse.json(
+        { ok: false, message: "Encryption not configured.", problems: ["Set ENCRYPTION_KEY (32+ chars) in Vercel."] },
+        { status: 500 }
+      );
+    }
+
+    const { error: insertError } = await supabase.from("trading_account").insert({
+      user_id: user.id,
+      broker_type: brokerType,
+      account_number: accountNumber,
+      investor_password_encrypted: encryptedPassword,
+      metaapi_account_id: accountId
     });
 
-    // Placeholder: here we will encrypt investorPassword and persist
-    // into trading_account table in Supabase.
+    if (insertError) {
+      if (insertError.code === "23505") {
+        return NextResponse.json(
+          { ok: false, message: "This account is already added.", problems: ["Duplicate account."] },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { ok: false, message: insertError.message, problems: [insertError.message] },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      message: "Mock MetaTrader connection successful. Account would be stored now.",
-      warnings: [
-        "Investor password must be encrypted before storing.",
-        "Real MetaApi connectivity and account syncing not implemented yet."
-      ]
+      message: "Account connected and saved.",
+      accountId
     });
   } catch (error) {
-    console.error("[MetaTrader AddAccount] Unexpected server error:", error);
+    console.error("[AddAccount] Error:", error);
     return NextResponse.json(
       {
         ok: false,
-        message: "Unexpected server error while validating account.",
-        problems: ["Unexpected server error. Check server logs for details."]
+        message: error instanceof Error ? error.message : "Unexpected error.",
+        problems: ["Check server logs."]
       },
       { status: 500 }
     );
   }
 }
-

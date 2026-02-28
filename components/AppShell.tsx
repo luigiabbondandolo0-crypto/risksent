@@ -10,8 +10,10 @@ const APP_PATHS = [
   "/simulator",
   "/ai-coach",
   "/add-account",
+  "/accounts",
   "/metaapi-test",
-  "/metatraderapi-test"
+  "/metatraderapi-test",
+  "/admin"
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

@@ -8,6 +8,8 @@ import {
   PlusCircle,
   Zap,
   Activity,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +21,7 @@ const navItems = [
 ] as const;
 
 const secondaryItems = [
+  { href: "/accounts", label: "Manage Accounts", icon: CreditCard },
   { href: "/add-account", label: "Add Account", icon: PlusCircle },
   { href: "/metaapi-test", label: "MetaApi Test", icon: Zap },
   { href: "/metatraderapi-test", label: "MetatraderApi Test", icon: Activity },
@@ -55,6 +58,18 @@ export function Sidebar() {
               <span className="uppercase tracking-wide">{label}</span>
             </Link>
           ))}
+        </div>
+        <div className="mt-6 pt-4 border-t border-slate-800/60">
+          <span className="uppercase tracking-wider text-[11px] text-slate-600 mb-3 block font-medium">
+            Admin
+          </span>
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
+          >
+            <Shield className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            <span className="uppercase tracking-wide">Admin</span>
+          </Link>
         </div>
       </nav>
     </aside>
