@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
   const chatId = update.message?.chat?.id;
   const rawText = (update.message?.text ?? "").trim();
   const text = rawText.toLowerCase();
+  console.log(LOG_PREFIX, "[verbose] update", { chatId, rawText: rawText.slice(0, 80), hasMessage: !!update.message });
+
   if (chatId == null) {
     return NextResponse.json({ ok: true });
   }
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
   const parts = rawText.split(/\s+/);
   const startParam = parts[1]; // /start TOKEN
   if (!startParam) {
-    console.log(LOG_PREFIX, "/start without token, sent instructions");
+    console.log(LOG_PREFIX, "[verbose] /start without token", { chatId });
     await sendTelegramMessage(
       token,
       chatId,
@@ -80,7 +82,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  console.log(LOG_PREFIX, "/start with token", { chatId, tokenPresent: !!startParam });
+  console.log(LOG_PREFIX, "[verbose] /start with token", { chatId, tokenPrefix: startParam.slice(0, 6) + "..." });
 
   const supabase = createSupabaseAdmin();
   const { data: linkRow, error: fetchErr } = await supabase
@@ -90,7 +92,12 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (fetchErr || !linkRow?.user_id) {
-    console.log(LOG_PREFIX, "link token not found or expired", fetchErr?.message ?? "no row");
+    console.log(LOG_PREFIX, "[verbose] link token not found or expired", {
+      error: fetchErr?.message,
+      code: (fetchErr as { code?: string })?.code,
+      chatId,
+      tokenPrefix: startParam.slice(0, 6) + "..."
+    });
     await sendTelegramMessage(token, chatId, "Link non valido o scaduto. Vai su RiskSent → Rules → Collega Telegram e genera un nuovo link.");
     return NextResponse.json({ ok: true });
   }
@@ -106,6 +113,14 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
+  console.log(LOG_PREFIX, "[verbose] app_user update result", {
+    updatedRow: !!updatedRow,
+    updateError: updateErr?.message,
+    updateCode: (updateErr as { code?: string })?.code,
+    userId: linkRow.user_id.slice(0, 8) + "...",
+    chatId
+  });
+
   if (updateErr && (updateErr as { code?: string }).code !== "PGRST116") {
     console.warn(LOG_PREFIX, "link failed: app_user update error", updateErr.message);
     await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
@@ -113,6 +128,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!updatedRow) {
+    console.log(LOG_PREFIX, "[verbose] no app_user row, inserting", { userId: linkRow.user_id.slice(0, 8) + "..." });
     const { error: insertErr } = await supabase.from("app_user").insert({
       id: linkRow.user_id,
       role: "customer",
@@ -124,15 +140,19 @@ export async function POST(req: NextRequest) {
       updated_at: updatedAt
     });
     if (insertErr) {
-      console.warn(LOG_PREFIX, "link failed: app_user insert error", insertErr.message);
+      console.warn(LOG_PREFIX, "[verbose] app_user insert failed", { error: insertErr.message, code: (insertErr as { code?: string })?.code });
       await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
       return NextResponse.json({ ok: true });
     }
-    console.log(LOG_PREFIX, "app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
+    console.log(LOG_PREFIX, "[verbose] app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
   }
 
-  await supabase.from("telegram_link_token").delete().eq("token", startParam);
-  console.log(LOG_PREFIX, "chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
+  const { error: delErr } = await supabase.from("telegram_link_token").delete().eq("token", startParam);
+  console.log(LOG_PREFIX, "[verbose] token consumed, chat linked", {
+    userId: linkRow.user_id.slice(0, 8) + "...",
+    chatId,
+    deleteError: delErr?.message ?? "none"
+  });
 
   await sendTelegramMessage(
     token,

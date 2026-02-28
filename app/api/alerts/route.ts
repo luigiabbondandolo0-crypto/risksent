@@ -73,12 +73,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  console.log("[Alerts POST] [verbose] sending to Telegram", {
+    userId: user.id.slice(0, 8) + "...",
+    alertId: alert?.id,
+    messageLen: message.length
+  });
   await sendAlertToTelegram({
     user_id: user.id,
     message,
     severity,
     solution
   });
+  console.log("[Alerts POST] [verbose] sendAlertToTelegram done");
 
   return NextResponse.json({ alert });
 }

@@ -10,6 +10,7 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
+    console.log("[Rules GET] [verbose] unauthorized", { authError: authError?.message });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,6 +20,13 @@ export async function GET() {
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades, telegram_chat_id")
     .eq("id", user.id)
     .single();
+
+  console.log("[Rules GET] [verbose]", {
+    userId: user.id.slice(0, 8) + "...",
+    hasRow: !!row,
+    error: error?.message,
+    telegram_chat_id: row ? (row.telegram_chat_id ? "set(" + String(row.telegram_chat_id).length + ")" : "null") : "n/a"
+  });
 
   if (error || !row) {
     return NextResponse.json({

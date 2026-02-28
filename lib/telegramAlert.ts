@@ -44,11 +44,21 @@ export async function sendAlertToTelegram(params: SendAlertParams): Promise<{ ok
     .single();
 
   const userLinked = !!user?.telegram_chat_id;
-  console.log(LOG_PREFIX, "alert target", { user_id: user_id.slice(0, 8) + "...", userLinked });
+  const chatIdLen = user?.telegram_chat_id ? String(user.telegram_chat_id).length : 0;
+  console.log(LOG_PREFIX, "[verbose] alert target", {
+    user_id: user_id.slice(0, 8) + "...",
+    userLinked,
+    telegram_chat_id: user?.telegram_chat_id ? `set(len=${chatIdLen})` : "null",
+    dbError: (user as unknown as { error?: string })?.error
+  });
 
   if (user?.telegram_chat_id) {
     const res = await sendTelegramMessage(token, user.telegram_chat_id, text);
-    console.log(LOG_PREFIX, "send to user", res.ok ? "ok" : "fail", res.ok ? "" : res.reason);
+    console.log(LOG_PREFIX, "[verbose] send to user", {
+      ok: res.ok,
+      reason: res.reason,
+      chatIdLen
+    });
   }
 
   if (channelId) {
