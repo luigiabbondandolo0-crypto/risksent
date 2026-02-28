@@ -3,6 +3,144 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 
 const METAAPI_BASE = "https://api.metatraderapi.dev";
 
+type ClosedOrder = {
+  closeTime?: string;
+  profit?: number;
+  openTime?: string;
+};
+
+function parseOrders(orders: unknown): ClosedOrder[] {
+  if (!Array.isArray(orders)) return [];
+  return orders as ClosedOrder[];
+}
+
+function buildRealStats(
+  balance: number,
+  equity: number,
+  orders: ClosedOrder[]
+): {
+  winRate: number | null;
+  maxDd: number | null;
+  highestDdPct: number | null;
+  avgRiskReward: number | null;
+  equityCurve: { date: string; value: number; pctFromStart: number }[];
+  dailyStats: { date: string; profit: number; trades: number; wins: number }[];
+  totalProfit: number;
+  initialBalance: number;
+} {
+  const valid = orders.filter(
+    (o) => o != null && typeof o.closeTime === "string" && typeof o.profit === "number"
+  );
+  if (valid.length === 0) {
+    const totalProfit = Number.isFinite(balance) ? 0 : 0;
+    const initialBalance = balance;
+    return {
+      winRate: null,
+      maxDd: null,
+      highestDdPct: null,
+      avgRiskReward: null,
+      equityCurve: [
+        {
+          date: new Date().toISOString().slice(0, 10),
+          value: balance,
+          pctFromStart: 0
+        }
+      ],
+      dailyStats: [],
+      totalProfit: 0,
+      initialBalance: balance
+    };
+  }
+
+  const totalProfit = valid.reduce((s, o) => s + (o.profit ?? 0), 0);
+  const initialBalance = balance - totalProfit;
+  if (initialBalance <= 0) {
+    // fallback: use balance as start, curve will show growth from 0
+    // initialBalance = balance; totalProfit stays; we'll build curve from orders only
+  }
+
+  const wins = valid.filter((o) => (o.profit ?? 0) > 0).length;
+  const winRate = valid.length > 0 ? (wins / valid.length) * 100 : null;
+
+  // Sort by close time and build equity curve (running balance) and daily stats
+  const sorted = [...valid].sort(
+    (a, b) => new Date(a.closeTime!).getTime() - new Date(b.closeTime!).getTime()
+  );
+  let running = initialBalance;
+  const curve: { date: string; value: number; pctFromStart: number }[] = [];
+  const dayMap = new Map<string, { profit: number; trades: number; wins: number }>();
+
+  curve.push({
+    date: sorted[0]!.closeTime!.slice(0, 10),
+    value: initialBalance,
+    pctFromStart: 0
+  });
+
+  for (const o of sorted) {
+    const profit = o.profit ?? 0;
+    running += profit;
+    const dateStr = o.closeTime!.slice(0, 10);
+    const pctFromStart =
+      initialBalance > 0 ? ((running - initialBalance) / initialBalance) * 100 : 0;
+    curve.push({
+      date: dateStr,
+      value: running,
+      pctFromStart
+    });
+    const day = dayMap.get(dateStr) ?? { profit: 0, trades: 0, wins: 0 };
+    day.profit += profit;
+    day.trades += 1;
+    if (profit > 0) day.wins += 1;
+    dayMap.set(dateStr, day);
+  }
+
+  // If curve has only one point (no closes yet), add current balance as last point
+  if (curve.length === 1 && balance !== initialBalance) {
+    const pctFromStart =
+      initialBalance > 0 ? ((balance - initialBalance) / initialBalance) * 100 : 0;
+    curve.push({
+      date: new Date().toISOString().slice(0, 10),
+      value: balance,
+      pctFromStart
+    });
+  }
+
+  // Max drawdown from curve
+  let peak = curve[0]?.value ?? initialBalance;
+  let maxDdPct = 0;
+  for (let i = 1; i < curve.length; i++) {
+    const v = curve[i]!.value;
+    if (v > peak) peak = v;
+    const dd = peak > 0 ? ((peak - v) / peak) * 100 : 0;
+    if (dd > maxDdPct) maxDdPct = dd;
+  }
+  const maxDd = maxDdPct > 0 ? -maxDdPct : null;
+  const highestDdPct = maxDdPct > 0 ? maxDdPct : null;
+
+  // Average risk/reward: avg win size / avg loss size (absolute)
+  const winningProfits = valid.filter((o) => (o.profit ?? 0) > 0).map((o) => o.profit!);
+  const losingProfits = valid.filter((o) => (o.profit ?? 0) < 0).map((o) => Math.abs(o.profit!));
+  const avgWin = winningProfits.length ? winningProfits.reduce((a, b) => a + b, 0) / winningProfits.length : 0;
+  const avgLoss = losingProfits.length ? losingProfits.reduce((a, b) => a + b, 0) / losingProfits.length : 0;
+  const avgRiskReward =
+    avgLoss > 0 && avgWin > 0 ? Math.round((avgWin / avgLoss) * 100) / 100 : null;
+
+  const dailyStats = Array.from(dayMap.entries())
+    .map(([date, d]) => ({ date, profit: d.profit, trades: d.trades, wins: d.wins }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    winRate,
+    maxDd,
+    highestDdPct,
+    avgRiskReward,
+    equityCurve: curve,
+    dailyStats,
+    totalProfit,
+    initialBalance: initialBalance > 0 ? initialBalance : balance - totalProfit
+  };
+}
+
 export async function GET(req: NextRequest) {
   const supabase = createSupabaseRouteClient();
   const {
@@ -43,42 +181,63 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "METATRADERAPI_API_KEY not set" }, { status: 500 });
   }
 
+  const headers = { "x-api-key": apiKey, Accept: "application/json" };
+
   try {
-    const res = await fetch(
-      `${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`,
-      {
-        headers: { "x-api-key": apiKey, Accept: "application/json" }
-      }
-    );
-    if (!res.ok) {
-      const err = await res.text();
+    const [summaryRes, closedRes] = await Promise.all([
+      fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`, { headers }),
+      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, { headers })
+    ]);
+
+    if (!summaryRes.ok) {
+      const err = await summaryRes.text();
       return NextResponse.json(
-        { error: `MetatraderApi: ${res.status} ${err}` },
+        { error: `MetatraderApi: ${summaryRes.status} ${err}` },
         { status: 502 }
       );
     }
-    const summary = await res.json();
+    const summary = await summaryRes.json();
     const balance = Number(summary.balance) ?? 0;
     const equity = Number(summary.equity) ?? 0;
+    const currency = summary.currency ?? "EUR";
 
-    // Mock win rate and max DD until we have trades
-    const winRate = 54;
-    const maxDd = -4.2;
-    const equityCurve = [
-      { t: 0, v: balance * 0.96 },
-      { t: 1, v: balance * 0.98 },
-      { t: 2, v: balance * 0.97 },
-      { t: 3, v: balance * 1.0 },
-      { t: 4, v: equity }
-    ];
+    let closedOrders: ClosedOrder[] = [];
+    if (closedRes.ok) {
+      const raw = await closedRes.json();
+      closedOrders = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
+    }
+
+    const {
+      winRate,
+      maxDd,
+      highestDdPct,
+      avgRiskReward,
+      equityCurve,
+      dailyStats,
+      totalProfit,
+      initialBalance
+    } = buildRealStats(balance, equity, closedOrders);
+
+    const balancePct =
+      initialBalance > 0 ? ((balance - initialBalance) / initialBalance) * 100 : null;
+    const equityPct =
+      initialBalance > 0 ? ((equity - initialBalance) / initialBalance) * 100 : null;
 
     return NextResponse.json({
       balance,
       equity,
+      currency,
       winRate,
       maxDd,
+      highestDdPct,
+      avgRiskReward,
+      balancePct,
+      equityPct,
       equityCurve,
-      currency: summary.currency ?? "EUR"
+      dailyStats,
+      totalProfit,
+      initialBalance,
+      updatedAt: new Date().toISOString()
     });
   } catch (e) {
     return NextResponse.json(
