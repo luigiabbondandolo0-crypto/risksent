@@ -8,7 +8,8 @@ const PROTECTED_PATHS = [
   "/trades",
   "/simulator",
   "/ai-coach",
-  "/add-account"
+  "/add-account",
+  "/metaapi-test"
 ];
 
 export async function middleware(req: NextRequest) {
