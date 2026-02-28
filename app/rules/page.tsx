@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent, ChangeEvent } from "react";
-import { Save, AlertCircle, Lightbulb, SlidersHorizontal } from "lucide-react";
+import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, Send } from "lucide-react";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
@@ -75,6 +75,9 @@ export default function RulesPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [exceedAlert, setExceedAlert] = useState<ExceedAlert | null>(null);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [telegramLinking, setTelegramLinking] = useState(false);
+  const [testAlertSending, setTestAlertSending] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -331,32 +334,112 @@ export default function RulesPage() {
           </div>
 
           <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <h2 className="text-sm font-medium text-slate-200 mb-1">Telegram Live Alerts</h2>
-            <p className="text-xs text-slate-500 mb-4">Receive real-time alert notifications via Telegram.</p>
+            <div className="flex items-center gap-2 mb-1">
+              <Link2 className="h-4 w-4 text-slate-500" />
+              <h2 className="text-sm font-medium text-slate-200">Collega Telegram</h2>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">
+              Per ricevere gli alert live sul tuo Telegram: apri il bot, invia /start dal link qui sotto, poi clicca &quot;Verifica collegamento&quot;.
+            </p>
             <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm text-slate-400">
-                <input type="checkbox" disabled className="rounded border-slate-600 bg-slate-800" />
-                Enable
-              </label>
-              <div className="space-y-1.5">
-                <label className="block text-xs text-slate-500">Webhook URL</label>
-                <input
-                  type="url"
-                  placeholder="https://api.telegram.org/bot.../sendMessage"
-                  disabled
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-500 placeholder-slate-600"
-                />
+              {rules.telegram_chat_id ? (
+                <p className="text-sm text-emerald-400 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Chat collegata. Riceverai gli alert qui.
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400">Nessuna chat collegata.</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={telegramLinking}
+                  onClick={async () => {
+                    setTelegramLinking(true);
+                    setTelegramLink(null);
+                    try {
+                      const res = await fetch("/api/bot/link-telegram", { method: "POST" });
+                      const data = await res.json();
+                      if (res.ok && data.link) {
+                        setTelegramLink(data.link);
+                        window.open(data.link, "_blank");
+                      } else {
+                        setMessage({ type: "error", text: data.error ?? "Errore creazione link" });
+                      }
+                    } catch {
+                      setMessage({ type: "error", text: "Errore di rete" });
+                    } finally {
+                      setTelegramLinking(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                >
+                  <Link2 className="h-4 w-4" />
+                  {telegramLinking ? "Generazione…" : "Collega ora"}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/rules");
+                      if (res.ok) {
+                        const r = await res.json();
+                        setRules((prev) => ({ ...prev, telegram_chat_id: r.telegram_chat_id ?? null }));
+                      }
+                    } catch {
+                      setMessage({ type: "error", text: "Errore verifica" });
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
+                >
+                  Verifica collegamento
+                </button>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs text-slate-500">Chat ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. -1001234567890"
-                  disabled
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-500 placeholder-slate-600"
-                />
-              </div>
-              {rules.telegram_chat_id && <p className="text-xs text-emerald-400">Connected</p>}
+              {telegramLink && (
+                <p className="text-xs text-slate-400 break-all">
+                  Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{telegramLink}</a>
+                </p>
+              )}
+              {rules.telegram_chat_id && (
+                <button
+                  type="button"
+                  disabled={testAlertSending}
+                  onClick={async () => {
+                    setTestAlertSending(true);
+                    setMessage(null);
+                    try {
+                      const res = await fetch("/api/alerts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          message: "Questo è un alert di test da RiskSent.",
+                          severity: "medium",
+                          solution: "Se lo vedi su Telegram, il collegamento funziona."
+                        })
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setMessage({ type: "success", text: "Alert di test inviato. Controlla Telegram." });
+                        const aRes = await fetch("/api/alerts");
+                        if (aRes.ok) {
+                          const a = await aRes.json();
+                          setAlerts(a.alerts ?? []);
+                        }
+                      } else {
+                        setMessage({ type: "error", text: data.error ?? "Invio fallito" });
+                      }
+                    } catch {
+                      setMessage({ type: "error", text: "Errore di rete" });
+                    } finally {
+                      setTestAlertSending(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50 disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                  {testAlertSending ? "Invio…" : "Invia alert di test"}
+                </button>
+              )}
             </div>
           </div>
         </div>

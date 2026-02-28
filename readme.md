@@ -23,8 +23,11 @@ SUPABASE_SERVICE_ROLE_KEY=...
 METATRADERAPI_API_KEY=...
 METATRADERAPI_UUID=...
 ENCRYPTION_KEY=...   # 32+ chars for encrypting stored passwords
-SUPABASE_SERVICE_ROLE_KEY=...  # required for /admin (user list + stats)
+TELEGRAM_BOT_TOKEN=...   # Bot token from BotFather for alert notifications
+TELEGRAM_BOT_USERNAME=... # e.g. RiskSentAlertsBot (for link in Collega Telegram)
+BOT_INTERNAL_SECRET=...  # optional; if set, POST /api/bot/send-alert requires header x-bot-secret or body secret
 ```
+Set Telegram webhook to `https://your-domain.com/api/telegram-webhook` (BotFather: /setwebhook).
 
 Then, mirror these values in your Vercel project settings under **Environment Variables**.
 
