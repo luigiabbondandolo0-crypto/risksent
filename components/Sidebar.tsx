@@ -6,8 +6,6 @@ import {
   FlaskConical,
   Bot,
   PlusCircle,
-  Zap,
-  Activity,
   CreditCard,
   Shield,
 } from "lucide-react";
@@ -23,8 +21,6 @@ const navItems = [
 const secondaryItems = [
   { href: "/accounts", label: "Manage Accounts", icon: CreditCard },
   { href: "/add-account", label: "Add Account", icon: PlusCircle },
-  { href: "/metaapi-test", label: "MetaApi Test", icon: Zap },
-  { href: "/metatraderapi-test", label: "MetatraderApi Test", icon: Activity },
 ] as const;
 
 export function Sidebar() {

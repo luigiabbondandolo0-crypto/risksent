@@ -10,8 +10,6 @@ const PROTECTED_PATHS = [
   "/ai-coach",
   "/add-account",
   "/accounts",
-  "/metaapi-test",
-  "/metatraderapi-test",
   "/admin"
 ];
 
