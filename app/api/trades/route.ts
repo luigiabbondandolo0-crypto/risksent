@@ -18,11 +18,24 @@ export type TradeRow = {
 
 function normalizeOrderType(o: Record<string, unknown>): string {
   const ex = (o.ex as Record<string, unknown> | undefined) ?? {};
-  const type = String(o.type ?? o.dealType ?? "").toLowerCase();
+  const type = String(o.type ?? o.orderType ?? o.dealType ?? "").toLowerCase();
   const cmd = Number(o.cmd ?? ex.cmd ?? NaN);
   if (type.includes("sell") || type === "dealsell" || cmd === 1) return "Sell";
   if (type.includes("buy") || type === "dealbuy" || cmd === 0) return "Buy";
   return type || "Buy";
+}
+
+function getLots(o: Record<string, unknown>): number {
+  const diIn = o.dealInternalIn as Record<string, unknown> | undefined;
+  const diOut = o.dealInternalOut as Record<string, unknown> | undefined;
+  const closeLots = Number(o.closeLots);
+  if (Number.isFinite(closeLots) && closeLots > 0) return closeLots;
+  const inLots = diIn != null ? Number(diIn.lots) : NaN;
+  if (Number.isFinite(inLots) && inLots > 0) return inLots;
+  const outLots = diOut != null ? Number(diOut.lots) : NaN;
+  if (Number.isFinite(outLots) && outLots > 0) return outLots;
+  const top = Number(o.lots ?? (o.ex as Record<string, unknown>)?.volume);
+  return Number.isFinite(top) ? top : 0;
 }
 
 function parseOrders(raw: unknown): TradeRow[] {
@@ -36,15 +49,13 @@ function parseOrders(raw: unknown): TradeRow[] {
     )
     .map((o: Record<string, unknown>) => {
       const ex = (o.ex as Record<string, unknown>) ?? {};
-      const lotsRaw = o.lots ?? o.volume ?? ex.volume;
-      const lots = typeof lotsRaw === "number" ? lotsRaw : Number(lotsRaw) || 0;
       return {
         ticket: Number(o.ticket) ?? 0,
         openTime: String(o.openTime ?? ""),
         closeTime: String(o.closeTime ?? ""),
         type: normalizeOrderType(o),
         symbol: String(o.symbol ?? ""),
-        lots,
+        lots: getLots(o),
         openPrice: Number(o.openPrice ?? ex.open_price) ?? 0,
         closePrice: Number(o.closePrice ?? ex.close_price) ?? 0,
         profit: Number(o.profit ?? ex.profit) ?? 0,
