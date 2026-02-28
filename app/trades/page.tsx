@@ -16,7 +16,8 @@ function formatTradeDate(iso: string): string {
 
 function normalizeType(t: string): "Buy" | "Sell" {
   const u = (t || "").toLowerCase();
-  if (u === "sell" || u === "short") return "Sell";
+  if (u === "sell" || u === "short" || u === "dealsell") return "Sell";
+  if (u === "buy" || u === "dealbuy") return "Buy";
   return "Buy";
 }
 

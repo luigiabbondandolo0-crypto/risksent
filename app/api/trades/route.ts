@@ -16,6 +16,15 @@ export type TradeRow = {
   comment?: string;
 };
 
+function normalizeOrderType(o: Record<string, unknown>): string {
+  const ex = (o.ex as Record<string, unknown> | undefined) ?? {};
+  const type = String(o.type ?? o.dealType ?? "").toLowerCase();
+  const cmd = Number(o.cmd ?? ex.cmd ?? NaN);
+  if (type.includes("sell") || type === "dealsell" || cmd === 1) return "Sell";
+  if (type.includes("buy") || type === "dealbuy" || cmd === 0) return "Buy";
+  return type || "Buy";
+}
+
 function parseOrders(raw: unknown): TradeRow[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -25,18 +34,23 @@ function parseOrders(raw: unknown): TradeRow[] {
         typeof (o as { closeTime?: string }).closeTime === "string" &&
         typeof (o as { profit?: number }).profit === "number"
     )
-    .map((o: Record<string, unknown>) => ({
-      ticket: Number(o.ticket) ?? 0,
-      openTime: String(o.openTime ?? ""),
-      closeTime: String(o.closeTime ?? ""),
-      type: String(o.type ?? ""),
-      symbol: String(o.symbol ?? ""),
-      lots: Number(o.lots) ?? 0,
-      openPrice: Number(o.openPrice) ?? 0,
-      closePrice: Number(o.closePrice) ?? 0,
-      profit: Number(o.profit) ?? 0,
-      comment: o.comment != null ? String(o.comment) : undefined
-    }));
+    .map((o: Record<string, unknown>) => {
+      const ex = (o.ex as Record<string, unknown>) ?? {};
+      const lotsRaw = o.lots ?? o.volume ?? ex.volume;
+      const lots = typeof lotsRaw === "number" ? lotsRaw : Number(lotsRaw) || 0;
+      return {
+        ticket: Number(o.ticket) ?? 0,
+        openTime: String(o.openTime ?? ""),
+        closeTime: String(o.closeTime ?? ""),
+        type: normalizeOrderType(o),
+        symbol: String(o.symbol ?? ""),
+        lots,
+        openPrice: Number(o.openPrice ?? ex.open_price) ?? 0,
+        closePrice: Number(o.closePrice ?? ex.close_price) ?? 0,
+        profit: Number(o.profit ?? ex.profit) ?? 0,
+        comment: o.comment != null ? String(o.comment) : undefined
+      };
+    });
 }
 
 export async function GET(req: NextRequest) {
@@ -95,7 +109,9 @@ export async function GET(req: NextRequest) {
       );
     }
     const raw = await closedRes.json();
-    const trades = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
+    const rawArray = Array.isArray(raw) ? raw : raw?.orders ?? raw ?? [];
+    console.log("[api/trades] ClosedOrders raw:", JSON.stringify(rawArray.length ? rawArray.slice(0, 3) : rawArray, null, 2));
+    const trades = parseOrders(rawArray);
     trades.sort(
       (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
     );
