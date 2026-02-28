@@ -307,7 +307,7 @@ export async function runRiskCheckDryRun(params: {
       status: summaryRes.status,
       error: summaryRes.ok ? "" : (await summaryRes.text().catch(() => "Unknown"))
     };
-    else {
+    if (summaryRes.ok) {
       rawSummary = await summaryRes.json();
       const s = rawSummary as { balance?: number; equity?: number };
       balance = Number(s?.balance) ?? 0;
@@ -319,7 +319,7 @@ export async function runRiskCheckDryRun(params: {
       status: closedRes.status,
       error: closedRes.ok ? "" : (await closedRes.text().catch(() => "Unknown"))
     };
-    else {
+    if (closedRes.ok) {
       rawClosed = await closedRes.json();
       orders = parseOrders(Array.isArray(rawClosed) ? rawClosed : (rawClosed as { orders?: unknown })?.orders ?? rawClosed ?? []);
     }
