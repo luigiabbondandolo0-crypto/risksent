@@ -41,8 +41,21 @@ export async function POST(req: NextRequest) {
   }
 
   const chatId = update.message?.chat?.id;
-  const text = update.message?.text?.trim();
-  if (chatId == null || !text) {
+  const rawText = (update.message?.text ?? "").trim();
+  const text = rawText.toLowerCase();
+  if (chatId == null) {
+    return NextResponse.json({ ok: true });
+  }
+
+  if (text === "/help" || text === "aiuto") {
+    await sendTelegramMessage(
+      token,
+      chatId,
+      "RiskSent Alert Bot\n\n" +
+        "• /start — Collega questa chat al tuo account (usa il link da RiskSent → Rules)\n" +
+        "• /help — Questo messaggio\n\n" +
+        "Dopo il collegamento riceverai qui gli alert su rischio, drawdown e revenge trading. Non serve scrivere altri comandi."
+    );
     return NextResponse.json({ ok: true });
   }
 
@@ -50,11 +63,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const parts = text.split(/\s+/);
+  const parts = rawText.split(/\s+/);
   const startParam = parts[1]; // /start TOKEN
   if (!startParam) {
     console.log(LOG_PREFIX, "/start without token, sent instructions");
-    await sendTelegramMessage(token, chatId, "Ciao! Per collegare il tuo account RiskSent:\n1. Vai su RiskSent → Rules → Collega Telegram\n2. Clicca \"Collega ora\" e apri il link\n3. Torna qui e invia di nuovo /start dal link ricevuto.");
+    await sendTelegramMessage(
+      token,
+      chatId,
+      "Ciao! Sono il bot RiskSent per gli alert di rischio.\n\n" +
+        "Per collegare questa chat al tuo account:\n" +
+        "1. Vai su risksent.com → Rules → Collega Telegram\n" +
+        "2. Clicca \"Collega ora\" e apri il link che si apre\n" +
+        "3. Torna qui e invia di nuovo /start (usando quel link, non scrivere solo /start)\n\n" +
+        "Scrivi /help per altri comandi."
+    );
     return NextResponse.json({ ok: true });
   }
 
@@ -93,7 +115,10 @@ export async function POST(req: NextRequest) {
   await sendTelegramMessage(
     token,
     chatId,
-    "✅ Chat collegata! Da ora riceverai gli alert RiskSent qui. Torna sull'app e clicca \"Verifica collegamento\" se necessario."
+    "✅ Chat collegata!\n\n" +
+      "Collegamento unico: non serve fare altro. Riceverai qui gli alert su rischio, drawdown e revenge trading.\n" +
+      "Gli stessi alert li vedi anche su RiskSent → Rules → Alerts Center.\n\n" +
+      "Scrivi /help per info."
   );
 
   return NextResponse.json({ ok: true });

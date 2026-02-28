@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, FormEvent, ChangeEvent } from "react";
-import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, Send } from "lucide-react";
+import { useEffect, useState, FormEvent, ChangeEvent, useRef } from "react";
+import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, Send, RefreshCw } from "lucide-react";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
@@ -78,13 +78,30 @@ export default function RulesPage() {
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [telegramLinking, setTelegramLinking] = useState(false);
   const [testAlertSending, setTestAlertSending] = useState(false);
+  const pollLinkRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const refetchRules = async () => {
+    const res = await fetch("/api/rules", { cache: "no-store" });
+    if (!res.ok) return null;
+    const r = await res.json();
+    const chatId = r.telegram_chat_id ?? null;
+    setRules((prev) => ({
+      ...prev,
+      daily_loss_pct: Number(r.daily_loss_pct) ?? prev.daily_loss_pct,
+      max_risk_per_trade_pct: Number(r.max_risk_per_trade_pct) ?? prev.max_risk_per_trade_pct,
+      max_exposure_pct: Number(r.max_exposure_pct) ?? prev.max_exposure_pct,
+      revenge_threshold_trades: Number(r.revenge_threshold_trades) ?? prev.revenge_threshold_trades,
+      telegram_chat_id: chatId
+    }));
+    return chatId;
+  };
 
   useEffect(() => {
     (async () => {
       try {
         const [rulesRes, alertsRes] = await Promise.all([
-          fetch("/api/rules"),
-          fetch("/api/alerts")
+          fetch("/api/rules", { cache: "no-store" }),
+          fetch("/api/alerts", { cache: "no-store" })
         ]);
         if (rulesRes.ok) {
           const r = await rulesRes.json();
@@ -93,7 +110,7 @@ export default function RulesPage() {
             max_risk_per_trade_pct: Number(r.max_risk_per_trade_pct) ?? DEFAULT_RULES.max_risk_per_trade_pct,
             max_exposure_pct: Number(r.max_exposure_pct) ?? DEFAULT_RULES.max_exposure_pct,
             revenge_threshold_trades: Number(r.revenge_threshold_trades) ?? DEFAULT_RULES.revenge_threshold_trades,
-            telegram_chat_id: r.telegram_chat_id ?? null
+            telegram_chat_id: r.telegram_chat_id != null && r.telegram_chat_id !== "" ? String(r.telegram_chat_id) : null
           };
           setRules(loaded);
           setFormValues({
@@ -113,6 +130,12 @@ export default function RulesPage() {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pollLinkRef.current) clearInterval(pollLinkRef.current);
+    };
   }, []);
 
   const num = (s: string) => (s === "" || s === "-" ? NaN : Number(s));
@@ -339,16 +362,16 @@ export default function RulesPage() {
               <h2 className="text-sm font-medium text-slate-200">Collega Telegram</h2>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              Per ricevere gli alert live sul tuo Telegram: apri il bot, invia /start dal link qui sotto, poi clicca &quot;Verifica collegamento&quot;.
+              Collegamento unico: apri il link, invia /start al bot. Da allora riceverai qui tutti gli alert (notifiche). Non serve scrivere altri comandi.
             </p>
             <div className="space-y-3">
               {rules.telegram_chat_id ? (
                 <p className="text-sm text-emerald-400 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
-                  Chat collegata. Riceverai gli alert qui.
+                  Chat collegata. Riceverai gli alert su Telegram e qui sotto nello stesso elenco.
                 </p>
               ) : (
-                <p className="text-xs text-slate-400">Nessuna chat collegata.</p>
+                <p className="text-xs text-slate-400">Nessuna chat collegata. Usa &quot;Collega ora&quot; e completa /start nel bot.</p>
               )}
               <div className="flex flex-wrap gap-2">
                 <button
@@ -357,12 +380,35 @@ export default function RulesPage() {
                   onClick={async () => {
                     setTelegramLinking(true);
                     setTelegramLink(null);
+                    setMessage(null);
+                    if (pollLinkRef.current) {
+                      clearInterval(pollLinkRef.current);
+                      pollLinkRef.current = null;
+                    }
                     try {
                       const res = await fetch("/api/bot/link-telegram", { method: "POST" });
                       const data = await res.json();
                       if (res.ok && data.link) {
                         setTelegramLink(data.link);
                         window.open(data.link, "_blank");
+                        setMessage({ type: "success", text: "Apri il link, invia /start. Lo stato si aggiorna da solo." });
+                        let elapsed = 0;
+                        const POLL_MS = 2000;
+                        const MAX_MS = 30000;
+                        pollLinkRef.current = setInterval(async () => {
+                          elapsed += POLL_MS;
+                          const chatId = await refetchRules();
+                          if (chatId) {
+                            if (pollLinkRef.current) clearInterval(pollLinkRef.current);
+                            pollLinkRef.current = null;
+                            setMessage({ type: "success", text: "Chat collegata. Puoi usare Test per verificare." });
+                            return;
+                          }
+                          if (elapsed >= MAX_MS && pollLinkRef.current) {
+                            clearInterval(pollLinkRef.current);
+                            pollLinkRef.current = null;
+                          }
+                        }, POLL_MS);
                       } else {
                         setMessage({ type: "error", text: data.error ?? "Errore creazione link" });
                       }
@@ -380,27 +426,18 @@ export default function RulesPage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    try {
-                      const res = await fetch("/api/rules");
-                      if (res.ok) {
-                        const r = await res.json();
-                        setRules((prev) => ({ ...prev, telegram_chat_id: r.telegram_chat_id ?? null }));
-                      }
-                    } catch {
-                      setMessage({ type: "error", text: "Errore verifica" });
+                    setMessage(null);
+                    const chatId = await refetchRules();
+                    if (!chatId) {
+                      setMessage({ type: "error", text: "Nessuna chat collegata. Usa Collega ora e invia /start nel bot." });
+                      return;
                     }
+                    setMessage({ type: "success", text: "Stato aggiornato." });
                   }}
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
                 >
                   Verifica collegamento
                 </button>
-              </div>
-              {telegramLink && (
-                <p className="text-xs text-slate-400 break-all">
-                  Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{telegramLink}</a>
-                </p>
-              )}
-              {rules.telegram_chat_id && (
                 <button
                   type="button"
                   disabled={testAlertSending}
@@ -408,6 +445,12 @@ export default function RulesPage() {
                     setTestAlertSending(true);
                     setMessage(null);
                     try {
+                      const chatId = await refetchRules();
+                      if (!chatId) {
+                        setMessage({ type: "error", text: "Collega prima la chat con Collega ora e invia /start nel bot." });
+                        setTestAlertSending(false);
+                        return;
+                      }
                       const res = await fetch("/api/alerts", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -419,8 +462,8 @@ export default function RulesPage() {
                       });
                       const data = await res.json();
                       if (res.ok) {
-                        setMessage({ type: "success", text: "Alert di test inviato. Controlla Telegram." });
-                        const aRes = await fetch("/api/alerts");
+                        setMessage({ type: "success", text: "Messaggio inviato. Controlla Telegram e l'elenco sotto." });
+                        const aRes = await fetch("/api/alerts", { cache: "no-store" });
                         if (aRes.ok) {
                           const a = await aRes.json();
                           setAlerts(a.alerts ?? []);
@@ -437,8 +480,13 @@ export default function RulesPage() {
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50 disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
-                  {testAlertSending ? "Invio…" : "Invia alert di test"}
+                  {testAlertSending ? "Invio…" : "Test collegamento"}
                 </button>
+              </div>
+              {telegramLink && (
+                <p className="text-xs text-slate-400 break-all">
+                  Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{telegramLink}</a>
+                </p>
               )}
             </div>
           </div>
@@ -489,8 +537,25 @@ export default function RulesPage() {
           )}
 
           <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <h2 className="text-sm font-medium text-slate-200 mb-1">Alerts Center</h2>
-            <p className="text-xs text-slate-500 mb-3">Active risk violations ranked by severity—address high severity alerts immediately.</p>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h2 className="text-sm font-medium text-slate-200">Alerts Center</h2>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await fetch("/api/alerts", { cache: "no-store" });
+                  if (res.ok) {
+                    const a = await res.json();
+                    setAlerts(a.alerts ?? []);
+                  }
+                }}
+                className="inline-flex items-center gap-1 rounded border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs text-slate-400 hover:bg-slate-700/50"
+              >
+                <RefreshCw className="h-3 w-3" /> Aggiorna
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mb-3">
+              Stessi alert che ricevi su Telegram (notifiche). Qui li vedi tutti; risolvi subito quelli ad alta gravità.
+            </p>
             <div className="flex gap-3 mb-3">
               <span className="flex items-center gap-1.5 text-[10px] text-red-400"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> High</span>
               <span className="flex items-center gap-1.5 text-[10px] text-amber-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Medium</span>

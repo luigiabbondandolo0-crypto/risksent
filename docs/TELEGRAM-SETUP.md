@@ -9,6 +9,9 @@
 5. BotFather ti invia un **token** tipo: `7123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
 6. **Copia il token** e tienilo per la variabile `TELEGRAM_BOT_TOKEN`.
 
+Opzionale: imposta una descrizione per il bot (BotFather → `/setdescription`):  
+*Alert di rischio RiskSent. Collega la chat da risksent.com → Rules → Collega Telegram. Comandi: /start, /help.*
+
 ---
 
 ## 2. Variabili da impostare (Vercel / .env.local)
