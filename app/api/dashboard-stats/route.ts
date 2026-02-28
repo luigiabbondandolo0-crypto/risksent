@@ -17,17 +17,17 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");
 
-  let accountId = uuid;
+  let accountId: string | null = uuid;
   if (!accountId) {
     const apiKey = process.env.METATRADERAPI_API_KEY;
-    accountId = process.env.METATRADERAPI_UUID ?? undefined;
+    accountId = process.env.METATRADERAPI_UUID ?? null;
     if (!apiKey || !accountId) {
       const { data: accounts } = await supabase
         .from("trading_account")
         .select("metaapi_account_id")
         .eq("user_id", user.id)
         .limit(1);
-      accountId = accounts?.[0]?.metaapi_account_id ?? undefined;
+      accountId = accounts?.[0]?.metaapi_account_id ?? null;
     }
   }
 
