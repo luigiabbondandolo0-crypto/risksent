@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
-const PROTECTED_PATHS = ["/dashboard", "/rules"];
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/rules",
+  "/trades",
+  "/simulator",
+  "/ai-coach",
+  "/add-account"
+];
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
