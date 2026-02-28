@@ -37,7 +37,7 @@ type ExceedAlert = {
 const DEFAULT_RULES: Rules = {
   daily_loss_pct: 2,
   max_risk_per_trade_pct: 1,
-  max_exposure_pct: 10,
+  max_exposure_pct: 15,
   revenge_threshold_trades: 2,
   telegram_chat_id: null
 };
@@ -219,7 +219,7 @@ export default function RulesPage() {
                       type="number"
                       min={0}
                       step={0.5}
-                      placeholder="e.g. 2"
+                      placeholder="Suggested: 2"
                       value={formValues.daily_loss_pct}
                       onChange={handleChange("daily_loss_pct")}
                       className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
@@ -245,7 +245,7 @@ export default function RulesPage() {
                       type="number"
                       min={0}
                       step={0.1}
-                      placeholder="e.g. 1"
+                      placeholder="Suggested: 1"
                       value={formValues.max_risk_per_trade_pct}
                       onChange={handleChange("max_risk_per_trade_pct")}
                       className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
@@ -271,7 +271,7 @@ export default function RulesPage() {
                       type="number"
                       min={0}
                       step={0.5}
-                      placeholder="e.g. 10"
+                      placeholder="Suggested: 15"
                       value={formValues.max_exposure_pct}
                       onChange={handleChange("max_exposure_pct")}
                       className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
@@ -297,7 +297,7 @@ export default function RulesPage() {
                       type="number"
                       min={0}
                       step={1}
-                      placeholder="e.g. 2"
+                      placeholder="Suggested: 2"
                       value={formValues.revenge_threshold_trades}
                       onChange={handleChange("revenge_threshold_trades")}
                       className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${

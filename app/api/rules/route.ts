@@ -21,10 +21,10 @@ export async function GET() {
   if (error) {
     if (error.code === "PGRST116") {
       return NextResponse.json({
-        daily_loss_pct: 5,
+        daily_loss_pct: 2,
         max_risk_per_trade_pct: 1,
-        max_exposure_pct: 6,
-        revenge_threshold_trades: 3,
+        max_exposure_pct: 15,
+        revenge_threshold_trades: 2,
         telegram_chat_id: null
       });
     }
@@ -32,10 +32,10 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    daily_loss_pct: Number(row?.daily_loss_pct) ?? 5,
+    daily_loss_pct: Number(row?.daily_loss_pct) ?? 2,
     max_risk_per_trade_pct: Number(row?.max_risk_per_trade_pct) ?? 1,
-    max_exposure_pct: Number(row?.max_exposure_pct) ?? 6,
-    revenge_threshold_trades: Number(row?.revenge_threshold_trades) ?? 3,
+    max_exposure_pct: Number(row?.max_exposure_pct) ?? 15,
+    revenge_threshold_trades: Number(row?.revenge_threshold_trades) ?? 2,
     telegram_chat_id: row?.telegram_chat_id ?? null
   });
 }
@@ -87,10 +87,10 @@ export async function PATCH(req: NextRequest) {
     const insertPayload = {
       id: user.id,
       role: "customer",
-      daily_loss_pct: (updates.daily_loss_pct as number) ?? 5,
+      daily_loss_pct: (updates.daily_loss_pct as number) ?? 2,
       max_risk_per_trade_pct: (updates.max_risk_per_trade_pct as number) ?? 1,
-      max_exposure_pct: (updates.max_exposure_pct as number) ?? 6,
-      revenge_threshold_trades: (updates.revenge_threshold_trades as number) ?? 3,
+      max_exposure_pct: (updates.max_exposure_pct as number) ?? 15,
+      revenge_threshold_trades: (updates.revenge_threshold_trades as number) ?? 2,
       telegram_chat_id: updates.telegram_chat_id ?? null,
       updated_at: new Date().toISOString()
     };
@@ -101,10 +101,10 @@ export async function PATCH(req: NextRequest) {
       .single();
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
     return NextResponse.json({
-      daily_loss_pct: Number(inserted?.daily_loss_pct) ?? 5,
+      daily_loss_pct: Number(inserted?.daily_loss_pct) ?? 2,
       max_risk_per_trade_pct: Number(inserted?.max_risk_per_trade_pct) ?? 1,
-      max_exposure_pct: Number(inserted?.max_exposure_pct) ?? 6,
-      revenge_threshold_trades: Number(inserted?.revenge_threshold_trades) ?? 3,
+      max_exposure_pct: Number(inserted?.max_exposure_pct) ?? 15,
+      revenge_threshold_trades: Number(inserted?.revenge_threshold_trades) ?? 2,
       telegram_chat_id: inserted?.telegram_chat_id ?? null
     });
   }
