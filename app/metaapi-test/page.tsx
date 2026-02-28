@@ -90,7 +90,7 @@ export default function MetaApiTestPage() {
             {result.error && (
               <p className="text-sm text-red-400">{result.error}</p>
             )}
-            {result.body && (
+            {result.body != null && (
               <pre className="overflow-auto rounded-md border border-slate-800 bg-black/40 p-4 text-xs text-slate-300 max-h-64">
                 {JSON.stringify(result.body, null, 2)}
               </pre>
