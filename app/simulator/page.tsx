@@ -3,19 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { SimulatorView, type Account, type SimulatorStats } from "./SimulatorView";
 
-const FTMO_PHASE1 = {
-  profit_target_pct: 10,
-  daily_loss_limit_pct: 5,
-  max_loss_pct: 10,
-  min_trading_days: 4
-};
-
-const FTMO_PHASE2 = {
-  profit_target_pct: 5,
-  daily_loss_limit_pct: 5,
-  max_loss_pct: 10,
-  min_trading_days: 4
-};
+const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
+const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
+const SIMPLIFIED_PHASE1 = { profit_target_pct: 8, daily_loss_limit_pct: 4, max_loss_pct: 8 };
+const SIMPLIFIED_PHASE2 = { profit_target_pct: 4, daily_loss_limit_pct: 4, max_loss_pct: 8 };
 
 type Trade = {
   ticket: number;
@@ -23,7 +14,7 @@ type Trade = {
   profit: number;
 };
 
-function computeFtmoChecks(
+function computeChallengeStats(
   trades: Trade[],
   initialBalance: number,
   currentBalance: number
@@ -134,22 +125,35 @@ export default function SimulatorPage() {
   }, [selectedUuid]);
 
   const stats = useMemo(() => {
-    return computeFtmoChecks(trades, initialBalance, balance);
+    return computeChallengeStats(trades, initialBalance, balance);
   }, [trades, initialBalance, balance]);
 
-  const phase1Pass = !!(
+  const ftmoPhase1Pass = !!(
     stats &&
     !stats.daily_loss_breach &&
     !stats.max_loss_breach &&
-    stats.profit_pct >= FTMO_PHASE1.profit_target_pct &&
-    stats.trading_days >= FTMO_PHASE1.min_trading_days
+    stats.profit_pct >= FTMO_PHASE1.profit_target_pct
   );
-  const phase2Pass = !!(
+  const ftmoPhase2Pass = !!(
     stats &&
     !stats.daily_loss_breach &&
     !stats.max_loss_breach &&
-    stats.profit_pct >= FTMO_PHASE2.profit_target_pct &&
-    stats.trading_days >= FTMO_PHASE2.min_trading_days
+    stats.profit_pct >= FTMO_PHASE2.profit_target_pct
+  );
+
+  const simplifiedDailyBreach = stats ? stats.worst_daily_pct < -SIMPLIFIED_PHASE1.daily_loss_limit_pct : false;
+  const simplifiedMaxLossBreach = stats ? stats.max_drawdown_pct > SIMPLIFIED_PHASE1.max_loss_pct : false;
+  const simplifiedPhase1Pass = !!(
+    stats &&
+    !simplifiedDailyBreach &&
+    !simplifiedMaxLossBreach &&
+    stats.profit_pct >= SIMPLIFIED_PHASE1.profit_target_pct
+  );
+  const simplifiedPhase2Pass = !!(
+    stats &&
+    !simplifiedDailyBreach &&
+    !simplifiedMaxLossBreach &&
+    stats.profit_pct >= SIMPLIFIED_PHASE2.profit_target_pct
   );
 
   if (loading) {
@@ -168,8 +172,12 @@ export default function SimulatorPage() {
       setSelectedUuid={setSelectedUuid}
       error={error}
       stats={stats}
-      phase1Pass={phase1Pass}
-      phase2Pass={phase2Pass}
+      ftmoPhase1Pass={ftmoPhase1Pass}
+      ftmoPhase2Pass={ftmoPhase2Pass}
+      simplifiedPhase1Pass={simplifiedPhase1Pass}
+      simplifiedPhase2Pass={simplifiedPhase2Pass}
+      simplifiedDailyBreach={simplifiedDailyBreach}
+      simplifiedMaxLossBreach={simplifiedMaxLossBreach}
       initialBalance={initialBalance}
       balance={balance}
       currency={currency}
