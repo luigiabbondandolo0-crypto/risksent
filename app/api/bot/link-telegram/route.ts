@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { getTelegramBotLinkUsername } from "@/lib/telegramAlert";
 
+const LOG_PREFIX = "[Telegram link]";
+
 /**
  * POST /api/bot/link-telegram
  * Crea un token one-time e restituisce il link per collegare la chat Telegram.
@@ -18,6 +20,12 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const botUsername = getTelegramBotLinkUsername();
+  console.log(LOG_PREFIX, "config check", {
+    token: process.env.TELEGRAM_BOT_TOKEN ? "set" : "missing",
+    botUsername
+  });
+
   const { data: row, error } = await supabase
     .from("telegram_link_token")
     .insert({ user_id: user.id })
@@ -25,14 +33,15 @@ export async function POST() {
     .single();
 
   if (error || !row?.token) {
+    console.warn(LOG_PREFIX, "create token failed", error?.message);
     return NextResponse.json(
       { error: error?.message ?? "Failed to create link token" },
       { status: 500 }
     );
   }
 
-  const botUsername = getTelegramBotLinkUsername();
   const link = `https://t.me/${botUsername.replace(/^@/, "")}?start=${row.token}`;
+  console.log(LOG_PREFIX, "link generated", { userId: user.id.slice(0, 8) + "..." });
 
   return NextResponse.json({
     token: row.token,

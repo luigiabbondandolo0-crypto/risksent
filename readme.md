@@ -25,6 +25,7 @@ METATRADERAPI_UUID=...
 ENCRYPTION_KEY=...   # 32+ chars for encrypting stored passwords
 TELEGRAM_BOT_TOKEN=...   # Bot token from BotFather for alert notifications
 TELEGRAM_BOT_USERNAME=... # e.g. RiskSentAlertsBot (for link in Collega Telegram)
+TELEGRAM_ALERT_CHANNEL_ID=... # optional; channel chat_id (e.g. -1001234567890) to receive all alerts aggregated
 BOT_INTERNAL_SECRET=...  # optional; if set, POST /api/bot/send-alert requires header x-bot-secret or body secret
 ```
 Set Telegram webhook to `https://your-domain.com/api/telegram-webhook` (BotFather: /setwebhook).

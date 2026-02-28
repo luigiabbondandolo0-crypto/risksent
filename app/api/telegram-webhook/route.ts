@@ -15,9 +15,21 @@ type TelegramUpdate = {
  * Webhook ricevuto da Telegram. Su /start [TOKEN] associa chat_id all'utente e risponde.
  * Impostare su BotFather: setwebhook → https://risksent.com/api/telegram-webhook
  */
+const LOG_PREFIX = "[Telegram webhook]";
+
 export async function POST(req: NextRequest) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
+  const channelId = process.env.TELEGRAM_ALERT_CHANNEL_ID?.trim();
+  const username = process.env.TELEGRAM_BOT_USERNAME?.trim();
+
+  console.log(LOG_PREFIX, "config check", {
+    token: token ? "set" : "missing",
+    channelId: channelId ? "set" : "missing",
+    botUsername: username || "default"
+  });
+
   if (!token) {
+    console.warn(LOG_PREFIX, "webhook rejected: TELEGRAM_BOT_TOKEN not set");
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 
@@ -41,9 +53,12 @@ export async function POST(req: NextRequest) {
   const parts = text.split(/\s+/);
   const startParam = parts[1]; // /start TOKEN
   if (!startParam) {
+    console.log(LOG_PREFIX, "/start without token, sent instructions");
     await sendTelegramMessage(token, chatId, "Ciao! Per collegare il tuo account RiskSent:\n1. Vai su RiskSent → Rules → Collega Telegram\n2. Clicca \"Collega ora\" e apri il link\n3. Torna qui e invia di nuovo /start dal link ricevuto.");
     return NextResponse.json({ ok: true });
   }
+
+  console.log(LOG_PREFIX, "/start with token", { chatId, tokenPresent: !!startParam });
 
   const supabase = createSupabaseAdmin();
   const { data: linkRow, error: fetchErr } = await supabase
@@ -53,6 +68,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (fetchErr || !linkRow?.user_id) {
+    console.log(LOG_PREFIX, "link token not found or expired", fetchErr?.message ?? "no row");
     await sendTelegramMessage(token, chatId, "Link non valido o scaduto. Vai su RiskSent → Rules → Collega Telegram e genera un nuovo link.");
     return NextResponse.json({ ok: true });
   }
@@ -66,11 +82,13 @@ export async function POST(req: NextRequest) {
     .eq("id", linkRow.user_id);
 
   if (updateErr) {
+    console.warn(LOG_PREFIX, "link failed: app_user update error", updateErr.message);
     await sendTelegramMessage(token, chatId, "Errore collegamento. Riprova da RiskSent.");
     return NextResponse.json({ ok: true });
   }
 
   await supabase.from("telegram_link_token").delete().eq("token", startParam);
+  console.log(LOG_PREFIX, "chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
 
   await sendTelegramMessage(
     token,
