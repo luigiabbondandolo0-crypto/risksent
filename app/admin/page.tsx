@@ -24,11 +24,13 @@ export default function AdminPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setForbidden(false);
+      setServerError(null);
       try {
         const [statsRes, usersRes] = await Promise.all([
           fetch("/api/admin/stats"),
@@ -40,15 +42,17 @@ export default function AdminPage() {
           return;
         }
         if (!statsRes.ok || !usersRes.ok) {
-          setForbidden(true);
+          const body = await statsRes.ok ? usersRes.json() : statsRes.json().catch(() => ({}));
+          const msg = body?.error ?? `Server error ${statsRes.ok ? usersRes.status : statsRes.status}. Check Vercel env (SUPABASE_SERVICE_ROLE_KEY, Supabase URL) and that tables app_user, trading_account exist.`;
+          setServerError(msg);
           return;
         }
         const statsData = await statsRes.json();
         const usersData = await usersRes.json();
         setStats(statsData);
         setUsers(usersData.users ?? []);
-      } catch {
-        setForbidden(true);
+      } catch (e) {
+        setServerError(e instanceof Error ? e.message : "Request failed");
       } finally {
         setLoading(false);
       }
@@ -71,6 +75,21 @@ export default function AdminPage() {
           <h2 className="text-lg font-semibold text-amber-200">Access denied</h2>
           <p className="text-sm text-slate-400 mt-1">
             This page is only for the platform admin ({ADMIN_EMAIL}). If you need access, contact the administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (serverError) {
+    return (
+      <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 flex items-start gap-3">
+        <AlertCircle className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5" />
+        <div>
+          <h2 className="text-lg font-semibold text-red-200">Server error</h2>
+          <p className="text-sm text-slate-400 mt-1 font-mono break-all">{serverError}</p>
+          <p className="text-xs text-slate-500 mt-2">
+            Set SUPABASE_SERVICE_ROLE_KEY in Vercel and run supabase/schema.sql + accounts-and-admin.sql in Supabase SQL Editor.
           </p>
         </div>
       </div>

@@ -17,21 +17,20 @@ export async function GET() {
 
   try {
     const admin = createSupabaseAdmin();
-
     const [usersRes, accountsRes, tradesRes] = await Promise.all([
       admin.from("app_user").select("id", { count: "exact", head: true }),
       admin.from("trading_account").select("id", { count: "exact", head: true }),
       admin.from("trade").select("id", { count: "exact", head: true })
     ]);
-
     return NextResponse.json({
       users: usersRes.count ?? 0,
       tradingAccounts: accountsRes.count ?? 0,
       trades: tradesRes.count ?? 0
     });
   } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to load stats";
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to load stats" },
+      { error: msg.includes("Missing") ? msg : `Stats: ${msg}. Set SUPABASE_SERVICE_ROLE_KEY and ensure app_user/trading_account/trade tables exist.` },
       { status: 500 }
     );
   }

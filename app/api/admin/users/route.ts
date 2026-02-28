@@ -54,8 +54,9 @@ export async function GET() {
 
     return NextResponse.json({ users });
   } catch (e) {
+    const msg = e instanceof Error ? e.message : "Failed to load users";
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Failed to load users" },
+      { error: msg.includes("Missing") ? msg : `Users: ${msg}. Set SUPABASE_SERVICE_ROLE_KEY and ensure app_user exists.` },
       { status: 500 }
     );
   }
