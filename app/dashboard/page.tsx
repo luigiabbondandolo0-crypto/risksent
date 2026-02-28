@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   XAxis,
@@ -53,6 +53,7 @@ type RiskRules = {
 };
 
 const POLL_MS = 45_000;
+const CHECK_RISK_THROTTLE_MS = 5 * 60 * 1000; // 5 min
 
 function PctLabel({ value }: { value: number | null }) {
   if (value == null) return null;
@@ -72,6 +73,7 @@ export default function DashboardPage() {
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastCheckRiskRef = useRef<{ uuid: string; at: number } | null>(null);
 
   const fetchStats = useCallback(async (uuid: string | null) => {
     if (uuid === null) return;
@@ -153,6 +155,20 @@ export default function DashboardPage() {
     const t = setInterval(() => fetchStats(selectedUuid), POLL_MS);
     return () => clearInterval(t);
   }, [selectedUuid, fetchStats]);
+
+  // Risk check: quando le stats sono caricate, invia a check-risk (throttle 5 min per account)
+  useEffect(() => {
+    if (!stats || stats.error || !selectedUuid) return;
+    const now = Date.now();
+    const last = lastCheckRiskRef.current;
+    if (last && last.uuid === selectedUuid && now - last.at < CHECK_RISK_THROTTLE_MS) return;
+    lastCheckRiskRef.current = { uuid: selectedUuid, at: now };
+    fetch("/api/alerts/check-risk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uuid: selectedUuid })
+    }).catch(() => {});
+  }, [stats, selectedUuid]);
 
   const currency = stats?.currency ?? "EUR";
   const curve = stats?.equityCurve ?? [];
