@@ -127,13 +127,16 @@ export async function GET(req: NextRequest) {
       (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
     );
     let currency = "EUR";
+    let balance = 0;
     if (summaryRes.ok) {
       const summary = await summaryRes.json();
       if (summary?.currency) currency = String(summary.currency);
+      if (Number.isFinite(summary?.balance)) balance = Number(summary.balance);
     }
     return NextResponse.json({
       trades,
-      currency
+      currency,
+      balance
     });
   } catch (e) {
     return NextResponse.json(

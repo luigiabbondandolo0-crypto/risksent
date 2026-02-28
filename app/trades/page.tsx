@@ -2,16 +2,21 @@
 
 import { useEffect, useState, useMemo } from "react";
 
-const MONTHS = "jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec".split(",");
-
 function formatTradeDate(iso: string): string {
   const d = new Date(iso);
-  const day = d.getDate();
-  const month = MONTHS[d.getMonth()] ?? "jan";
-  const year = d.getFullYear();
-  const h = d.getHours();
-  const m = d.getMinutes();
-  return `${day}-${month}-${year} ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return d.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+}
+
+function profitPctOfBalance(profit: number, balance: number): number | null {
+  if (!Number.isFinite(balance) || balance <= 0) return null;
+  return (profit / balance) * 100;
 }
 
 function normalizeType(t: string): "Buy" | "Sell" {
@@ -19,11 +24,6 @@ function normalizeType(t: string): "Buy" | "Sell" {
   if (u === "sell" || u === "short" || u === "dealsell") return "Sell";
   if (u === "buy" || u === "dealbuy") return "Buy";
   return "Buy";
-}
-
-function changePct(openPrice: number, closePrice: number): number | null {
-  if (openPrice === 0 || !Number.isFinite(openPrice)) return null;
-  return ((closePrice - openPrice) / openPrice) * 100;
 }
 
 type Account = {
@@ -58,6 +58,7 @@ export default function TradesPage() {
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currency, setCurrency] = useState("EUR");
+  const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -108,6 +109,7 @@ export default function TradesPage() {
         }
         setTrades(data.trades ?? []);
         setCurrency(data.currency ?? "EUR");
+        setBalance(Number(data.balance) || 0);
       } catch {
         setError("Request failed");
         setTrades([]);
@@ -173,23 +175,23 @@ export default function TradesPage() {
         />
         <div className="flex items-center gap-2 text-slate-400 text-xs">
           <label className="flex items-center gap-1.5">
-            <span>From</span>
+            <span>From (dd-mm-yyyy)</span>
             <input
               type="date"
               className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              title="dd-mm-yyyy"
+              title="From date"
             />
           </label>
           <label className="flex items-center gap-1.5">
-            <span>To</span>
+            <span>To (dd-mm-yyyy)</span>
             <input
               type="date"
               className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              title="dd-mm-yyyy"
+              title="To date"
             />
           </label>
         </div>
@@ -203,7 +205,7 @@ export default function TradesPage() {
               setDateTo("");
             }}
           >
-            Clear
+            Clear filters
           </button>
         )}
       </div>
@@ -229,13 +231,13 @@ export default function TradesPage() {
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
-                  <th className="px-4 py-3 font-medium">Change %</th>
+                  <th className="px-4 py-3 font-medium">P/L % of balance</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTrades.map((t) => {
                   const type = normalizeType(t.type);
-                  const pct = changePct(t.openPrice, t.closePrice);
+                  const pct = profitPctOfBalance(t.profit, balance);
                   return (
                     <tr
                       key={t.ticket}
@@ -279,12 +281,12 @@ export default function TradesPage() {
                         {pct != null ? (
                           <span
                             className={
-                              pct >= 0
+                              t.profit >= 0
                                 ? "text-emerald-400"
                                 : "text-red-400"
                             }
                           >
-                            {pct >= 0 ? "+" : ""}
+                            {t.profit >= 0 ? "+" : ""}
                             {pct.toFixed(2)}%
                           </span>
                         ) : (
