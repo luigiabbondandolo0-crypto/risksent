@@ -19,16 +19,12 @@ export async function GET(req: NextRequest) {
 
   let accountId: string | null = uuid;
   if (!accountId) {
-    const apiKey = process.env.METATRADERAPI_API_KEY;
-    accountId = process.env.METATRADERAPI_UUID ?? null;
-    if (!apiKey || !accountId) {
-      const { data: accounts } = await supabase
-        .from("trading_account")
-        .select("metaapi_account_id")
-        .eq("user_id", user.id)
-        .limit(1);
-      accountId = accounts?.[0]?.metaapi_account_id ?? null;
-    }
+    const { data: accounts } = await supabase
+      .from("trading_account")
+      .select("metaapi_account_id")
+      .eq("user_id", user.id)
+      .limit(1);
+    accountId = accounts?.[0]?.metaapi_account_id ?? null;
   }
 
   if (!accountId) {
