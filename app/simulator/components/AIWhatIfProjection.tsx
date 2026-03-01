@@ -2,10 +2,22 @@
 
 import React from "react";
 import { Sparkles } from "lucide-react";
-import type { AIWhatIfResult } from "../lib/aiWhatIf";
+
+type WhatIfData = {
+  scenario: string;
+  recommendation: string;
+  detectedPatterns: string[];
+  projectedProbFtmo2StepP1: number;
+  projectedProbFtmo2StepP2: number;
+  projectedProbFtmo1Step: number;
+  projectedProbSimplifiedP1: number;
+  projectedProbSimplifiedP2: number;
+  projectedDaysToTarget: number;
+  projectedBreachRiskPct: number;
+};
 
 type AIWhatIfProjectionProps = {
-  data: AIWhatIfResult | null;
+  data: WhatIfData | null;
   className?: string;
 };
 
@@ -17,8 +29,9 @@ export function AIWhatIfProjection(props: AIWhatIfProjectionProps) {
   const { data, className = "" } = props;
   if (!data) return null;
 
+  const rootClass = "rounded-xl border border-slate-800 bg-surface p-5 " + className;
   return (
-    <div className={"rounded-xl border border-slate-800 bg-surface p-5 " + className}>
+    <div className={rootClass}>
       <h3 className="text-sm font-medium text-slate-200 mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-cyan-400" />
         AI What-If Projection
