@@ -81,14 +81,13 @@ function LoginForm() {
   }, [email, password, redirectTo, router]);
 
   return (
-    <div className="flex flex-col items-center mt-12">
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4">
       <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-surface/80 p-6 shadow-lg shadow-black/40">
         <h1 className="text-lg font-semibold text-slate-50 mb-1">
           Log in to RiskSent
         </h1>
         <p className="text-xs text-slate-500 mb-6">
-          Mock auth using Supabase email + password. Privacy first: investor
-          passwords are encrypted at rest.
+          Privacy first: investor passwords are encrypted at rest.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,6 +133,21 @@ function LoginForm() {
           </button>
         </form>
 
+        <div className="mt-4 flex flex-col gap-2">
+          <Link
+            href="/signup"
+            className="w-full rounded-md border border-slate-700 bg-slate-800/40 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/50 hover:border-emerald-500/50 hover:text-emerald-300 transition-all duration-200 text-center"
+          >
+            Create Account
+          </Link>
+          <Link
+            href="/reset-password"
+            className="w-full rounded-md border border-slate-700 bg-slate-800/40 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/50 hover:border-emerald-500/50 hover:text-emerald-300 transition-all duration-200 text-center"
+          >
+            Forgot Password
+          </Link>
+        </div>
+
         <p className="mt-4 text-[11px] text-slate-500 leading-relaxed">
           By logging in you accept the{" "}
           <span className="text-slate-300">privacy disclaimer</span>: RiskSent
@@ -141,29 +155,17 @@ function LoginForm() {
           for risk analytics only.
         </p>
 
-        <p className="mt-3 text-[11px] text-slate-500">
-          No account yet?{" "}
-          <Link
-            href="/signup"
-            className="text-slate-200 hover:text-emerald-300"
-          >
-            Create one here
-          </Link>
-          .{" "}
-          <Link
-            href="/reset-password"
-            className="text-slate-200 hover:text-emerald-300"
-          >
-            Forgot password?
-          </Link>
-        </p>
-
-        <div className="mt-4 flex justify-between text-[11px] text-slate-500">
+        <div className="mt-4 flex justify-center text-[11px] text-slate-500">
           <Link href="/" className="hover:text-slate-300">
             Back to landing
           </Link>
-          <span className="text-slate-600">v0.1 mock</span>
         </div>
+      </div>
+      
+      <div className="mt-8 text-center">
+        <p className="text-xs text-slate-600">
+          © {new Date().getFullYear()} RiskSent. All rights reserved.
+        </p>
       </div>
     </div>
   );

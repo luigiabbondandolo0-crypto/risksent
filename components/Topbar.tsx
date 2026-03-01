@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, User } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export function Topbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
+  const isLoginPage = pathname === "/login";
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -20,8 +22,8 @@ export function Topbar() {
   const handleLogout = async () => {
     const supabase = createSupabaseBrowserClient();
     await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    // Use window.location for proper redirect
+    window.location.href = "/";
   };
 
   return (
@@ -68,7 +70,7 @@ export function Topbar() {
                 Logout
               </button>
             </>
-          ) : (
+          ) : !isLoginPage ? (
             <>
               <Link
                 href="/dashboard"
@@ -83,7 +85,7 @@ export function Topbar() {
                 Log in
               </Link>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </header>
