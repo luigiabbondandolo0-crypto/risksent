@@ -31,28 +31,26 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user },
-        error: authError
-      } = await supabase.auth.getUser();
+      try {
+        const res = await fetch("/api/profile");
+        if (res.status === 401) {
+          router.push("/login?redirectedFrom=/profile");
+          return;
+        }
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || "Failed to load profile");
+          setLoading(false);
+          return;
+        }
 
-      if (authError || !user) {
-        router.push("/login?redirectedFrom=/profile");
-        return;
+        const data = await res.json();
+        setProfile(data);
+        setLoading(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load profile");
+        setLoading(false);
       }
-
-      // Load user data (mock for now)
-      setProfile({
-        email: user.email || "",
-        fullName: user.user_metadata?.full_name || "",
-        phone: user.user_metadata?.phone || "",
-        company: user.user_metadata?.company || "",
-        role: "customer", // This would come from app_user table
-        createdAt: user.created_at || ""
-      });
-
-      setLoading(false);
     };
 
     loadProfile();
@@ -65,28 +63,24 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: profile.fullName,
+          phone: profile.phone,
+          company: profile.company
+        })
+      });
 
-      if (!user) {
-        setError("Not authenticated");
-        setSaving(false);
+      if (res.status === 401) {
+        router.push("/login?redirectedFrom=/profile");
         return;
       }
 
-      // Update user metadata (mock - in production would update app_user table)
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          full_name: profile.fullName,
-          phone: profile.phone,
-          company: profile.company
-        }
-      });
-
-      if (updateError) {
-        setError(updateError.message);
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to update profile");
         setSaving(false);
         return;
       }

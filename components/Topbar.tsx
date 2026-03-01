@@ -10,13 +10,31 @@ export function Topbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
   const isLoginPage = pathname === "/login";
 
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setEmail(session?.user?.email ?? null);
-    });
+    const loadUserData = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setEmail(session.user.email ?? null);
+        
+        // Load full_name from profile
+        try {
+          const res = await fetch("/api/profile");
+          if (res.ok) {
+            const data = await res.json();
+            setFullName(data.fullName || null);
+          }
+        } catch (e) {
+          // Ignore errors, just use email
+        }
+      }
+    };
+    
+    loadUserData();
   }, []);
 
   const handleLogout = async () => {
@@ -62,7 +80,7 @@ export function Topbar() {
               >
                 <User className="h-3.5 w-3.5 text-slate-400" />
                 <span className="truncate max-w-[140px]">
-                  {email}
+                  {fullName || email}
                 </span>
               </Link>
               <button

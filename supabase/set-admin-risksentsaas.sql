@@ -15,7 +15,7 @@ WHERE id = (
 -- Verify the update
 SELECT 
   au.id,
-  au.email,
+  u.email,
   au.role,
   au.created_at
 FROM public.app_user au
