@@ -4,7 +4,7 @@ import { useState } from "react";
 import { RefreshCw, Info } from "lucide-react";
 import { ProgressBar } from "./components/ProgressBar";
 import { EquityCurveChart } from "./components/EquityCurveChart";
-import { WhatIfSliders } from "./components/WhatIfSliders";
+import { WhatIfSliders, type WhatIfParams } from "./components/WhatIfSliders";
 import { FeedbackAICard, type AIFeedbackData } from "./components/FeedbackAICard";
 import { AlertsBar, type ImminentAlert } from "./components/AlertsBar";
 
@@ -44,6 +44,9 @@ export type SimulatorViewProps = {
   error: string | null;
   stats: SimulatorStats | null;
   equityCurve: { index: number; date: string; balance: number; pct: number }[];
+  projectedEquityCurve: { index: number; date: string; balance: number; pct: number }[];
+  whatIfParams: WhatIfParams;
+  onWhatIfChange: (p: WhatIfParams) => void;
   passProbFtmo2StepP1: number;
   passProbFtmo2StepP2: number;
   passProbFtmo1Step: number;
@@ -83,6 +86,9 @@ export function SimulatorView(props: SimulatorViewProps) {
     error,
     stats,
     equityCurve,
+    projectedEquityCurve,
+    whatIfParams,
+    onWhatIfChange,
     passProbFtmo2StepP1,
     passProbFtmo2StepP2,
     passProbFtmo1Step,
@@ -352,24 +358,26 @@ export function SimulatorView(props: SimulatorViewProps) {
               )}
             </div>
 
-            {/* Proiezione & What-If */}
+            {/* Projection & What-If */}
             <div className="rounded-xl border border-slate-800 bg-surface p-5">
-              <h2 className="text-sm font-medium text-slate-200 mb-1">Proiezione & What-If</h2>
+              <h2 className="text-sm font-medium text-slate-200 mb-1">Projection & What-If</h2>
               <p className="text-xs text-slate-500 mb-4">
-                Equity curve and linear projection (last 30 trades). Adjust the sliders to see how your pass probability and breach risk would change. Suggestions will be driven by AI based on your behaviour and trades.
+                Current equity curve vs projected curve with the settings below. Adjust risk per trade, max trades per day and stop after consecutive losses to see how your account would have performed. The AI will evaluate how these changes affect your chance of passing the challenge.
               </p>
               <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-2">
                   <EquityCurveChart
                     data={equityCurve}
+                    projectedData={projectedEquityCurve}
                     initialBalance={initialBalance}
                     targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
                     height={220}
-                    showLinearProjection
                   />
                 </div>
                 <div>
                   <WhatIfSliders
+                    value={whatIfParams}
+                    onChange={onWhatIfChange}
                     baselineProbPhase1={passProbFtmo2StepP1}
                     baselineDaysToTarget={estimatedDaysToTarget}
                     baselineBreachRisk={breachRiskPct}

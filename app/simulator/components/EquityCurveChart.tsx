@@ -20,50 +20,29 @@ export type EquityPoint = {
   pct: number;
 };
 
-/** Linear regression on last N points: returns slope and intercept for pct = slope * index + intercept */
-function linearRegressionLastN(data: EquityPoint[], n: number): { slope: number; intercept: number } {
-  const slice = data.length <= n ? data : data.slice(-n);
-  if (slice.length < 2) return { slope: 0, intercept: slice[0]?.pct ?? 0 };
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-  const len = slice.length;
-  for (let i = 0; i < len; i++) {
-    const x = slice[i].index;
-    const y = slice[i].pct;
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumX2 += x * x;
-  }
-  const slope = (len * sumXY - sumX * sumY) / (len * sumX2 - sumX * sumX) || 0;
-  const intercept = (sumY - slope * sumX) / len;
-  return { slope, intercept };
-}
-
 type EquityCurveChartProps = {
   data: EquityPoint[];
+  /** Projected curve with what-if rules applied (same length as data) */
+  projectedData?: EquityPoint[];
   initialBalance: number;
-  /** Optional target % for reference line (e.g. 10 for Phase 1) */
   targetPct?: number;
   height?: number;
   className?: string;
-  /** Show linear projection line based on last 30 trades */
-  showLinearProjection?: boolean;
 };
 
 export function EquityCurveChart({
   data,
+  projectedData,
   initialBalance,
   targetPct,
   height = 200,
-  className = "",
-  showLinearProjection = false
+  className = ""
 }: EquityCurveChartProps) {
   const chartData = useMemo(() => {
     if (!data.length) return [];
-    if (!showLinearProjection) return data;
-    const { slope, intercept } = linearRegressionLastN(data, 30);
-    return data.map((p) => ({ ...p, projection: slope * p.index + intercept }));
-  }, [data, showLinearProjection]);
+    if (!projectedData || projectedData.length !== data.length) return data.map((p) => ({ ...p, projectedPct: undefined }));
+    return data.map((p, i) => ({ ...p, projectedPct: projectedData[i]?.pct }));
+  }, [data, projectedData]);
 
   if (!data.length) {
     return (
@@ -76,9 +55,13 @@ export function EquityCurveChart({
     );
   }
 
+  const hasProjected = chartData.some((d) => d.projectedPct !== undefined);
+
   return (
     <div className={"rounded-xl border border-slate-800 bg-surface p-4 " + className}>
-      <p className="text-xs text-slate-500 mb-2">Equity curve (from closed trades){showLinearProjection ? " + linear projection (last 30)" : ""}</p>
+      <p className="text-xs text-slate-500 mb-2">
+        {hasProjected ? "Current equity vs projected (with what-if settings)" : "Equity curve (from closed trades)"}
+      </p>
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
           <defs>
@@ -100,7 +83,7 @@ export function EquityCurveChart({
           <Tooltip
             contentStyle={{ backgroundColor: "#0b0b10", border: "1px solid #334155" }}
             labelStyle={{ color: "#94a3b8" }}
-            formatter={(value: number) => [`${value.toFixed(2)}%`, "Equity"]}
+            formatter={(value: number, name: string) => [value != null ? `${Number(value).toFixed(2)}%` : "", name === "pct" ? "Current" : name === "projectedPct" ? "Projected" : name]}
             labelFormatter={(label) => label}
           />
           {targetPct != null && (
@@ -112,16 +95,17 @@ export function EquityCurveChart({
             stroke="#22d3ee"
             fill="url(#equityGrad)"
             strokeWidth={2}
+            name="Current"
           />
-          {showLinearProjection && (
+          {hasProjected && (
             <Line
               type="monotone"
-              dataKey="projection"
+              dataKey="projectedPct"
               stroke="#f59e0b"
               strokeDasharray="4 2"
               dot={false}
-              strokeWidth={1.5}
-              name="Projection"
+              strokeWidth={2}
+              name="Projected"
             />
           )}
         </AreaChart>

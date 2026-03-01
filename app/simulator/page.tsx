@@ -11,6 +11,8 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { SimulatorView, type Account, type SimulatorStats } from "./SimulatorView";
 import type { EquityPoint } from "./components/EquityCurveChart";
 import { estimatePassProbability } from "./lib/probability";
+import type { WhatIfParams } from "./components/WhatIfSliders";
+import { WHATIF_DEFAULT_PARAMS } from "./components/WhatIfSliders";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -103,6 +105,63 @@ function buildEquityCurve(
   return points;
 }
 
+const BASELINE_RISK_PCT = 1.5;
+
+/**
+ * Build projected equity curve by simulating: scale each trade by (riskPerTradePct / baseline),
+ * cap at maxTradesPerDay per day, stop adding trades after stopAfterConsecutiveLosses losses in a day.
+ * Returns same-length array so chart can show actual vs projected.
+ */
+function buildProjectedEquityCurve(
+  trades: Trade[],
+  initialBalance: number,
+  params: WhatIfParams
+): EquityPoint[] {
+  if (initialBalance <= 0 || trades.length === 0) return [];
+  const sorted = [...trades].sort(
+    (a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime()
+  );
+  const riskRatio = params.riskPerTradePct / BASELINE_RISK_PCT;
+  const dayToTrades = new Map<string, { index: number; profit: number }[]>();
+  sorted.forEach((t, i) => {
+    const day = t.closeTime.slice(0, 10);
+    if (!dayToTrades.has(day)) dayToTrades.set(day, []);
+    dayToTrades.get(day)!.push({ index: i, profit: t.profit * riskRatio });
+  });
+  const effectiveProfit = new Array<number>(sorted.length).fill(0);
+  for (const [, list] of dayToTrades) {
+    let count = 0;
+    let consecutiveLosses = 0;
+    for (const { index, profit } of list) {
+      if (count >= params.maxTradesPerDay) continue;
+      if (consecutiveLosses >= params.stopAfterConsecutiveLosses) continue;
+      effectiveProfit[index] = profit;
+      count++;
+      if (profit < 0) consecutiveLosses++;
+      else consecutiveLosses = 0;
+    }
+  }
+  let running = initialBalance;
+  const points: EquityPoint[] = [];
+  points.push({
+    index: 0,
+    date: sorted[0]?.closeTime?.slice(0, 10) ?? "",
+    balance: initialBalance,
+    pct: 0
+  });
+  sorted.forEach((t, i) => {
+    running += effectiveProfit[i];
+    const pct = ((running - initialBalance) / initialBalance) * 100;
+    points.push({
+      index: i + 1,
+      date: t.closeTime.slice(0, 10),
+      balance: running,
+      pct
+    });
+  });
+  return points;
+}
+
 /** Estimated days to reach Phase 1 target (10%). Uses average daily rate so far. */
 function estimateDaysToTarget(stats: SimulatorStats | null): number {
   if (!stats || stats.trading_days === 0) return TRADING_DAYS_CAP;
@@ -144,6 +203,7 @@ export default function SimulatorPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [whatIfParams, setWhatIfParams] = useState<WhatIfParams>(WHATIF_DEFAULT_PARAMS);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -215,6 +275,10 @@ export default function SimulatorPage() {
     () => buildEquityCurve(trades, initialBalance),
     [trades, initialBalance]
   );
+  const projectedEquityCurve = useMemo(
+    () => buildProjectedEquityCurve(trades, initialBalance, whatIfParams),
+    [trades, initialBalance, whatIfParams]
+  );
 
   const passProbFtmo2StepP1 = useMemo(() => estimatePassProbability(stats, FTMO_PHASE1), [stats]);
   const passProbFtmo2StepP2 = useMemo(() => estimatePassProbability(stats, FTMO_PHASE2), [stats]);
@@ -277,6 +341,9 @@ export default function SimulatorPage() {
       error={error}
       stats={stats}
       equityCurve={equityCurve}
+      projectedEquityCurve={projectedEquityCurve}
+      whatIfParams={whatIfParams}
+      onWhatIfChange={setWhatIfParams}
       passProbFtmo2StepP1={passProbFtmo2StepP1}
       passProbFtmo2StepP2={passProbFtmo2StepP2}
       passProbFtmo1Step={passProbFtmo1Step}
