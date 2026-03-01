@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import {
-  AreaChart,
+  ComposedChart,
   Area,
   Line,
   XAxis,
@@ -41,8 +41,12 @@ export function EquityCurveChart({
 }: EquityCurveChartProps) {
   const chartData = useMemo(() => {
     if (!data.length) return [];
-    if (!projectedData || projectedData.length !== data.length) return data.map((p) => ({ ...p, projectedPct: undefined }));
-    return data.map((p, i) => ({ ...p, projectedPct: projectedData[i].pct }));
+    if (!projectedData || projectedData.length === 0) return data.map((p) => ({ ...p, projectedPct: undefined }));
+    const len = Math.min(data.length, projectedData.length);
+    return data.map((p, i) => ({
+      ...p,
+      projectedPct: i < len ? projectedData[i].pct : (i > 0 ? projectedData[len - 1].pct : 0)
+    }));
   }, [data, projectedData]);
 
   if (!data.length) {
@@ -56,7 +60,7 @@ export function EquityCurveChart({
     );
   }
 
-  const hasProjected = Boolean(projectedData?.length === data.length && chartData.some((d) => d.projectedPct !== undefined));
+  const hasProjected = Boolean(projectedData && projectedData.length > 0);
 
   return (
     <div className={"rounded-xl border border-slate-800 bg-surface p-4 " + className}>
@@ -64,7 +68,7 @@ export function EquityCurveChart({
         {hasProjected ? "Current equity vs projected (with what-if settings)" : "Equity curve (from closed trades)"}
       </p>
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+        <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
           <defs>
             <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.3} />
@@ -102,9 +106,9 @@ export function EquityCurveChart({
             <Line
               type="monotone"
               dataKey="projectedPct"
-              stroke="#f59e0b"
-              strokeWidth={2.5}
-              strokeDasharray="5 3"
+              stroke="#ea580c"
+              strokeWidth={3}
+              strokeDasharray="6 4"
               dot={false}
               connectNulls
               name="Projected"
@@ -117,7 +121,7 @@ export function EquityCurveChart({
               formatter={(value) => <span className="text-slate-400">{value}</span>}
             />
           )}
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
