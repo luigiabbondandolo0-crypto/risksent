@@ -91,11 +91,8 @@ function TradesPageContent() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(0);
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
-  const [rowMeta, setRowMeta] = useState<Map<number, { note?: string; revenge?: boolean; deleted?: boolean }>>(new Map());
   const [aiModal, setAiModal] = useState<{ open: true; insight: { summary: string; patterns: string[]; emotional: string[] } } | { open: false }>({ open: false });
   const [aiLoading, setAiLoading] = useState(false);
-  const [editNoteTicket, setEditNoteTicket] = useState<number | null>(null);
-  const [editNoteValue, setEditNoteValue] = useState("");
 
   useEffect(() => {
     const date = searchParams.get("date");
@@ -184,8 +181,8 @@ function TradesPageContent() {
       const to = dateTo + "T23:59:59";
       list = list.filter((t) => t.closeTime <= to);
     }
-    return list.filter((t) => !rowMeta.get(t.ticket)?.deleted);
-  }, [trades, search, dateFrom, dateTo, rowMeta]);
+    return list;
+  }, [trades, search, dateFrom, dateTo]);
 
   const sortedByTime = useMemo(() => {
     const copy = [...filteredTrades];
@@ -249,24 +246,24 @@ function TradesPageContent() {
         total: 0,
         wins: 0,
         winPct: 0,
-        avgPl: 0,
-        maxLoss: 0,
-        revengePct: 0
+        avgWin: 0,
+        avgLoss: 0,
+        maxLoss: 0
       };
-    const wins = filteredTrades.filter((t) => t.profit > 0).length;
-    const totalPl = filteredTrades.reduce((s, t) => s + t.profit, 0);
+    const wins = filteredTrades.filter((t) => t.profit > 0);
     const losses = filteredTrades.filter((t) => t.profit < 0);
+    const avgWin = wins.length ? wins.reduce((s, t) => s + t.profit, 0) / wins.length : 0;
+    const avgLoss = losses.length ? losses.reduce((s, t) => s + t.profit, 0) / losses.length : 0;
     const maxLoss = losses.length ? Math.min(...losses.map((t) => t.profit)) : 0;
-    const revengeCount = consecutiveLossesBefore.filter((s) => s >= 2).length;
     return {
       total: n,
-      wins,
-      winPct: (wins / n) * 100,
-      avgPl: totalPl / n,
-      maxLoss,
-      revengePct: (revengeCount / n) * 100
+      wins: wins.length,
+      winPct: (wins.length / n) * 100,
+      avgWin,
+      avgLoss,
+      maxLoss
     };
-  }, [filteredTrades, consecutiveLossesBefore]);
+  }, [filteredTrades]);
 
   const paginatedTrades = useMemo(() => {
     const start = page * PAGE_SIZE;
@@ -280,36 +277,6 @@ function TradesPageContent() {
       const next = new Set(prev);
       if (next.has(ticket)) next.delete(ticket);
       else next.add(ticket);
-      return next;
-    });
-  }, []);
-
-  const toggleRevenge = useCallback((ticket: number) => {
-    setRowMeta((prev) => {
-      const next = new Map(prev);
-      const m = next.get(ticket) ?? {};
-      next.set(ticket, { ...m, revenge: !m.revenge });
-      return next;
-    });
-  }, []);
-
-  const setNote = useCallback((ticket: number, note: string) => {
-    setRowMeta((prev) => {
-      const next = new Map(prev);
-      const m = next.get(ticket) ?? {};
-      next.set(ticket, { ...m, note: note || undefined });
-      return next;
-    });
-    setEditNoteTicket(null);
-    setEditNoteValue("");
-  }, []);
-
-  const deleteTrade = useCallback((ticket: number) => {
-    if (!confirm("Eliminare questo trade dalla vista? (Non modifica il conto.)")) return;
-    setRowMeta((prev) => {
-      const next = new Map(prev);
-      const m = next.get(ticket) ?? {};
-      next.set(ticket, { ...m, deleted: true });
       return next;
     });
   }, []);
@@ -423,7 +390,7 @@ function TradesPageContent() {
 
       {filteredTrades.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
               <p className="text-xs text-slate-500 uppercase tracking-wide">Trades</p>
               <p className="text-lg font-semibold text-slate-200">{summary.total}</p>
@@ -433,18 +400,20 @@ function TradesPageContent() {
               <p className="text-lg font-semibold text-emerald-400">{summary.winPct.toFixed(1)}%</p>
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg P/L</p>
-              <p className={`text-lg font-semibold ${summary.avgPl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {summary.avgPl >= 0 ? "+" : ""}{summary.avgPl.toFixed(2)} {currency}
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Win</p>
+              <p className="text-lg font-semibold text-emerald-400">
+                +{summary.avgWin.toFixed(2)} {currency}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Loss</p>
+              <p className="text-lg font-semibold text-red-400">
+                {summary.avgLoss.toFixed(2)} {currency}
               </p>
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
               <p className="text-xs text-slate-500 uppercase tracking-wide">Max loss</p>
               <p className="text-lg font-semibold text-red-400">{summary.maxLoss.toFixed(2)} {currency}</p>
-            </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Revenge %</p>
-              <p className="text-lg font-semibold text-amber-400">{summary.revengePct.toFixed(1)}%</p>
             </div>
           </div>
 
@@ -505,9 +474,7 @@ function TradesPageContent() {
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
-                  <th className="px-4 py-3 font-medium" title="Rischio % preso (size × stop / equity)">Risk %</th>
                   <th className="px-4 py-3 font-medium" title="Sanity: verde ok, giallo borderline, rosso revenge/risk">Sanity</th>
-                  <th className="px-4 py-3 font-medium w-28">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -525,8 +492,6 @@ function TradesPageContent() {
                     maxRiskPct: maxRisk,
                     revengeThreshold: revengeThr
                   });
-                  const meta = rowMeta.get(t.ticket);
-                  const isRevengeTag = meta?.revenge ?? false;
                   const rowTitle = `Ticket ${t.ticket}${t.comment ? ` · ${t.comment}` : ""}`;
 
                   return (
@@ -573,85 +538,8 @@ function TradesPageContent() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        {riskPct != null ? (
-                          <span
-                            className={
-                              maxRisk > 0 && riskPct > maxRisk ? "text-red-400 font-medium" : "text-slate-300"
-                            }
-                            title="Rischio % equity a rischio (size × stop / equity)"
-                          >
-                            {riskPct.toFixed(2)}%
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
                       <td className="px-4 py-3" title={sanity.tooltip}>
                         <SanityBadge level={sanity.level} tooltip={sanity.tooltip} />
-                      </td>
-                      <td className="px-4 py-2 flex items-center gap-1">
-                        {editNoteTicket === t.ticket ? (
-                          <>
-                            <input
-                              type="text"
-                              value={editNoteValue}
-                              onChange={(e) => setEditNoteValue(e.target.value)}
-                              placeholder="Note"
-                              className="w-20 rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") setNote(t.ticket, editNoteValue);
-                                if (e.key === "Escape") {
-                                  setEditNoteTicket(null);
-                                  setEditNoteValue("");
-                                }
-                              }}
-                            />
-                            <button
-                              type="button"
-                              className="text-cyan-400 text-xs"
-                              onClick={() => setNote(t.ticket, editNoteValue)}
-                            >
-                              Ok
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              title="Edit note"
-                              className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200"
-                              onClick={() => {
-                                setEditNoteTicket(t.ticket);
-                                setEditNoteValue(meta?.note ?? "");
-                              }}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              title={isRevengeTag ? "Rimuovi tag revenge" : "Tag revenge"}
-                              className={`p-1 rounded hover:bg-slate-700 ${isRevengeTag ? "text-amber-400" : "text-slate-400 hover:text-slate-200"}`}
-                              onClick={() => toggleRevenge(t.ticket)}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              title="Delete (hide from list)"
-                              className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-red-400"
-                              onClick={() => deleteTrade(t.ticket)}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </>
-                        )}
                       </td>
                     </tr>
                   );
