@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Sparkles } from "lucide-react";
 import type { AIWhatIfResult } from "../lib/aiWhatIf";
 
@@ -12,11 +13,12 @@ type AIWhatIfProjectionProps = {
  * AI-driven What-If projection: shows scenario, recommendation, and projected
  * pass probabilities for all challenges. No user input – all from AI analysis.
  */
-export function AIWhatIfProjection({ data, className = "" }: AIWhatIfProjectionProps) {
+export function AIWhatIfProjection(props: AIWhatIfProjectionProps) {
+  const { data, className = "" } = props;
   if (!data) return null;
 
   return (
-    <div className={`rounded-xl border border-slate-800 bg-surface p-5 ${className}`}>
+    <div className={"rounded-xl border border-slate-800 bg-surface p-5 " + className}>
       <h3 className="text-sm font-medium text-slate-200 mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-cyan-400" />
         AI What-If Projection
