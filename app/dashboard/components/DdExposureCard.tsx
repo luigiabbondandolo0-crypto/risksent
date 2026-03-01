@@ -9,6 +9,8 @@ type DdExposureCardProps = {
   dailyLimitPct: number;
   exposurePct: number | null;
   exposureLimitPct: number;
+  /** When true, show a note that values are mock/sample data */
+  isMock?: boolean;
 };
 
 function gaugeColor(ratio: number): string {
@@ -63,12 +65,20 @@ export function DdExposureCard({
   dailyDdPct,
   dailyLimitPct,
   exposurePct,
-  exposureLimitPct
+  exposureLimitPct,
+  isMock
 }: DdExposureCardProps) {
   return (
     <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/90 to-slate-900/90 p-5 shadow-lg">
-      <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-4">
-        Daily DD & Exposure vs limits
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+          Daily DD & Exposure vs limits
+        </span>
+        {isMock && (
+          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
+            Mock data
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap items-end justify-around gap-6">
         <SemiGauge

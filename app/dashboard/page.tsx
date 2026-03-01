@@ -333,6 +333,7 @@ export default function DashboardPage() {
           dailyLimitPct={riskRules.daily_loss_pct}
           exposurePct={stats?.currentExposurePct ?? 2.3}
           exposureLimitPct={riskRules.max_exposure_pct}
+          isMock={stats?.dailyDdPct == null && stats?.currentExposurePct == null}
         />
       )}
 
@@ -413,9 +414,9 @@ export default function DashboardPage() {
               {stats?.avgLossPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgLossPct.toFixed(2)}%)</span>}
             </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-3 text-sm">
-            <span><span className="text-slate-500">Ratio (win/loss)</span> <span className="font-bold text-white">{stats?.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span></span>
-            <span><span className="text-slate-500">Profit factor</span> <span className="font-bold text-white">{stats?.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}</span></span>
+          <div className="mt-2 pt-2 border-t border-slate-700/50 text-sm">
+            <span className="text-slate-500">Profit factor </span>
+            <span className="font-bold text-white">{stats?.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}</span>
           </div>
         </div>
 
