@@ -5,6 +5,7 @@ import { SimulatorView, type Account, type SimulatorStats } from "./SimulatorVie
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
+const FTMO_1STEP = { profit_target_pct: 10, daily_loss_limit_pct: 3, max_loss_pct: 10 };
 const SIMPLIFIED_PHASE1 = { profit_target_pct: 8, daily_loss_limit_pct: 4, max_loss_pct: 8 };
 const SIMPLIFIED_PHASE2 = { profit_target_pct: 4, daily_loss_limit_pct: 4, max_loss_pct: 8 };
 
@@ -141,6 +142,15 @@ export default function SimulatorPage() {
     stats.profit_pct >= FTMO_PHASE2.profit_target_pct
   );
 
+  const ftmo1StepDailyBreach = stats ? stats.worst_daily_pct < -FTMO_1STEP.daily_loss_limit_pct : false;
+  const ftmo1StepMaxLossBreach = stats ? stats.max_drawdown_pct > FTMO_1STEP.max_loss_pct : false;
+  const ftmo1StepPass = !!(
+    stats &&
+    !ftmo1StepDailyBreach &&
+    !ftmo1StepMaxLossBreach &&
+    stats.profit_pct >= FTMO_1STEP.profit_target_pct
+  );
+
   const simplifiedDailyBreach = stats ? stats.worst_daily_pct < -SIMPLIFIED_PHASE1.daily_loss_limit_pct : false;
   const simplifiedMaxLossBreach = stats ? stats.max_drawdown_pct > SIMPLIFIED_PHASE1.max_loss_pct : false;
   const simplifiedPhase1Pass = !!(
@@ -174,6 +184,9 @@ export default function SimulatorPage() {
       stats={stats}
       ftmoPhase1Pass={ftmoPhase1Pass}
       ftmoPhase2Pass={ftmoPhase2Pass}
+      ftmo1StepPass={ftmo1StepPass}
+      ftmo1StepDailyBreach={ftmo1StepDailyBreach}
+      ftmo1StepMaxLossBreach={ftmo1StepMaxLossBreach}
       simplifiedPhase1Pass={simplifiedPhase1Pass}
       simplifiedPhase2Pass={simplifiedPhase2Pass}
       simplifiedDailyBreach={simplifiedDailyBreach}

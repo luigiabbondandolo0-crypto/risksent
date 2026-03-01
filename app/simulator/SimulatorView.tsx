@@ -5,6 +5,7 @@ import { PerformanceFeedbackMock } from "./PerformanceFeedbackMock";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
+const FTMO_1STEP = { profit_target_pct: 10, daily_loss_limit_pct: 3, max_loss_pct: 10 };
 const SIMPLIFIED_PHASE1 = { profit_target_pct: 8, daily_loss_limit_pct: 4, max_loss_pct: 8 };
 const SIMPLIFIED_PHASE2 = { profit_target_pct: 4, daily_loss_limit_pct: 4, max_loss_pct: 8 };
 
@@ -43,6 +44,9 @@ export type SimulatorViewProps = {
   stats: SimulatorStats | null;
   ftmoPhase1Pass: boolean;
   ftmoPhase2Pass: boolean;
+  ftmo1StepPass: boolean;
+  ftmo1StepDailyBreach: boolean;
+  ftmo1StepMaxLossBreach: boolean;
   simplifiedPhase1Pass: boolean;
   simplifiedPhase2Pass: boolean;
   simplifiedDailyBreach: boolean;
@@ -116,6 +120,9 @@ export function SimulatorView(props: SimulatorViewProps) {
     stats,
     ftmoPhase1Pass,
     ftmoPhase2Pass,
+    ftmo1StepPass,
+    ftmo1StepDailyBreach,
+    ftmo1StepMaxLossBreach,
     simplifiedPhase1Pass,
     simplifiedPhase2Pass,
     simplifiedDailyBreach,
@@ -137,10 +144,10 @@ export function SimulatorView(props: SimulatorViewProps) {
   ) : (
     <div className="space-y-8">
       <div>
-        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">FTMO</h2>
+        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">FTMO 2-STEP</h2>
         <div className="grid gap-6 lg:grid-cols-2">
           {PhaseCard(
-            "Phase 1 - FTMO Challenge",
+            "Phase 1",
             "Profit target 10%, daily loss 5%, max loss 10%.",
             stats,
             FTMO_PHASE1,
@@ -150,7 +157,7 @@ export function SimulatorView(props: SimulatorViewProps) {
             "bg-amber-500"
           )}
           {PhaseCard(
-            "Phase 2 - Verification",
+            "Phase 2",
             "Profit target 5%, daily loss 5%, max loss 10%.",
             stats,
             FTMO_PHASE2,
@@ -163,10 +170,26 @@ export function SimulatorView(props: SimulatorViewProps) {
       </div>
 
       <div>
-        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">Simplified</h2>
+        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">FTMO 1-STEP</h2>
+        <div className="grid gap-6 lg:grid-cols-1 max-w-xl">
+          {PhaseCard(
+            "Phase 1",
+            "Profit target 10%, daily loss 3%, max loss 10%. Single step to FTMO Account.",
+            stats,
+            FTMO_1STEP,
+            ftmo1StepDailyBreach,
+            ftmo1StepMaxLossBreach,
+            ftmo1StepPass,
+            "bg-emerald-500"
+          )}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wide mb-3">ALTERNATIVE 2-STEP</h2>
         <div className="grid gap-6 lg:grid-cols-2">
           {PhaseCard(
-            "Phase 1 - Simplified",
+            "Phase 1",
             "Profit target 8%, daily loss 4%, max loss 8%.",
             stats,
             SIMPLIFIED_PHASE1,
@@ -176,7 +199,7 @@ export function SimulatorView(props: SimulatorViewProps) {
             "bg-violet-500"
           )}
           {PhaseCard(
-            "Phase 2 - Simplified Verification",
+            "Phase 2",
             "Profit target 4%, daily loss 4%, max loss 8%.",
             stats,
             SIMPLIFIED_PHASE2,
@@ -196,7 +219,7 @@ export function SimulatorView(props: SimulatorViewProps) {
         <div>
           <h1 className="text-xl font-semibold text-slate-50">Challenge Simulator</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Confronta il trading con le regole FTMO e Simplified. Seleziona un account e controlla Phase 1 e Phase 2.
+            Confronta il trading con FTMO 2-STEP, FTMO 1-STEP e Alternative 2-STEP. Seleziona un account e controlla Phase 1 e Phase 2.
           </p>
         </div>
         <select
