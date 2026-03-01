@@ -1,7 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { MiniEquityChart } from "./components/MiniEquityChart";
+import { SanityBadge, getSanityLevel } from "./components/SanityBadge";
 
 function formatTradeDate(iso: string): string {
   const d = new Date(iso);
@@ -27,6 +29,9 @@ function normalizeType(t: string): "Buy" | "Sell" {
   return "Buy";
 }
 
+const CONTRACT_SIZE = 100_000;
+const PAGE_SIZE = 50;
+
 type Account = {
   id: string;
   broker_type: string;
@@ -46,12 +51,28 @@ type Trade = {
   closePrice: number;
   profit: number;
   comment?: string;
+  stopLoss?: number | null;
+};
+
+type Rules = {
+  max_risk_per_trade_pct: number;
+  revenge_threshold_trades: number;
+  max_exposure_pct: number;
 };
 
 function accountLabel(a: Account): string {
   const login = a.account_number ?? "";
   const name = a.account_name?.trim();
   return name ? `${login} · ${name}` : login;
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debouncedValue;
 }
 
 function TradesPageContent() {
@@ -61,11 +82,20 @@ function TradesPageContent() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [currency, setCurrency] = useState("EUR");
   const [balance, setBalance] = useState(0);
+  const [rules, setRules] = useState<Rules | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebounce(searchInput, 300);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(0);
+  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
+  const [rowMeta, setRowMeta] = useState<Map<number, { note?: string; revenge?: boolean; deleted?: boolean }>>(new Map());
+  const [aiModal, setAiModal] = useState<{ open: true; insight: { summary: string; patterns: string[]; emotional: string[] } } | { open: false }>({ open: false });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [editNoteTicket, setEditNoteTicket] = useState<number | null>(null);
+  const [editNoteValue, setEditNoteValue] = useState("");
 
   useEffect(() => {
     const date = searchParams.get("date");
@@ -78,12 +108,9 @@ function TradesPageContent() {
   useEffect(() => {
     (async () => {
       try {
-        console.log("[Trades] Fetching /api/accounts...");
         const accRes = await fetch("/api/accounts");
         const body = await accRes.json().catch(() => ({}));
-        console.log("[Trades] /api/accounts response:", { status: accRes.status, ok: accRes.ok, body });
         if (!accRes.ok) {
-          console.error("[Trades] /api/accounts failed:", accRes.status, body);
           setError(body?.error ?? "Failed to load accounts");
           return;
         }
@@ -97,8 +124,7 @@ function TradesPageContent() {
           if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
           else setSelectedUuid("");
         }
-      } catch (e) {
-        console.error("[Trades] /api/accounts exception:", e);
+      } catch {
         setError("Failed to load accounts");
       } finally {
         setLoading(false);
@@ -113,9 +139,7 @@ function TradesPageContent() {
     const u = selectedUuid || "";
     (async () => {
       try {
-        const res = await fetch(
-          `/api/trades${u ? `?uuid=${encodeURIComponent(u)}` : ""}`
-        );
+        const res = await fetch(`/api/trades${u ? `?uuid=${encodeURIComponent(u)}` : ""}`);
         const data = await res.json();
         if (!res.ok) {
           setError(data.error ?? "Failed to load trades");
@@ -125,6 +149,15 @@ function TradesPageContent() {
         setTrades(data.trades ?? []);
         setCurrency(data.currency ?? "EUR");
         setBalance(Number(data.balance) || 0);
+        if (data.rules) {
+          setRules({
+            max_risk_per_trade_pct: Number(data.rules.max_risk_per_trade_pct) ?? 1,
+            revenge_threshold_trades: Number(data.rules.revenge_threshold_trades) ?? 2,
+            max_exposure_pct: Number(data.rules.max_exposure_pct) ?? 6
+          });
+        } else {
+          setRules(null);
+        }
       } catch {
         setError("Request failed");
         setTrades([]);
@@ -151,8 +184,174 @@ function TradesPageContent() {
       const to = dateTo + "T23:59:59";
       list = list.filter((t) => t.closeTime <= to);
     }
-    return list;
-  }, [trades, search, dateFrom, dateTo]);
+    return list.filter((t) => !rowMeta.get(t.ticket)?.deleted);
+  }, [trades, search, dateFrom, dateTo, rowMeta]);
+
+  const sortedByTime = useMemo(() => {
+    const copy = [...filteredTrades];
+    copy.sort((a, b) => new Date(a.closeTime).getTime() - new Date(b.closeTime).getTime());
+    return copy;
+  }, [filteredTrades]);
+
+  const totalProfit = useMemo(() => sortedByTime.reduce((s, t) => s + t.profit, 0), [sortedByTime]);
+  const initialBalance = balance - totalProfit;
+
+  const equityCurveData = useMemo(() => {
+    let cum = 0;
+    return sortedByTime.map((t, index) => {
+      cum += t.profit;
+      const equity = initialBalance + cum;
+      const pct = equity > 0 ? (cum / equity) * 100 : 0;
+      return {
+        index,
+        closeTime: t.closeTime,
+        cumulative: Math.round(cum * 100) / 100,
+        pct,
+        label: t.closeTime.slice(0, 10)
+      };
+    });
+  }, [sortedByTime, initialBalance]);
+
+  const riskPctAndEquity = useMemo(() => {
+    let runningEquity = initialBalance;
+    return sortedByTime.map((t) => {
+      const equity = runningEquity;
+      runningEquity += t.profit;
+      let riskPct: number | null = null;
+      if (
+        t.stopLoss != null &&
+        Number.isFinite(t.stopLoss) &&
+        t.lots > 0 &&
+        equity > 0
+      ) {
+        const riskAmount = t.lots * CONTRACT_SIZE * Math.abs(t.openPrice - t.stopLoss);
+        riskPct = (riskAmount / equity) * 100;
+      }
+      return { riskPct, equity };
+    });
+  }, [sortedByTime, initialBalance]);
+
+  const consecutiveLossesBefore = useMemo(() => {
+    const out: number[] = [];
+    let streak = 0;
+    for (let i = 0; i < sortedByTime.length; i++) {
+      out.push(streak);
+      if (sortedByTime[i].profit < 0) streak += 1;
+      else streak = 0;
+    }
+    return out;
+  }, [sortedByTime]);
+
+  const summary = useMemo(() => {
+    const n = filteredTrades.length;
+    if (n === 0)
+      return {
+        total: 0,
+        wins: 0,
+        winPct: 0,
+        avgPl: 0,
+        maxLoss: 0,
+        revengePct: 0
+      };
+    const wins = filteredTrades.filter((t) => t.profit > 0).length;
+    const totalPl = filteredTrades.reduce((s, t) => s + t.profit, 0);
+    const losses = filteredTrades.filter((t) => t.profit < 0);
+    const maxLoss = losses.length ? Math.min(...losses.map((t) => t.profit)) : 0;
+    const revengeCount = consecutiveLossesBefore.filter((s) => s >= 2).length;
+    return {
+      total: n,
+      wins,
+      winPct: (wins / n) * 100,
+      avgPl: totalPl / n,
+      maxLoss,
+      revengePct: (revengeCount / n) * 100
+    };
+  }, [filteredTrades, consecutiveLossesBefore]);
+
+  const paginatedTrades = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return sortedByTime.slice(start, start + PAGE_SIZE);
+  }, [sortedByTime, page]);
+
+  const totalPages = Math.ceil(sortedByTime.length / PAGE_SIZE) || 1;
+
+  const toggleSelect = useCallback((ticket: number) => {
+    setSelectedTickets((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticket)) next.delete(ticket);
+      else next.add(ticket);
+      return next;
+    });
+  }, []);
+
+  const toggleRevenge = useCallback((ticket: number) => {
+    setRowMeta((prev) => {
+      const next = new Map(prev);
+      const m = next.get(ticket) ?? {};
+      next.set(ticket, { ...m, revenge: !m.revenge });
+      return next;
+    });
+  }, []);
+
+  const setNote = useCallback((ticket: number, note: string) => {
+    setRowMeta((prev) => {
+      const next = new Map(prev);
+      const m = next.get(ticket) ?? {};
+      next.set(ticket, { ...m, note: note || undefined });
+      return next;
+    });
+    setEditNoteTicket(null);
+    setEditNoteValue("");
+  }, []);
+
+  const deleteTrade = useCallback((ticket: number) => {
+    if (!confirm("Eliminare questo trade dalla vista? (Non modifica il conto.)")) return;
+    setRowMeta((prev) => {
+      const next = new Map(prev);
+      const m = next.get(ticket) ?? {};
+      next.set(ticket, { ...m, deleted: true });
+      return next;
+    });
+  }, []);
+
+  const runAiInsight = useCallback(async () => {
+    const tickets = Array.from(selectedTickets);
+    if (tickets.length === 0 || tickets.length > 15) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/ai/trade-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketIds: tickets })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? "Errore analisi");
+        return;
+      }
+      setAiModal({
+        open: true,
+        insight: {
+          summary: data.summary ?? "",
+          patterns: Array.isArray(data.patterns) ? data.patterns : [],
+          emotional: Array.isArray(data.emotional) ? data.emotional : []
+        }
+      });
+    } catch {
+      alert("Errore di rete");
+    } finally {
+      setAiLoading(false);
+    }
+  }, [selectedTickets]);
+
+  const selectedIndicesForChart = useMemo(() => {
+    const set = new Set<number>();
+    selectedTickets.forEach((ticket) => {
+      const globalIndex = sortedByTime.findIndex((x) => x.ticket === ticket);
+      if (globalIndex >= 0) set.add(globalIndex);
+    });
+    return set;
+  }, [selectedTickets, sortedByTime]);
 
   return (
     <div className="space-y-6">
@@ -160,7 +359,7 @@ function TradesPageContent() {
         <div>
           <h1 className="text-xl font-semibold text-slate-50">Trades</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Closed orders from the selected account. Filter by account, search and date.
+            Closed orders. Sanity badge, equity curve and AI insight.
           </p>
         </div>
         <select
@@ -183,41 +382,38 @@ function TradesPageContent() {
       <div className="flex flex-wrap gap-3 items-center">
         <input
           type="text"
-          placeholder="Search symbol, ticket..."
-          className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500 w-48"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search symbol, ticket, comment..."
+          className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500 w-52"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
-        <div className="flex items-center gap-2 text-slate-400 text-xs">
-          <label className="flex items-center gap-1.5">
-            <span>From (dd-mm-yyyy)</span>
-            <input
-              type="date"
-              className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              title="From date"
-            />
-          </label>
-          <label className="flex items-center gap-1.5">
-            <span>To (dd-mm-yyyy)</span>
-            <input
-              type="date"
-              className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              title="To date"
-            />
-          </label>
-        </div>
-        {(search || dateFrom || dateTo) && (
+        <label className="flex items-center gap-1.5 text-slate-400 text-xs">
+          <span>From</span>
+          <input
+            type="date"
+            className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </label>
+        <label className="flex items-center gap-1.5 text-slate-400 text-xs">
+          <span>To</span>
+          <input
+            type="date"
+            className="rounded border border-slate-700 bg-slate-800/50 px-2 py-1.5 text-slate-200 text-xs outline-none focus:border-cyan-500 w-[130px]"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </label>
+        {(searchInput || dateFrom || dateTo) && (
           <button
             type="button"
             className="text-xs text-slate-400 hover:text-slate-200"
             onClick={() => {
-              setSearch("");
+              setSearchInput("");
               setDateFrom("");
               setDateTo("");
+              setPage(0);
             }}
           >
             Clear filters
@@ -225,20 +421,70 @@ function TradesPageContent() {
         )}
       </div>
 
+      {filteredTrades.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Trades</p>
+              <p className="text-lg font-semibold text-slate-200">{summary.total}</p>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Win %</p>
+              <p className="text-lg font-semibold text-emerald-400">{summary.winPct.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg P/L</p>
+              <p className={`text-lg font-semibold ${summary.avgPl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {summary.avgPl >= 0 ? "+" : ""}{summary.avgPl.toFixed(2)} {currency}
+              </p>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Max loss</p>
+              <p className="text-lg font-semibold text-red-400">{summary.maxLoss.toFixed(2)} {currency}</p>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <p className="text-xs text-slate-500 uppercase tracking-wide">Revenge %</p>
+              <p className="text-lg font-semibold text-amber-400">{summary.revengePct.toFixed(1)}%</p>
+            </div>
+          </div>
+
+          <MiniEquityChart
+            data={equityCurveData}
+            selectedIndices={selectedIndicesForChart}
+            currency={currency}
+            height={140}
+          />
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              disabled={selectedTickets.size === 0 || selectedTickets.size > 15 || aiLoading}
+              onClick={runAiInsight}
+              className="rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:pointer-events-none px-3 py-2 text-sm font-medium text-white"
+            >
+              {aiLoading ? "Analisi…" : `Analizza selezionati (${selectedTickets.size})`}
+            </button>
+            {selectedTickets.size > 0 && (
+              <button
+                type="button"
+                className="text-xs text-slate-400 hover:text-slate-200"
+                onClick={() => setSelectedTickets(new Set())}
+              >
+                Deseleziona
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
       <div className="rounded-xl border border-slate-800 bg-surface overflow-hidden">
         {loading && selectedUuid !== null ? (
           <div className="p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]">
             <div className="relative w-10 h-10">
               <div className="absolute inset-0 rounded-full border-2 border-slate-700" />
               <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-cyan-500 animate-spin" />
-              <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-cyan-400 animate-spin" style={{ animationDuration: "0.8s", animationDirection: "reverse" }} />
             </div>
             <p className="text-sm text-slate-400 animate-pulse">Loading trades…</p>
-            <div className="flex gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-500/80 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 rounded-full bg-cyan-500/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 rounded-full bg-cyan-500/40 animate-bounce" style={{ animationDelay: "300ms" }} />
-            </div>
           </div>
         ) : filteredTrades.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-sm">
@@ -251,6 +497,7 @@ function TradesPageContent() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-700 text-left text-slate-400 uppercase tracking-wide text-xs">
+                  <th className="px-2 py-3 font-medium w-8" title="Select for AI">Sel</th>
                   <th className="px-4 py-3 font-medium">Close time</th>
                   <th className="px-4 py-3 font-medium">Symbol</th>
                   <th className="px-4 py-3 font-medium">Type</th>
@@ -258,66 +505,152 @@ function TradesPageContent() {
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
-                  <th className="px-4 py-3 font-medium">VAR %</th>
+                  <th className="px-4 py-3 font-medium" title="Rischio % preso (size × stop / equity)">Risk %</th>
+                  <th className="px-4 py-3 font-medium" title="Sanity: verde ok, giallo borderline, rosso revenge/risk">Sanity</th>
+                  <th className="px-4 py-3 font-medium w-28">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTrades.map((t) => {
+                {paginatedTrades.map((t, idx) => {
+                  const globalIndex = sortedByTime.findIndex((x) => x.ticket === t.ticket);
                   const type = normalizeType(t.type);
                   const pct = profitPctOfBalance(t.profit, balance);
+                  const { riskPct } = riskPctAndEquity[globalIndex] ?? { riskPct: null };
+                  const consec = consecutiveLossesBefore[globalIndex] ?? 0;
+                  const maxRisk = rules?.max_risk_per_trade_pct ?? 1;
+                  const revengeThr = rules?.revenge_threshold_trades ?? 2;
+                  const sanity = getSanityLevel({
+                    consecutiveLossesBefore: consec,
+                    riskPct,
+                    maxRiskPct: maxRisk,
+                    revengeThreshold: revengeThr
+                  });
+                  const meta = rowMeta.get(t.ticket);
+                  const isRevengeTag = meta?.revenge ?? false;
+                  const rowTitle = `Ticket ${t.ticket}${t.comment ? ` · ${t.comment}` : ""}`;
+
                   return (
                     <tr
                       key={t.ticket}
-                      className="border-b border-slate-800/80 hover:bg-slate-800/30"
+                      className={`border-b border-slate-800/80 hover:bg-slate-800/40 ${
+                        idx % 2 === 0 ? "bg-slate-900/50" : "bg-slate-800/30"
+                      }`}
                     >
-                      <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
+                      <td className="px-2 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedTickets.has(t.ticket)}
+                          onChange={() => toggleSelect(t.ticket)}
+                          title="Seleziona per Analizza selezionati"
+                          className="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-slate-300 whitespace-nowrap" title={rowTitle}>
                         {formatTradeDate(t.closeTime)}
                       </td>
-                      <td className="px-4 py-3 text-slate-200 font-medium">
+                      <td className="px-4 py-3 text-slate-200 font-medium" title={t.symbol}>
                         {t.symbol}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={
-                            type === "Buy"
-                              ? "text-emerald-400 font-medium"
-                              : "text-red-400 font-medium"
-                          }
-                        >
+                        <span className={type === "Buy" ? "text-emerald-400 font-medium" : "text-red-400 font-medium"}>
                           {type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-slate-300" title={`Lots: ${t.lots}`}>
                         {t.lots > 0 ? t.lots.toFixed(2) : "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
-                        {t.openPrice.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-slate-300">
-                        {t.closePrice.toFixed(2)}
-                      </td>
+                      <td className="px-4 py-3 text-slate-300">{t.openPrice.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-slate-300">{t.closePrice.toFixed(2)}</td>
                       <td
-                        className={`px-4 py-3 font-medium ${
-                          t.profit >= 0 ? "text-emerald-400" : "text-red-400"
-                        }`}
+                        className={`px-4 py-3 font-medium ${t.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                        title={`Ticket ${t.ticket}. ${t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)} ${currency}${pct != null ? ` (${(t.profit >= 0 ? "+" : "")}${pct.toFixed(2)}% sul conto)` : ""}`}
                       >
                         {t.profit >= 0 ? "+" : ""}
                         {t.profit.toFixed(2)} {currency}
+                        {pct != null && (
+                          <span className="text-slate-500 ml-1">
+                            ({t.profit >= 0 ? "+" : ""}{pct.toFixed(2)}%)
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
-                        {pct != null ? (
+                        {riskPct != null ? (
                           <span
                             className={
-                              t.profit >= 0
-                                ? "text-emerald-400"
-                                : "text-red-400"
+                              maxRisk > 0 && riskPct > maxRisk ? "text-red-400 font-medium" : "text-slate-300"
                             }
+                            title="Rischio % equity a rischio (size × stop / equity)"
                           >
-                            {t.profit >= 0 ? "+" : ""}
-                            {pct.toFixed(2)}%
+                            {riskPct.toFixed(2)}%
                           </span>
                         ) : (
                           "—"
+                        )}
+                      </td>
+                      <td className="px-4 py-3" title={sanity.tooltip}>
+                        <SanityBadge level={sanity.level} tooltip={sanity.tooltip} />
+                      </td>
+                      <td className="px-4 py-2 flex items-center gap-1">
+                        {editNoteTicket === t.ticket ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editNoteValue}
+                              onChange={(e) => setEditNoteValue(e.target.value)}
+                              placeholder="Note"
+                              className="w-20 rounded border border-slate-600 bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") setNote(t.ticket, editNoteValue);
+                                if (e.key === "Escape") {
+                                  setEditNoteTicket(null);
+                                  setEditNoteValue("");
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="text-cyan-400 text-xs"
+                              onClick={() => setNote(t.ticket, editNoteValue)}
+                            >
+                              Ok
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              title="Edit note"
+                              className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200"
+                              onClick={() => {
+                                setEditNoteTicket(t.ticket);
+                                setEditNoteValue(meta?.note ?? "");
+                              }}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              title={isRevengeTag ? "Rimuovi tag revenge" : "Tag revenge"}
+                              className={`p-1 rounded hover:bg-slate-700 ${isRevengeTag ? "text-amber-400" : "text-slate-400 hover:text-slate-200"}`}
+                              onClick={() => toggleRevenge(t.ticket)}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete (hide from list)"
+                              className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-red-400"
+                              onClick={() => deleteTrade(t.ticket)}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
                         )}
                       </td>
                     </tr>
@@ -327,29 +660,91 @@ function TradesPageContent() {
             </table>
           </div>
         )}
-        {filteredTrades.length > 0 && (
-          <div className="px-4 py-2 border-t border-slate-800 text-xs text-slate-500">
-            Showing {filteredTrades.length}
-            {filteredTrades.length !== trades.length
-              ? ` of ${trades.length} trades`
-              : " trades"}
+
+        {filteredTrades.length > 0 && totalPages > 1 && (
+          <div className="px-4 py-3 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-slate-300 disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="text-slate-400 text-sm">
+                Page {page + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-slate-300 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      {aiModal.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setAiModal({ open: false })}
+        >
+          <div
+            className="rounded-xl border border-slate-700 bg-slate-900 p-6 max-w-lg w-full shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-slate-100 mb-3">AI Insight</h3>
+            <p className="text-sm text-slate-300 whitespace-pre-wrap mb-4">{aiModal.insight.summary}</p>
+            {aiModal.insight.patterns.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs text-slate-500 uppercase mb-1">Pattern</p>
+                <ul className="list-disc list-inside text-sm text-slate-300">
+                  {aiModal.insight.patterns.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {aiModal.insight.emotional.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs text-slate-500 uppercase mb-1">Emotivo</p>
+                <ul className="list-disc list-inside text-sm text-slate-300">
+                  {aiModal.insight.emotional.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button
+              type="button"
+              className="mt-4 rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-slate-200"
+              onClick={() => setAiModal({ open: false })}
+            >
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function TradesPage() {
   return (
-    <Suspense fallback={
-      <div className="space-y-6">
-        <div className="h-8 w-48 rounded bg-slate-800 animate-pulse" />
-        <div className="h-64 rounded-xl border border-slate-800 bg-slate-800/30 flex items-center justify-center text-slate-500 text-sm">
-          Loading…
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="h-8 w-48 rounded bg-slate-800 animate-pulse" />
+          <div className="h-64 rounded-xl border border-slate-800 bg-slate-800/30 flex items-center justify-center text-slate-500 text-sm">
+            Loading…
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <TradesPageContent />
     </Suspense>
   );

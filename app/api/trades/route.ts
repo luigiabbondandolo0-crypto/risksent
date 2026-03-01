@@ -14,6 +14,7 @@ export type TradeRow = {
   closePrice: number;
   profit: number;
   comment?: string;
+  stopLoss?: number | null;
 };
 
 function normalizeOrderType(o: Record<string, unknown>): string {
@@ -49,6 +50,8 @@ function parseOrders(raw: unknown): TradeRow[] {
     )
     .map((o: Record<string, unknown>) => {
       const ex = (o.ex as Record<string, unknown>) ?? {};
+      const sl = o.stopLoss ?? ex.stop_loss ?? o.sl;
+      const stopLossVal = sl != null && Number.isFinite(Number(sl)) ? Number(sl) : null;
       return {
         ticket: Number(o.ticket) ?? 0,
         openTime: String(o.openTime ?? ""),
@@ -59,7 +62,8 @@ function parseOrders(raw: unknown): TradeRow[] {
         openPrice: Number(o.openPrice ?? ex.open_price) ?? 0,
         closePrice: Number(o.closePrice ?? ex.close_price) ?? 0,
         profit: Number(o.profit ?? ex.profit) ?? 0,
-        comment: o.comment != null ? String(o.comment) : undefined
+        comment: o.comment != null ? String(o.comment) : undefined,
+        stopLoss: stopLossVal
       };
     });
 }
@@ -133,10 +137,21 @@ export async function GET(req: NextRequest) {
       if (summary?.currency) currency = String(summary.currency);
       if (Number.isFinite(summary?.balance)) balance = Number(summary.balance);
     }
+    const { data: appUser } = await supabase
+      .from("app_user")
+      .select("max_risk_per_trade_pct, revenge_threshold_trades, max_exposure_pct")
+      .eq("id", user.id)
+      .single();
+    const rules = {
+      max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
+      revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 2,
+      max_exposure_pct: Number(appUser?.max_exposure_pct) ?? 6
+    };
     return NextResponse.json({
       trades,
       currency,
-      balance
+      balance,
+      rules
     });
   } catch (e) {
     return NextResponse.json(
