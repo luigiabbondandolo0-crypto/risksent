@@ -1,13 +1,36 @@
 "use client";
 
+/**
+ * DATA SOURCES (what is real vs mock):
+ * - Rules values: REAL from DB (app_user).
+ * - Live status badges (Safe/Warning/Breach): REAL when account linked + MetaAPI ok; otherwise no live data (badges show "—" or "No data").
+ * - Current exposure bar: REAL from MetaAPI open positions when account linked.
+ * - Alerts list: REAL from DB (alert table).
+ * - Telegram linked: REAL from DB (app_user.telegram_chat_id).
+ * - AI "Analyze my rules": MOCK (stub response until AI is wired).
+ */
+
 import { useEffect, useState, FormEvent, ChangeEvent, useRef } from "react";
-import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, RefreshCw } from "lucide-react";
+import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, RefreshCw, Info, Unlink } from "lucide-react";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
   max_risk_per_trade_pct: 1,
   max_exposure_pct: 15,
   revenge_threshold_trades: 2
+} as const;
+
+const RECOMMENDED_RANGES: Record<string, string> = {
+  daily_loss_pct: "Industry 2–5%. FTMO uses 5%.",
+  max_risk_per_trade_pct: "Common 0.5–1%. FTMO 1%.",
+  max_exposure_pct: "Typical 10–20% total exposure.",
+  revenge_threshold_trades: "2–3 consecutive losses."
+};
+
+const PRESETS = {
+  "FTMO Standard": { daily_loss_pct: 5, max_risk_per_trade_pct: 1, max_exposure_pct: 15, revenge_threshold_trades: 2 },
+  Simplified: { daily_loss_pct: 4, max_risk_per_trade_pct: 0.8, max_exposure_pct: 12, revenge_threshold_trades: 2 },
+  "Aggressive Swing": { daily_loss_pct: 8, max_risk_per_trade_pct: 2, max_exposure_pct: 20, revenge_threshold_trades: 3 }
 } as const;
 
 type Rules = {
@@ -25,6 +48,10 @@ type AlertRow = {
   solution: string | null;
   alert_date: string;
   read: boolean;
+  rule_type?: string | null;
+  dismissed?: boolean;
+  acknowledged_at?: string | null;
+  acknowledged_note?: string | null;
 };
 
 type ExceedAlert = {
@@ -34,6 +61,11 @@ type ExceedAlert = {
   revenge_threshold_trades?: { current: number; recommended: number };
 };
 
+type LiveStatus = {
+  dailyLossPct: number | null;
+  currentExposurePct: number | null;
+} | null;
+
 const DEFAULT_RULES: Rules = {
   daily_loss_pct: 2,
   max_risk_per_trade_pct: 1,
@@ -42,10 +74,7 @@ const DEFAULT_RULES: Rules = {
   telegram_chat_id: null
 };
 
-function getInlineError(
-  field: keyof typeof SUGGESTED,
-  value: number
-): string | null {
+function getInlineError(field: keyof typeof SUGGESTED, value: number): string | null {
   const max = SUGGESTED[field];
   if (!Number.isFinite(value) || value <= max) return null;
   switch (field) {
@@ -60,6 +89,46 @@ function getInlineError(
     default:
       return `Suggested max: ${max}.`;
   }
+}
+
+function getRuleBadge(
+  ruleKey: string,
+  limit: number,
+  live: LiveStatus
+): { label: string; color: string } {
+  if (!live) return { label: "—", color: "text-slate-500" };
+  if (ruleKey === "daily_loss_pct" && live.dailyLossPct != null) {
+    const current = live.dailyLossPct;
+    if (current >= limit) return { label: "Breach imminent", color: "text-red-400" };
+    if (limit - current <= 1.5) return { label: "Warning – approaching limit", color: "text-amber-400" };
+    return { label: "Safe – within limit", color: "text-emerald-400" };
+  }
+  if (ruleKey === "max_exposure_pct" && live.currentExposurePct != null) {
+    const current = live.currentExposurePct;
+    if (current >= limit) return { label: "Breach imminent", color: "text-red-400" };
+    if (limit - current <= 2) return { label: "Warning – approaching limit", color: "text-amber-400" };
+    return { label: "Safe – within limit", color: "text-emerald-400" };
+  }
+  return { label: "—", color: "text-slate-500" };
+}
+
+function relativeTime(iso: string): string {
+  const d = new Date(iso);
+  const now = Date.now();
+  const diff = now - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  if (hours < 24) return `${hours} h ago`;
+  if (days < 7) return `${days} d ago`;
+  return d.toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" });
+}
+
+function maskChatId(chatId: string): string {
+  if (chatId.length <= 6) return "***";
+  return chatId.slice(0, 3) + "***" + chatId.slice(-3);
 }
 
 export default function RulesPage() {
@@ -78,6 +147,12 @@ export default function RulesPage() {
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [telegramLinking, setTelegramLinking] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [live, setLive] = useState<LiveStatus>(null);
+  const [alertFilter, setAlertFilter] = useState<"all" | "high" | "medium">("all");
+  const [ackModal, setAckModal] = useState<{ id: string; note: string } | null>(null);
+  const [testAlertSending, setTestAlertSending] = useState(false);
+  const [aiInsightOpen, setAiInsightOpen] = useState(false);
+  const [aiInsightText, setAiInsightText] = useState("");
   const pollLinkRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refetchRules = async () => {
@@ -96,12 +171,24 @@ export default function RulesPage() {
     return chatId;
   };
 
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/rules/status", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setLive(data.live ?? null);
+    } catch {
+      setLive(null);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       try {
-        const [rulesRes, alertsRes] = await Promise.all([
+        const [rulesRes, alertsRes, statusRes] = await Promise.all([
           fetch("/api/rules", { cache: "no-store" }),
-          fetch("/api/alerts", { cache: "no-store" })
+          fetch("/api/alerts", { cache: "no-store" }),
+          fetch("/api/rules/status", { cache: "no-store" })
         ]);
         if (rulesRes.ok) {
           const r = await rulesRes.json();
@@ -124,12 +211,21 @@ export default function RulesPage() {
           const a = await alertsRes.json();
           setAlerts(a.alerts ?? []);
         }
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          setLive(s.live ?? null);
+        }
       } catch {
         setMessage({ type: "error", text: "Failed to load rules" });
       } finally {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(fetchStatus, 60_000);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
@@ -150,6 +246,16 @@ export default function RulesPage() {
   const handleChange = (field: keyof typeof formValues) => (e: ChangeEvent<HTMLInputElement>) => {
     setFormValues((prev) => ({ ...prev, [field]: e.target.value }));
     setExceedAlert(null);
+  };
+
+  const handlePreset = (presetName: keyof typeof PRESETS) => {
+    const p = PRESETS[presetName];
+    setFormValues({
+      daily_loss_pct: String(p.daily_loss_pct),
+      max_risk_per_trade_pct: String(p.max_risk_per_trade_pct),
+      max_exposure_pct: String(p.max_exposure_pct),
+      revenge_threshold_trades: String(p.revenge_threshold_trades)
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -192,6 +298,7 @@ export default function RulesPage() {
         revenge_threshold_trades: String(revenge_threshold_trades)
       });
       setMessage({ type: "success", text: "Rules saved." });
+      await fetchStatus();
 
       const exceed: ExceedAlert = {};
       if (daily_loss_pct > SUGGESTED.daily_loss_pct) exceed.daily_loss_pct = { current: daily_loss_pct, recommended: SUGGESTED.daily_loss_pct };
@@ -206,6 +313,28 @@ export default function RulesPage() {
     }
   };
 
+  const updateAlert = async (id: string, updates: { read?: boolean; dismissed?: boolean; acknowledged?: boolean; acknowledged_note?: string }) => {
+    try {
+      const res = await fetch(`/api/alerts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, ...data.alert } : a)));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const filteredAlerts = alerts
+    .filter((a) => !a.dismissed)
+    .filter((a) => alertFilter === "all" || a.severity === alertFilter);
+
+  const readCount = alerts.filter((a) => a.read && !a.dismissed).length;
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -216,7 +345,7 @@ export default function RulesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header>
         <h1 className="text-xl font-semibold text-slate-50">Risk Rules & Alerts</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -224,121 +353,95 @@ export default function RulesPage() {
         </p>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[1.2fr,1fr]">
-        <div className="space-y-6">
-          <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <div className="flex items-center gap-2 mb-1">
-              <SlidersHorizontal className="h-4 w-4 text-slate-500" />
-              <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
+      <section className="flex flex-col gap-8 lg:flex-row">
+        <div className="flex-1 space-y-6">
+          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-cyan-400" />
+                <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Preset:</span>
+                <select
+                  className="rounded border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs text-slate-200"
+                  onChange={(e) => {
+                    const v = e.target.value as keyof typeof PRESETS | "";
+                    if (v) handlePreset(v);
+                  }}
+                  value=""
+                >
+                  <option value="">Apply preset…</option>
+                  {Object.keys(PRESETS).map((k) => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mb-4">These thresholds govern your alert triggers and sanity scoring.</p>
+            <p className="text-xs text-slate-500 mb-4">Thresholds govern alert triggers and sanity scoring.</p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-400" htmlFor="dailyLoss">
-                    Daily Loss Limit (%)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="dailyLoss"
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      placeholder="Suggested: 2"
-                      value={formValues.daily_loss_pct}
-                      onChange={handleChange("daily_loss_pct")}
-                      className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
-                        inlineErrors.daily_loss_pct ? "border-red-500/60 focus:ring-red-500/50" : "border-slate-700 focus:ring-cyan-500/50"
-                      }`}
-                    />
-                    <span className="text-slate-500 text-sm w-6">%</span>
+              {[
+                { key: "daily_loss_pct" as const, label: "Daily Loss Limit (%)", min: 0, max: 10, step: 0.5, unit: "%" },
+                { key: "max_risk_per_trade_pct" as const, label: "Max Risk Per Trade (%)", min: 0, max: 3, step: 0.1, unit: "%" },
+                { key: "max_exposure_pct" as const, label: "Max Total Exposure (%)", min: 0, max: 30, step: 0.5, unit: "%" },
+                { key: "revenge_threshold_trades" as const, label: "Revenge Trading Threshold", min: 0, max: 5, step: 1, unit: "losses" }
+              ].map(({ key, label, min, max, step, unit }) => {
+                const val = num(formValues[key]);
+                const badge = getRuleBadge(key, Number(rules[key]) || 0, live);
+                const limitNum = Number(rules[key]) || 0;
+                const badgeDetail =
+                  key === "daily_loss_pct" && live?.dailyLossPct != null
+                    ? `Current ${live.dailyLossPct.toFixed(1)}% vs limit ${limitNum}%`
+                    : key === "max_exposure_pct" && live?.currentExposurePct != null
+                    ? `Current ${live.currentExposurePct.toFixed(1)}% vs limit ${limitNum}%`
+                    : null;
+                return (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="text-xs font-medium text-slate-400" htmlFor={key}>{label}</label>
+                      <span className="inline-flex items-center gap-1 text-slate-500" title={RECOMMENDED_RANGES[key]}>
+                        <Info className="h-3 w-3" />
+                      </span>
+                      {!inlineErrors[key] && (
+                        <span className="text-[11px] text-emerald-500">Recommended: {RECOMMENDED_RANGES[key]}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        id={key}
+                        type="range"
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={Number.isFinite(val) ? val : min}
+                        onChange={(e) => setFormValues((prev) => ({ ...prev, [key]: e.target.value }))}
+                        className="flex-1 h-2 rounded-lg appearance-none bg-slate-700 accent-cyan-500"
+                      />
+                      <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={formValues[key]}
+                        onChange={handleChange(key)}
+                        className="w-16 rounded border border-slate-700 bg-slate-900/50 px-2 py-1.5 text-sm text-slate-100"
+                      />
+                      <span className="text-slate-500 text-sm w-12">{unit}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      {inlineErrors[key] ? (
+                        <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors[key]}</p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500">{RECOMMENDED_RANGES[key]}</p>
+                      )}
+                      <span className={`text-xs ${badge.color}`} title={badgeDetail ?? undefined}>
+                        {badge.label}{badgeDetail ? ` (${badgeDetail})` : ""}
+                      </span>
+                    </div>
                   </div>
-                  {inlineErrors.daily_loss_pct ? (
-                    <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors.daily_loss_pct}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500">Maximum allowable loss in a single trading day before alerts trigger. Suggested max: 2%.</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-400" htmlFor="maxRisk">
-                    Max Risk Per Trade (%)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="maxRisk"
-                      type="number"
-                      min={0}
-                      step={0.1}
-                      placeholder="Suggested: 1"
-                      value={formValues.max_risk_per_trade_pct}
-                      onChange={handleChange("max_risk_per_trade_pct")}
-                      className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
-                        inlineErrors.max_risk_per_trade_pct ? "border-red-500/60 focus:ring-red-500/50" : "border-slate-700 focus:ring-cyan-500/50"
-                      }`}
-                    />
-                    <span className="text-slate-500 text-sm w-6">%</span>
-                  </div>
-                  {inlineErrors.max_risk_per_trade_pct ? (
-                    <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors.max_risk_per_trade_pct}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500">Maximum account equity risked on any single trade position. Suggested max: 1%.</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-400" htmlFor="maxExposure">
-                    Max Total Exposure (%)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="maxExposure"
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      placeholder="Suggested: 15"
-                      value={formValues.max_exposure_pct}
-                      onChange={handleChange("max_exposure_pct")}
-                      className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
-                        inlineErrors.max_exposure_pct ? "border-red-500/60 focus:ring-red-500/50" : "border-slate-700 focus:ring-cyan-500/50"
-                      }`}
-                    />
-                    <span className="text-slate-500 text-sm w-6">%</span>
-                  </div>
-                  {inlineErrors.max_exposure_pct ? (
-                    <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors.max_exposure_pct}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500">Maximum combined exposure across all open positions. Suggested max: 15%.</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-slate-400" htmlFor="revenge">
-                    Revenge Trading Threshold
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="revenge"
-                      type="number"
-                      min={0}
-                      step={1}
-                      placeholder="Suggested: 2"
-                      value={formValues.revenge_threshold_trades}
-                      onChange={handleChange("revenge_threshold_trades")}
-                      className={`flex-1 rounded-lg border bg-slate-900/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 outline-none focus:ring-1 ${
-                        inlineErrors.revenge_threshold_trades ? "border-red-500/60 focus:ring-red-500/50" : "border-slate-700 focus:ring-cyan-500/50"
-                      }`}
-                    />
-                    <span className="text-slate-500 text-sm">losses</span>
-                  </div>
-                  {inlineErrors.revenge_threshold_trades ? (
-                    <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors.revenge_threshold_trades}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-500">Number of consecutive losses before a trade is flagged for revenge trading. Suggested max: 2.</p>
-                  )}
-                </div>
-              </div>
+                );
+              })}
 
               {message && (
                 <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
@@ -356,89 +459,156 @@ export default function RulesPage() {
             </form>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-surface p-5">
+          {live && (live.dailyLossPct != null || live.currentExposurePct != null) && (
+            <div className="rounded-xl border border-cyan-500/20 bg-surface p-4">
+              <h3 className="text-xs font-medium text-slate-300 mb-2">Current Risk Exposure</h3>
+              {live.currentExposurePct != null ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Exposure {live.currentExposurePct.toFixed(1)}% vs limit {rules.max_exposure_pct}%</span>
+                    <span className="text-emerald-400">
+                      {Math.max(0, rules.max_exposure_pct - live.currentExposurePct).toFixed(1)}% headroom
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-700 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${live.currentExposurePct >= rules.max_exposure_pct ? "bg-red-500" : live.currentExposurePct >= rules.max_exposure_pct * 0.8 ? "bg-amber-500" : "bg-cyan-500"}`}
+                      style={{ width: `${Math.min(100, (live.currentExposurePct / Math.max(1, rules.max_exposure_pct)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">No open positions. Exposure updates when you have positions.</p>
+              )}
+              <p className="text-[10px] text-slate-500 mt-2">Live from connected account (MetaAPI).</p>
+            </div>
+          )}
+
+          {!live && (
+            <p className="text-xs text-slate-500 rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2">
+              Connect an account in Dashboard to see live status badges and exposure bar.
+            </p>
+          )}
+
+          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6">
             <div className="flex items-center gap-2 mb-1">
-              <Link2 className="h-4 w-4 text-slate-500" />
+              <Link2 className="h-4 w-4 text-cyan-400" />
               <h2 className="text-sm font-medium text-slate-200">Link Telegram</h2>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              One-time link: open the link and send /start to the bot. You will then receive the same alerts here and on Telegram. No other commands needed.
+              One-time link: open the link and send /start to the bot. No other commands needed.
             </p>
             <div className="space-y-3">
               {rules.telegram_chat_id ? (
-                <p className="text-sm text-emerald-400 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Chat linked. You will receive alerts on Telegram and in Alerts Center below.
-                </p>
+                <>
+                  <p className="text-sm text-emerald-400 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Connected (chat_id: {maskChatId(rules.telegram_chat_id)})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={testAlertSending}
+                      onClick={async () => {
+                        setTestAlertSending(true);
+                        setTelegramMessage(null);
+                        try {
+                          const res = await fetch("/api/bot/send-test-alert", { method: "POST" });
+                          const data = await res.json();
+                          if (res.ok) {
+                            setTelegramMessage({ type: "success", text: "Test alert sent. Check Telegram." });
+                          } else {
+                            setTelegramMessage({ type: "error", text: data.error ?? "Send failed" });
+                          }
+                        } catch {
+                          setTelegramMessage({ type: "error", text: "Network error" });
+                        } finally {
+                          setTestAlertSending(false);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                    >
+                      {testAlertSending ? "Sending…" : "Send test alert"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!confirm("Disconnect Telegram? You will stop receiving alerts there.")) return;
+                        try {
+                          const res = await fetch("/api/rules", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ telegram_chat_id: null })
+                          });
+                          if (res.ok) {
+                            setRules((prev) => ({ ...prev, telegram_chat_id: null }));
+                            setTelegramMessage({ type: "success", text: "Disconnected." });
+                          }
+                        } catch {
+                          setTelegramMessage({ type: "error", text: "Request failed" });
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
+                    >
+                      <Unlink className="h-4 w-4" /> Disconnect
+                    </button>
+                  </div>
+                </>
               ) : (
-                <p className="text-xs text-slate-400">No chat linked. Use &quot;Link now&quot; and complete /start in the bot.</p>
+                <>
+                  <p className="text-xs text-slate-400">No chat linked. Use &quot;Link now&quot; and complete /start in the bot.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={telegramLinking}
+                      onClick={async () => {
+                        setTelegramLinking(true);
+                        setTelegramLink(null);
+                        setTelegramMessage(null);
+                        if (pollLinkRef.current) {
+                          clearInterval(pollLinkRef.current);
+                          pollLinkRef.current = null;
+                        }
+                        try {
+                          const res = await fetch("/api/bot/link-telegram", { method: "POST" });
+                          const data = await res.json();
+                          if (res.ok && data.link) {
+                            setTelegramLink(data.link);
+                            window.open(data.link, "_blank");
+                            setTelegramMessage({ type: "success", text: "Open the link and send /start. Status will update automatically." });
+                            let elapsed = 0;
+                            const POLL_MS = 2000;
+                            const MAX_MS = 30000;
+                            pollLinkRef.current = setInterval(async () => {
+                              elapsed += POLL_MS;
+                              const chatId = await refetchRules();
+                              if (chatId) {
+                                if (pollLinkRef.current) clearInterval(pollLinkRef.current);
+                                pollLinkRef.current = null;
+                                setTelegramMessage({ type: "success", text: "Chat linked." });
+                                return;
+                              }
+                              if (elapsed >= MAX_MS && pollLinkRef.current) {
+                                clearInterval(pollLinkRef.current);
+                                pollLinkRef.current = null;
+                              }
+                            }, POLL_MS);
+                          } else {
+                            setTelegramMessage({ type: "error", text: data.error ?? "Failed to create link" });
+                          }
+                        } catch {
+                          setTelegramMessage({ type: "error", text: "Network error" });
+                        } finally {
+                          setTelegramLinking(false);
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      {telegramLinking ? "Generating…" : "Link now"}
+                    </button>
+                  </div>
+                </>
               )}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={telegramLinking}
-                  onClick={async () => {
-                    setTelegramLinking(true);
-                    setTelegramLink(null);
-                    setTelegramMessage(null);
-                    if (pollLinkRef.current) {
-                      clearInterval(pollLinkRef.current);
-                      pollLinkRef.current = null;
-                    }
-                    try {
-                      const res = await fetch("/api/bot/link-telegram", { method: "POST" });
-                      const data = await res.json();
-                      if (res.ok && data.link) {
-                        setTelegramLink(data.link);
-                        window.open(data.link, "_blank");
-                        setTelegramMessage({ type: "success", text: "Open the link and send /start. Status will update automatically." });
-                        let elapsed = 0;
-                        const POLL_MS = 2000;
-                        const MAX_MS = 30000;
-                        pollLinkRef.current = setInterval(async () => {
-                          elapsed += POLL_MS;
-                          const chatId = await refetchRules();
-                          if (chatId) {
-                            if (pollLinkRef.current) clearInterval(pollLinkRef.current);
-                            pollLinkRef.current = null;
-                            setTelegramMessage({ type: "success", text: "Chat linked." });
-                            return;
-                          }
-                          if (elapsed >= MAX_MS && pollLinkRef.current) {
-                            clearInterval(pollLinkRef.current);
-                            pollLinkRef.current = null;
-                          }
-                        }, POLL_MS);
-                      } else {
-                        setTelegramMessage({ type: "error", text: data.error ?? "Failed to create link" });
-                      }
-                    } catch {
-                      setTelegramMessage({ type: "error", text: "Network error" });
-                    } finally {
-                      setTelegramLinking(false);
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
-                >
-                  <Link2 className="h-4 w-4" />
-                  {telegramLinking ? "Generating…" : "Link now"}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setTelegramMessage(null);
-                    const chatId = await refetchRules();
-                    if (!chatId) {
-                      setTelegramMessage({ type: "error", text: "No chat linked. Use Link now and send /start in the bot." });
-                      return;
-                    }
-                    setTelegramMessage({ type: "success", text: "Chat linked." });
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
-                >
-                  Verify link
-                </button>
-              </div>
               {telegramMessage && (
                 <p className={`text-sm ${telegramMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
                   {telegramMessage.text}
@@ -451,9 +621,39 @@ export default function RulesPage() {
               )}
             </div>
           </div>
+
+          <div className="rounded-xl border border-cyan-500/20 bg-surface p-4">
+            <button
+              type="button"
+              onClick={async () => {
+                setAiInsightOpen(true);
+                setAiInsightText("Analyzing your rules and recent trades…");
+                try {
+                  const res = await fetch("/api/ai/rules-insight", { method: "POST" });
+                  const data = await res.json();
+                  setAiInsightText(data.insight ?? "No insight available. (Stub: connect AI later.)");
+                } catch {
+                  setAiInsightText("Request failed. (Stub: connect AI later.)");
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
+            >
+              <Lightbulb className="h-4 w-4" /> Analyze my rules with AI
+            </button>
+            {aiInsightOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAiInsightOpen(false)}>
+                <div className="rounded-xl border border-slate-700 bg-slate-900 p-6 max-w-lg w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-lg font-semibold text-slate-100 mb-3">AI rules insight</h3>
+                  <p className="text-sm text-slate-300 whitespace-pre-wrap">{aiInsightText}</p>
+                  <p className="text-[10px] text-slate-500 mt-2">Data: MOCK (stub until AI is wired).</p>
+                  <button type="button" className="mt-4 rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-slate-200" onClick={() => setAiInsightOpen(false)}>Close</button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 lg:min-w-[320px]">
           {exceedAlert && Object.keys(exceedAlert).length > 0 && (
             <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4">
               <div className="flex items-center gap-2 text-amber-300 font-medium mb-2">
@@ -487,18 +687,12 @@ export default function RulesPage() {
                   </li>
                 )}
               </ul>
-              <button
-                type="button"
-                onClick={() => setExceedAlert(null)}
-                className="mt-3 text-xs text-slate-400 hover:text-slate-200"
-              >
-                Dismiss
-              </button>
+              <button type="button" onClick={() => setExceedAlert(null)} className="mt-3 text-xs text-slate-400 hover:text-slate-200">Dismiss</button>
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-800 bg-surface p-5">
-            <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6">
+            <div className="flex items-center justify-between gap-2 mb-2">
               <h2 className="text-sm font-medium text-slate-200">Alerts Center</h2>
               <button
                 type="button"
@@ -514,40 +708,70 @@ export default function RulesPage() {
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-3">
-              Same notifications you receive on Telegram. Shown here for history; address high-severity alerts first.
-            </p>
-            <div className="flex gap-3 mb-3">
-              <span className="flex items-center gap-1.5 text-[10px] text-red-400"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> High</span>
-              <span className="flex items-center gap-1.5 text-[10px] text-amber-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Medium</span>
+            <p className="text-xs text-slate-500 mb-3">High alerts first.</p>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-[10px] text-slate-500">Show:</span>
+              {(["all", "high", "medium"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setAlertFilter(f)}
+                  className={`rounded px-2 py-1 text-xs capitalize ${alertFilter === f ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "border border-slate-600 text-slate-400 hover:bg-slate-800/50"}`}
+                >
+                  {f}
+                </button>
+              ))}
+              {readCount > 0 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await Promise.all(
+                      alerts.filter((a) => a.read && !a.dismissed).map((a) => updateAlert(a.id, { read: false }))
+                    );
+                    const res = await fetch("/api/alerts", { cache: "no-store" });
+                    if (res.ok) {
+                      const a = await res.json();
+                      setAlerts(a.alerts ?? []);
+                    }
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-200"
+                >
+                  Clear all read
+                </button>
+              )}
             </div>
-            {alerts.length === 0 ? (
-              <p className="text-xs text-slate-500">No alerts yet. Alerts will appear here when risk rules are breached.</p>
+            {filteredAlerts.length === 0 ? (
+              <p className="text-xs text-slate-500">No alerts. Alerts appear here when risk rules are breached.</p>
             ) : (
-              <div className="space-y-3">
-                {alerts.slice(0, 10).map((a) => (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto">
+                {filteredAlerts.map((a) => (
                   <div
                     key={a.id}
-                    className={`rounded-lg border p-3 ${
-                      a.severity === "high" ? "border-red-500/40 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"
-                    }`}
+                    className={`rounded-lg border p-3 ${a.severity === "high" ? "border-red-500/40 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"}`}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                       <span className={`text-xs font-medium ${a.severity === "high" ? "text-red-300" : "text-amber-300"}`}>
                         {a.severity === "high" ? "High" : "Medium"} {!a.read && "• New"}
                       </span>
                       <span className="text-[10px] text-slate-500">
-                        {new Date(a.alert_date).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
+                        {new Date(a.alert_date).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })} – {relativeTime(a.alert_date)}
                       </span>
                     </div>
-                    <p className="text-xs font-medium text-slate-300 mb-1">Problem detected</p>
+                    <p className="text-xs font-medium text-slate-300 mb-1">Problem</p>
                     <p className="text-xs text-slate-400 mb-2">{a.message}</p>
                     {a.solution && (
                       <>
-                        <p className="text-xs font-medium text-slate-300 mb-1 flex items-center gap-1"><Lightbulb className="h-3 w-3" /> Recommended action</p>
+                        <p className="text-xs font-medium text-slate-300 mb-1 flex items-center gap-1"><Lightbulb className="h-3 w-3" /> Action</p>
                         <p className="text-xs text-slate-400">{a.solution}</p>
                       </>
                     )}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {!a.read && (
+                        <button type="button" className="text-xs text-cyan-400 hover:underline" onClick={() => updateAlert(a.id, { read: true })}>Mark as read</button>
+                      )}
+                      <button type="button" className="text-xs text-slate-400 hover:underline" onClick={() => updateAlert(a.id, { dismissed: true })}>Dismiss</button>
+                      <button type="button" className="text-xs text-slate-400 hover:underline" onClick={() => setAckModal({ id: a.id, note: "" })}>Acknowledge</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -555,6 +779,43 @@ export default function RulesPage() {
           </div>
         </div>
       </section>
+
+      {ackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAckModal(null)}>
+          <div className="rounded-xl border border-slate-700 bg-slate-900 p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-semibold text-slate-200 mb-2">Acknowledge alert</h3>
+            <input
+              type="text"
+              placeholder="Optional note (e.g. Closed position)"
+              value={ackModal.note}
+              onChange={(e) => setAckModal((prev) => prev ? { ...prev, note: e.target.value } : null)}
+              className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="rounded-lg bg-cyan-600 hover:bg-cyan-500 px-3 py-2 text-sm text-white"
+                onClick={async () => {
+                  await updateAlert(ackModal.id, { acknowledged: true, acknowledged_note: ackModal.note || undefined });
+                  setAckModal(null);
+                  const res = await fetch("/api/alerts", { cache: "no-store" });
+                  if (res.ok) {
+                    const a = await res.json();
+                    setAlerts(a.alerts ?? []);
+                  }
+                }}
+              >
+                Save
+              </button>
+              <button type="button" className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-300" onClick={() => setAckModal(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="text-[10px] text-slate-600 border-t border-slate-800 pt-4">
+        Rules & alerts: DB. Live badges & exposure: MetaAPI when account linked. AI insight: stub.
+      </footer>
     </div>
   );
 }
