@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
@@ -21,32 +21,64 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectTo = searchParams.get("redirectedFrom") ?? "/dashboard";
+  const redirectTo = useMemo(
+    () => searchParams.get("redirectedFrom") ?? "/dashboard",
+    [searchParams]
+  );
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    
+    // Basic validation
+    if (!email.trim() || !password.trim()) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password
       });
 
       if (signInError) {
-        setError(signInError.message);
+        // Better error messages
+        let errorMessage = signInError.message;
+        if (signInError.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password. Please try again.";
+        } else if (signInError.message.includes("Email not confirmed")) {
+          errorMessage = "Please confirm your email address before logging in.";
+        }
+        setError(errorMessage);
         setLoading(false);
         return;
       }
 
-      router.push(redirectTo);
+      // Successful login - redirect immediately
+      if (data?.user) {
+        router.push(redirectTo);
+        // Don't set loading to false here - we're redirecting
+      } else {
+        setError("Login failed. Please try again.");
+        setLoading(false);
+      }
     } catch (err) {
-      setError("Unexpected error. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Unexpected error. Please try again.";
+      setError(errorMessage);
       setLoading(false);
     }
-  };
+  }, [email, password, redirectTo, router]);
 
   return (
     <div className="flex flex-col items-center mt-12">
@@ -117,7 +149,13 @@ function LoginForm() {
           >
             Create one here
           </Link>
-          .
+          .{" "}
+          <Link
+            href="/reset-password"
+            className="text-slate-200 hover:text-emerald-300"
+          >
+            Forgot password?
+          </Link>
         </p>
 
         <div className="mt-4 flex justify-between text-[11px] text-slate-500">

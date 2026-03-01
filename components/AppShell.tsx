@@ -11,7 +11,8 @@ const APP_PATHS = [
   "/ai-coach",
   "/add-account",
   "/accounts",
-  "/admin"
+  "/admin",
+  "/change-password"
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

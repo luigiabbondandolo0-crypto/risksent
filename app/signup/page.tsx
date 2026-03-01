@@ -28,7 +28,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password
       });
@@ -39,14 +39,27 @@ export default function SignupPage() {
         return;
       }
 
+      // Send welcome email (non-blocking)
+      if (signUpData.user) {
+        try {
+          await fetch("/api/send-welcome-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (emailErr) {
+          // Don't fail signup if email fails
+          console.warn("Failed to send welcome email:", emailErr);
+        }
+      }
+
       setInfo(
-        "Account created. Check your inbox for a confirmation link or log in if email confirmations are disabled."
+        "Account created successfully! Check your inbox for a welcome email and confirmation link (if required)."
       );
 
       // Soft redirect to login after a short delay
       setTimeout(() => {
         router.push("/login");
-      }, 2000);
+      }, 3000);
     } catch (err) {
       setError("Unexpected error. Please try again.");
       setLoading(false);

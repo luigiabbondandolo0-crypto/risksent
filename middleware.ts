@@ -11,7 +11,8 @@ const PROTECTED_PATHS = [
   "/add-account",
   "/accounts",
   "/admin",
-  "/live-monitoring"
+  "/live-monitoring",
+  "/change-password"
 ];
 
 export async function middleware(req: NextRequest) {

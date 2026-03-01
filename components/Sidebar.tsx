@@ -9,6 +9,7 @@ import {
   CreditCard,
   Shield,
   Activity,
+  Key,
 } from "lucide-react";
 
 const navItems = [
@@ -55,6 +56,13 @@ export function Sidebar() {
               <span className="uppercase tracking-wide">{label}</span>
             </Link>
           ))}
+          <Link
+            href="/change-password"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
+          >
+            <Key className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            <span className="uppercase tracking-wide">Change Password</span>
+          </Link>
         </div>
         <div className="mt-6 pt-4 border-t border-slate-800/60">
           <span className="uppercase tracking-wider text-[11px] text-slate-600 mb-3 block font-medium">
