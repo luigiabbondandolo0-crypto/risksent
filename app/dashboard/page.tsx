@@ -400,22 +400,6 @@ export default function DashboardPage() {
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
 
-        {/* Max DD — highest registered, $ + % + date */}
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Max DD</div>
-          <div className="mt-1 text-xl font-bold text-red-400">
-            {stats?.maxDdDollars != null ? `${stats.maxDdDollars < 0 ? "" : "-"}${Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}
-          </div>
-          {stats?.highestDdPct != null && (
-            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-sm font-semibold">
-              -{stats.highestDdPct.toFixed(2)}%
-            </span>
-          )}
-          {stats?.peakDdDate && (
-            <p className="mt-2 text-[11px] text-slate-500">{new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
-          )}
-        </div>
-
         {/* Average Win + Average Loss + ratio + profit factor */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Average Win / Loss</div>
@@ -433,6 +417,22 @@ export default function DashboardPage() {
             <span><span className="text-slate-500">Ratio (win/loss)</span> <span className="font-bold text-white">{stats?.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span></span>
             <span><span className="text-slate-500">Profit factor</span> <span className="font-bold text-white">{stats?.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}</span></span>
           </div>
+        </div>
+
+        {/* Max DD — highest registered, $ + % + date */}
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+          <div className="text-xs text-slate-400 uppercase tracking-wide">Max DD</div>
+          <div className="mt-1 text-xl font-bold text-red-400">
+            {stats?.maxDdDollars != null ? `${stats.maxDdDollars < 0 ? "" : "-"}${Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}
+          </div>
+          {stats?.highestDdPct != null && (
+            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-sm font-semibold">
+              -{stats.highestDdPct.toFixed(2)}%
+            </span>
+          )}
+          {stats?.peakDdDate && (
+            <p className="mt-2 text-[11px] text-slate-500">{new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+          )}
         </div>
 
         {/* Account Health */}
@@ -462,15 +462,13 @@ export default function DashboardPage() {
             const isFuture = new Date(year, month, day) > now;
             const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
             const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
-            return (
-              <div
-                key={dateStr}
-                className={`min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
-                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
-                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
-                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
-                }`}
-              >
+            const cellClass = `min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
+              isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
+              dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
+              "border-slate-700/50 bg-slate-800/30 text-slate-500"
+            }`;
+            const content = (
+              <>
                 <span className="text-xs font-medium text-slate-300">{day}</span>
                 {dayData && (
                   <>
@@ -480,6 +478,20 @@ export default function DashboardPage() {
                     <span className="text-[10px] text-slate-400">{dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}</span>
                   </>
                 )}
+              </>
+            );
+            return dayData ? (
+              <Link
+                key={dateStr}
+                href={`/trades?date=${dateStr}${selectedUuid ? `&uuid=${encodeURIComponent(selectedUuid)}` : ""}`}
+                className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
+                title={`View trades on ${dateStr}`}
+              >
+                {content}
+              </Link>
+            ) : (
+              <div key={dateStr} className={cellClass}>
+                {content}
               </div>
             );
           })}

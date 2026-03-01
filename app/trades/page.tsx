@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 
 function formatTradeDate(iso: string): string {
   const d = new Date(iso);
@@ -54,6 +55,7 @@ function accountLabel(a: Account): string {
 }
 
 export default function TradesPage() {
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -64,6 +66,14 @@ export default function TradesPage() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    const date = searchParams.get("date");
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setDateFrom(date);
+      setDateTo(date);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -79,9 +89,14 @@ export default function TradesPage() {
         }
         const list = body.accounts ?? [];
         setAccounts(list);
-        const first = list?.[0];
-        if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
-        else setSelectedUuid("");
+        const uuidFromUrl = searchParams.get("uuid");
+        if (uuidFromUrl && list.some((a: Account) => a.metaapi_account_id === uuidFromUrl)) {
+          setSelectedUuid(uuidFromUrl);
+        } else {
+          const first = list?.[0];
+          if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
+          else setSelectedUuid("");
+        }
       } catch (e) {
         console.error("[Trades] /api/accounts exception:", e);
         setError("Failed to load accounts");
