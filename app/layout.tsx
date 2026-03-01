@@ -8,7 +8,12 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "RiskSent – Trading Risk Dashboard",
-  description: "Ultra-clean dark fintech dashboard for MT4/MT5 traders."
+  description: "Ultra-clean dark fintech dashboard for MT4/MT5 traders.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png"
+  },
+  manifest: "/site.webmanifest"
 };
 
 export default function RootLayout({

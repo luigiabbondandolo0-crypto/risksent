@@ -57,8 +57,13 @@ function buildRealStats(
   maxDd: number | null;
   highestDdPct: number | null;
   peakDdDate: string | null;
+  maxDdDollars: number | null;
   dailyDdPct: number | null;
   avgRiskReward: number | null;
+  avgWin: number | null;
+  avgLoss: number | null;
+  avgWinPct: number | null;
+  avgLossPct: number | null;
   equityCurve: { date: string; value: number; pctFromStart: number }[];
   dailyStats: { date: string; profit: number; trades: number; wins: number }[];
   totalProfit: number;
@@ -75,8 +80,13 @@ function buildRealStats(
       maxDd: null,
       highestDdPct: null,
       peakDdDate: null,
+      maxDdDollars: null,
       dailyDdPct: null,
       avgRiskReward: null,
+      avgWin: null,
+      avgLoss: null,
+      avgWinPct: null,
+      avgLossPct: null,
       equityCurve: [
         {
           date: new Date().toISOString().slice(0, 10),
@@ -143,10 +153,11 @@ function buildRealStats(
     });
   }
 
-  // Max drawdown from curve + date of peak DD
+  // Max drawdown from curve + date of peak DD + max DD in dollars
   let peak = curve[0]?.value ?? initialBalance;
   let maxDdPct = 0;
   let peakDdDate: string | null = null;
+  let peakDdTroughValue = 0;
   for (let i = 1; i < curve.length; i++) {
     const v = curve[i]!.value;
     if (v > peak) peak = v;
@@ -154,18 +165,26 @@ function buildRealStats(
     if (dd > maxDdPct) {
       maxDdPct = dd;
       peakDdDate = curve[i]!.date;
+      peakDdTroughValue = v;
     }
   }
   const maxDd = maxDdPct > 0 ? -maxDdPct : null;
   const highestDdPct = maxDdPct > 0 ? maxDdPct : null;
+  const maxDdDollars =
+    maxDdPct > 0 && peak > 0 ? peak - peakDdTroughValue : null;
 
-  // Average risk/reward: avg win size / avg loss size (absolute)
+  // Average win/loss (absolute and % of initial balance) and risk/reward
   const winningProfits = valid.filter((o) => (o.profit ?? 0) > 0).map((o) => o.profit!);
   const losingProfits = valid.filter((o) => (o.profit ?? 0) < 0).map((o) => Math.abs(o.profit!));
-  const avgWin = winningProfits.length ? winningProfits.reduce((a, b) => a + b, 0) / winningProfits.length : 0;
-  const avgLoss = losingProfits.length ? losingProfits.reduce((a, b) => a + b, 0) / losingProfits.length : 0;
+  const avgWinVal = winningProfits.length ? winningProfits.reduce((a, b) => a + b, 0) / winningProfits.length : 0;
+  const avgLossVal = losingProfits.length ? losingProfits.reduce((a, b) => a + b, 0) / losingProfits.length : 0;
   const avgRiskReward =
-    avgLoss > 0 && avgWin > 0 ? Math.round((avgWin / avgLoss) * 100) / 100 : null;
+    avgLossVal > 0 && avgWinVal > 0 ? Math.round((avgWinVal / avgLossVal) * 100) / 100 : null;
+  const avgWin = winningProfits.length ? avgWinVal : null;
+  const avgLoss = losingProfits.length ? avgLossVal : null;
+  const denom = initialBalance > 0 ? initialBalance : balance - totalProfit;
+  const avgWinPct = denom > 0 && avgWin != null ? (avgWin / denom) * 100 : null;
+  const avgLossPct = denom > 0 && avgLoss != null ? (avgLoss / denom) * 100 : null;
 
   const dailyStats = Array.from(dayMap.entries())
     .map(([date, d]) => ({ date, profit: d.profit, trades: d.trades, wins: d.wins }))
@@ -182,8 +201,13 @@ function buildRealStats(
     maxDd,
     highestDdPct,
     peakDdDate,
+    maxDdDollars,
     dailyDdPct,
     avgRiskReward,
+    avgWin,
+    avgLoss,
+    avgWinPct,
+    avgLossPct,
     equityCurve: curve,
     dailyStats,
     totalProfit,
@@ -271,8 +295,13 @@ export async function GET(req: NextRequest) {
       maxDd,
       highestDdPct,
       peakDdDate,
+      maxDdDollars,
       dailyDdPct,
       avgRiskReward,
+      avgWin,
+      avgLoss,
+      avgWinPct,
+      avgLossPct,
       equityCurve,
       dailyStats,
       totalProfit,
@@ -292,9 +321,14 @@ export async function GET(req: NextRequest) {
       maxDd,
       highestDdPct,
       peakDdDate,
+      maxDdDollars,
       dailyDdPct,
       currentExposurePct,
       avgRiskReward,
+      avgWin,
+      avgLoss,
+      avgWinPct,
+      avgLossPct,
       balancePct,
       equityPct,
       equityCurve,

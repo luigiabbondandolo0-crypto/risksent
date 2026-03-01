@@ -28,7 +28,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
         Edit Rules
       </Link>
       <Link
-        href="/simulator"
+        href="/ai-coach"
         className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2.5 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors"
       >
         <Sparkles className="h-4 w-4" />

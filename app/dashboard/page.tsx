@@ -12,10 +12,12 @@ import {
   ReferenceLine,
   Brush
 } from "recharts";
-import { DdExposureGauge } from "./components/DdExposureGauge";
+import { DdExposureCard } from "./components/DdExposureCard";
 import { AlertsOverview } from "./components/AlertsOverview";
 import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
+import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
+import { AccountHealthCard } from "./components/AccountHealthCard";
 
 type Account = {
   id: string;
@@ -40,9 +42,14 @@ type Stats = {
   maxDd: number | null;
   highestDdPct: number | null;
   peakDdDate?: string | null;
+  maxDdDollars?: number | null;
   dailyDdPct?: number | null;
   currentExposurePct?: number | null;
   avgRiskReward: number | null;
+  avgWin?: number | null;
+  avgLoss?: number | null;
+  avgWinPct?: number | null;
+  avgLossPct?: number | null;
   balancePct: number | null;
   equityPct: number | null;
   equityCurve: { date: string; value: number; pctFromStart: number }[];
@@ -75,6 +82,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
   const [rulesPopupOpen, setRulesPopupOpen] = useState(false);
+  const [rrTableOpen, setRrTableOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -214,20 +223,22 @@ export default function DashboardPage() {
     fetchStats(selectedUuid).finally(() => setSyncing(false));
   }, [selectedUuid, fetchStats]);
 
-  // Calendar: current month and traded days
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  // Calendar: displayed month (navigable)
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const daysInMonth = lastDay.getDate();
   const startWeekday = firstDay.getDay();
   const dailyByDate = new Map<string, DayStat>(dailyStats.map((d) => [d.date, d]));
+  const now = new Date();
 
-  const monthLabel = firstDay.toLocaleDateString("en-GB", {
+  const monthLabel = firstDay.toLocaleDateString("it-IT", {
     month: "long",
     year: "numeric"
   });
+  const goPrevMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
+  const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
   return (
     <div className="space-y-8">
@@ -260,29 +271,45 @@ export default function DashboardPage() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 px-4 py-3">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Active risk rules</span>
-        {riskRules ? (
-          <>
-            <span className="text-slate-500">·</span>
-            <span className="text-xs text-slate-300">
-              Daily loss: {riskRules.daily_loss_pct}% · Risk/trade: {riskRules.max_risk_per_trade_pct}% · Exposure: {riskRules.max_exposure_pct}% · Revenge: {riskRules.revenge_threshold_trades}
-            </span>
+      <section className="rounded-xl border border-slate-700/80 bg-gradient-to-br from-slate-800 to-slate-900 p-5 shadow-inner">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-sm font-semibold text-slate-200">Active risk rules</h3>
+          {riskRules ? (
             <button
               type="button"
               onClick={() => setRulesPopupOpen(true)}
-              className="ml-auto text-xs font-medium text-cyan-400 hover:text-cyan-300"
+              className="text-xs font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/40 rounded-lg px-3 py-1.5 hover:bg-cyan-500/10 transition-colors"
             >
               Edit
             </button>
-          </>
-        ) : (
-          <Link
-            href="/rules"
-            className="inline-flex items-center rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30"
-          >
-            Set rules
-          </Link>
+          ) : (
+            <Link
+              href="/rules"
+              className="inline-flex items-center rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30"
+            >
+              Set rules
+            </Link>
+          )}
+        </div>
+        {riskRules && (
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Daily loss</div>
+              <div className="text-lg font-bold text-white">{riskRules.daily_loss_pct}%</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Risk/trade</div>
+              <div className="text-lg font-bold text-white">{riskRules.max_risk_per_trade_pct}%</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Exposure</div>
+              <div className="text-lg font-bold text-white">{riskRules.max_exposure_pct}%</div>
+            </div>
+            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500">Revenge</div>
+              <div className="text-lg font-bold text-white">{riskRules.revenge_threshold_trades}</div>
+            </div>
+          </div>
         )}
       </section>
       {riskRules && (
@@ -297,91 +324,152 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Daily DD & Current Exposure gauges */}
+      {/* Daily DD & Current Exposure — single card */}
       {riskRules && (
-        <section className="grid gap-4 sm:grid-cols-2">
-          <DdExposureGauge
-            label="Daily DD"
-            valuePct={stats?.dailyDdPct ?? null}
-            limitPct={riskRules.daily_loss_pct}
-            valueLabel="Oggi"
-          />
-          <DdExposureGauge
-            label="Current Exposure %"
-            valuePct={stats?.currentExposurePct ?? null}
-            limitPct={riskRules.max_exposure_pct}
-            valueLabel="Posizioni aperte"
-          />
-        </section>
+        <DdExposureCard
+          dailyDdPct={stats?.dailyDdPct ?? null}
+          dailyLimitPct={riskRules.daily_loss_pct}
+          exposurePct={stats?.currentExposurePct ?? null}
+          exposureLimitPct={riskRules.max_exposure_pct}
+        />
       )}
 
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Balance + Equity in one card */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Balance</div>
-          <div className="mt-1 text-2xl font-bold text-white">
-            {stats == null
-              ? "—"
-              : stats.error
-                ? "—"
-                : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-          </div>
-          {stats && !stats.error && stats.balancePct != null && (
-            <div className="mt-1 text-sm">
-              <PctLabel value={stats.balancePct} />
+          <div className="text-xs text-slate-400 uppercase tracking-wide">Balance & Equity</div>
+          <div className="mt-2 space-y-2">
+            <div>
+              <div className="text-lg font-bold text-white">
+                {stats == null || stats.error ? "—" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+              </div>
+              {stats && !stats.error && stats.balancePct != null && (
+                <div className="text-sm"><PctLabel value={stats.balancePct} /> <span className="text-slate-500 text-xs">balance</span></div>
+              )}
             </div>
-          )}
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Equity</div>
-          <div className="mt-1 text-2xl font-bold text-cyan-400">
-            {stats == null
-              ? "—"
-              : stats.error
-                ? "—"
-                : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-          </div>
-          {stats && !stats.error && stats.equityPct != null && (
-            <div className="mt-1 text-sm">
-              <PctLabel value={stats.equityPct} />
+            <div>
+              <div className="text-lg font-bold text-cyan-400">
+                {stats == null || stats.error ? "—" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+              </div>
+              {stats && !stats.error && stats.equityPct != null && (
+                <div className="text-sm"><PctLabel value={stats.equityPct} /> <span className="text-slate-500 text-xs">equity</span></div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Win rate + Avg R:R + info */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Win rate</div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 uppercase tracking-wide">Win rate & Avg R:R</span>
+            <button
+              type="button"
+              onClick={() => setRrTableOpen(true)}
+              className="rounded-full p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 transition-colors"
+              title="Risk:Reward & Win Rate"
+              aria-label="Info"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+            </button>
+          </div>
           <div className="mt-1 text-2xl font-bold text-white">
             {stats == null ? "—" : stats.winRate != null ? `${stats.winRate.toFixed(1)}%` : "—"}
           </div>
           {winRateTrend != null && (
-            <p className="mt-1 text-xs text-slate-400">
-              {winRateTrend.diff >= 0 ? (
-                <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}% vs sett. scorsa</span>
-              ) : (
-                <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}% vs sett. scorsa</span>
-              )}
+            <p className="mt-0.5 text-xs text-slate-400">
+              {winRateTrend.diff >= 0 ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span> : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs sett. scorsa
             </p>
           )}
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Avg risk/reward</div>
-          <div className="mt-1 text-2xl font-bold text-white">
-            {stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}
+          <div className="mt-2 pt-2 border-t border-slate-700/50">
+            <span className="text-xs text-slate-500">Avg R:R </span>
+            <span className="text-lg font-bold text-white">{stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">Avg win / avg loss</p>
         </div>
+        <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
+
+        {/* Max DD — highest registered, $ + % + date */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Current Max DD</div>
-          <div className={`mt-1 text-2xl font-bold ${stats?.maxDd != null && riskRules && Math.abs(stats.maxDd) >= riskRules.daily_loss_pct * 0.8 ? "text-red-400" : "text-slate-200"}`}>
-            {stats == null ? "—" : stats.maxDd != null ? `${stats.maxDd.toFixed(2)}%` : "—"}
+          <div className="text-xs text-slate-400 uppercase tracking-wide">Max DD</div>
+          <div className="mt-1 text-xl font-bold text-red-400">
+            {stats?.maxDdDollars != null ? `${stats.maxDdDollars < 0 ? "" : "-"}${Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}
           </div>
+          {stats?.highestDdPct != null && (
+            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-sm font-semibold">
+              -{stats.highestDdPct.toFixed(2)}%
+            </span>
+          )}
           {stats?.peakDdDate && (
-            <p className="mt-1 text-[11px] text-slate-500">Picco: {new Date(stats.peakDdDate).toLocaleDateString("it-IT")}</p>
+            <p className="mt-2 text-[11px] text-slate-500">{new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
           )}
-          {riskRules && (
-            <p className="mt-0.5 text-xs text-slate-400">Vs tuo limite {riskRules.daily_loss_pct}%</p>
-          )}
+        </div>
+
+        {/* Average Win + Average Loss */}
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+          <div className="text-xs text-slate-400 uppercase tracking-wide">Average Win / Loss</div>
+          <div className="mt-2 space-y-2">
+            <div>
+              <span className="text-emerald-400 font-bold">{stats?.avgWin != null ? `+${stats.avgWin.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
+              {stats?.avgWinPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgWinPct.toFixed(2)}%)</span>}
+            </div>
+            <div>
+              <span className="text-red-400 font-bold">{stats?.avgLoss != null ? `-${stats.avgLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
+              {stats?.avgLossPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgLossPct.toFixed(2)}%)</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Account Health */}
+        <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
+      </section>
+
+      {/* Calendar — below stats, above equity curve */}
+      <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-slate-400 uppercase tracking-wide">{monthLabel} — Traded days</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700">←</button>
+            <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700">→</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"].map((d) => (
+            <div key={d} className="text-[10px] text-slate-500 font-medium py-1">{d}</div>
+          ))}
+          {Array.from({ length: startWeekday }, (_, i) => (
+            <div key={`pad-${i}`} className="min-h-[64px]" />
+          ))}
+          {Array.from({ length: daysInMonth }, (_, i) => {
+            const day = i + 1;
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const dayData = dailyByDate.get(dateStr);
+            const isFuture = new Date(year, month, day) > now;
+            const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
+            const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
+            return (
+              <div
+                key={dateStr}
+                className={`min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
+                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
+                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
+                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
+                }`}
+              >
+                <span className="text-xs font-medium text-slate-300">{day}</span>
+                {dayData && (
+                  <>
+                    <span className={`text-xs font-semibold ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
+                    </span>
+                    <span className="text-[10px] text-slate-400">{dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}</span>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
+      {/* Equity curve — full width, below calendar */}
       <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
           Equity growth — valore assoluto e % da inizio (zoom/pan con la barra sotto)
@@ -468,75 +556,11 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <AlertsOverview
-        winRate={stats?.winRate ?? null}
-        highestDdPct={stats?.highestDdPct ?? null}
-      />
+      <AlertsOverview />
 
       <section>
         <h2 className="text-sm font-semibold text-slate-200 mb-3">Quick Actions</h2>
         <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
-      </section>
-
-      <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-        <div className="text-xs text-slate-400 uppercase tracking-wide mb-3">
-          {monthLabel} — Traded days
-        </div>
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} className="text-[10px] text-slate-500 font-medium py-1">
-              {d}
-            </div>
-          ))}
-          {Array.from({ length: startWeekday }, (_: number, i: number) => (
-            <div key={`pad-${i}`} className="min-h-[64px]" />
-          ))}
-          {Array.from({ length: daysInMonth }, (_: number, i: number) => {
-            const day = i + 1;
-            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const dayData: DayStat | undefined = dailyByDate.get(dateStr);
-            const isFuture = new Date(year, month, day) > now;
-            const pct =
-              dayData && stats?.initialBalance
-                ? (dayData.profit / stats.initialBalance) * 100
-                : null;
-            const winPct =
-              dayData && dayData.trades > 0
-                ? (dayData.wins / dayData.trades) * 100
-                : null;
-            return (
-              <div
-                key={dateStr}
-                className={`min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
-                  isFuture
-                    ? "border-slate-800/50 bg-slate-900/30 text-slate-600"
-                    : dayData
-                      ? pct != null && pct >= 0
-                        ? "border-emerald-500/30 bg-emerald-500/10"
-                        : "border-red-500/30 bg-red-500/10"
-                      : "border-slate-700/50 bg-slate-800/30 text-slate-500"
-                }`}
-              >
-                <span className="text-xs font-medium text-slate-300">{day}</span>
-                {dayData && (
-                  <>
-                    <span
-                      className={`text-xs font-semibold ${
-                        pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
-                    >
-                      {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}
-                      {winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}
-                    </span>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </section>
     </div>
   );
