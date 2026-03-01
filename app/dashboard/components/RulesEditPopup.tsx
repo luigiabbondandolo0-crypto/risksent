@@ -57,7 +57,7 @@ export function RulesEditPopup({
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Errore nel salvataggio" });
+        setMessage({ type: "error", text: data.error ?? "Save failed." });
         return;
       }
       onSaved({
@@ -66,12 +66,12 @@ export function RulesEditPopup({
         max_exposure_pct: Number(data.max_exposure_pct) ?? rules.max_exposure_pct,
         revenge_threshold_trades: Number(data.revenge_threshold_trades) ?? rules.revenge_threshold_trades
       });
-      setMessage({ type: "success", text: "Regole aggiornate." });
+      setMessage({ type: "success", text: "Rules updated." });
       setTimeout(() => {
         onClose();
       }, 800);
     } catch {
-      setMessage({ type: "error", text: "Errore di rete." });
+      setMessage({ type: "error", text: "Network error." });
     } finally {
       setSaving(false);
     }
@@ -84,12 +84,12 @@ export function RulesEditPopup({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-slate-100">Modifica regole rischio</h3>
+          <h3 className="text-base font-semibold text-slate-100">Edit risk rules</h3>
           <button
             type="button"
             onClick={onClose}
             className="p-1 rounded text-slate-400 hover:text-slate-200"
-            aria-label="Chiudi"
+            aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
@@ -161,14 +161,14 @@ export function RulesEditPopup({
               onClick={onClose}
               className="flex-1 rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
             >
-              Annulla
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
               className="flex-1 rounded-lg bg-cyan-500/20 border border-cyan-500/40 px-3 py-2 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
             >
-              {saving ? "Salvataggio…" : "Salva"}
+              {saving ? "Saving…" : "Save"}
             </button>
           </div>
         </form>

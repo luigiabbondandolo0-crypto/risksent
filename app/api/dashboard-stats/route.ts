@@ -64,6 +64,10 @@ function buildRealStats(
   avgLoss: number | null;
   avgWinPct: number | null;
   avgLossPct: number | null;
+  winsCount: number;
+  lossesCount: number;
+  drawsCount: number;
+  profitFactor: number | null;
   equityCurve: { date: string; value: number; pctFromStart: number }[];
   dailyStats: { date: string; profit: number; trades: number; wins: number }[];
   totalProfit: number;
@@ -87,6 +91,10 @@ function buildRealStats(
       avgLoss: null,
       avgWinPct: null,
       avgLossPct: null,
+      winsCount: 0,
+      lossesCount: 0,
+      drawsCount: 0,
+      profitFactor: null,
       equityCurve: [
         {
           date: new Date().toISOString().slice(0, 10),
@@ -107,8 +115,10 @@ function buildRealStats(
     // initialBalance = balance; totalProfit stays; we'll build curve from orders only
   }
 
-  const wins = valid.filter((o) => (o.profit ?? 0) > 0).length;
-  const winRate = valid.length > 0 ? (wins / valid.length) * 100 : null;
+  const winsCount = valid.filter((o) => (o.profit ?? 0) > 0).length;
+  const lossesCount = valid.filter((o) => (o.profit ?? 0) < 0).length;
+  const drawsCount = valid.filter((o) => (o.profit ?? 0) === 0).length;
+  const winRate = valid.length > 0 ? (winsCount / valid.length) * 100 : null;
 
   // Sort by close time and build equity curve (running balance) and daily stats
   const sorted = [...valid].sort(
@@ -185,6 +195,9 @@ function buildRealStats(
   const denom = initialBalance > 0 ? initialBalance : balance - totalProfit;
   const avgWinPct = denom > 0 && avgWin != null ? (avgWin / denom) * 100 : null;
   const avgLossPct = denom > 0 && avgLoss != null ? (avgLoss / denom) * 100 : null;
+  const grossProfit = winningProfits.length ? winningProfits.reduce((a, b) => a + b, 0) : 0;
+  const grossLoss = losingProfits.length ? losingProfits.reduce((a, b) => a + b, 0) : 0;
+  const profitFactor = grossLoss > 0 ? Math.round((grossProfit / grossLoss) * 100) / 100 : null;
 
   const dailyStats = Array.from(dayMap.entries())
     .map(([date, d]) => ({ date, profit: d.profit, trades: d.trades, wins: d.wins }))
@@ -208,6 +221,10 @@ function buildRealStats(
     avgLoss,
     avgWinPct,
     avgLossPct,
+    winsCount,
+    lossesCount,
+    drawsCount,
+    profitFactor,
     equityCurve: curve,
     dailyStats,
     totalProfit,
@@ -302,6 +319,10 @@ export async function GET(req: NextRequest) {
       avgLoss,
       avgWinPct,
       avgLossPct,
+      winsCount,
+      lossesCount,
+      drawsCount,
+      profitFactor,
       equityCurve,
       dailyStats,
       totalProfit,
@@ -329,6 +350,10 @@ export async function GET(req: NextRequest) {
       avgLoss,
       avgWinPct,
       avgLossPct,
+      winsCount,
+      lossesCount,
+      drawsCount,
+      profitFactor,
       balancePct,
       equityPct,
       equityCurve,

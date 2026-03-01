@@ -34,13 +34,13 @@ export function RiskRewardTableModal({ open, onClose }: RiskRewardTableModalProp
             type="button"
             onClick={onClose}
             className="p-1 rounded text-slate-400 hover:text-slate-200"
-            aria-label="Chiudi"
+            aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
         <p className="text-xs text-slate-500 px-5 pt-3">
-          Combinazioni ideali per essere profittevoli. Verde = profittevole, arancione = break even, rosso = non profittevole.
+          Ideal combinations to be profitable. Green = profitable, orange = break even, red = not profitable.
         </p>
         <div className="p-5 overflow-x-auto">
           <table className="w-full border-collapse text-sm">

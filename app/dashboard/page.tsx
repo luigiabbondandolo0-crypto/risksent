@@ -18,6 +18,7 @@ import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { AccountHealthCard } from "./components/AccountHealthCard";
+import { WinsLossesGauge } from "./components/WinsLossesGauge";
 
 type Account = {
   id: string;
@@ -50,6 +51,10 @@ type Stats = {
   avgLoss?: number | null;
   avgWinPct?: number | null;
   avgLossPct?: number | null;
+  winsCount?: number;
+  lossesCount?: number;
+  drawsCount?: number;
+  profitFactor?: number | null;
   balancePct: number | null;
   equityPct: number | null;
   equityCurve: { date: string; value: number; pctFromStart: number }[];
@@ -233,7 +238,7 @@ export default function DashboardPage() {
   const dailyByDate = new Map<string, DayStat>(dailyStats.map((d) => [d.date, d]));
   const now = new Date();
 
-  const monthLabel = firstDay.toLocaleDateString("it-IT", {
+  const monthLabel = firstDay.toLocaleDateString("en-GB", {
     month: "long",
     year: "numeric"
   });
@@ -245,14 +250,11 @@ export default function DashboardPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-50">Dashboard</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Balance, equity, win rate and drawdown in real time from MetatraderApi.
-            {stats?.updatedAt && (
-              <span className="ml-1">
-                Last update: {new Date(stats.updatedAt).toLocaleTimeString()}
-              </span>
-            )}
-          </p>
+          {stats?.updatedAt && (
+            <p className="text-xs text-slate-500 mt-1">
+              Last update: {new Date(stats.updatedAt).toLocaleTimeString()}
+            </p>
+          )}
         </div>
         <select
           className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 outline-none focus:border-cyan-500"
@@ -324,12 +326,12 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Daily DD & Current Exposure — single card */}
+      {/* Daily DD & Current Exposure — single card (mock values when no data) */}
       {riskRules && (
         <DdExposureCard
-          dailyDdPct={stats?.dailyDdPct ?? null}
+          dailyDdPct={stats?.dailyDdPct ?? -0.52}
           dailyLimitPct={riskRules.daily_loss_pct}
-          exposurePct={stats?.currentExposurePct ?? null}
+          exposurePct={stats?.currentExposurePct ?? 2.3}
           exposureLimitPct={riskRules.max_exposure_pct}
         />
       )}
@@ -358,7 +360,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Win rate + Avg R:R + info */}
+        {/* Win rate + Avg R:R + wins/losses gauge + info */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400 uppercase tracking-wide">Win rate & Avg R:R</span>
@@ -372,17 +374,28 @@ export default function DashboardPage() {
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
             </button>
           </div>
-          <div className="mt-1 text-2xl font-bold text-white">
-            {stats == null ? "—" : stats.winRate != null ? `${stats.winRate.toFixed(1)}%` : "—"}
-          </div>
-          {winRateTrend != null && (
-            <p className="mt-0.5 text-xs text-slate-400">
-              {winRateTrend.diff >= 0 ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span> : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs sett. scorsa
-            </p>
-          )}
-          <div className="mt-2 pt-2 border-t border-slate-700/50">
-            <span className="text-xs text-slate-500">Avg R:R </span>
-            <span className="text-lg font-bold text-white">{stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span>
+          <div className="flex items-start justify-between gap-3 mt-1">
+            <div>
+              <div className="text-2xl font-bold text-white">
+                {stats == null ? "—" : stats.winRate != null ? `${stats.winRate.toFixed(1)}%` : "—"}
+              </div>
+              {winRateTrend != null && (
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {winRateTrend.diff >= 0 ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span> : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
+                </p>
+              )}
+              <div className="mt-2 pt-2 border-t border-slate-700/50">
+                <span className="text-xs text-slate-500">Avg R:R </span>
+                <span className="text-lg font-bold text-white">{stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span>
+              </div>
+            </div>
+            {(stats?.winsCount != null || stats?.lossesCount != null) && (
+              <WinsLossesGauge
+                wins={stats?.winsCount ?? 0}
+                losses={stats?.lossesCount ?? 0}
+                draws={stats?.drawsCount ?? 0}
+              />
+            )}
           </div>
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
@@ -403,7 +416,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Average Win + Average Loss */}
+        {/* Average Win + Average Loss + ratio + profit factor */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Average Win / Loss</div>
           <div className="mt-2 space-y-2">
@@ -415,6 +428,10 @@ export default function DashboardPage() {
               <span className="text-red-400 font-bold">{stats?.avgLoss != null ? `-${stats.avgLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
               {stats?.avgLossPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgLossPct.toFixed(2)}%)</span>}
             </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-3 text-sm">
+            <span><span className="text-slate-500">Ratio (win/loss)</span> <span className="font-bold text-white">{stats?.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span></span>
+            <span><span className="text-slate-500">Profit factor</span> <span className="font-bold text-white">{stats?.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}</span></span>
           </div>
         </div>
 
@@ -432,7 +449,7 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center">
-          {["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"].map((d) => (
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
             <div key={d} className="text-[10px] text-slate-500 font-medium py-1">{d}</div>
           ))}
           {Array.from({ length: startWeekday }, (_, i) => (
@@ -472,7 +489,7 @@ export default function DashboardPage() {
       {/* Equity curve — full width, below calendar */}
       <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
-          Equity growth — valore assoluto e % da inizio (zoom/pan con la barra sotto)
+          Equity growth — absolute value and % from start (zoom/pan with bar below)
         </div>
         {stats?.error && <p className="text-sm text-amber-400">{stats.error}</p>}
         {curve.length === 0 && !stats?.error && (

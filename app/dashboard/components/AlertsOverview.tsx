@@ -40,12 +40,12 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
 
   return (
     <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-slate-200">Alert imminenti</h2>
+      <h2 className="text-sm font-semibold text-slate-200">Imminent alerts</h2>
 
       {loading ? (
-        <p className="text-xs text-slate-500">Caricamento alert…</p>
+        <p className="text-xs text-slate-500">Loading alerts…</p>
       ) : pending.length === 0 ? (
-        <p className="text-xs text-slate-500">Nessun alert pendente. Tutto sotto controllo.</p>
+        <p className="text-xs text-slate-500">No pending alerts. All under control.</p>
       ) : (
         <ul className="space-y-3">
           {pending.map((a) => (
@@ -67,7 +67,7 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
               </p>
               {a.solution && (
                 <p className="text-xs text-slate-400 mt-1 ml-6">
-                  Soluzione: <span className="text-cyan-300">{a.solution}</span>
+                  Solution: <span className="text-cyan-300">{a.solution}</span>
                 </p>
               )}
             </li>
@@ -80,7 +80,7 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
           href="/rules#alerts"
           className="inline-block text-xs font-medium text-cyan-400 hover:text-cyan-300"
         >
-          Vedi tutti gli alert →
+          See all alerts →
         </Link>
       )}
     </section>

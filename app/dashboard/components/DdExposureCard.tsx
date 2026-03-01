@@ -54,7 +54,7 @@ function SemiGauge({ valuePct, limitPct, label }: { valuePct: number | null; lim
           "—"
         )}
       </span>
-      <span className="text-[10px] text-slate-500">limite {limitPct}%</span>
+      <span className="text-[10px] text-slate-500">limit {limitPct}%</span>
     </div>
   );
 }
@@ -68,13 +68,13 @@ export function DdExposureCard({
   return (
     <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/90 to-slate-900/90 p-5 shadow-lg">
       <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-4">
-        Daily DD & Exposure vs limiti
+        Daily DD & Exposure vs limits
       </div>
       <div className="flex flex-wrap items-end justify-around gap-6">
         <SemiGauge
           valuePct={dailyDdPct}
           limitPct={dailyLimitPct}
-          label="Daily DD (oggi)"
+          label="Daily DD (today)"
         />
         <SemiGauge
           valuePct={exposurePct}
