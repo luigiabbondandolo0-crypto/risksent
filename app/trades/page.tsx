@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 function formatTradeDate(iso: string): string {
@@ -54,7 +54,7 @@ function accountLabel(a: Account): string {
   return name ? `${login} · ${name}` : login;
 }
 
-export default function TradesPage() {
+function TradesPageContent() {
   const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
@@ -337,5 +337,20 @@ export default function TradesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TradesPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="h-8 w-48 rounded bg-slate-800 animate-pulse" />
+        <div className="h-64 rounded-xl border border-slate-800 bg-slate-800/30 flex items-center justify-center text-slate-500 text-sm">
+          Loading…
+        </div>
+      </div>
+    }>
+      <TradesPageContent />
+    </Suspense>
   );
 }
