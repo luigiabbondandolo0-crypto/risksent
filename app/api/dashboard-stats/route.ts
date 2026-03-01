@@ -14,6 +14,40 @@ function parseOrders(orders: unknown): ClosedOrder[] {
   return orders as ClosedOrder[];
 }
 
+const DEFAULT_CONTRACT_SIZE = 100_000;
+
+type RawOpenPosition = {
+  symbol?: string;
+  volume?: number;
+  openPrice?: number;
+  stopLoss?: number;
+  type?: string;
+};
+
+function parseOpenPositions(raw: unknown): RawOpenPosition[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (o): o is RawOpenPosition =>
+      o != null && typeof o === "object" && typeof (o as RawOpenPosition).symbol === "string"
+  );
+}
+
+function computeCurrentExposurePct(rawPositions: RawOpenPosition[], equity: number): number | null {
+  if (equity <= 0) return null;
+  let total = 0;
+  for (const p of rawPositions) {
+    const volume = Number(p.volume) || 0;
+    const openPrice = Number(p.openPrice) || 0;
+    const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
+    if (!volume || !openPrice) continue;
+    if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
+      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
+      total += (riskAmount / equity) * 100;
+    }
+  }
+  return total > 0 ? total : null;
+}
+
 function buildRealStats(
   balance: number,
   equity: number,
@@ -22,6 +56,8 @@ function buildRealStats(
   winRate: number | null;
   maxDd: number | null;
   highestDdPct: number | null;
+  peakDdDate: string | null;
+  dailyDdPct: number | null;
   avgRiskReward: number | null;
   equityCurve: { date: string; value: number; pctFromStart: number }[];
   dailyStats: { date: string; profit: number; trades: number; wins: number }[];
@@ -105,14 +141,18 @@ function buildRealStats(
     });
   }
 
-  // Max drawdown from curve
+  // Max drawdown from curve + date of peak DD
   let peak = curve[0]?.value ?? initialBalance;
   let maxDdPct = 0;
+  let peakDdDate: string | null = null;
   for (let i = 1; i < curve.length; i++) {
     const v = curve[i]!.value;
     if (v > peak) peak = v;
     const dd = peak > 0 ? ((peak - v) / peak) * 100 : 0;
-    if (dd > maxDdPct) maxDdPct = dd;
+    if (dd > maxDdPct) {
+      maxDdPct = dd;
+      peakDdDate = curve[i]!.date;
+    }
   }
   const maxDd = maxDdPct > 0 ? -maxDdPct : null;
   const highestDdPct = maxDdPct > 0 ? maxDdPct : null;
@@ -129,15 +169,23 @@ function buildRealStats(
     .map(([date, d]) => ({ date, profit: d.profit, trades: d.trades, wins: d.wins }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  const initBal = initialBalance > 0 ? initialBalance : balance - totalProfit;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStat = dayMap.get(todayStr);
+  const dailyDdPct =
+    todayStat && initBal > 0 ? (todayStat.profit / initBal) * 100 : null;
+
   return {
     winRate,
     maxDd,
     highestDdPct,
+    peakDdDate,
+    dailyDdPct,
     avgRiskReward,
     equityCurve: curve,
     dailyStats,
     totalProfit,
-    initialBalance: initialBalance > 0 ? initialBalance : balance - totalProfit
+    initialBalance: initBal
   };
 }
 
@@ -184,9 +232,10 @@ export async function GET(req: NextRequest) {
   const headers = { "x-api-key": apiKey, Accept: "application/json" };
 
   try {
-    const [summaryRes, closedRes] = await Promise.all([
+    const [summaryRes, closedRes, openRes] = await Promise.all([
       fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`, { headers }),
-      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, { headers })
+      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, { headers }),
+      fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(accountId)}`, { headers })
     ]);
 
     if (!summaryRes.ok) {
@@ -207,10 +256,20 @@ export async function GET(req: NextRequest) {
       closedOrders = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
     }
 
+    let currentExposurePct: number | null = null;
+    if (openRes.ok) {
+      const rawOpen = await openRes.json();
+      const rawList = Array.isArray(rawOpen) ? rawOpen : (rawOpen as { orders?: unknown })?.orders ?? (rawOpen as { positions?: unknown })?.positions ?? rawOpen ?? [];
+      const positions = parseOpenPositions(rawList);
+      currentExposurePct = computeCurrentExposurePct(positions, equity > 0 ? equity : balance);
+    }
+
     const {
       winRate,
       maxDd,
       highestDdPct,
+      peakDdDate,
+      dailyDdPct,
       avgRiskReward,
       equityCurve,
       dailyStats,
@@ -230,6 +289,9 @@ export async function GET(req: NextRequest) {
       winRate,
       maxDd,
       highestDdPct,
+      peakDdDate,
+      dailyDdPct,
+      currentExposurePct,
       avgRiskReward,
       balancePct,
       equityPct,

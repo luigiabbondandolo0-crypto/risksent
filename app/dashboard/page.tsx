@@ -8,8 +8,14 @@ import {
   Tooltip,
   ResponsiveContainer,
   Area,
-  AreaChart
+  AreaChart,
+  ReferenceLine,
+  Brush
 } from "recharts";
+import { DdExposureGauge } from "./components/DdExposureGauge";
+import { AlertsOverview } from "./components/AlertsOverview";
+import { QuickActions } from "./components/QuickActions";
+import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 
 type Account = {
   id: string;
@@ -33,6 +39,9 @@ type Stats = {
   winRate: number | null;
   maxDd: number | null;
   highestDdPct: number | null;
+  peakDdDate?: string | null;
+  dailyDdPct?: number | null;
+  currentExposurePct?: number | null;
   avgRiskReward: number | null;
   balancePct: number | null;
   equityPct: number | null;
@@ -45,12 +54,6 @@ type Stats = {
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
 
-type RiskRules = {
-  daily_loss_pct: number;
-  max_risk_per_trade_pct: number;
-  max_exposure_pct: number;
-  revenge_threshold_trades: number;
-};
 
 const POLL_MS = 45_000;
 const CHECK_RISK_THROTTLE_MS = 1 * 60 * 1000; // 1 min — live-ish when dashboard open; cron runs every 2 min for all accounts
@@ -71,6 +74,8 @@ export default function DashboardPage() {
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
+  const [rulesPopupOpen, setRulesPopupOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lastCheckRiskRef = useRef<{ uuid: string; at: number } | null>(null);
@@ -174,6 +179,41 @@ export default function DashboardPage() {
   const curve = stats?.equityCurve ?? [];
   const dailyStats = stats?.dailyStats ?? [];
 
+  // Win rate trend: last 7 days vs previous 7 days (from dailyStats)
+  const winRateTrend = (() => {
+    if (!dailyStats.length) return null;
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const last7: { trades: number; wins: number } = { trades: 0, wins: 0 };
+    const prev7: { trades: number; wins: number } = { trades: 0, wins: 0 };
+    for (const d of dailyStats) {
+      if (d.date > fourteenDaysAgo.toISOString().slice(0, 10) && d.date <= today) {
+        if (d.date > sevenDaysAgo.toISOString().slice(0, 10)) {
+          last7.trades += d.trades;
+          last7.wins += d.wins;
+        } else {
+          prev7.trades += d.trades;
+          prev7.wins += d.wins;
+        }
+      }
+    }
+    if (last7.trades === 0 || prev7.trades === 0) return null;
+    const wrLast = (last7.wins / last7.trades) * 100;
+    const wrPrev = (prev7.wins / prev7.trades) * 100;
+    const diff = wrLast - wrPrev;
+    return { wrLast, wrPrev, diff };
+  })();
+
+  const handleSyncTrades = useCallback(() => {
+    if (!selectedUuid) return;
+    setSyncing(true);
+    fetchStats(selectedUuid).finally(() => setSyncing(false));
+  }, [selectedUuid, fetchStats]);
+
   // Calendar: current month and traded days
   const now = new Date();
   const year = now.getFullYear();
@@ -190,7 +230,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-50">Dashboard</h1>
@@ -220,7 +260,7 @@ export default function DashboardPage() {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-surface px-4 py-3">
+      <section className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 px-4 py-3">
         <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Active risk rules</span>
         {riskRules ? (
           <>
@@ -228,12 +268,13 @@ export default function DashboardPage() {
             <span className="text-xs text-slate-300">
               Daily loss: {riskRules.daily_loss_pct}% · Risk/trade: {riskRules.max_risk_per_trade_pct}% · Exposure: {riskRules.max_exposure_pct}% · Revenge: {riskRules.revenge_threshold_trades}
             </span>
-            <Link
-              href="/rules"
+            <button
+              type="button"
+              onClick={() => setRulesPopupOpen(true)}
               className="ml-auto text-xs font-medium text-cyan-400 hover:text-cyan-300"
             >
               Edit
-            </Link>
+            </button>
           </>
         ) : (
           <Link
@@ -244,11 +285,40 @@ export default function DashboardPage() {
           </Link>
         )}
       </section>
+      {riskRules && (
+        <RulesEditPopup
+          open={rulesPopupOpen}
+          onClose={() => setRulesPopupOpen(false)}
+          initialRules={riskRules}
+          onSaved={(r) => {
+            setRiskRules(r);
+            setRulesPopupOpen(false);
+          }}
+        />
+      )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
+      {/* Daily DD & Current Exposure gauges */}
+      {riskRules && (
+        <section className="grid gap-4 sm:grid-cols-2">
+          <DdExposureGauge
+            label="Daily DD"
+            valuePct={stats?.dailyDdPct ?? null}
+            limitPct={riskRules.daily_loss_pct}
+            valueLabel="Oggi"
+          />
+          <DdExposureGauge
+            label="Current Exposure %"
+            valuePct={stats?.currentExposurePct ?? null}
+            limitPct={riskRules.max_exposure_pct}
+            valueLabel="Posizioni aperte"
+          />
+        </section>
+      )}
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Balance</div>
-          <div className="mt-1 text-2xl font-semibold text-white">
+          <div className="mt-1 text-2xl font-bold text-white">
             {stats == null
               ? "—"
               : stats.error
@@ -261,9 +331,9 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Equity</div>
-          <div className="mt-1 text-2xl font-semibold text-cyan-400">
+          <div className="mt-1 text-2xl font-bold text-cyan-400">
             {stats == null
               ? "—"
               : stats.error
@@ -276,52 +346,54 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Win rate</div>
-          <div className="mt-1 text-2xl font-semibold text-white">
+          <div className="mt-1 text-2xl font-bold text-white">
             {stats == null ? "—" : stats.winRate != null ? `${stats.winRate.toFixed(1)}%` : "—"}
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">From closed trades</p>
+          {winRateTrend != null && (
+            <p className="mt-1 text-xs text-slate-400">
+              {winRateTrend.diff >= 0 ? (
+                <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}% vs sett. scorsa</span>
+              ) : (
+                <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}% vs sett. scorsa</span>
+              )}
+            </p>
+          )}
         </div>
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Max DD</div>
-          <div className="mt-1 text-2xl font-semibold text-red-400">
-            {stats == null ? "—" : stats.maxDd != null ? `${stats.maxDd.toFixed(2)}%` : "—"}
-          </div>
-          <p className="mt-1 text-[11px] text-slate-500">Current drawdown</p>
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
           <div className="text-xs text-slate-400 uppercase tracking-wide">Avg risk/reward</div>
-          <div className="mt-1 text-2xl font-semibold text-white">
+          <div className="mt-1 text-2xl font-bold text-white">
             {stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}
           </div>
           <p className="mt-1 text-[11px] text-slate-500">Avg win / avg loss</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-surface p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Highest DD</div>
-          <div className="mt-1 text-2xl font-semibold text-red-400">
-            {stats == null
-              ? "—"
-              : stats.highestDdPct != null
-                ? `-${stats.highestDdPct.toFixed(2)}%`
-                : "—"}
+        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+          <div className="text-xs text-slate-400 uppercase tracking-wide">Current Max DD</div>
+          <div className={`mt-1 text-2xl font-bold ${stats?.maxDd != null && riskRules && Math.abs(stats.maxDd) >= riskRules.daily_loss_pct * 0.8 ? "text-red-400" : "text-slate-200"}`}>
+            {stats == null ? "—" : stats.maxDd != null ? `${stats.maxDd.toFixed(2)}%` : "—"}
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">Peak drawdown registered</p>
+          {stats?.peakDdDate && (
+            <p className="mt-1 text-[11px] text-slate-500">Picco: {new Date(stats.peakDdDate).toLocaleDateString("it-IT")}</p>
+          )}
+          {riskRules && (
+            <p className="mt-0.5 text-xs text-slate-400">Vs tuo limite {riskRules.daily_loss_pct}%</p>
+          )}
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+      <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
-          Equity growth (% from start)
+          Equity growth — valore assoluto e % da inizio (zoom/pan con la barra sotto)
         </div>
         {stats?.error && <p className="text-sm text-amber-400">{stats.error}</p>}
         {curve.length === 0 && !stats?.error && (
-          <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
+          <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
             {stats == null ? "Loading…" : "No data. Link an account and trade to see the curve."}
           </div>
         )}
         {curve.length > 0 && (
-          <div className="h-64 w-full">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
@@ -360,11 +432,22 @@ export default function DashboardPage() {
                     borderRadius: "8px"
                   }}
                   labelStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number) => [`${Number(value).toFixed(2)}%`, "Growth"]}
+                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
+                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
+                    "Growth"
+                  ]}
                   labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
                     payload?.[0]?.payload?.displayDate ?? ""
                   }
                 />
+                {riskRules && (
+                  <ReferenceLine
+                    y={-riskRules.daily_loss_pct}
+                    stroke="#ef4444"
+                    strokeDasharray="4 4"
+                    strokeWidth={1.5}
+                  />
+                )}
                 <Area
                   type="monotone"
                   dataKey="pctFromStart"
@@ -372,13 +455,30 @@ export default function DashboardPage() {
                   strokeWidth={2}
                   fill="url(#equityGrad)"
                 />
+                <Brush
+                  dataKey="displayDate"
+                  height={24}
+                  stroke="#475569"
+                  fill="#1e293b"
+                  tickFormatter={(v: string) => v}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+      <AlertsOverview
+        winRate={stats?.winRate ?? null}
+        highestDdPct={stats?.highestDdPct ?? null}
+      />
+
+      <section>
+        <h2 className="text-sm font-semibold text-slate-200 mb-3">Quick Actions</h2>
+        <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
+      </section>
+
+      <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
         <div className="text-xs text-slate-400 uppercase tracking-wide mb-3">
           {monthLabel} — Traded days
         </div>
