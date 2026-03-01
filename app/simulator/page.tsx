@@ -11,7 +11,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { SimulatorView, type Account, type SimulatorStats } from "./SimulatorView";
 import type { EquityPoint } from "./components/EquityCurveChart";
 import { estimatePassProbability } from "./lib/probability";
-import { computeAIWhatIf, type AIWhatIfResult } from "./lib/aiWhatIf";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -225,7 +224,6 @@ export default function SimulatorPage() {
   const estimatedDaysToTarget = useMemo(() => estimateDaysToTarget(stats), [stats]);
   const status = useMemo(() => getStatus(stats), [stats]);
   const breachRiskPct = useMemo(() => estimateBreachRiskPct(stats), [stats]);
-  const aiWhatIf = useMemo((): AIWhatIfResult | null => computeAIWhatIf(stats, trades), [stats, trades]);
 
   const ftmoPhase1Pass = !!(
     stats &&
@@ -287,7 +285,6 @@ export default function SimulatorPage() {
       estimatedDaysToTarget={estimatedDaysToTarget}
       status={status}
       breachRiskPct={breachRiskPct}
-      aiWhatIf={aiWhatIf}
       onRefresh={fetchTradesAndStats}
       refreshing={refreshing}
       ftmoPhase1Pass={ftmoPhase1Pass}

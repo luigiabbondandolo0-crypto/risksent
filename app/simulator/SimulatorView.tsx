@@ -4,10 +4,8 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { ProgressBar } from "./components/ProgressBar";
 import { EquityCurveChart } from "./components/EquityCurveChart";
-import { AIWhatIfProjection } from "./components/AIWhatIfProjection";
 import { FeedbackAICard, type AIFeedbackData } from "./components/FeedbackAICard";
 import { AlertsBar, type ImminentAlert } from "./components/AlertsBar";
-import type { AIWhatIfResult } from "./lib/aiWhatIf";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -53,7 +51,6 @@ export type SimulatorViewProps = {
   estimatedDaysToTarget: number;
   status: "fuori_gioco" | "a_rischio" | "in_corsa";
   breachRiskPct: number;
-  aiWhatIf: AIWhatIfResult | null;
   onRefresh?: () => void;
   refreshing?: boolean;
   ftmoPhase1Pass: boolean;
@@ -93,7 +90,6 @@ export function SimulatorView(props: SimulatorViewProps) {
     estimatedDaysToTarget,
     status,
     breachRiskPct,
-    aiWhatIf,
     onRefresh,
     refreshing = false,
     ftmoPhase1Pass,
@@ -330,20 +326,13 @@ export function SimulatorView(props: SimulatorViewProps) {
               )}
             </div>
 
-            {/* Equity + AI What-If (no user input) */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <EquityCurveChart
-                  data={equityCurve}
-                  initialBalance={initialBalance}
-                  targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
-                  height={220}
-                />
-              </div>
-              <div>
-                <AIWhatIfProjection data={aiWhatIf} />
-              </div>
-            </div>
+            {/* Equity curve */}
+            <EquityCurveChart
+              data={equityCurve}
+              initialBalance={initialBalance}
+              targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
+              height={220}
+            />
 
             <FeedbackAICard data={aiFeedback} tradesCount={tradesCount} periodLabel="last 30 trades" />
 
