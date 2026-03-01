@@ -164,14 +164,19 @@ export async function runRiskCheckForAccount(params: {
     }
     const useEquity = equity > 0 ? equity : balance;
     try {
-      const openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
+      let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, { headers });
+      if (!openRes.ok && openRes.status === 403) {
+        // If OpenPositions fails with 403, try OpenOrders as fallback
+        openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      }
       if (openRes.ok) {
         const raw = await openRes.json();
         const rawList = Array.isArray(raw) ? raw : raw?.orders ?? raw?.positions ?? raw ?? [];
         openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
       }
     } catch {
-      // OpenOrders may not exist
+      // OpenPositions/OpenOrders may not exist or be available
     }
   } catch (e) {
     return {
@@ -326,7 +331,12 @@ export async function runRiskCheckDryRun(params: {
 
     const useEquity = equity > 0 ? equity : balance;
     try {
-      const openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
+      let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, { headers });
+      if (!openRes.ok && openRes.status === 403) {
+        // If OpenPositions fails with 403, try OpenOrders as fallback
+        openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      }
       connection.openOrders = {
         ok: openRes.ok,
         status: openRes.status,

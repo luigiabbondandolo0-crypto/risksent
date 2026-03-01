@@ -52,17 +52,24 @@ export async function GET() {
   }
 
   try {
-    const [summaryRes, closedRes, openRes] = await Promise.all([
+    const [summaryRes, closedRes] = await Promise.all([
       fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`, {
         headers: { "x-api-key": apiKey, Accept: "application/json" }
       }),
       fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, {
         headers: { "x-api-key": apiKey, Accept: "application/json" }
-      }),
-      fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(accountId)}`, {
-        headers: { "x-api-key": apiKey, Accept: "application/json" }
       })
     ]);
+    
+    // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
+    let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(accountId)}`, {
+      headers: { "x-api-key": apiKey, Accept: "application/json" }
+    });
+    if (!openRes.ok && openRes.status === 403) {
+      openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(accountId)}`, {
+        headers: { "x-api-key": apiKey, Accept: "application/json" }
+      });
+    }
 
     if (!summaryRes.ok) {
       return NextResponse.json({ rules, live: null });
