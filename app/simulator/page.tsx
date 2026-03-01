@@ -1,15 +1,17 @@
 "use client";
 
 /**
- * Challenge Simulator – strumento decisionale proattivo per FTMO/Simplified.
- * Dati: /api/accounts, /api/trades?uuid=, /api/dashboard-stats?uuid=
- * In alternativa (Supabase diretto): da auth getUser(), poi
+ * Challenge Simulator – proactive decision tool for FTMO & Simplified.
+ * Data: /api/accounts, /api/trades?uuid=, /api/dashboard-stats?uuid=
+ * Alternatively (Supabase): from auth getUser(), then
  *   const { data: trades } = await supabase.from('closed_orders').select('*').eq('metaapi_account_id', uuid).order('closeTime');
  *   const { data: rules } = await supabase.from('rules').select('*').eq('app_user_id', userId);
  */
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { SimulatorView, type Account, type SimulatorStats } from "./SimulatorView";
 import type { EquityPoint } from "./components/EquityCurveChart";
+import { estimatePassProbability } from "./lib/probability";
+import { computeAIWhatIf, type AIWhatIfResult } from "./lib/aiWhatIf";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -100,19 +102,6 @@ function buildEquityCurve(
     });
   });
   return points;
-}
-
-/**
- * Simple heuristic: probability to pass Phase 1 (0–100).
- * If already breached → 0. Else combine progress toward target and buffer on DD.
- */
-function estimatePassProbabilityPhase1(stats: SimulatorStats | null): number {
-  if (!stats) return 50;
-  if (stats.daily_loss_breach || stats.max_loss_breach) return 0;
-  const progress = Math.min(1, stats.profit_pct / FTMO_PHASE1.profit_target_pct);
-  const dailyBuffer = Math.max(0, (FTMO_PHASE1.daily_loss_limit_pct + stats.worst_daily_pct) / FTMO_PHASE1.daily_loss_limit_pct);
-  const ddBuffer = Math.max(0, (FTMO_PHASE1.max_loss_pct - stats.max_drawdown_pct) / FTMO_PHASE1.max_loss_pct);
-  return Math.round((progress * 40) + (dailyBuffer * 30) + (ddBuffer * 30));
 }
 
 /** Estimated days to reach Phase 1 target (10%). Uses average daily rate so far. */
@@ -228,14 +217,15 @@ export default function SimulatorPage() {
     [trades, initialBalance]
   );
 
-  const passProbabilityPhase1 = useMemo(() => estimatePassProbabilityPhase1(stats), [stats]);
-  const passProbabilityPhase2 = useMemo(
-    () => (stats && !stats.daily_loss_breach && !stats.max_loss_breach ? Math.max(0, passProbabilityPhase1 - 10) : 0),
-    [stats, passProbabilityPhase1]
-  );
+  const passProbFtmo2StepP1 = useMemo(() => estimatePassProbability(stats, FTMO_PHASE1), [stats]);
+  const passProbFtmo2StepP2 = useMemo(() => estimatePassProbability(stats, FTMO_PHASE2), [stats]);
+  const passProbFtmo1Step = useMemo(() => estimatePassProbability(stats, FTMO_1STEP), [stats]);
+  const passProbSimplifiedP1 = useMemo(() => estimatePassProbability(stats, SIMPLIFIED_PHASE1), [stats]);
+  const passProbSimplifiedP2 = useMemo(() => estimatePassProbability(stats, SIMPLIFIED_PHASE2), [stats]);
   const estimatedDaysToTarget = useMemo(() => estimateDaysToTarget(stats), [stats]);
   const status = useMemo(() => getStatus(stats), [stats]);
   const breachRiskPct = useMemo(() => estimateBreachRiskPct(stats), [stats]);
+  const aiWhatIf = useMemo((): AIWhatIfResult | null => computeAIWhatIf(stats, trades), [stats, trades]);
 
   const ftmoPhase1Pass = !!(
     stats &&
@@ -289,11 +279,15 @@ export default function SimulatorPage() {
       error={error}
       stats={stats}
       equityCurve={equityCurve}
-      passProbabilityPhase1={passProbabilityPhase1}
-      passProbabilityPhase2={passProbabilityPhase2}
+      passProbFtmo2StepP1={passProbFtmo2StepP1}
+      passProbFtmo2StepP2={passProbFtmo2StepP2}
+      passProbFtmo1Step={passProbFtmo1Step}
+      passProbSimplifiedP1={passProbSimplifiedP1}
+      passProbSimplifiedP2={passProbSimplifiedP2}
       estimatedDaysToTarget={estimatedDaysToTarget}
       status={status}
       breachRiskPct={breachRiskPct}
+      aiWhatIf={aiWhatIf}
       onRefresh={fetchTradesAndStats}
       refreshing={refreshing}
       ftmoPhase1Pass={ftmoPhase1Pass}

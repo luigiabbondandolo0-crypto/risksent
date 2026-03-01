@@ -41,7 +41,7 @@ export function AlertsBar({ alerts, onBlockTrading, className = "" }: AlertsBarP
           className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border border-red-500/50 bg-red-500/20 text-red-200 text-sm font-medium hover:bg-red-500/30 transition-colors"
         >
           <ShieldOff className="h-4 w-4" />
-          Blocca trading 24h
+          Block trading 24h
         </button>
       )}
     </div>

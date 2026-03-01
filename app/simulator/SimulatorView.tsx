@@ -4,9 +4,10 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { ProgressBar } from "./components/ProgressBar";
 import { EquityCurveChart } from "./components/EquityCurveChart";
-import { WhatIfSliders } from "./components/WhatIfSliders";
+import { AIWhatIfProjection } from "./components/AIWhatIfProjection";
 import { FeedbackAICard, type AIFeedbackData } from "./components/FeedbackAICard";
 import { AlertsBar, type ImminentAlert } from "./components/AlertsBar";
+import type { AIWhatIfResult } from "./lib/aiWhatIf";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
 const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -44,11 +45,15 @@ export type SimulatorViewProps = {
   error: string | null;
   stats: SimulatorStats | null;
   equityCurve: { index: number; date: string; balance: number; pct: number }[];
-  passProbabilityPhase1: number;
-  passProbabilityPhase2: number;
+  passProbFtmo2StepP1: number;
+  passProbFtmo2StepP2: number;
+  passProbFtmo1Step: number;
+  passProbSimplifiedP1: number;
+  passProbSimplifiedP2: number;
   estimatedDaysToTarget: number;
   status: "fuori_gioco" | "a_rischio" | "in_corsa";
   breachRiskPct: number;
+  aiWhatIf: AIWhatIfResult | null;
   onRefresh?: () => void;
   refreshing?: boolean;
   ftmoPhase1Pass: boolean;
@@ -68,6 +73,10 @@ export type SimulatorViewProps = {
 
 const TRADING_DAYS_CAP = 30;
 
+function probColor(p: number): string {
+  return p >= 60 ? "text-emerald-400" : p >= 30 ? "text-amber-400" : "text-red-400";
+}
+
 export function SimulatorView(props: SimulatorViewProps) {
   const {
     accounts,
@@ -76,11 +85,15 @@ export function SimulatorView(props: SimulatorViewProps) {
     error,
     stats,
     equityCurve,
-    passProbabilityPhase1,
-    passProbabilityPhase2,
+    passProbFtmo2StepP1,
+    passProbFtmo2StepP2,
+    passProbFtmo1Step,
+    passProbSimplifiedP1,
+    passProbSimplifiedP2,
     estimatedDaysToTarget,
     status,
     breachRiskPct,
+    aiWhatIf,
     onRefresh,
     refreshing = false,
     ftmoPhase1Pass,
@@ -98,27 +111,26 @@ export function SimulatorView(props: SimulatorViewProps) {
     tradesCount
   } = props;
 
-  const [rulesTab, setRulesTab] = useState<"ftmo" | "simplified">("ftmo");
+  const [rulesTab, setRulesTab] = useState<"ftmo2" | "ftmo1" | "simplified">("ftmo2");
 
   const statusLabel =
-    status === "fuori_gioco" ? "Fuori gioco" : status === "a_rischio" ? "A rischio breach" : "In corsa";
+    status === "fuori_gioco" ? "Out of the game" : status === "a_rischio" ? "At breach risk" : "On track";
   const statusColor =
     status === "fuori_gioco" ? "bg-red-500/20 text-red-400" : status === "a_rischio" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400";
 
-  // Placeholder AI feedback (in future: from API / AI analysis on last 30 trades)
   const aiFeedback: AIFeedbackData = {
     summary: stats
-      ? `Sei in Phase 1 con ${stats.profit_pct >= 0 ? "+" : ""}${stats.profit_pct.toFixed(2)}%. Pattern revenge e overtrading vengono analizzati sui ultimi ${tradesCount} trade.`
-      : "Connessi un account e chiudi trade per vedere l'analisi.",
+      ? `You are in Phase 1 at ${stats.profit_pct >= 0 ? "+" : ""}${stats.profit_pct.toFixed(2)}%. Revenge and overtrading patterns are analysed over the last ${tradesCount} trades.`
+      : "Connect an account and close trades to see the analysis.",
     errors: [
-      "Revenge su coppie principali dopo 3 perdite (size +78%)",
-      "Overtrading pomeridiano (WR 38% dopo le 14:00)",
-      "Exposure >6% su 2 trade (violazione regola)"
+      "Revenge on major pairs after 3 losses (size +78%)",
+      "Afternoon overtrading (38% WR after 14:00)",
+      "Exposure >6% on 2 trades (rule violation)"
     ],
     tips: [
-      "Dopo 2 perdite: cut size 50% per i prossimi 5 trade",
-      "Cut-off trading alle 14:00 – +22% WR atteso",
-      "Max exposure 5% – riduci posizioni su correlati"
+      "After 2 losses: cut size 50% for the next 5 trades",
+      "Trading cut-off at 14:00 – +22% WR expected",
+      "Max exposure 5% – reduce correlated positions"
     ],
     healthScore: stats ? (stats.daily_loss_breach || stats.max_loss_breach ? 35 : 62) : 50
   };
@@ -127,25 +139,25 @@ export function SimulatorView(props: SimulatorViewProps) {
   if (stats && breachRiskPct >= 50) {
     imminentAlerts.push({
       id: "breach-risk",
-      message: `Rischio breach daily DD nei prossimi trade (probabilità ~${Math.round(breachRiskPct)}%)`,
+      message: `Daily DD breach risk in the next trades (probability ~${Math.round(breachRiskPct)}%)`,
       severity: breachRiskPct >= 70 ? "error" : "warning"
     });
   }
   if (stats && status === "a_rischio") {
     imminentAlerts.push({
       id: "at-risk",
-      message: "Sei vicino al limite daily o max DD – riduci size o fermati oggi.",
+      message: "You are close to daily or max DD limit – reduce size or stop for today.",
       severity: "warning"
     });
   }
 
   const emptyState = !selectedUuid ? (
     <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-      Seleziona un conto per vedere il simulator.
+      Select an account to run the simulator.
     </div>
   ) : !stats ? (
     <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-      Nessun dato trade ancora. Connetti il conto e chiudi trade per i risultati.
+      No trade data yet. Connect the account and close some trades to see results.
     </div>
   ) : null;
 
@@ -157,7 +169,7 @@ export function SimulatorView(props: SimulatorViewProps) {
           <div>
             <h1 className="text-xl font-semibold text-slate-50">Challenge Simulator – FTMO & Simplified</h1>
             <p className="text-sm text-slate-500 mt-1">
-              Probabilità di passaggio, giorni stimati e stato in tempo reale.
+              Pass probability for each challenge based on your current trading behaviour.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -166,7 +178,7 @@ export function SimulatorView(props: SimulatorViewProps) {
               value={selectedUuid ?? ""}
               onChange={(e) => setSelectedUuid(e.target.value || null)}
             >
-              <option value="">Tutti i conti</option>
+              <option value="">All accounts</option>
               {accounts.map((a) => (
                 <option key={a.id} value={a.metaapi_account_id ?? ""}>
                   {accountLabel(a)}
@@ -180,52 +192,43 @@ export function SimulatorView(props: SimulatorViewProps) {
               className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700/50 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              Aggiorna Stats Live
+              Refresh live stats
             </button>
           </div>
         </div>
 
         {!emptyState && stats && (
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Prob. Phase 1</p>
-              <p
-                className={`text-2xl font-semibold tabular-nums ${
-                  passProbabilityPhase1 >= 60 ? "text-emerald-400" : passProbabilityPhase1 >= 30 ? "text-amber-400" : "text-red-400"
-                }`}
-              >
-                {passProbabilityPhase1}%
-              </p>
-            </div>
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Prob. Phase 2</p>
-              <p
-                className={`text-2xl font-semibold tabular-nums ${
-                  passProbabilityPhase2 >= 60 ? "text-emerald-400" : passProbabilityPhase2 >= 30 ? "text-amber-400" : "text-red-400"
-                }`}
-              >
-                {passProbabilityPhase2}%
-              </p>
-            </div>
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Giorni al target</p>
-              <p className="text-2xl font-semibold text-slate-200 tabular-nums">
-                {estimatedDaysToTarget} / {TRADING_DAYS_CAP}
-              </p>
-              <div className="mt-2 h-1.5 w-full rounded-full bg-slate-700">
-                <div
-                  className="h-1.5 rounded-full bg-cyan-500 transition-all"
-                  style={{ width: `${Math.min(100, ((TRADING_DAYS_CAP - estimatedDaysToTarget) / TRADING_DAYS_CAP) * 100)}%` }}
-                />
+          <>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 2-Step P1</p>
+                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo2StepP1)}`}>{passProbFtmo2StepP1}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 2-Step P2</p>
+                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo2StepP2)}`}>{passProbFtmo2StepP2}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 1-Step</p>
+                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo1Step)}`}>{passProbFtmo1Step}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Simplified P1</p>
+                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbSimplifiedP1)}`}>{passProbSimplifiedP1}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Simplified P2</p>
+                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbSimplifiedP2)}`}>{passProbSimplifiedP2}%</p>
+              </div>
+              <div className="rounded-lg bg-slate-800/50 p-3">
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
+                <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>
+                  {statusLabel}
+                </span>
+                <p className="text-xs text-slate-500 mt-1">Days to target: {estimatedDaysToTarget} / {TRADING_DAYS_CAP}</p>
               </div>
             </div>
-            <div className="rounded-lg bg-slate-800/50 p-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Stato</p>
-              <span className={`inline-block mt-1 rounded-full px-3 py-1 text-sm font-medium ${statusColor}`}>
-                {statusLabel}
-              </span>
-            </div>
-          </div>
+          </>
         )}
       </header>
 
@@ -236,17 +239,26 @@ export function SimulatorView(props: SimulatorViewProps) {
       ) : (
         stats && (
           <>
-            {/* Rules & Status */}
+            {/* Rules & Status – tabs for FTMO 2-Step, FTMO 1-Step, Simplified */}
             <div className="rounded-xl border border-slate-800 bg-surface p-5">
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   type="button"
-                  onClick={() => setRulesTab("ftmo")}
+                  onClick={() => setRulesTab("ftmo2")}
                   className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    rulesTab === "ftmo" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
+                    rulesTab === "ftmo2" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   FTMO 2-STEP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRulesTab("ftmo1")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                    rulesTab === "ftmo1" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  FTMO 1-STEP
                 </button>
                 <button
                   type="button"
@@ -259,66 +271,39 @@ export function SimulatorView(props: SimulatorViewProps) {
                 </button>
               </div>
 
-              {rulesTab === "ftmo" && (
+              {rulesTab === "ftmo2" && (
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1</h3>
                     <div className="space-y-3">
-                      <ProgressBar
-                        label="Profit target"
-                        value={stats.profit_pct}
-                        limit={FTMO_PHASE1.profit_target_pct}
-                        variant="profit"
-                      />
-                      <ProgressBar
-                        label="Daily DD"
-                        value={stats.worst_daily_pct}
-                        limit={-FTMO_PHASE1.daily_loss_limit_pct}
-                        variant="loss"
-                        valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`}
-                        limitLabel={`${FTMO_PHASE1.daily_loss_limit_pct}%`}
-                      />
-                      <ProgressBar
-                        label="Max DD"
-                        value={stats.max_drawdown_pct}
-                        limit={FTMO_PHASE1.max_loss_pct}
-                        variant="loss"
-                        valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`}
-                        limitLabel={`${FTMO_PHASE1.max_loss_pct}%`}
-                      />
+                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_PHASE1.profit_target_pct} variant="profit" />
+                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_PHASE1.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE1.daily_loss_limit_pct}%`} />
+                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_PHASE1.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE1.max_loss_pct}%`} />
                     </div>
                     <p className="text-xs text-slate-500 mt-2">
                       {stats.worst_daily_pct > -FTMO_PHASE1.daily_loss_limit_pct
-                        ? `Mancano ${(FTMO_PHASE1.daily_loss_limit_pct + stats.worst_daily_pct).toFixed(1)}% al daily DD`
-                        : "Breach daily DD già superato"}
+                        ? `${(FTMO_PHASE1.daily_loss_limit_pct + stats.worst_daily_pct).toFixed(1)}% headroom to daily DD limit`
+                        : "Daily DD limit already breached"}
                     </p>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 2</h3>
                     <div className="space-y-3">
-                      <ProgressBar
-                        label="Profit target"
-                        value={stats.profit_pct}
-                        limit={FTMO_PHASE2.profit_target_pct}
-                        variant="profit"
-                      />
-                      <ProgressBar
-                        label="Daily DD"
-                        value={stats.worst_daily_pct}
-                        limit={-FTMO_PHASE2.daily_loss_limit_pct}
-                        variant="loss"
-                        valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`}
-                        limitLabel={`${FTMO_PHASE2.daily_loss_limit_pct}%`}
-                      />
-                      <ProgressBar
-                        label="Max DD"
-                        value={stats.max_drawdown_pct}
-                        limit={FTMO_PHASE2.max_loss_pct}
-                        variant="loss"
-                        valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`}
-                        limitLabel={`${FTMO_PHASE2.max_loss_pct}%`}
-                      />
+                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_PHASE2.profit_target_pct} variant="profit" />
+                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_PHASE2.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE2.daily_loss_limit_pct}%`} />
+                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_PHASE2.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE2.max_loss_pct}%`} />
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {rulesTab === "ftmo1" && (
+                <div>
+                  <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1 (single step)</h3>
+                  <div className="space-y-3 max-w-md">
+                    <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_1STEP.profit_target_pct} variant="profit" />
+                    <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_1STEP.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_1STEP.daily_loss_limit_pct}%`} />
+                    <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_1STEP.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_1STEP.max_loss_pct}%`} />
                   </div>
                 </div>
               )}
@@ -328,92 +313,41 @@ export function SimulatorView(props: SimulatorViewProps) {
                   <div>
                     <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1</h3>
                     <div className="space-y-3">
-                      <ProgressBar
-                        label="Profit target"
-                        value={stats.profit_pct}
-                        limit={SIMPLIFIED_PHASE1.profit_target_pct}
-                        variant="profit"
-                      />
-                      <ProgressBar
-                        label="Daily DD"
-                        value={stats.worst_daily_pct}
-                        limit={-SIMPLIFIED_PHASE1.daily_loss_limit_pct}
-                        variant="loss"
-                        valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`}
-                        limitLabel={`${SIMPLIFIED_PHASE1.daily_loss_limit_pct}%`}
-                      />
-                      <ProgressBar
-                        label="Max DD"
-                        value={stats.max_drawdown_pct}
-                        limit={SIMPLIFIED_PHASE1.max_loss_pct}
-                        variant="loss"
-                        valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`}
-                        limitLabel={`${SIMPLIFIED_PHASE1.max_loss_pct}%`}
-                      />
+                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={SIMPLIFIED_PHASE1.profit_target_pct} variant="profit" />
+                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-SIMPLIFIED_PHASE1.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE1.daily_loss_limit_pct}%`} />
+                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={SIMPLIFIED_PHASE1.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE1.max_loss_pct}%`} />
                     </div>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 2</h3>
                     <div className="space-y-3">
-                      <ProgressBar
-                        label="Profit target"
-                        value={stats.profit_pct}
-                        limit={SIMPLIFIED_PHASE2.profit_target_pct}
-                        variant="profit"
-                      />
-                      <ProgressBar
-                        label="Daily DD"
-                        value={stats.worst_daily_pct}
-                        limit={-SIMPLIFIED_PHASE2.daily_loss_limit_pct}
-                        variant="loss"
-                        valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`}
-                        limitLabel={`${SIMPLIFIED_PHASE2.daily_loss_limit_pct}%`}
-                      />
-                      <ProgressBar
-                        label="Max DD"
-                        value={stats.max_drawdown_pct}
-                        limit={SIMPLIFIED_PHASE2.max_loss_pct}
-                        variant="loss"
-                        valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`}
-                        limitLabel={`${SIMPLIFIED_PHASE2.max_loss_pct}%`}
-                      />
+                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={SIMPLIFIED_PHASE2.profit_target_pct} variant="profit" />
+                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-SIMPLIFIED_PHASE2.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE2.daily_loss_limit_pct}%`} />
+                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={SIMPLIFIED_PHASE2.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE2.max_loss_pct}%`} />
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Equity + What-If */}
+            {/* Equity + AI What-If (no user input) */}
             <div className="grid gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <EquityCurveChart
                   data={equityCurve}
                   initialBalance={initialBalance}
-                  targetPct={rulesTab === "ftmo" ? FTMO_PHASE1.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
+                  targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
                   height={220}
                 />
               </div>
               <div>
-                <WhatIfSliders
-                  baselineProbPhase1={passProbabilityPhase1}
-                  baselineDaysToTarget={estimatedDaysToTarget}
-                  baselineBreachRisk={breachRiskPct}
-                />
+                <AIWhatIfProjection data={aiWhatIf} />
               </div>
             </div>
 
-            {/* AI Coach */}
-            <FeedbackAICard
-              data={aiFeedback}
-              tradesCount={tradesCount}
-              periodLabel="ultimi 30 trade"
-            />
+            <FeedbackAICard data={aiFeedback} tradesCount={tradesCount} periodLabel="last 30 trades" />
 
-            {/* Alerts */}
-            <AlertsBar
-              alerts={imminentAlerts}
-              onBlockTrading={imminentAlerts.length > 0 ? () => {} : undefined}
-            />
+            <AlertsBar alerts={imminentAlerts} onBlockTrading={imminentAlerts.length > 0 ? () => {} : undefined} />
           </>
         )
       )}
