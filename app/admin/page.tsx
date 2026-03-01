@@ -13,6 +13,8 @@ type UserRow = {
   accountsCount: number;
 };
 
+const ROLES = ["customer", "trader", "admin"] as const;
+
 type Stats = {
   users: number;
   tradingAccounts: number;
@@ -25,6 +27,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +62,32 @@ export default function AdminPage() {
       }
     })();
   }, []);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    setUpdatingRole(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Failed to update role: ${data.error || "Unknown error"}`);
+        return;
+      }
+
+      // Update local state
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+    } catch (e) {
+      alert(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+    } finally {
+      setUpdatingRole(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -145,6 +174,7 @@ export default function AdminPage() {
                 <th className="px-4 py-3">Role</th>
                 <th className="px-4 py-3">MT accounts</th>
                 <th className="px-4 py-3">Joined</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -163,6 +193,20 @@ export default function AdminPage() {
                   <td className="px-4 py-3 text-slate-400">{u.accountsCount}</td>
                   <td className="px-4 py-3 text-slate-500">
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                      disabled={updatingRole === u.id}
+                      className="rounded-md border border-slate-700 bg-slate-800/40 px-2 py-1 text-xs text-slate-200 outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {ROLES.map((role) => (
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               ))}

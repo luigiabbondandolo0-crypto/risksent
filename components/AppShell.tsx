@@ -12,7 +12,8 @@ const APP_PATHS = [
   "/add-account",
   "/accounts",
   "/admin",
-  "/change-password"
+  "/change-password",
+  "/profile"
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

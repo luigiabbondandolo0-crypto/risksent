@@ -67,7 +67,8 @@ function LoginForm() {
 
       // Successful login - redirect immediately
       if (data?.user) {
-        router.push(redirectTo);
+        // Use window.location for proper redirect
+        window.location.href = redirectTo;
         // Don't set loading to false here - we're redirecting
       } else {
         setError("Login failed. Please try again.");

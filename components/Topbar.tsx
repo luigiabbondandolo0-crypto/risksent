@@ -56,12 +56,15 @@ export function Topbar() {
         <div className="flex items-center gap-4">
           {email ? (
             <>
-              <div className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-1.5">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 transition-colors cursor-pointer"
+              >
                 <User className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-xs text-slate-300 truncate max-w-[140px]">
+                <span className="truncate max-w-[140px]">
                   {email}
                 </span>
-              </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 transition-colors"
