@@ -59,10 +59,15 @@ export async function sendAlertToTelegram(params: SendAlertParams): Promise<{ ok
       reason: res.reason,
       chatIdLen
     });
+    if (!res.ok) {
+      return { ok: false, reason: res.reason ?? "Send to user failed" };
+    }
+  } else {
+    return { ok: false, reason: "No Telegram chat linked for user" };
   }
 
   if (channelId) {
-    const channelText = `[Alert utente]\n${text}`;
+    const channelText = `[User alert]\n${text}`;
     const res = await sendTelegramMessage(token, channelId, channelText);
     if (res.ok) {
       console.log(LOG_PREFIX, "send to channel ok");
@@ -79,11 +84,12 @@ async function sendTelegramMessage(
   chatId: string | number,
   text: string
 ): Promise<{ ok: boolean; reason?: string }> {
+  const id = typeof chatId === "string" && /^-?\d+$/.test(chatId) ? Number(chatId) : chatId;
   const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: chatId,
+      chat_id: id,
       text,
       parse_mode: "HTML"
     })
@@ -95,7 +101,7 @@ async function sendTelegramMessage(
   return { ok: true };
 }
 
-/** Username del bot per il link (es. RiskSentAlertsBot). Da env o fallback. */
+/** Bot username for the link (e.g. RiskSentAlertsBot). From env or fallback. */
 export function getTelegramBotLinkUsername(): string {
   return process.env.TELEGRAM_BOT_USERNAME ?? "RiskSentAlertsBot";
 }

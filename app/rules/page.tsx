@@ -4,14 +4,13 @@
  * DATA SOURCES (what is real vs mock):
  * - Rules values: REAL from DB (app_user).
  * - Live status badges (Safe/Warning/Breach): REAL when account linked + MetaAPI ok; otherwise no live data (badges show "—" or "No data").
- * - Current exposure bar: REAL from MetaAPI open positions when account linked.
  * - Alerts list: REAL from DB (alert table).
  * - Telegram linked: REAL from DB (app_user.telegram_chat_id).
  * - AI "Analyze my rules": MOCK (stub response until AI is wired).
  */
 
 import { useEffect, useState, FormEvent, ChangeEvent, useRef } from "react";
-import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, CheckCircle, RefreshCw, Info, Unlink } from "lucide-react";
+import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, RefreshCw, Info, Unlink } from "lucide-react";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
@@ -21,17 +20,11 @@ const SUGGESTED = {
 } as const;
 
 const RECOMMENDED_RANGES: Record<string, string> = {
-  daily_loss_pct: "Industry 2–5%. FTMO uses 5%.",
-  max_risk_per_trade_pct: "Common 0.5–1%. FTMO 1%.",
-  max_exposure_pct: "Typical 10–20% total exposure.",
-  revenge_threshold_trades: "2–3 consecutive losses."
+  daily_loss_pct: "Recommended: 2%.",
+  max_risk_per_trade_pct: "Recommended: 1%.",
+  max_exposure_pct: "Recommended: 15%.",
+  revenge_threshold_trades: "Recommended: 2 losses."
 };
-
-const PRESETS = {
-  "FTMO Standard": { daily_loss_pct: 5, max_risk_per_trade_pct: 1, max_exposure_pct: 15, revenge_threshold_trades: 2 },
-  Simplified: { daily_loss_pct: 4, max_risk_per_trade_pct: 0.8, max_exposure_pct: 12, revenge_threshold_trades: 2 },
-  "Aggressive Swing": { daily_loss_pct: 8, max_risk_per_trade_pct: 2, max_exposure_pct: 20, revenge_threshold_trades: 3 }
-} as const;
 
 type Rules = {
   daily_loss_pct: number;
@@ -149,7 +142,6 @@ export default function RulesPage() {
   const [telegramMessage, setTelegramMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [live, setLive] = useState<LiveStatus>(null);
   const [alertFilter, setAlertFilter] = useState<"all" | "high" | "medium">("all");
-  const [ackModal, setAckModal] = useState<{ id: string; note: string } | null>(null);
   const [testAlertSending, setTestAlertSending] = useState(false);
   const [aiInsightOpen, setAiInsightOpen] = useState(false);
   const [aiInsightText, setAiInsightText] = useState("");
@@ -248,16 +240,6 @@ export default function RulesPage() {
     setExceedAlert(null);
   };
 
-  const handlePreset = (presetName: keyof typeof PRESETS) => {
-    const p = PRESETS[presetName];
-    setFormValues({
-      daily_loss_pct: String(p.daily_loss_pct),
-      max_risk_per_trade_pct: String(p.max_risk_per_trade_pct),
-      max_exposure_pct: String(p.max_exposure_pct),
-      revenge_threshold_trades: String(p.revenge_threshold_trades)
-    });
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -333,8 +315,6 @@ export default function RulesPage() {
     .filter((a) => !a.dismissed)
     .filter((a) => alertFilter === "all" || a.severity === alertFilter);
 
-  const readCount = alerts.filter((a) => a.read && !a.dismissed).length;
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -356,27 +336,9 @@ export default function RulesPage() {
       <section className="flex flex-col gap-8 lg:flex-row">
         <div className="flex-1 space-y-6">
           <div className="rounded-xl border border-cyan-500/20 bg-surface p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-cyan-400" />
-                <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">Preset:</span>
-                <select
-                  className="rounded border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs text-slate-200"
-                  onChange={(e) => {
-                    const v = e.target.value as keyof typeof PRESETS | "";
-                    if (v) handlePreset(v);
-                  }}
-                  value=""
-                >
-                  <option value="">Apply preset…</option>
-                  {Object.keys(PRESETS).map((k) => (
-                    <option key={k} value={k}>{k}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <SlidersHorizontal className="h-4 w-4 text-cyan-400" />
+              <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
             </div>
             <p className="text-xs text-slate-500 mb-4">Thresholds govern alert triggers and sanity scoring.</p>
 
@@ -459,34 +421,9 @@ export default function RulesPage() {
             </form>
           </div>
 
-          {live && (live.dailyLossPct != null || live.currentExposurePct != null) && (
-            <div className="rounded-xl border border-cyan-500/20 bg-surface p-4">
-              <h3 className="text-xs font-medium text-slate-300 mb-2">Current Risk Exposure</h3>
-              {live.currentExposurePct != null ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Exposure {live.currentExposurePct.toFixed(1)}% vs limit {rules.max_exposure_pct}%</span>
-                    <span className="text-emerald-400">
-                      {Math.max(0, rules.max_exposure_pct - live.currentExposurePct).toFixed(1)}% headroom
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-700 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${live.currentExposurePct >= rules.max_exposure_pct ? "bg-red-500" : live.currentExposurePct >= rules.max_exposure_pct * 0.8 ? "bg-amber-500" : "bg-cyan-500"}`}
-                      style={{ width: `${Math.min(100, (live.currentExposurePct / Math.max(1, rules.max_exposure_pct)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500">No open positions. Exposure updates when you have positions.</p>
-              )}
-              <p className="text-[10px] text-slate-500 mt-2">Live from connected account (MetaAPI).</p>
-            </div>
-          )}
-
           {!live && (
             <p className="text-xs text-slate-500 rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2">
-              Connect an account in Dashboard to see live status badges and exposure bar.
+              Connect an account in Dashboard to see live status badges.
             </p>
           )}
 
@@ -721,24 +658,6 @@ export default function RulesPage() {
                   {f}
                 </button>
               ))}
-              {readCount > 0 && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await Promise.all(
-                      alerts.filter((a) => a.read && !a.dismissed).map((a) => updateAlert(a.id, { read: false }))
-                    );
-                    const res = await fetch("/api/alerts", { cache: "no-store" });
-                    if (res.ok) {
-                      const a = await res.json();
-                      setAlerts(a.alerts ?? []);
-                    }
-                  }}
-                  className="text-xs text-slate-400 hover:text-slate-200"
-                >
-                  Clear all read
-                </button>
-              )}
             </div>
             {filteredAlerts.length === 0 ? (
               <p className="text-xs text-slate-500">No alerts. Alerts appear here when risk rules are breached.</p>
@@ -769,8 +688,6 @@ export default function RulesPage() {
                       {!a.read && (
                         <button type="button" className="text-xs text-cyan-400 hover:underline" onClick={() => updateAlert(a.id, { read: true })}>Mark as read</button>
                       )}
-                      <button type="button" className="text-xs text-slate-400 hover:underline" onClick={() => updateAlert(a.id, { dismissed: true })}>Dismiss</button>
-                      <button type="button" className="text-xs text-slate-400 hover:underline" onClick={() => setAckModal({ id: a.id, note: "" })}>Acknowledge</button>
                     </div>
                   </div>
                 ))}
@@ -780,41 +697,8 @@ export default function RulesPage() {
         </div>
       </section>
 
-      {ackModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAckModal(null)}>
-          <div className="rounded-xl border border-slate-700 bg-slate-900 p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">Acknowledge alert</h3>
-            <input
-              type="text"
-              placeholder="Optional note (e.g. Closed position)"
-              value={ackModal.note}
-              onChange={(e) => setAckModal((prev) => prev ? { ...prev, note: e.target.value } : null)}
-              className="w-full rounded border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 mb-4"
-            />
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-lg bg-cyan-600 hover:bg-cyan-500 px-3 py-2 text-sm text-white"
-                onClick={async () => {
-                  await updateAlert(ackModal.id, { acknowledged: true, acknowledged_note: ackModal.note || undefined });
-                  setAckModal(null);
-                  const res = await fetch("/api/alerts", { cache: "no-store" });
-                  if (res.ok) {
-                    const a = await res.json();
-                    setAlerts(a.alerts ?? []);
-                  }
-                }}
-              >
-                Save
-              </button>
-              <button type="button" className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-300" onClick={() => setAckModal(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <footer className="text-[10px] text-slate-600 border-t border-slate-800 pt-4">
-        Rules & alerts: DB. Live badges & exposure: MetaAPI when account linked. AI insight: stub.
+        Rules & alerts: DB. Live badges: MetaAPI when account linked. AI insight: stub.
       </footer>
     </div>
   );
