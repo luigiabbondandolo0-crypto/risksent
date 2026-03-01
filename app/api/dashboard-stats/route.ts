@@ -74,6 +74,8 @@ function buildRealStats(
       winRate: null,
       maxDd: null,
       highestDdPct: null,
+      peakDdDate: null,
+      dailyDdPct: null,
       avgRiskReward: null,
       equityCurve: [
         {
