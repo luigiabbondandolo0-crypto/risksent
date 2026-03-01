@@ -293,7 +293,7 @@ function TradesPageContent() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Errore analisi");
+        alert(data.error ?? "Analysis error");
         return;
       }
       setAiModal({
@@ -305,7 +305,7 @@ function TradesPageContent() {
         }
       });
     } catch {
-      alert("Errore di rete");
+      alert("Network error");
     } finally {
       setAiLoading(false);
     }
@@ -431,7 +431,7 @@ function TradesPageContent() {
               onClick={runAiInsight}
               className="rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:pointer-events-none px-3 py-2 text-sm font-medium text-white"
             >
-              {aiLoading ? "Analisi…" : `Analizza selezionati (${selectedTickets.size})`}
+              {aiLoading ? "Analyzing…" : `Analyze selected (${selectedTickets.size})`}
             </button>
             {selectedTickets.size > 0 && (
               <button
@@ -439,7 +439,7 @@ function TradesPageContent() {
                 className="text-xs text-slate-400 hover:text-slate-200"
                 onClick={() => setSelectedTickets(new Set())}
               >
-                Deseleziona
+                Clear selection
               </button>
             )}
           </div>
@@ -474,7 +474,7 @@ function TradesPageContent() {
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
-                  <th className="px-4 py-3 font-medium" title="Sanity: verde ok, giallo borderline, rosso revenge/risk">Sanity</th>
+                  <th className="px-4 py-3 font-medium" title="Sanity: green ok, yellow borderline, red revenge/risk">Sanity</th>
                 </tr>
               </thead>
               <tbody>
@@ -506,7 +506,7 @@ function TradesPageContent() {
                           type="checkbox"
                           checked={selectedTickets.has(t.ticket)}
                           onChange={() => toggleSelect(t.ticket)}
-                          title="Seleziona per Analizza selezionati"
+                          title="Select for AI analysis"
                           className="rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
                         />
                       </td>
@@ -528,7 +528,7 @@ function TradesPageContent() {
                       <td className="px-4 py-3 text-slate-300">{t.closePrice.toFixed(2)}</td>
                       <td
                         className={`px-4 py-3 font-medium ${t.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
-                        title={`Ticket ${t.ticket}. ${t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)} ${currency}${pct != null ? ` (${(t.profit >= 0 ? "+" : "")}${pct.toFixed(2)}% sul conto)` : ""}`}
+                        title={`Ticket ${t.ticket}. ${t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)} ${currency}${pct != null ? ` (${(t.profit >= 0 ? "+" : "")}${pct.toFixed(2)}% on account)` : ""}`}
                       >
                         {t.profit >= 0 ? "+" : ""}
                         {t.profit.toFixed(2)} {currency}
@@ -599,7 +599,7 @@ function TradesPageContent() {
             )}
             {aiModal.insight.emotional.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs text-slate-500 uppercase mb-1">Emotivo</p>
+                <p className="text-xs text-slate-500 uppercase mb-1">Emotional</p>
                 <ul className="list-disc list-inside text-sm text-slate-300">
                   {aiModal.insight.emotional.map((e, i) => (
                     <li key={i}>{e}</li>
@@ -612,7 +612,7 @@ function TradesPageContent() {
               className="mt-4 rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-slate-200"
               onClick={() => setAiModal({ open: false })}
             >
-              Chiudi
+              Close
             </button>
           </div>
         </div>

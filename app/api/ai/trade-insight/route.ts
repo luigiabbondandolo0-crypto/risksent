@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
   // Stub: return mock insight. Replace with real AI call when ready.
   const insight = {
     summary:
-      "Analisi sui trade selezionati: presenza di perdite consecutive in giorni recenti; size in linea con le regole nella maggior parte dei casi. Suggerimento: evitare di aumentare il lot size dopo 2 perdite di fila.",
+      "Analysis of selected trades: consecutive losses in recent days; position size in line with rules in most cases. Suggestion: avoid increasing lot size after 2 losses in a row.",
     patterns: [
-      "Sequenza di 2–3 trade in perdita in rapida successione",
-      "Profitti concentrati in pochi trade; molte piccole perdite"
+      "Sequence of 2–3 losing trades in quick succession",
+      "Profits concentrated in few trades; many small losses"
     ],
     emotional: [
-      "Possibile effetto revenge dopo le perdite del 28/02",
-      "Rispetto del risk per trade nella maggior parte dei casi"
+      "Possible revenge trading after losses",
+      "Risk per trade respected in most cases"
     ]
   };
 
