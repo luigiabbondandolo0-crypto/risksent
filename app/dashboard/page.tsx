@@ -337,6 +337,93 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* Equity curve — full width, below Daily DD & above stats cards */}
+      <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+        <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
+          Equity growth — absolute value and % from start (zoom/pan with bar below)
+        </div>
+        {stats?.error && <p className="text-sm text-amber-400">{stats.error}</p>}
+        {curve.length === 0 && !stats?.error && (
+          <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
+            {stats == null ? "Loading…" : "No data. Link an account and trade to see the curve."}
+          </div>
+        )}
+        {curve.length > 0 && (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
+                  ...p,
+                  pct: p.pctFromStart,
+                  displayDate: new Date(p.date).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "2-digit"
+                  })
+                }))}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+              >
+                <defs>
+                  <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="displayDate"
+                  tick={{ fill: "#94a3b8", fontSize: 10 }}
+                  axisLine={{ stroke: "#475569" }}
+                  tickLine={{ stroke: "#475569" }}
+                />
+                <YAxis
+                  tickFormatter={(v: number) => `${v}%`}
+                  tick={{ fill: "#94a3b8", fontSize: 10 }}
+                  axisLine={{ stroke: "#475569" }}
+                  tickLine={{ stroke: "#475569" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e293b",
+                    border: "1px solid #334155",
+                    borderRadius: "8px"
+                  }}
+                  labelStyle={{ color: "#e2e8f0" }}
+                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
+                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
+                    "Growth"
+                  ]}
+                  labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
+                    payload?.[0]?.payload?.displayDate ?? ""
+                  }
+                />
+                {riskRules && (
+                  <ReferenceLine
+                    y={-riskRules.daily_loss_pct}
+                    stroke="#ef4444"
+                    strokeDasharray="4 4"
+                    strokeWidth={1.5}
+                  />
+                )}
+                <Area
+                  type="monotone"
+                  dataKey="pctFromStart"
+                  stroke="#22d3ee"
+                  strokeWidth={2}
+                  fill="url(#equityGrad)"
+                />
+                <Brush
+                  dataKey="displayDate"
+                  height={24}
+                  stroke="#475569"
+                  fill="#1e293b"
+                  tickFormatter={(v: string) => v}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>
+
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {/* Balance + Equity in one card */}
         <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
@@ -440,7 +527,7 @@ export default function DashboardPage() {
         <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
       </section>
 
-      {/* Calendar — below stats, above equity curve */}
+      {/* Calendar — traded days */}
       <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs text-slate-400 uppercase tracking-wide">{monthLabel} — Traded days</span>
@@ -497,93 +584,6 @@ export default function DashboardPage() {
             );
           })}
         </div>
-      </section>
-
-      {/* Equity curve — full width, below calendar */}
-      <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-        <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
-          Equity growth — absolute value and % from start (zoom/pan with bar below)
-        </div>
-        {stats?.error && <p className="text-sm text-amber-400">{stats.error}</p>}
-        {curve.length === 0 && !stats?.error && (
-          <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
-            {stats == null ? "Loading…" : "No data. Link an account and trade to see the curve."}
-          </div>
-        )}
-        {curve.length > 0 && (
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
-                  ...p,
-                  pct: p.pctFromStart,
-                  displayDate: new Date(p.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "2-digit"
-                  })
-                }))}
-                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-              >
-                <defs>
-                  <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="displayDate"
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => `${v}%`}
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: "8px"
-                  }}
-                  labelStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
-                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
-                    "Growth"
-                  ]}
-                  labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
-                    payload?.[0]?.payload?.displayDate ?? ""
-                  }
-                />
-                {riskRules && (
-                  <ReferenceLine
-                    y={-riskRules.daily_loss_pct}
-                    stroke="#ef4444"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
-                  />
-                )}
-                <Area
-                  type="monotone"
-                  dataKey="pctFromStart"
-                  stroke="#22d3ee"
-                  strokeWidth={2}
-                  fill="url(#equityGrad)"
-                />
-                <Brush
-                  dataKey="displayDate"
-                  height={24}
-                  stroke="#475569"
-                  fill="#1e293b"
-                  tickFormatter={(v: string) => v}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </section>
 
       <AlertsOverview />
