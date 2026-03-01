@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Info } from "lucide-react";
 import { ProgressBar } from "./components/ProgressBar";
 import { EquityCurveChart } from "./components/EquityCurveChart";
+import { WhatIfSliders } from "./components/WhatIfSliders";
 import { FeedbackAICard, type AIFeedbackData } from "./components/FeedbackAICard";
 import { AlertsBar, type ImminentAlert } from "./components/AlertsBar";
 
@@ -108,6 +109,7 @@ export function SimulatorView(props: SimulatorViewProps) {
   } = props;
 
   const [rulesTab, setRulesTab] = useState<"ftmo2" | "ftmo1" | "simplified">("ftmo2");
+  const [showInfo, setShowInfo] = useState(false);
 
   const statusLabel =
     status === "fuori_gioco" ? "Out of the game" : status === "a_rischio" ? "At breach risk" : "On track";
@@ -162,11 +164,22 @@ export function SimulatorView(props: SimulatorViewProps) {
       {/* Hero */}
       <header className="rounded-xl border border-slate-800 bg-surface p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-50">Challenge Simulator – FTMO & Simplified</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Pass probability for each challenge based on your current trading behaviour.
-            </p>
+          <div className="flex items-start gap-2">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-50 uppercase tracking-wide">Challenge Simulator</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Pass probability for each challenge based on your current trading behaviour.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowInfo((v) => !v)}
+              className="shrink-0 rounded-full p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors"
+              title="What is this page?"
+              aria-label="Info"
+            >
+              <Info className="h-5 w-5" />
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <select
@@ -192,6 +205,19 @@ export function SimulatorView(props: SimulatorViewProps) {
             </button>
           </div>
         </div>
+
+        {showInfo && (
+          <div className="mt-4 p-4 rounded-lg bg-slate-800/70 border border-slate-700 text-sm text-slate-300 space-y-2">
+            <p className="font-medium text-slate-200">What does this page do?</p>
+            <p>
+              This page simulates your progress against FTMO 2-Step, FTMO 1-Step and Simplified challenge rules. It shows your current pass probability for each challenge based on your closed trades (profit target, daily loss limit, max drawdown).
+            </p>
+            <p className="font-medium text-slate-200 mt-2">How can it help you as a trader?</p>
+            <p>
+              You can see at a glance whether you are on track or at risk of breaching. The Rules & Status section shows how close you are to each limit. The Proiezione & What-If section lets you explore how reducing risk, capping trades per day or stopping after consecutive losses would change your estimated pass probability and breach risk—so you can adjust your behaviour before it is too late.
+            </p>
+          </div>
+        )}
 
         {!emptyState && stats && (
           <>
@@ -326,13 +352,31 @@ export function SimulatorView(props: SimulatorViewProps) {
               )}
             </div>
 
-            {/* Equity curve */}
-            <EquityCurveChart
-              data={equityCurve}
-              initialBalance={initialBalance}
-              targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
-              height={220}
-            />
+            {/* Proiezione & What-If */}
+            <div className="rounded-xl border border-slate-800 bg-surface p-5">
+              <h2 className="text-sm font-medium text-slate-200 mb-1">Proiezione & What-If</h2>
+              <p className="text-xs text-slate-500 mb-4">
+                Equity curve and linear projection (last 30 trades). Adjust the sliders to see how your pass probability and breach risk would change. Suggestions will be driven by AI based on your behaviour and trades.
+              </p>
+              <div className="grid gap-6 lg:grid-cols-3">
+                <div className="lg:col-span-2">
+                  <EquityCurveChart
+                    data={equityCurve}
+                    initialBalance={initialBalance}
+                    targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
+                    height={220}
+                    showLinearProjection
+                  />
+                </div>
+                <div>
+                  <WhatIfSliders
+                    baselineProbPhase1={passProbFtmo2StepP1}
+                    baselineDaysToTarget={estimatedDaysToTarget}
+                    baselineBreachRisk={breachRiskPct}
+                  />
+                </div>
+              </div>
+            </div>
 
             <FeedbackAICard data={aiFeedback} tradesCount={tradesCount} periodLabel="last 30 trades" />
 

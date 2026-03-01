@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   AreaChart,
   Area,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -18,6 +20,25 @@ export type EquityPoint = {
   pct: number;
 };
 
+/** Linear regression on last N points: returns slope and intercept for pct = slope * index + intercept */
+function linearRegressionLastN(data: EquityPoint[], n: number): { slope: number; intercept: number } {
+  const slice = data.length <= n ? data : data.slice(-n);
+  if (slice.length < 2) return { slope: 0, intercept: slice[0]?.pct ?? 0 };
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  const len = slice.length;
+  for (let i = 0; i < len; i++) {
+    const x = slice[i].index;
+    const y = slice[i].pct;
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumX2 += x * x;
+  }
+  const slope = (len * sumXY - sumX * sumY) / (len * sumX2 - sumX * sumX) || 0;
+  const intercept = (sumY - slope * sumX) / len;
+  return { slope, intercept };
+}
+
 type EquityCurveChartProps = {
   data: EquityPoint[];
   initialBalance: number;
@@ -25,6 +46,8 @@ type EquityCurveChartProps = {
   targetPct?: number;
   height?: number;
   className?: string;
+  /** Show linear projection line based on last 30 trades */
+  showLinearProjection?: boolean;
 };
 
 export function EquityCurveChart({
@@ -32,12 +55,20 @@ export function EquityCurveChart({
   initialBalance,
   targetPct,
   height = 200,
-  className = ""
+  className = "",
+  showLinearProjection = false
 }: EquityCurveChartProps) {
+  const chartData = useMemo(() => {
+    if (!data.length) return [];
+    if (!showLinearProjection) return data;
+    const { slope, intercept } = linearRegressionLastN(data, 30);
+    return data.map((p) => ({ ...p, projection: slope * p.index + intercept }));
+  }, [data, showLinearProjection]);
+
   if (!data.length) {
     return (
       <div
-        className={`rounded-xl border border-slate-800 bg-surface flex items-center justify-center text-slate-500 text-sm ${className}`}
+        className={"rounded-xl border border-slate-800 bg-surface flex items-center justify-center text-slate-500 text-sm " + className}
         style={{ height }}
       >
         No trade data for equity curve
@@ -46,10 +77,10 @@ export function EquityCurveChart({
   }
 
   return (
-    <div className={`rounded-xl border border-slate-800 bg-surface p-4 ${className}`}>
-      <p className="text-xs text-slate-500 mb-2">Equity curve (from closed trades)</p>
+    <div className={"rounded-xl border border-slate-800 bg-surface p-4 " + className}>
+      <p className="text-xs text-slate-500 mb-2">Equity curve (from closed trades){showLinearProjection ? " + linear projection (last 30)" : ""}</p>
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+        <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
           <defs>
             <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.3} />
@@ -82,6 +113,17 @@ export function EquityCurveChart({
             fill="url(#equityGrad)"
             strokeWidth={2}
           />
+          {showLinearProjection && (
+            <Line
+              type="monotone"
+              dataKey="projection"
+              stroke="#f59e0b"
+              strokeDasharray="4 2"
+              dot={false}
+              strokeWidth={1.5}
+              name="Projection"
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>
