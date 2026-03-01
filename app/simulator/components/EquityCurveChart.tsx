@@ -9,7 +9,8 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Legend
 } from "recharts";
 
 /** Single point on equity curve (after each trade or by day) */
@@ -41,7 +42,7 @@ export function EquityCurveChart({
   const chartData = useMemo(() => {
     if (!data.length) return [];
     if (!projectedData || projectedData.length !== data.length) return data.map((p) => ({ ...p, projectedPct: undefined }));
-    return data.map((p, i) => ({ ...p, projectedPct: projectedData[i]?.pct }));
+    return data.map((p, i) => ({ ...p, projectedPct: projectedData[i].pct }));
   }, [data, projectedData]);
 
   if (!data.length) {
@@ -55,7 +56,7 @@ export function EquityCurveChart({
     );
   }
 
-  const hasProjected = chartData.some((d) => d.projectedPct !== undefined);
+  const hasProjected = Boolean(projectedData?.length === data.length && chartData.some((d) => d.projectedPct !== undefined));
 
   return (
     <div className={"rounded-xl border border-slate-800 bg-surface p-4 " + className}>
@@ -102,10 +103,18 @@ export function EquityCurveChart({
               type="monotone"
               dataKey="projectedPct"
               stroke="#f59e0b"
-              strokeDasharray="4 2"
+              strokeWidth={2.5}
+              strokeDasharray="5 3"
               dot={false}
-              strokeWidth={2}
+              connectNulls
               name="Projected"
+              isAnimationActive={false}
+            />
+          )}
+          {hasProjected && (
+            <Legend
+              wrapperStyle={{ fontSize: "11px" }}
+              formatter={(value) => <span className="text-slate-400">{value}</span>}
             />
           )}
         </AreaChart>
