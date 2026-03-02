@@ -57,8 +57,8 @@ body {
 
 .partners-marquee {
   display: inline-flex;
-  gap: 1.5rem;
-  animation: partners-marquee 20s linear infinite;
+  gap: 2rem;
+  animation: partners-marquee 10s linear infinite;
   will-change: transform;
 }
 

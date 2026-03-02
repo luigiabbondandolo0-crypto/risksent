@@ -175,19 +175,19 @@ export default function HomePage() {
 
       {/* Partners slider */}
       <section className="px-4 py-8 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-4xl">
           <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
             PARTNERS & INTEGRATIONS
           </p>
           <div className="mt-4 overflow-hidden pb-2">
             <div className="partners-marquee">
               {[0, 1].map((row) => (
-                <div key={row} className="flex items-center gap-6">
-                  <div className="flex h-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/70 px-4">
+                <div key={row} className="flex items-center gap-8">
+                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl bg-white p-4 shadow-sm">
                     <img
                       src="/partners/avantgarde-fx.png"
                       alt="Avantgarde FX"
-                      className="h-8 w-auto object-contain"
+                      className="h-full w-full object-contain"
                     />
                   </div>
                 </div>
