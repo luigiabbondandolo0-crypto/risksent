@@ -20,7 +20,7 @@ export type StatsForRisk = {
 export type RiskLevel = "lieve" | "medio" | "alto";
 
 export type RiskFinding = {
-  type: "daily_loss" | "max_drawdown" | "max_risk_per_trade" | "revenge_trading";
+  type: "daily_loss" | "max_drawdown" | "current_exposure" | "max_risk_per_trade" | "revenge_trading";
   level: RiskLevel;
   message: string;
   advice: string;
@@ -84,44 +84,47 @@ export function getRiskFindings(
     }
   }
 
-  // --- Max risk per trade (da posizioni aperte con SL) ---
+  // --- Max risk per trade (da posizioni aperte con SL) — aggregated for one Telegram alert ---
   if (rules.max_risk_per_trade_pct > 0 && openPositions.length > 0) {
     const limit = rules.max_risk_per_trade_pct;
-    for (const pos of openPositions) {
-      const riskPct = pos.riskPct;
-      if (riskPct != null && riskPct > limit) {
-        const ratio = riskPct / limit;
-        const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
-        findings.push({
-          type: "max_risk_per_trade",
-          level,
-          message: `Risk on trade ${pos.symbol}: ${riskPct.toFixed(2)}% (limit ${limit}%). Reduce stop loss or lot size.`,
-          advice: "Close or downsize the position to respect max risk per trade. Check RiskSent → Rules.",
-          severity: level === "alto" ? "high" : "medium"
-        });
-      }
+    const overLimit = openPositions.filter((p) => p.riskPct != null && p.riskPct > limit);
+    if (overLimit.length > 0) {
+      const maxRatio = Math.max(...overLimit.map((p) => (p.riskPct ?? 0) / limit));
+      const level: RiskLevel = maxRatio >= 1.5 ? "alto" : maxRatio >= 1.1 ? "medio" : "medio";
+      const parts = overLimit.map((p) => `${p.symbol} ${(p.riskPct ?? 0).toFixed(2)}%`);
+      const message =
+        overLimit.length === 1
+          ? `Open position ${parts[0]} (limit ${limit}%). Reduce stop loss or lot size.`
+          : `Open positions over risk limit: ${parts.join(", ")} (limit ${limit}%). Reduce stop loss or lot size.`;
+      findings.push({
+        type: "max_risk_per_trade",
+        level,
+        message,
+        advice: "Close or downsize the position(s) to respect max risk per trade. Check RiskSent → Rules.",
+        severity: level === "alto" ? "high" : "medium"
+      });
     }
   }
 
-  // --- Current exposure (from open positions) ---
-  if (currentExposurePct != null && rules.max_exposure_pct > 0) {
+  // --- Current exposure (from open positions) — distinct type so Telegram gets both exposure + historical drawdown ---
+  if (currentExposurePct != null && currentExposurePct > 0 && rules.max_exposure_pct > 0) {
     const limit = rules.max_exposure_pct;
     const approachLimit = limit * APPROACH_THRESHOLD;
     if (currentExposurePct >= limit) {
       const ratio = currentExposurePct / limit;
       const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
       findings.push({
-        type: "max_drawdown",
+        type: "current_exposure",
         level,
-        message: `Current exposure: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
+        message: `Open positions exposure: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice(level, currentExposurePct, limit),
         severity: level === "alto" ? "high" : "medium"
       });
     } else if (currentExposurePct >= approachLimit) {
       findings.push({
-        type: "max_drawdown",
+        type: "current_exposure",
         level: "lieve",
-        message: `Exposure approaching limit: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
+        message: `Open positions exposure approaching limit: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice("lieve", currentExposurePct, limit),
         severity: "medium"
       });

@@ -15,9 +15,13 @@ type ClosedOrder = { closeTime?: string; profit?: number };
 
 type RawOpenPosition = {
   symbol?: string;
+  instrument?: string;
   volume?: number;
+  lots?: number;
   openPrice?: number;
+  open_price?: number;
   stopLoss?: number;
+  stop_loss?: number;
   type?: string;
 };
 
@@ -94,7 +98,9 @@ function parseOpenPositions(raw: unknown): RawOpenPosition[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
     (o): o is RawOpenPosition =>
-      o != null && typeof o === "object" && typeof (o as RawOpenPosition).symbol === "string"
+      o != null &&
+      typeof o === "object" &&
+      (typeof (o as RawOpenPosition).symbol === "string" || typeof (o as RawOpenPosition).instrument === "string")
   );
 }
 
@@ -102,10 +108,11 @@ function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): Open
   if (equity <= 0) return [];
   const out: OpenPositionForRisk[] = [];
   for (const p of raw) {
-    const symbol = String(p.symbol ?? "").trim();
-    const volume = Number(p.volume) || 0;
-    const openPrice = Number(p.openPrice) || 0;
-    const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
+    const symbol = String(p.symbol ?? (p as RawOpenPosition).instrument ?? "").trim();
+    const volume = Number(p.volume ?? (p as RawOpenPosition).lots) || 0;
+    const openPrice = Number(p.openPrice ?? (p as RawOpenPosition).open_price) || 0;
+    const stopLossRaw = p.stopLoss ?? (p as RawOpenPosition).stop_loss;
+    const stopLoss = stopLossRaw != null ? Number(stopLossRaw) : undefined;
     if (!symbol || volume <= 0 || openPrice <= 0) continue;
     let riskPct: number | null = null;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
@@ -117,7 +124,7 @@ function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): Open
       volume,
       openPrice,
       stopLoss: stopLoss ?? null,
-      type: p.type === "sell" ? "sell" : "buy",
+      type: String(p.type ?? "").toLowerCase() === "sell" ? "sell" : "buy",
       riskPct: riskPct ?? null
     });
   }
