@@ -46,3 +46,19 @@ body {
 .animate-delay-400 { animation-delay: 400ms; }
 .animate-delay-500 { animation-delay: 500ms; }
 
+@keyframes partners-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.partners-marquee {
+  display: inline-flex;
+  gap: 1.5rem;
+  animation: partners-marquee 20s linear infinite;
+  will-change: transform;
+}
+
