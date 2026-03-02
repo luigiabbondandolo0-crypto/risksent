@@ -280,10 +280,27 @@ export async function GET(req: NextRequest) {
       fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, { headers })
     ]);
     
-    // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
-    let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(accountId)}`, { headers });
-    if (!openRes.ok && openRes.status === 403) {
-      openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(accountId)}`, { headers });
+    // Try multiple endpoint variations for open positions
+    // Based on docs: HistoryPositions or OrderHistory filtered by state="Started"
+    const endpoints = [
+      `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(accountId)}`,
+      `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(accountId)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`,
+      `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(accountId)}`,
+      `${METAAPI_BASE}/Positions?id=${encodeURIComponent(accountId)}`
+    ];
+    
+    let openRes: Response | null = null;
+    let rawData: unknown = null;
+    
+    for (const endpoint of endpoints) {
+      openRes = await fetch(endpoint, { headers });
+      if (openRes.ok) {
+        rawData = await openRes.json();
+        break; // Found working endpoint
+      }
+      if (openRes.status !== 403) {
+        continue; // Try next endpoint
+      }
     }
 
     if (!summaryRes.ok) {
@@ -305,9 +322,26 @@ export async function GET(req: NextRequest) {
     }
 
     let currentExposurePct: number | null = null;
-    if (openRes.ok) {
-      const rawOpen = await openRes.json();
-      const rawList = Array.isArray(rawOpen) ? rawOpen : (rawOpen as { orders?: unknown })?.orders ?? (rawOpen as { positions?: unknown })?.positions ?? rawOpen ?? [];
+    if (openRes?.ok && rawData) {
+      let rawList: unknown[] = [];
+      
+      // Handle different response formats
+      if (Array.isArray(rawData)) {
+        rawList = rawData;
+      } else if (typeof rawData === 'object' && rawData !== null) {
+        // OrderHistory returns { orders: [...] }
+        if ('orders' in rawData && Array.isArray(rawData.orders)) {
+          // Filter for open positions: state="Started" or closeTime is null/empty
+          rawList = (rawData.orders as unknown[]).filter((o: any) => 
+            o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
+          );
+        } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
+          rawList = rawData.positions;
+        } else {
+          rawList = [rawData];
+        }
+      }
+      
       const positions = parseOpenPositions(rawList);
       currentExposurePct = computeCurrentExposurePct(positions, equity > 0 ? equity : balance);
     }

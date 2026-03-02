@@ -164,19 +164,55 @@ export async function runRiskCheckForAccount(params: {
     }
     const useEquity = equity > 0 ? equity : balance;
     try {
-      // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
-      let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, { headers });
-      if (!openRes.ok && openRes.status === 403) {
-        // If OpenPositions fails with 403, try OpenOrders as fallback
-        openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      // Try multiple endpoint variations for open positions
+      // Based on docs: OrderHistory with state="Started" or HistoryPositions
+      const endpoints = [
+        `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`,
+        `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`,
+        `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`,
+        `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`
+      ];
+      
+      let openRes: Response | null = null;
+      let rawData: unknown = null;
+      
+      for (const endpoint of endpoints) {
+        openRes = await fetch(endpoint, { headers });
+        if (openRes.ok) {
+          rawData = await openRes.json();
+          break; // Found working endpoint
+        }
+        if (openRes.status !== 403) {
+          // If not 403, might be a different error, try next endpoint
+          continue;
+        }
       }
-      if (openRes.ok) {
-        const raw = await openRes.json();
-        const rawList = Array.isArray(raw) ? raw : raw?.orders ?? raw?.positions ?? raw ?? [];
+      
+      if (openRes?.ok && rawData) {
+        let rawList: unknown[] = [];
+        
+        // Handle different response formats
+        if (Array.isArray(rawData)) {
+          rawList = rawData;
+        } else if (typeof rawData === 'object' && rawData !== null) {
+          // OrderHistory returns { orders: [...] }
+          if ('orders' in rawData && Array.isArray(rawData.orders)) {
+            // Filter for open positions: state="Started" or closeTime is null/empty
+            rawList = (rawData.orders as unknown[]).filter((o: any) => 
+              o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
+            );
+          } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
+            rawList = rawData.positions;
+          } else {
+            rawList = [rawData];
+          }
+        }
+        
         openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
       }
+      // If all endpoints return 403, they don't exist for this account - silently skip
     } catch {
-      // OpenPositions/OpenOrders may not exist or be available
+      // OpenPositions may not exist or be available - silently skip
     }
   } catch (e) {
     return {
@@ -331,21 +367,61 @@ export async function runRiskCheckDryRun(params: {
 
     const useEquity = equity > 0 ? equity : balance;
     try {
-      // Try OpenPositions first (MT4/MT5 standard), then fallback to OpenOrders
-      let openRes = await fetch(`${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, { headers });
-      if (!openRes.ok && openRes.status === 403) {
-        // If OpenPositions fails with 403, try OpenOrders as fallback
-        openRes = await fetch(`${METAAPI_BASE}/OpenOrders?id=${encodeURIComponent(uuid)}`, { headers });
+      // Try multiple endpoint variations for open positions
+      // Based on docs: HistoryPositions or OrderHistory filtered by state="Started"
+      const endpoints = [
+        { url: `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`, name: "HistoryPositions" },
+        { url: `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`, name: "OrderHistory" },
+        { url: `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, name: "OpenPositions" },
+        { url: `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`, name: "Positions" }
+      ];
+      
+      let openRes: Response | null = null;
+      let triedEndpoint = "";
+      let rawData: unknown = null;
+      
+      for (const endpoint of endpoints) {
+        triedEndpoint = endpoint.name;
+        openRes = await fetch(endpoint.url, { headers });
+        if (openRes.ok) {
+          rawData = await openRes.json();
+          break; // Found working endpoint
+        }
+        if (openRes.status !== 403) {
+          continue; // Try next endpoint
+        }
       }
+      
       connection.openOrders = {
-        ok: openRes.ok,
-        status: openRes.status,
-        error: openRes.ok ? "" : (await openRes.text().catch(() => "Unknown"))
+        ok: openRes?.ok ?? false,
+        status: openRes?.status ?? 0,
+        error: openRes?.ok ? "" : (await openRes?.text().catch(() => `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`))
       };
-      if (openRes.ok) {
-        rawOpen = await openRes.json();
-        const rawList = Array.isArray(rawOpen) ? rawOpen : (rawOpen as { orders?: unknown })?.orders ?? (rawOpen as { positions?: unknown })?.positions ?? rawOpen ?? [];
+      
+      if (openRes?.ok && rawData) {
+        let rawList: unknown[] = [];
+        
+        // Handle different response formats
+        if (Array.isArray(rawData)) {
+          rawList = rawData;
+        } else if (typeof rawData === 'object' && rawData !== null) {
+          // OrderHistory returns { orders: [...] }
+          if ('orders' in rawData && Array.isArray(rawData.orders)) {
+            // Filter for open positions: state="Started" or closeTime is null/empty
+            rawList = (rawData.orders as unknown[]).filter((o: any) => 
+              o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
+            );
+          } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
+            rawList = rawData.positions;
+          } else {
+            rawList = [rawData];
+          }
+        }
+        
+        rawOpen = rawList;
         openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
+      } else if (openRes?.status === 403) {
+        connection.openOrders.error = `All endpoints (${endpoints.map(e => e.name).join(", ")}) returned 403 - not available for this account type`;
       }
     } catch (e) {
       connection.openOrders.error = e instanceof Error ? e.message : "Request failed";
