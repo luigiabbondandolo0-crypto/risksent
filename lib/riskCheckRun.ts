@@ -395,7 +395,7 @@ export async function runRiskCheckDryRun(params: {
       connection.openOrders = {
         ok: openRes?.ok ?? false,
         status: openRes?.status ?? 0,
-        error: openRes?.ok ? "" : (await openRes?.text().catch(() => `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`))
+        error: openRes?.ok ? "" : (openRes ? (await openRes.text().catch(() => `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`)) : `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`)
       };
       
       if (openRes?.ok && rawData) {
