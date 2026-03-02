@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Shield, LayoutDashboard } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export function Topbar() {
-  const router = useRouter();
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const isLoginPage = pathname === "/login";
+  const isAdminArea = pathname?.startsWith("/admin");
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -21,12 +22,12 @@ export function Topbar() {
       if (session?.user) {
         setEmail(session.user.email ?? null);
         
-        // Load full_name from profile
         try {
           const res = await fetch("/api/profile");
           if (res.ok) {
             const data = await res.json();
             setFullName(data.fullName || null);
+            setIsAdmin(data.role === "admin");
           }
         } catch (e) {
           // Ignore errors, just use email
@@ -74,6 +75,26 @@ export function Topbar() {
         <div className="flex items-center gap-4">
           {email ? (
             <>
+              {isAdminArea && (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-800/40 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700/50 hover:text-slate-100 transition-colors"
+                  title="Vai alla Dashboard"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  <span>Dashboard</span>
+                </Link>
+              )}
+              {isAdmin && !isAdminArea && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-1.5 rounded-lg border border-amber-700/50 bg-amber-900/20 px-2.5 py-1.5 text-xs text-amber-300 hover:bg-amber-800/30 hover:text-amber-200 transition-colors"
+                  title="Admin area"
+                >
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>Admin</span>
+                </Link>
+              )}
               <Link
                 href="/profile"
                 className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 transition-colors cursor-pointer"
