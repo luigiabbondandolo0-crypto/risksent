@@ -55,7 +55,7 @@ export default function HomePage() {
               </div>
               <span className="hidden h-3 w-px bg-slate-700 sm:inline-block" />
               <span className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-                Live monitoring · Telegram alerts · Admin area
+                Live monitoring · Telegram alerts
               </span>
             </div>
           </div>
@@ -265,6 +265,13 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Separator between features and flow */}
+      <section className="px-4 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
         </div>
       </section>
 
