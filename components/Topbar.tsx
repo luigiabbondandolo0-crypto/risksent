@@ -115,6 +115,12 @@ export function Topbar() {
           ) : !isLoginPage ? (
             <>
               <Link
+                href="/demo"
+                className="hidden rounded-lg border border-slate-600 bg-slate-800/40 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700/50 hover:border-cyan-500/50 hover:text-cyan-200 transition-all duration-200 sm:inline-flex"
+              >
+                Demo dashboard
+              </Link>
+              <Link
                 href="/dashboard"
                 className="rounded-lg border border-slate-600 bg-slate-800/40 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-700/50 hover:border-cyan-500/50 hover:text-cyan-200 transition-all duration-200"
               >

@@ -173,6 +173,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Partners slider */}
+      <section className="px-4 py-8 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            PARTNERS & INTEGRATIONS
+          </p>
+          <div className="mt-4 flex items-center gap-6 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <div className="flex items-center gap-6">
+              {["partner-1", "partner-2", "partner-3", "partner-4", "partner-5"].map(
+                (name) => (
+                  <div
+                    key={name}
+                    className="flex h-10 flex-shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/70 px-4"
+                  >
+                    <span className="text-xs font-medium text-slate-300">
+                      {name.toUpperCase()}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Feature grid */}
       <section className="px-4 py-14 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-6xl">
@@ -186,8 +211,8 @@ export default function HomePage() {
             </h2>
             <p className="mt-3 text-sm text-slate-300 sm:text-base">
               TradeZella tracks every execution detail. RiskSent tracks whether
-              those trades respect your risk plan: loss, exposure, behaviour and
-              admin-level monitoring.
+              those trades respect your risk plan: loss, exposure and behaviour,
+              so you know when risk is drifting out of bounds.
             </p>
           </div>
 
@@ -215,8 +240,8 @@ export default function HomePage() {
               },
               {
                 icon: Shield,
-                title: "Admin monitoring",
-                desc: "Separate admin area to supervise multiple accounts and track live exposure across traders.",
+                title: "Multi-account ready",
+                desc: "Connect multiple MetaTrader accounts and see their risk profile in one place.",
               },
               {
                 icon: Bell,
@@ -245,7 +270,7 @@ export default function HomePage() {
 
       {/* How it works */}
       <section className="px-4 pb-14 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
             <div className="lg:w-2/5">
               <h2 className="text-2xl font-semibold text-white sm:text-3xl">
@@ -299,9 +324,54 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="px-4 pb-14 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl font-semibold text-white sm:text-3xl">
+              Traders who treat risk as a{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                first-class metric
+              </span>
+              .
+            </h2>
+            <p className="mt-3 text-sm text-slate-300 sm:text-base">
+              RiskSent is built for discretionary traders and prop accounts that
+              want less noise and more accountability.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {[
+              {
+                name: "Luca, FTMO trader",
+                text: "“I finally stopped checking five different dashboards. One glance at RiskSent tells me if I can keep trading or not.”",
+              },
+              {
+                name: "Sara, swing trader",
+                text: "“The Telegram alerts are simple and precise. When daily loss is near the limit, I get a ping and walk away.”",
+              },
+              {
+                name: "Marco, prop firm coach",
+                text: "“Monitoring multiple traders is easier: I only react when someone is breaking basic risk rules.”",
+              },
+            ].map((t) => (
+              <div
+                key={t.name}
+                className="flex h-full flex-col justify-between rounded-2xl border border-slate-800 bg-slate-950/80 p-5"
+              >
+                <p className="text-sm text-slate-100">{t.text}</p>
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  {t.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="px-4 pb-16 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-6xl">
           <div className="relative overflow-hidden rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/15 via-slate-950 to-emerald-500/15 p-7 text-center sm:p-10">
             <div className="pointer-events-none absolute -right-24 -top-24 h-52 w-52 rounded-full bg-cyan-500/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 -left-24 h-52 w-52 rounded-full bg-emerald-500/20 blur-3xl" />
@@ -337,7 +407,7 @@ export default function HomePage() {
 
       {/* Contact */}
       <section className="px-4 pb-10 sm:px-6 lg:px-10" id="contact">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-6xl">
           <h2 className="text-center text-xl font-semibold text-white sm:text-2xl">
             Need help connecting your account?
           </h2>
