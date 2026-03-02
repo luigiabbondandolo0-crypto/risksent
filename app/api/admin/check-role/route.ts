@@ -6,6 +6,12 @@ import { checkAdminRole } from "@/lib/adminAuth";
  * Returns whether the current user has admin role
  */
 export async function GET() {
-  const { isAdmin, userId } = await checkAdminRole();
-  return NextResponse.json({ isAdmin, userId });
+  try {
+    const { isAdmin, userId } = await checkAdminRole();
+    console.log("[check-role API] Result:", { isAdmin, userId });
+    return NextResponse.json({ isAdmin, userId });
+  } catch (err) {
+    console.error("[check-role API] Error:", err);
+    return NextResponse.json({ isAdmin: false, userId: null }, { status: 500 });
+  }
 }

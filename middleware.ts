@@ -12,7 +12,6 @@ const PROTECTED_PATHS = [
   "/add-account",
   "/accounts",
   "/admin",
-  "/live-monitoring",
   "/change-password",
   "/profile"
 ];
@@ -22,12 +21,25 @@ const ADMIN_PATHS = [
 ];
 
 export async function middleware(req: NextRequest) {
+  // Log all admin path requests in development
+  if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
+    console.log("[middleware] 🔍 Admin path requested:", req.nextUrl.pathname);
+  }
+  
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
   const {
     data: { session }
   } = await supabase.auth.getSession();
+  
+  if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
+    console.log("[middleware] Session check:", {
+      hasSession: !!session,
+      email: session?.user?.email || null,
+      userId: session?.user?.id || null
+    });
+  }
 
   const isProtected = PROTECTED_PATHS.some((path) =>
     req.nextUrl.pathname.startsWith(path)
@@ -46,21 +58,72 @@ export async function middleware(req: NextRequest) {
   );
 
   if (isAdminPath && session) {
+    // Always log in development to see what's happening
+    console.log("[middleware] Checking admin access for:", session.user.email, "path:", req.nextUrl.pathname);
+    
     try {
       const admin = createSupabaseAdmin();
-      const { data: appUser } = await admin
+      const userId = session.user.id;
+      
+      // Use .maybeSingle() instead of .single() to handle missing records gracefully
+      const { data: appUser, error: roleError } = await admin
         .from("app_user")
         .select("role")
-        .eq("id", session.user.id)
-        .single();
+        .eq("id", userId)
+        .maybeSingle();
 
-      if (!appUser || appUser.role !== "admin") {
+      // Log for debugging
+      if (process.env.NODE_ENV === "development") {
+        console.log("[middleware] Admin check:", {
+          userId,
+          email: session.user.email,
+          hasAppUser: !!appUser,
+          role: appUser?.role,
+          error: roleError?.message || null,
+          errorCode: roleError?.code || null
+        });
+      }
+
+      // If there's a database error (not just "not found"), log it
+      if (roleError && roleError.code !== "PGRST116") { // PGRST116 = no rows returned
+        console.error("[middleware] ❌ Admin check database error:");
+        console.error("  Message:", roleError.message);
+        console.error("  Code:", roleError.code);
+        console.error("  Details:", roleError.details);
+        console.error("  Hint:", roleError.hint);
+        console.error("  Full error:", JSON.stringify(roleError, null, 2));
         const url = req.nextUrl.clone();
         url.pathname = "/dashboard";
         return NextResponse.redirect(url);
       }
-    } catch {
+      
+      // Log anche se c'è un errore PGRST116 (record non trovato)
+      if (roleError && roleError.code === "PGRST116") {
+        console.warn("[middleware] ⚠️  No app_user record found (PGRST116) for user:", userId);
+      }
+
+      // If no user found or role is not admin, redirect
+      if (!appUser) {
+        console.warn("[middleware] No app_user record found for user:", userId);
+        const url = req.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
+
+      if (appUser.role !== "admin") {
+        console.log("[middleware] User is not admin, role:", appUser.role);
+        const url = req.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
+
+      // Admin user - allow access
+      if (process.env.NODE_ENV === "development") {
+        console.log("[middleware] ✅ Admin access granted for:", session.user.email);
+      }
+    } catch (err) {
       // If check fails, redirect to dashboard
+      console.error("[middleware] Admin check exception:", err);
       const url = req.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
@@ -75,7 +138,7 @@ export async function middleware(req: NextRequest) {
         .from("app_user")
         .select("role")
         .eq("id", session.user.id)
-        .single();
+        .maybeSingle();
 
       // If admin, don't redirect - let them choose area
       if (appUser && appUser.role === "admin") {

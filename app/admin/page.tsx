@@ -42,16 +42,25 @@ export default function AdminPage() {
         return;
       }
 
-      const res = await fetch("/api/admin/check-role");
-      if (res.ok) {
-        const data = await res.json();
-        if (!data.isAdmin) {
+      try {
+        const res = await fetch("/api/admin/check-role");
+        if (res.ok) {
+          const data = await res.json();
+          console.log("[AdminPage] Role check result:", data);
+          if (!data.isAdmin) {
+            setForbidden(true);
+            setIsAdmin(false);
+            return;
+          }
+          setIsAdmin(true);
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          console.error("[AdminPage] Role check failed:", res.status, errorData);
           setForbidden(true);
           setIsAdmin(false);
-          return;
         }
-        setIsAdmin(true);
-      } else {
+      } catch (err) {
+        console.error("[AdminPage] Role check exception:", err);
         setForbidden(true);
         setIsAdmin(false);
       }

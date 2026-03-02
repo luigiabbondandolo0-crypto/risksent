@@ -24,12 +24,26 @@ export async function checkAdminRole(): Promise<{ isAdmin: boolean; userId: stri
       .eq("id", user.id)
       .single();
 
-    if (error || !appUser) {
+    if (error) {
+      console.error("[checkAdminRole] Database error:", error.message);
       return { isAdmin: false, userId: user.id };
     }
 
-    return { isAdmin: appUser.role === "admin", userId: user.id };
-  } catch {
+    if (!appUser) {
+      console.log("[checkAdminRole] No app_user found for user:", user.id);
+      return { isAdmin: false, userId: user.id };
+    }
+
+    const isAdmin = appUser.role === "admin";
+    console.log("[checkAdminRole] User role check:", {
+      userId: user.id,
+      role: appUser.role,
+      isAdmin
+    });
+
+    return { isAdmin, userId: user.id };
+  } catch (err) {
+    console.error("[checkAdminRole] Exception:", err);
     return { isAdmin: false, userId: user.id };
   }
 }
