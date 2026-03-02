@@ -183,7 +183,7 @@ export default function HomePage() {
             <div className="partners-marquee">
               {[0, 1].map((row) => (
                 <div key={row} className="flex items-center gap-8">
-                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl bg-white p-4 shadow-sm">
+                  <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl border border-slate-700/70 bg-transparent p-4">
                     <img
                       src="/partners/avantgarde-fx.png"
                       alt="Avantgarde FX"

@@ -20,6 +20,8 @@ type RawOpenPosition = {
   lots?: number;
   openPrice?: number;
   open_price?: number;
+  price?: number;
+  currentPrice?: number;
   stopLoss?: number;
   stop_loss?: number;
   type?: string;
@@ -94,6 +96,41 @@ function buildStatsForRisk(balance: number, orders: ClosedOrder[]): StatsForRisk
   };
 }
 
+/** Extract array of open position-like objects from various API response shapes. */
+function extractOpenListFromResponse(rawData: unknown): unknown[] {
+  if (!rawData || typeof rawData !== "object") return [];
+  const o = rawData as Record<string, unknown>;
+  if (Array.isArray(rawData)) return rawData;
+  // Nested: data.positions, data.orders
+  const data = o.data as Record<string, unknown> | undefined;
+  if (data && typeof data === "object") {
+    const fromData = extractOpenListFromResponse(data);
+    if (fromData.length > 0) return fromData;
+  }
+  for (const key of ["positions", "orders", "position"]) {
+    const v = o[key];
+    if (Array.isArray(v)) {
+      if (key === "orders") {
+        return (v as unknown[]).filter((item: unknown) => {
+          const i = item as Record<string, unknown>;
+          const state = String(i?.state ?? "").toLowerCase();
+          const closeTime = i?.closeTime ?? i?.close_time;
+          const isOpen =
+            state === "started" ||
+            state === "open" ||
+            state === "opened" ||
+            !closeTime ||
+            closeTime === "" ||
+            closeTime === null;
+          return isOpen;
+        });
+      }
+      return v;
+    }
+  }
+  return [];
+}
+
 function parseOpenPositions(raw: unknown): RawOpenPosition[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
@@ -110,7 +147,13 @@ function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): Open
   for (const p of raw) {
     const symbol = String(p.symbol ?? (p as RawOpenPosition).instrument ?? "").trim();
     const volume = Number(p.volume ?? (p as RawOpenPosition).lots) || 0;
-    const openPrice = Number(p.openPrice ?? (p as RawOpenPosition).open_price) || 0;
+    const openPrice =
+      Number(
+        p.openPrice ??
+          (p as RawOpenPosition).open_price ??
+          (p as RawOpenPosition).price ??
+          (p as RawOpenPosition).currentPrice
+      ) || 0;
     const stopLossRaw = p.stopLoss ?? (p as RawOpenPosition).stop_loss;
     const stopLoss = stopLossRaw != null ? Number(stopLossRaw) : undefined;
     if (!symbol || volume <= 0 || openPrice <= 0) continue;
@@ -171,53 +214,25 @@ export async function runRiskCheckForAccount(params: {
     }
     const useEquity = equity > 0 ? equity : balance;
     try {
-      // Try multiple endpoint variations for open positions
-      // Based on docs: OrderHistory with state="Started" or HistoryPositions
       const endpoints = [
         `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`,
         `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`,
         `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`,
         `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`
       ];
-      
-      let openRes: Response | null = null;
-      let rawData: unknown = null;
-      
+      const mergedOpenList: unknown[] = [];
       for (const endpoint of endpoints) {
-        openRes = await fetch(endpoint, { headers });
-        if (openRes.ok) {
-          rawData = await openRes.json();
-          break; // Found working endpoint
-        }
-        if (openRes.status !== 403) {
-          // If not 403, might be a different error, try next endpoint
-          continue;
+        const res = await fetch(endpoint, { headers });
+        if (!res.ok) continue;
+        const data = await res.json().catch(() => null);
+        const list = extractOpenListFromResponse(data);
+        if (Array.isArray(list) && list.length > 0) {
+          mergedOpenList.push(...list);
         }
       }
-      
-      if (openRes?.ok && rawData) {
-        let rawList: unknown[] = [];
-        
-        // Handle different response formats
-        if (Array.isArray(rawData)) {
-          rawList = rawData;
-        } else if (typeof rawData === 'object' && rawData !== null) {
-          // OrderHistory returns { orders: [...] }
-          if ('orders' in rawData && Array.isArray(rawData.orders)) {
-            // Filter for open positions: state="Started" or closeTime is null/empty
-            rawList = (rawData.orders as unknown[]).filter((o: any) => 
-              o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
-            );
-          } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
-            rawList = rawData.positions;
-          } else {
-            rawList = [rawData];
-          }
-        }
-        
-        openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
+      if (mergedOpenList.length > 0) {
+        openPositions = buildOpenPositionsForRisk(parseOpenPositions(mergedOpenList), useEquity);
       }
-      // If all endpoints return 403, they don't exist for this account - silently skip
     } catch {
       // OpenPositions may not exist or be available - silently skip
     }
@@ -306,6 +321,7 @@ export type RiskCheckDryRunResult = {
     accountSummary: unknown;
     closedOrders: unknown;
     openOrders: unknown;
+    openOrdersResponses?: { endpoint: string; status: number; body: unknown }[];
   };
   balance: number;
   equity: number;
@@ -343,6 +359,7 @@ export async function runRiskCheckDryRun(params: {
   let rawSummary: unknown;
   let rawClosed: unknown;
   let rawOpen: unknown;
+  let openOrdersResponses: { endpoint: string; status: number; body: unknown }[] = [];
 
   // Debug: log UUID being used
   console.log("[riskCheckDryRun] Using account UUID:", uuid);
@@ -393,61 +410,42 @@ export async function runRiskCheckDryRun(params: {
 
     const useEquity = equity > 0 ? equity : balance;
     try {
-      // Try multiple endpoint variations for open positions
-      // Based on docs: HistoryPositions or OrderHistory filtered by state="Started"
       const endpoints = [
         { url: `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`, name: "HistoryPositions" },
         { url: `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`, name: "OrderHistory" },
         { url: `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, name: "OpenPositions" },
         { url: `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`, name: "Positions" }
       ];
-      
-      let openRes: Response | null = null;
-      let triedEndpoint = "";
-      let rawData: unknown = null;
-      
+      const mergedOpenList: unknown[] = [];
+      const openOrdersResponses: { endpoint: string; status: number; body: unknown }[] = [];
+      let anyOk = false;
+      let lastStatus = 0;
+      let lastError = "";
       for (const endpoint of endpoints) {
-        triedEndpoint = endpoint.name;
-        openRes = await fetch(endpoint.url, { headers });
-        if (openRes.ok) {
-          rawData = await openRes.json();
-          break; // Found working endpoint
+        const res = await fetch(endpoint.url, { headers });
+        lastStatus = res.status;
+        const data = await res.json().catch(() => null);
+        if (includeRaw) openOrdersResponses.push({ endpoint: endpoint.name, status: res.status, body: data });
+        if (!res.ok) {
+          lastError = await res.text().catch(() => endpoint.name + " failed");
+          continue;
         }
-        if (openRes.status !== 403) {
-          continue; // Try next endpoint
+        anyOk = true;
+        const list = extractOpenListFromResponse(data);
+        if (Array.isArray(list) && list.length > 0) {
+          mergedOpenList.push(...list);
         }
       }
-      
       connection.openOrders = {
-        ok: openRes?.ok ?? false,
-        status: openRes?.status ?? 0,
-        error: openRes?.ok ? "" : (openRes ? (await openRes.text().catch(() => `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`)) : `Tried: ${triedEndpoint}, all endpoints returned 403 or failed`)
+        ok: anyOk,
+        status: lastStatus,
+        error: anyOk ? (mergedOpenList.length === 0 ? "" : "") : (lastError || "All endpoints failed")
       };
-      
-      if (openRes?.ok && rawData) {
-        let rawList: unknown[] = [];
-        
-        // Handle different response formats
-        if (Array.isArray(rawData)) {
-          rawList = rawData;
-        } else if (typeof rawData === 'object' && rawData !== null) {
-          // OrderHistory returns { orders: [...] }
-          if ('orders' in rawData && Array.isArray(rawData.orders)) {
-            // Filter for open positions: state="Started" or closeTime is null/empty
-            rawList = (rawData.orders as unknown[]).filter((o: any) => 
-              o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
-            );
-          } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
-            rawList = rawData.positions;
-          } else {
-            rawList = [rawData];
-          }
-        }
-        
-        rawOpen = rawList;
-        openPositions = buildOpenPositionsForRisk(parseOpenPositions(rawList), useEquity);
-      } else if (openRes?.status === 403) {
-        connection.openOrders.error = `All endpoints (${endpoints.map(e => e.name).join(", ")}) returned 403 - not available for this account type`;
+      if (mergedOpenList.length > 0) {
+        rawOpen = mergedOpenList;
+        openPositions = buildOpenPositionsForRisk(parseOpenPositions(mergedOpenList), useEquity);
+      } else {
+        rawOpen = [];
       }
     } catch (e) {
       connection.openOrders.error = e instanceof Error ? e.message : "Request failed";
@@ -501,7 +499,14 @@ export async function runRiskCheckDryRun(params: {
     timestamp: new Date().toISOString(),
     uuid,
     connection,
-    raw: includeRaw ? { accountSummary: rawSummary, closedOrders: rawClosed, openOrders: rawOpen } : undefined,
+    raw: includeRaw
+      ? {
+          accountSummary: rawSummary,
+          closedOrders: rawClosed,
+          openOrders: rawOpen,
+          openOrdersResponses: openOrdersResponses?.length ? openOrdersResponses : undefined
+        }
+      : undefined,
     balance,
     equity,
     closedOrdersCount: orders.length,

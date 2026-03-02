@@ -85,7 +85,8 @@ export async function GET() {
       stats: result.stats,
       currentExposurePct: result.currentExposurePct,
       openPositions: result.openPositions,
-      findings: result.findings
+      findings: result.findings,
+      rawOpenOrdersResponses: (result.raw as { openOrdersResponses?: unknown })?.openOrdersResponses
     }
   });
 }
