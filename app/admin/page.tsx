@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CreditCard, TrendingUp, Shield, AlertCircle } from "lucide-react";
-
-const ADMIN_EMAIL = "luigiabbondandolo0@gmail.com";
+import { useRouter } from "next/navigation";
+import { Users, CreditCard, TrendingUp, Shield, AlertCircle, Activity } from "lucide-react";
+import Link from "next/link";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 type UserRow = {
   id: string;
@@ -22,6 +23,8 @@ type Stats = {
 };
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +33,35 @@ export default function AdminPage() {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
 
   useEffect(() => {
+    const checkAdmin = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/login?redirectedFrom=/admin");
+        return;
+      }
+
+      const res = await fetch("/api/admin/check-role");
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.isAdmin) {
+          setForbidden(true);
+          setIsAdmin(false);
+          return;
+        }
+        setIsAdmin(true);
+      } else {
+        setForbidden(true);
+        setIsAdmin(false);
+      }
+    };
+    checkAdmin();
+  }, [router]);
+
+  useEffect(() => {
+    if (isAdmin !== true) return;
+    
     (async () => {
       setLoading(true);
       setForbidden(false);
@@ -61,7 +93,7 @@ export default function AdminPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [isAdmin]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdatingRole(userId);
@@ -89,7 +121,7 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) {
+  if (isAdmin === null || loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
         <p className="text-slate-500">Loading admin…</p>
@@ -97,14 +129,14 @@ export default function AdminPage() {
     );
   }
 
-  if (forbidden) {
+  if (!isAdmin || forbidden) {
     return (
       <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-6 flex items-start gap-3">
         <AlertCircle className="h-6 w-6 text-amber-400 flex-shrink-0 mt-0.5" />
         <div>
           <h2 className="text-lg font-semibold text-amber-200">Access denied</h2>
           <p className="text-sm text-slate-400 mt-1">
-            This page is only for the platform admin ({ADMIN_EMAIL}). If you need access, contact the administrator.
+            This page is only for administrators. If you need access, contact the administrator.
           </p>
         </div>
       </div>
@@ -130,12 +162,21 @@ export default function AdminPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-xl font-semibold text-slate-50 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-cyan-400" />
-          Admin
+          <Shield className="h-5 w-5 text-amber-400" />
+          Admin Dashboard
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Monitor users, roles, and platform statistics. Only visible to the admin account.
+          Manage users, roles, and platform statistics.
         </p>
+        <div className="mt-4">
+          <Link
+            href="/admin/live-monitoring"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800/40 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700/50 hover:border-emerald-500/50 hover:text-emerald-300 transition-all duration-200"
+          >
+            <Activity className="h-4 w-4" />
+            Live Monitoring
+          </Link>
+        </div>
       </header>
 
       {stats != null && (

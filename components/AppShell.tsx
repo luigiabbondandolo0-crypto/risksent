@@ -13,7 +13,8 @@ const APP_PATHS = [
   "/accounts",
   "/admin",
   "/change-password",
-  "/profile"
+  "/profile",
+  "/live-monitoring"
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

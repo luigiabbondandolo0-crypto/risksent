@@ -337,16 +337,35 @@ export async function runRiskCheckDryRun(params: {
   let rawClosed: unknown;
   let rawOpen: unknown;
 
+  // Debug: log UUID being used
+  console.log("[riskCheckDryRun] Using account UUID:", uuid);
+  console.log("[riskCheckDryRun] API Key configured:", apiKey ? "Yes" : "No");
+  console.log("[riskCheckDryRun] API Key length:", apiKey?.length ?? 0);
+  console.log("[riskCheckDryRun] API Key starts with:", apiKey?.substring(0, 10) ?? "N/A");
+
+  const accountSummaryUrl = `${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(uuid)}`;
+  const closedOrdersUrl = `${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`;
+  
+  console.log("[riskCheckDryRun] AccountSummary URL:", accountSummaryUrl);
+  console.log("[riskCheckDryRun] ClosedOrders URL:", closedOrdersUrl);
+
   try {
     const [summaryRes, closedRes] = await Promise.all([
-      fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(uuid)}`, { headers }),
-      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`, { headers })
+      fetch(accountSummaryUrl, { headers }),
+      fetch(closedOrdersUrl, { headers })
     ]);
 
+    const summaryErrorText = summaryRes.ok ? "" : (await summaryRes.text().catch(() => "Unknown"));
+    console.log("[riskCheckDryRun] AccountSummary response:", {
+      ok: summaryRes.ok,
+      status: summaryRes.status,
+      error: summaryErrorText.substring(0, 200)
+    });
+    
     connection.accountSummary = {
       ok: summaryRes.ok,
       status: summaryRes.status,
-      error: summaryRes.ok ? "" : (await summaryRes.text().catch(() => "Unknown"))
+      error: summaryErrorText
     };
     if (summaryRes.ok) {
       rawSummary = await summaryRes.json();

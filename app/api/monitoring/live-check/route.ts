@@ -34,6 +34,10 @@ export async function GET() {
     return NextResponse.json({ error: "No linked account", detail: "Add an account and link it (metaapi_account_id)." }, { status: 400 });
   }
 
+  // Debug: log UUID being used
+  console.log("[live-check] Using account UUID:", uuid);
+  console.log("[live-check] API Key configured:", apiKey ? "Yes" : "No");
+
   const result = await runRiskCheckDryRun({
     userId: user.id,
     uuid,

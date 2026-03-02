@@ -20,6 +20,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const redirectTo = useMemo(
     () => searchParams.get("redirectedFrom") ?? "/dashboard",
@@ -65,9 +66,25 @@ function LoginForm() {
         return;
       }
 
-      // Successful login - redirect immediately
+      // Successful login - check if admin to show area selection
       if (data?.user) {
-        // Use window.location for proper redirect
+        // Check if user is admin
+        try {
+          const roleRes = await fetch("/api/admin/check-role");
+          if (roleRes.ok) {
+            const roleData = await roleRes.json();
+            if (roleData.isAdmin) {
+              // Admin user - show area selection instead of redirecting
+              setIsAdmin(true);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // If check fails, proceed with normal redirect
+        }
+        
+        // Non-admin or check failed - redirect immediately
         window.location.href = redirectTo;
         // Don't set loading to false here - we're redirecting
       } else {
@@ -80,6 +97,41 @@ function LoginForm() {
       setLoading(false);
     }
   }, [email, password, redirectTo, router]);
+
+  // Show area selection for admin users
+  if (isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4">
+        <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-surface/80 p-6 shadow-lg shadow-black/40">
+          <h1 className="text-lg font-semibold text-slate-50 mb-1">
+            Choose Area
+          </h1>
+          <p className="text-xs text-slate-500 mb-6">
+            Select the area you want to access.
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                window.location.href = "/dashboard";
+              }}
+              className="w-full rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-black hover:bg-emerald-400 transition-colors"
+            >
+              User Area
+            </button>
+            <button
+              onClick={() => {
+                window.location.href = "/admin";
+              }}
+              className="w-full rounded-md border border-amber-500/50 bg-amber-500/20 px-3 py-2 text-sm font-medium text-amber-300 hover:bg-amber-500/30 transition-colors"
+            >
+              Admin Area
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4">

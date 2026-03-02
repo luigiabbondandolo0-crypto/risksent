@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { checkAdminRole } from "@/lib/adminAuth";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
-
-const ADMIN_EMAIL = "luigiabbondandolo0@gmail.com";
 
 /**
  * PATCH /api/admin/users/[id]/role
@@ -12,13 +10,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
+  const { isAdmin } = await checkAdminRole();
 
-  if (authError || !user || user.email !== ADMIN_EMAIL) {
+  if (!isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
