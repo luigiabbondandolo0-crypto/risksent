@@ -417,7 +417,7 @@ export async function runRiskCheckDryRun(params: {
         { url: `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`, name: "Positions" }
       ];
       const mergedOpenList: unknown[] = [];
-      const openOrdersResponses: { endpoint: string; status: number; body: unknown }[] = [];
+      openOrdersResponses = [];
       let anyOk = false;
       let lastStatus = 0;
       let lastError = "";

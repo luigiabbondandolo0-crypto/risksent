@@ -125,6 +125,18 @@ function buildHumanEvents(result: Awaited<ReturnType<typeof runRiskCheckDryRun>>
     technical: JSON.stringify(result.openPositions, null, 2)
   });
 
+  const rawResponses = (result.raw as { openOrdersResponses?: { endpoint: string; status: number; body: unknown }[] })?.openOrdersResponses;
+  if (rawResponses?.length) {
+    const humanLines = rawResponses.map(
+      (r) => `${r.endpoint}: ${r.status} ${typeof r.body === "object" && r.body && "error" in r.body ? String((r.body as { error?: string }).error) : ""}`
+    );
+    events.push({
+      title: "Open orders API responses (raw)",
+      human: humanLines.join(" | ") + " — See technical details for full response bodies.",
+      technical: JSON.stringify(rawResponses, null, 2)
+    });
+  }
+
   events.push({
     title: "Current exposure %",
     human: result.currentExposurePct == null ? "N/A (no open positions or not computed)." : `${result.currentExposurePct.toFixed(2)}% (limit ${result.rules.max_exposure_pct}%)`,
