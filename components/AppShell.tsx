@@ -19,6 +19,7 @@ const APP_PATHS = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isApp = APP_PATHS.some((p) => pathname?.startsWith(p));
+  const isAdminArea = pathname?.startsWith("/admin");
 
   if (!isApp) {
     return <>{children}</>;
@@ -26,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-1 w-full">
-      <Sidebar />
+      <Sidebar variant={isAdminArea ? "admin" : "default"} />
       <main className="flex-1 w-full min-w-0 px-4 sm:px-6 py-6">
         {children}
       </main>

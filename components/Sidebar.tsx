@@ -7,9 +7,9 @@ import {
   Bot,
   PlusCircle,
   CreditCard,
+  User,
   Shield,
   Activity,
-  Key,
 } from "lucide-react";
 
 const navItems = [
@@ -25,7 +25,34 @@ const secondaryItems = [
   { href: "/add-account", label: "Add Account", icon: PlusCircle },
 ] as const;
 
-export function Sidebar() {
+const adminNavItems = [
+  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/admin/live-monitoring", label: "Live Monitoring", icon: Activity },
+] as const;
+
+export function Sidebar({ variant = "default" }: { variant?: "default" | "admin" }) {
+  if (variant === "admin") {
+    return (
+      <aside className="hidden lg:flex flex-col w-56 border-r border-slate-800/60 bg-slate-950/40 px-4 py-6">
+        <span className="uppercase tracking-wider text-[11px] text-slate-500 mb-4 font-medium">
+          Admin
+        </span>
+        <nav className="flex flex-col gap-1">
+          {adminNavItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
+            >
+              <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
+              <span className="uppercase tracking-wide">{label}</span>
+            </Link>
+          ))}
+        </nav>
+      </aside>
+    );
+  }
+
   return (
     <aside className="hidden lg:flex flex-col w-56 border-r border-slate-800/60 bg-slate-950/40 px-4 py-6">
       <span className="uppercase tracking-wider text-[11px] text-slate-500 mb-4 font-medium">
@@ -57,11 +84,11 @@ export function Sidebar() {
             </Link>
           ))}
           <Link
-            href="/change-password"
+            href="/profile"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
           >
-            <Key className="h-4 w-4 flex-shrink-0 text-slate-500" />
-            <span className="uppercase tracking-wide">Change Password</span>
+            <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
+            <span className="uppercase tracking-wide">Profile</span>
           </Link>
         </div>
       </nav>

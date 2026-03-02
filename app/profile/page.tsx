@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Calendar, Shield } from "lucide-react";
+import { User, Mail, Calendar, Shield, Key } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 type ProfileData = {
@@ -28,6 +28,12 @@ export default function ProfilePage() {
     role: "customer",
     createdAt: ""
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordInfo, setPasswordInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -92,6 +98,47 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
+
+  const handleChangePassword = useCallback(async (e: FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordInfo(null);
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please fill in all fields.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("New password must be different from current password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (updateError) {
+        setPasswordError(updateError.message);
+        setPasswordLoading(false);
+        return;
+      }
+      setPasswordInfo("Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      setPasswordError("Unexpected error. Please try again.");
+    }
+    setPasswordLoading(false);
+  }, [currentPassword, newPassword, confirmPassword]);
 
   if (loading) {
     return (
@@ -232,6 +279,76 @@ export default function ProfilePage() {
               Cancel
             </button>
           </div>
+        </form>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-surface/80 p-6 shadow-lg shadow-black/40">
+        <h2 className="text-base font-semibold text-slate-50 flex items-center gap-2 mb-1">
+          <Key className="h-4 w-4 text-emerald-400" />
+          Change password
+        </h2>
+        <p className="text-xs text-slate-500 mb-6">
+          Update your account password. Make sure it&apos;s strong and secure.
+        </p>
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
+          <div className="space-y-1">
+            <label className="block text-xs text-slate-400" htmlFor="currentPassword">
+              Current password
+            </label>
+            <input
+              id="currentPassword"
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-slate-400" htmlFor="newPassword">
+              New password
+            </label>
+            <input
+              id="newPassword"
+              type="password"
+              required
+              minLength={6}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs text-slate-400" htmlFor="confirmPassword">
+              Confirm new password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
+            />
+          </div>
+          {passwordError && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/40 rounded-md px-2 py-1">
+              {passwordError}
+            </p>
+          )}
+          {passwordInfo && !passwordError && (
+            <p className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/40 rounded-md px-2 py-1">
+              {passwordInfo}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={passwordLoading}
+            className="rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-black hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {passwordLoading ? "Updating password..." : "Update password"}
+          </button>
         </form>
       </div>
     </div>
