@@ -114,17 +114,13 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  const account: TradingAccountRow = {
-    ...accountRow,
-    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-  };
+  const account = accountRow as TradingAccountRow;
 
   try {
-    console.log("[api/trades] fetch", { provider: account.provider, accountIdLen: account.metaapi_account_id?.length });
+    console.log("[api/trades] fetch", { accountIdLen: account.metaapi_account_id?.length });
     const [closedResult, summaryResult] = await Promise.all([
-      getClosedOrders(account, apiKey),
-      getAccountSummary(account, apiKey)
+      getClosedOrders(account),
+      getAccountSummary(account)
     ]);
     if (!closedResult.ok) {
       console.error("[api/trades] getClosedOrders failed", { error: closedResult.error });

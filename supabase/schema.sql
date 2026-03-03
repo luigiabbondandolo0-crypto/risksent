@@ -36,7 +36,7 @@ create table if not exists trading_account (
   -- encrypted investor password; encryption is handled at application level
   investor_password_encrypted text not null,
 
-  metaapi_account_id text, -- optional mapping to MetaApi account
+  metaapi_account_id text, -- mtapi session token (from Connect)
 
   unique (user_id, broker_type, account_number)
 );

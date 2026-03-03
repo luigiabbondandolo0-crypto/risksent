@@ -3,7 +3,7 @@
 /**
  * DATA SOURCES (what is real vs mock):
  * - Rules values: REAL from DB (app_user).
- * - Live status badges (Safe/Warning/Breach): REAL when account linked + MetaAPI ok; otherwise no live data (badges show "—" or "No data").
+ * - Live status badges (Safe/Warning/Breach): REAL when account linked + mtapi ok; otherwise no live data (badges show "—" or "No data").
  * - Alerts list: REAL from DB (alert table).
  * - Telegram linked: REAL from DB (app_user.telegram_chat_id).
  * - AI "Analyze my rules": MOCK (stub response until AI is wired).
@@ -698,7 +698,7 @@ export default function RulesPage() {
       </section>
 
       <footer className="text-[10px] text-slate-600 border-t border-slate-800 pt-4">
-        Rules & alerts: DB. Live badges: MetaAPI when account linked. AI insight: stub.
+        Rules & alerts: DB. Live badges: mtapi when account linked. AI insight: stub.
       </footer>
     </div>
   );

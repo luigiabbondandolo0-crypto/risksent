@@ -193,9 +193,8 @@ export async function runRiskCheckForAccount(params: {
   userId: string;
   uuid: string;
   supabase: SupabaseClient;
-  apiKey: string | undefined;
 }): Promise<RunRiskCheckResult> {
-  const { userId, uuid, supabase, apiKey } = params;
+  const { userId, uuid, supabase } = params;
 
   let balance = 0;
   let equity = 0;
@@ -216,17 +215,13 @@ export async function runRiskCheckForAccount(params: {
     return { ok: false, error: "Account not found", findings: [] };
   }
 
-  const account: TradingAccountRow = {
-    ...accountRow,
-    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-  };
-  console.log("[riskCheckRun] runRiskCheckForAccount", { provider: account.provider, uuidLen: uuid.length });
+  console.log("[riskCheckRun] runRiskCheckForAccount", { uuidLen: uuid.length });
 
   try {
     const [summaryResult, closedResult, openResult] = await Promise.all([
-      getAccountSummary(account, apiKey),
-      getClosedOrders(account, apiKey),
-      getOpenPositions(account, apiKey)
+      getAccountSummary(accountRow),
+      getClosedOrders(accountRow),
+      getOpenPositions(accountRow)
     ]);
     if (summaryResult.ok && summaryResult.summary) {
       balance = summaryResult.summary.balance;
@@ -345,10 +340,9 @@ export async function runRiskCheckDryRun(params: {
   userId: string;
   uuid: string;
   supabase: SupabaseClient;
-  apiKey: string | undefined;
   includeRaw?: boolean;
 }): Promise<RiskCheckDryRunResult> {
-  const { userId, uuid, supabase, apiKey, includeRaw = true } = params;
+  const { userId, uuid, supabase, includeRaw = true } = params;
 
   const connection = {
     accountSummary: { ok: false, status: 0 as number | undefined, error: "" },
@@ -393,17 +387,13 @@ export async function runRiskCheckDryRun(params: {
     };
   }
 
-  const account: TradingAccountRow = {
-    ...accountRow,
-    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-  };
-  console.log("[riskCheckDryRun] provider=", account.provider, "uuidLen=", uuid.length, "apiKey=", apiKey ? "set" : "unset");
+  console.log("[riskCheckDryRun] uuidLen=", uuid.length);
 
   try {
     const [summaryResult, closedResult, openResult] = await Promise.all([
-      getAccountSummary(account, apiKey),
-      getClosedOrders(account, apiKey),
-      getOpenPositions(account, apiKey)
+      getAccountSummary(accountRow),
+      getClosedOrders(accountRow),
+      getOpenPositions(accountRow)
     ]);
 
     connection.accountSummary = {
@@ -434,7 +424,7 @@ export async function runRiskCheckDryRun(params: {
     };
     if (includeRaw) {
       openOrdersResponses = [
-        { endpoint: account.provider === "mtapi" ? "OpenedOrders" : "OpenPositions", status: openResult.lastStatus ?? 0, body: openResult.positions }
+        { endpoint: "OpenedOrders", status: openResult.lastStatus ?? 0, body: openResult.positions }
       ];
     }
     const useEquity = equity > 0 ? equity : balance;

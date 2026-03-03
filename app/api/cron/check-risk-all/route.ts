@@ -30,9 +30,7 @@ async function runCron(req: NextRequest) {
     }
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  // apiKey required only for MetaAPI accounts; mtapi accounts work without it
-  console.log("[cron/check-risk-all] starting", { apiKeySet: !!apiKey });
+  console.log("[cron/check-risk-all] starting");
 
   const admin = createSupabaseAdmin();
   const { data: accounts, error: accountsError } = await admin
@@ -56,8 +54,7 @@ async function runCron(req: NextRequest) {
     const result = await runRiskCheckForAccount({
       userId,
       uuid,
-      supabase: admin,
-      apiKey
+      supabase: admin
     });
     results.push({
       user_id: userId.slice(0, 8) + "...",

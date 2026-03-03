@@ -4,7 +4,7 @@ import { getAccountSummary, accountSelectColumns, type TradingAccountRow } from 
 
 /**
  * GET /api/monitoring/status
- * Returns connection status for Trading API (MetaAPI/mtapi) and Supabase (for live-monitoring page).
+ * Returns connection status for mtapi and Supabase (for live-monitoring page).
  */
 export async function GET() {
   const supabase = createSupabaseRouteClient();
@@ -17,7 +17,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
   const logs: { time: string; source: string; ok: boolean; message: string; detail?: string }[] = [];
   const t = () => new Date().toISOString();
 
@@ -38,7 +37,7 @@ export async function GET() {
     logs.push({ time: t(), source: "Supabase", ok: false, message: "Exception", detail: e instanceof Error ? e.message : String(e) });
   }
 
-  // Trading API: first account then AccountSummary
+  // mtapi: first account then AccountSummary
   let tradingOk = false;
   const { data: accounts } = await supabase
     .from("trading_account")
@@ -48,32 +47,24 @@ export async function GET() {
     .limit(1);
   const accountRow = accounts?.[0] as TradingAccountRow | undefined;
   if (!accountRow?.metaapi_account_id) {
-    logs.push({ time: t(), source: "TradingAPI", ok: false, message: "No linked account (metaapi_account_id)" });
+    logs.push({ time: t(), source: "TradingAPI", ok: false, message: "No linked account (session token)" });
   } else {
-    const account: TradingAccountRow = {
-      ...accountRow,
-      provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-    };
-    if (account.provider === "metaapi" && !apiKey) {
-      logs.push({ time: t(), source: "TradingAPI", ok: false, message: "METATRADERAPI_API_KEY not set (metaapi account)" });
-    } else {
-      try {
-        const result = await getAccountSummary(account, apiKey);
-        tradingOk = result.ok && result.summary != null;
-        if (result.ok && result.summary) {
-          logs.push({
-            time: t(),
-            source: "TradingAPI",
-            ok: true,
-            message: `${account.provider} AccountSummary OK`,
-            detail: `balance=${result.summary.balance} provider=${account.provider}`
-          });
-        } else {
-          logs.push({ time: t(), source: "TradingAPI", ok: false, message: result.error ?? "AccountSummary failed", detail: result.error });
-        }
-      } catch (e) {
-        logs.push({ time: t(), source: "TradingAPI", ok: false, message: "Request failed", detail: e instanceof Error ? e.message : String(e) });
+    try {
+      const result = await getAccountSummary(accountRow);
+      tradingOk = result.ok && result.summary != null;
+      if (result.ok && result.summary) {
+        logs.push({
+          time: t(),
+          source: "TradingAPI",
+          ok: true,
+          message: "mtapi AccountSummary OK",
+          detail: `balance=${result.summary.balance}`
+        });
+      } else {
+        logs.push({ time: t(), source: "TradingAPI", ok: false, message: result.error ?? "AccountSummary failed", detail: result.error });
       }
+    } catch (e) {
+      logs.push({ time: t(), source: "TradingAPI", ok: false, message: "Request failed", detail: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -84,7 +75,7 @@ export async function GET() {
     logs,
     summary: {
       supabase: supabaseOk ? "connected" : "error",
-      metaapi: !accountRow ? "no_account" : tradingOk ? "connected" : "error"
+      trading: !accountRow ? "no_account" : tradingOk ? "connected" : "error"
     }
   });
 }

@@ -12,7 +12,7 @@ import {
 /**
  * GET /api/rules/status
  * Returns saved rules + live values from linked account for Rules page badges and exposure bar.
- * Live data: from MetaAPI (dashboard-stats logic). If no account or API error, live values are null.
+ * Live data: from mtapi (dashboard-stats logic). If no account or API error, live values are null.
  */
 export async function GET() {
   const supabase = createSupabaseRouteClient();
@@ -51,17 +51,13 @@ export async function GET() {
     return NextResponse.json({ rules, live: null });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  const account: TradingAccountRow = {
-    ...accountRow,
-    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-  };
+  const account = accountRow as TradingAccountRow;
 
   try {
     const [summaryResult, closedResult, openResult] = await Promise.all([
-      getAccountSummary(account, apiKey),
-      getClosedOrders(account, apiKey),
-      getOpenPositions(account, apiKey)
+      getAccountSummary(account),
+      getClosedOrders(account),
+      getOpenPositions(account)
     ]);
 
     if (!summaryResult.ok || !summaryResult.summary) {

@@ -17,11 +17,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "METATRADERAPI_API_KEY not set" }, { status: 500 });
-  }
-
   const { data: accounts } = await supabase
     .from("trading_account")
     .select("metaapi_account_id")
@@ -31,18 +26,13 @@ export async function GET() {
 
   const uuid = accounts?.[0]?.metaapi_account_id ?? null;
   if (!uuid) {
-    return NextResponse.json({ error: "No linked account", detail: "Add an account and link it (metaapi_account_id)." }, { status: 400 });
+    return NextResponse.json({ error: "No linked account", detail: "Add an account (mtapi host + port)." }, { status: 400 });
   }
-
-  // Debug: log UUID being used
-  console.log("[live-check] Using account UUID:", uuid);
-  console.log("[live-check] API Key configured:", apiKey ? "Yes" : "No");
 
   const result = await runRiskCheckDryRun({
     userId: user.id,
     uuid,
     supabase,
-    apiKey,
     includeRaw: true
   });
 

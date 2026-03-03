@@ -20,8 +20,7 @@ Create a `.env.local` file (not committed) with values like:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-METATRADERAPI_API_KEY=...   # required for MetaAPI (metatraderapi.dev) accounts
-MTAPI_BASE_URL=...          # optional; mtapi.io base (default https://mt5.mtapi.io). Use for open positions + alerts.
+MTAPI_BASE_URL=...          # optional; mtapi.io base (default https://mt5.mtapi.io)
 ENCRYPTION_KEY=...   # 32+ chars for encrypting stored passwords
 RESEND_API_KEY=...   # API key from Resend for sending welcome emails
 NEXT_PUBLIC_SITE_URL=... # optional; site URL for email links (defaults to https://risksent.com)

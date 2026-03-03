@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   } catch {
     // no body
   }
-  type AccountRow = { metaapi_account_id?: string; provider?: string };
+  type AccountRow = { metaapi_account_id?: string };
   let accountRow: AccountRow | null = null;
   if (uuid) {
     const { data } = await supabase
@@ -54,21 +54,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  const provider = (accountRow as { provider?: string })?.provider ?? "metaapi";
-  if (provider === "metaapi" && !apiKey) {
-    return NextResponse.json(
-      { error: "METATRADERAPI_API_KEY not set (required for MetaAPI accounts)", findings: [] },
-      { status: 500 }
-    );
-  }
-  console.log("[api/alerts/check-risk]", { provider, uuidLen: uuid.length });
-
   const result = await runRiskCheckForAccount({
     userId: user.id,
     uuid,
-    supabase,
-    apiKey
+    supabase
   });
 
   if (!result.ok) {

@@ -9,7 +9,7 @@ type StatusRes = {
   ok: boolean;
   timestamp: string;
   logs: Array<{ time: string; source: string; ok: boolean; message: string; detail?: string }>;
-  summary: { supabase: string; metaapi: string };
+  summary: { supabase: string; trading: string };
 };
 
 type LiveCheckRes = {
@@ -74,7 +74,7 @@ export default function AdminLiveMonitoringPage() {
       const res = await fetch("/api/monitoring/status");
       const data = await res.json();
       if (res.ok) setStatus(data);
-      else setStatus({ ok: false, timestamp: new Date().toISOString(), logs: [], summary: { supabase: "error", metaapi: "error" } });
+      else setStatus({ ok: false, timestamp: new Date().toISOString(), logs: [], summary: { supabase: "error", trading: "error" } });
     } catch {
       setStatus(null);
     } finally {
@@ -151,9 +151,9 @@ export default function AdminLiveMonitoringPage() {
                 {status.summary.supabase}
               </span>
               {" "}
-              <span className="text-slate-300">MetaAPI: </span>
-              <span className={status.summary.metaapi === "connected" ? "text-emerald-400" : "text-red-400"}>
-                {status.summary.metaapi}
+              <span className="text-slate-300">mtapi: </span>
+              <span className={status.summary.trading === "connected" ? "text-emerald-400" : "text-red-400"}>
+                {status.summary.trading}
               </span>
             </div>
             <div className="space-y-1 text-xs font-mono">

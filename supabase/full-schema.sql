@@ -34,7 +34,7 @@ create table if not exists public.trading_account (
 );
 
 alter table public.trading_account add column if not exists account_name text;
-alter table public.trading_account add column if not exists provider text not null default 'metaapi' check (provider in ('metaapi', 'mtapi'));
+alter table public.trading_account add column if not exists provider text not null default 'mtapi' check (provider in ('metaapi', 'mtapi'));
 alter table public.trading_account add column if not exists broker_host text;
 alter table public.trading_account add column if not exists broker_port text;
 

@@ -25,7 +25,7 @@ Documento di riferimento per integrare un bot Telegram con RiskSent. Descrive st
 | Server Supabase (API) | `createRouteHandlerClient({ cookies })` da `@supabase/auth-helpers-nextjs` |
 | Admin / bypass RLS | `createClient(url, serviceRoleKey)` in `lib/supabaseAdmin.ts` |
 | Cifratura password account | Node `crypto` AES-256-GCM in `lib/encrypt.ts` |
-| Dati trading (ordini/saldo) | API esterne MetaTrader (metatraderapi.dev) |
+| Dati trading (ordini/saldo) | mtapi.io (Connect, AccountSummary, OrderHistory, OpenedOrders) |
 
 ---
 
@@ -38,12 +38,11 @@ Tutte da impostare in Vercel (e in `.env.local` in locale). **Mai** committare v
 | `NEXT_PUBLIC_SUPABASE_URL` | Sì | URL progetto Supabase (pubblico) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sì | Chiave anonima Supabase (frontend) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Sì | Chiave service role (solo server; admin e operazioni bypass RLS) |
-| `METATRADERAPI_API_KEY` | Sì | API key per metatraderapi.dev (trades, account summary, register/delete account) |
 | `ENCRYPTION_KEY` | Sì | Stringa ≥ 32 caratteri per cifrare le password investitore in DB |
 | `TELEGRAM_BOT_TOKEN` | Sì (per alert) | Token da BotFather per il bot unico (es. @RiskSentAlertsBot) |
 | `TELEGRAM_BOT_USERNAME` | No | Username del bot per il link (es. RiskSentAlertsBot); default RiskSentAlertsBot |
 | `BOT_INTERNAL_SECRET` | No | Se impostato, POST /api/bot/send-alert richiede header `x-bot-secret` o body `secret` |
-| `METATRADERAPI_UUID` | No | Eventuale UUID predefinito (citato in readme) |
+| `MTAPI_BASE_URL` | No | Base URL mtapi.io (default https://mt5.mtapi.io) |
 | `DEBUG_ACCOUNTS` | No | Se `1`, le API accounts loggano in console |
 
 Webhook Telegram: su BotFather impostare `/setwebhook` con URL `https://risksent.com/api/telegram-webhook`.
@@ -81,7 +80,7 @@ Per il bot: o si associa un utente Telegram a un utente RiskSent (es. tramite `t
 - RLS: utente può leggere/aggiornare solo la propria riga (`auth.uid() = id`).
 
 ### 5.3 `public.trading_account`
-- Un conto MT per riga; collegato a MetaAPI tramite `metaapi_account_id`.
+- Un conto MT per riga; collegato a mtapi.io tramite token di sessione in `metaapi_account_id`.
 - Colonne:
   - `id` uuid PK
   - `created_at`, `updated_at` timestamptz
@@ -89,7 +88,9 @@ Per il bot: o si associa un utente Telegram a un utente RiskSent (es. tramite `t
   - `broker_type` text check in ('MT4', 'MT5', 'cTrader', 'Tradelocker')
   - `account_number` text NOT NULL
   - `investor_password_encrypted` text NOT NULL  — password cifrata con `lib/encrypt`
-  - `metaapi_account_id` text  — ID restituito da metatraderapi.dev
+  - `metaapi_account_id` text  — token di sessione mtapi (da Connect)
+  - `broker_host` text, `broker_port` text  — per Connect
+  - `provider` text default 'mtapi'  — solo mtapi supportato
   - `account_name` text (opzionale)
   - unique (user_id, broker_type, account_number)
 - RLS: utente vede/solo i propri account (`user_id = auth.uid()`).
@@ -125,7 +126,7 @@ Base URL in produzione: `https://risksent.com`. Tutte le API sotto richiedono **
 
 ### 6.1 `GET /api/accounts`
 - **Auth**: sessione utente.
-- **Risposta**: `{ accounts: Array<{ id, broker_type, account_number, account_name, metaapi_account_id, created_at }> }`.
+- **Risposta**: `{ accounts: Array<{ id, broker_type, account_number, account_name, metaapi_account_id, created_at }> }`. Il frontend usa `metaapi_account_id` come valore per selezionare l’account (è il token mtapi).
 - Ordine: `created_at` desc. Usato da dashboard, simulator, add-account (lista account).
 
 ### 6.2 `DELETE /api/accounts/[id]`
@@ -137,7 +138,7 @@ Base URL in produzione: `https://risksent.com`. Tutte le API sotto richiedono **
 ### 6.3 `POST /api/add-account`
 - **Auth**: sessione utente.
 - **Body** (JSON): `brokerType` ('MT4'|'MT5'), `server`, `accountNumber`, `investorPassword` (o `password`), `name` (opzionale).
-- Flusso: chiamata a MetaAPI `RegisterAccount` (GET con query params); poi inserimento in `trading_account` con password cifrata e `metaapi_account_id` restituito. Upsert su `app_user` per garantire che esista la riga.
+- Flusso: chiamata a mtapi.io `Connect` (host, port, user, password); poi inserimento in `trading_account` con password cifrata, token in `metaapi_account_id`, `broker_host`, `broker_port`, `provider='mtapi'`. Upsert su `app_user`.
 - Risposta: `{ ok: true, message, accountId }` o `{ ok: false, message, problems }` con status 4xx/5xx.
 
 ### 6.4 `GET /api/trades`
@@ -189,19 +190,18 @@ Base URL in produzione: `https://risksent.com`. Tutte le API sotto richiedono **
 
 ---
 
-## 7. Servizio esterno: MetaAPI (metatraderapi.dev)
+## 7. Servizio esterno: mtapi.io
 
-- **Base URL**: `https://api.metatraderapi.dev`.
-- **Header**: `x-api-key: METATRADERAPI_API_KEY`, `Accept: application/json`.
+- **Base URL**: `MTAPI_BASE_URL` (default `https://mt5.mtapi.io`). **Auth**: token da `Connect`, salvato in `metaapi_account_id`.
 
 Endpoint usati dall’app:
 
 | Metodo | Endpoint | Uso |
 |--------|----------|-----|
-| GET | `/RegisterAccount?type=Metatrader 4|5&server=...&user=...&password=...&name=...` | Aggiunta account (add-account) |
-| GET | `/DeleteAccount?id={metaapi_account_id}` | Rimozione account |
-| GET | `/AccountSummary?id={metaapi_account_id}` | Saldo, equity, currency |
-| GET | `/ClosedOrders?id={metaapi_account_id}` | Ordini chiusi (per trades e dashboard stats) |
+| GET | `/Connect?user=...&password=...&host=...&port=...` | Add-account: ottiene token |
+| GET | `/AccountSummary?id={token}` | Saldo, equity, currency |
+| GET | `/OrderHistory?id=...&from=...&to=...` | Ordini chiusi |
+| GET | `/OpenedOrders?id={token}` | Posizioni aperte (risk, alert) |
 
 L’app non espone queste chiavi al frontend; le chiamate sono solo lato server (Route Handlers). Il bot, se dovrà leggere trade/saldo, dovrà usare le stesse API interne (`/api/trades`, `/api/dashboard-stats`) con un meccanismo di autenticazione server-to-server, oppure riusare la stessa logica in un backend del bot con `METATRADERAPI_API_KEY` e `metaapi_account_id` letti da DB.
 

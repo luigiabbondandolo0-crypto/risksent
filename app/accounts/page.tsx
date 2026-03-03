@@ -46,7 +46,7 @@ export default function ManageAccountsPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Remove this MT account from RiskSent? It will be disconnected from MetatraderApi.dev.")) return;
+    if (!confirm("Remove this MT account from RiskSent? It will be disconnected from mtapi.io.")) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/accounts/${id}`, { method: "DELETE" });

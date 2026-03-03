@@ -282,18 +282,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  const account: TradingAccountRow = {
-    ...accountRow,
-    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
-  };
+  const account = accountRow as TradingAccountRow;
 
   try {
-    console.log("[api/dashboard-stats] fetch", { provider: account.provider });
+    console.log("[api/dashboard-stats] fetch");
     const [summaryResult, closedResult, openResult] = await Promise.all([
-      getAccountSummary(account, apiKey),
-      getClosedOrders(account, apiKey),
-      getOpenPositions(account, apiKey)
+      getAccountSummary(account),
+      getClosedOrders(account),
+      getOpenPositions(account)
     ]);
 
     if (!summaryResult.ok || !summaryResult.summary) {
