@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
-
-const METAAPI_BASE = "https://api.metatraderapi.dev";
+import {
+  getAccountSummary,
+  getClosedOrders,
+  accountSelectColumns,
+  type TradingAccountRow
+} from "@/lib/tradingApi";
 
 export type TradeRow = {
   ticket: number;
@@ -82,17 +86,27 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");
 
-  let accountId: string | null = uuid;
-  if (!accountId) {
+  let accountRow: TradingAccountRow | null = null;
+  if (uuid) {
+    const { data } = await supabase
+      .from("trading_account")
+      .select(accountSelectColumns())
+      .eq("user_id", user.id)
+      .eq("metaapi_account_id", uuid)
+      .limit(1)
+      .single();
+    accountRow = data && typeof data === "object" && "metaapi_account_id" in data ? (data as unknown as TradingAccountRow) : null;
+  }
+  if (!accountRow) {
     const { data: accounts } = await supabase
       .from("trading_account")
-      .select("metaapi_account_id")
+      .select(accountSelectColumns())
       .eq("user_id", user.id)
       .limit(1);
-    accountId = accounts?.[0]?.metaapi_account_id ?? null;
+    accountRow = (accounts?.[0] as unknown as TradingAccountRow) ?? null;
   }
 
-  if (!accountId) {
+  if (!accountRow?.metaapi_account_id) {
     return NextResponse.json({
       trades: [],
       currency: "EUR",
@@ -101,41 +115,35 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "METATRADERAPI_API_KEY not set" }, { status: 500 });
-  }
+  const account: TradingAccountRow = {
+    ...accountRow,
+    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
+  };
 
   try {
-    const [closedRes, summaryRes] = await Promise.all([
-      fetch(
-        `${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`,
-        { headers: { "x-api-key": apiKey, Accept: "application/json" } }
-      ),
-      fetch(
-        `${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`,
-        { headers: { "x-api-key": apiKey, Accept: "application/json" } }
-      )
+    console.log("[api/trades] fetch", { provider: account.provider, accountIdLen: account.metaapi_account_id?.length });
+    const [closedResult, summaryResult] = await Promise.all([
+      getClosedOrders(account, apiKey),
+      getAccountSummary(account, apiKey)
     ]);
-    if (!closedRes.ok) {
-      const err = await closedRes.text();
+    if (!closedResult.ok) {
+      console.error("[api/trades] getClosedOrders failed", { error: closedResult.error });
       return NextResponse.json(
-        { error: `MetatraderApi: ${closedRes.status} ${err}`, trades: [] },
+        { error: `Trading API: ${closedResult.error ?? "ClosedOrders failed"}`, trades: [] },
         { status: 502 }
       );
     }
-    const raw = await closedRes.json();
-    const rawArray = Array.isArray(raw) ? raw : raw?.orders ?? raw ?? [];
-    console.log("[api/trades] ClosedOrders raw:", JSON.stringify(rawArray.length ? rawArray.slice(0, 3) : rawArray, null, 2));
+    const rawArray = closedResult.orders;
+    console.log("[api/trades] ClosedOrders raw count", rawArray.length, "sample:", JSON.stringify(rawArray.slice(0, 2)));
     const trades = parseOrders(rawArray);
     trades.sort(
       (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
     );
     let currency = "EUR";
     let balance = 0;
-    if (summaryRes.ok) {
-      const summary = await summaryRes.json();
-      if (summary?.currency) currency = String(summary.currency);
-      if (Number.isFinite(summary?.balance)) balance = Number(summary.balance);
+    if (summaryResult.ok && summaryResult.summary) {
+      currency = summaryResult.summary.currency;
+      balance = summaryResult.summary.balance;
     }
     const { data: appUser } = await supabase
       .from("app_user")

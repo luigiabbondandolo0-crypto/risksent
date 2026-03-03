@@ -31,12 +31,8 @@ async function runCron(req: NextRequest) {
   }
 
   const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { ok: false, reason: "METATRADERAPI_API_KEY not set" },
-      { status: 500 }
-    );
-  }
+  // apiKey required only for MetaAPI accounts; mtapi accounts work without it
+  console.log("[cron/check-risk-all] starting", { apiKeySet: !!apiKey });
 
   const admin = createSupabaseAdmin();
   const { data: accounts, error: accountsError } = await admin

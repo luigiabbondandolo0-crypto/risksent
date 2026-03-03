@@ -205,6 +205,14 @@ Endpoint usati dall’app:
 
 L’app non espone queste chiavi al frontend; le chiamate sono solo lato server (Route Handlers). Il bot, se dovrà leggere trade/saldo, dovrà usare le stesse API interne (`/api/trades`, `/api/dashboard-stats`) con un meccanismo di autenticazione server-to-server, oppure riusare la stessa logica in un backend del bot con `METATRADERAPI_API_KEY` e `metaapi_account_id` letti da DB.
 
+### 7b. mtapi.io (alternativa / aggiunta)
+
+- **Base URL**: configurabile con `MTAPI_BASE_URL` (default `https://mt5.mtapi.io`).
+- **Auth**: nessuna API key; si usa il token restituito da `Connect` (user, password, host, port). Il token è salvato in `metaapi_account_id`; `broker_host` e `broker_port` in `trading_account` servono per eventuale refresh.
+- **Endpoint usati**: `Connect`, `AccountSummary`, `OrderHistory`, `OpenedOrders` (posizioni aperte).
+- **Add-account**: se in body sono presenti `brokerHost` e `brokerPort`, l’app chiama mtapi `Connect` e salva `provider='mtapi'`, token, host, port. Altrimenti si usa MetaAPI come sopra.
+- **Log**: `lib/tradingApi.ts` scrive log verbosi (`[TradingAPI]`) per debug in migrazione.
+
 ---
 
 ## 8. Struttura cartelle app (Next.js App Router)

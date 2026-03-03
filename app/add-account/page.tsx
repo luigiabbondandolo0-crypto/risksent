@@ -8,6 +8,8 @@ type BrokerType = "MT4" | "MT5";
 export default function AddAccountPage() {
   const [brokerType, setBrokerType] = useState<BrokerType>("MT5");
   const [server, setServer] = useState("");
+  const [brokerHost, setBrokerHost] = useState("");
+  const [brokerPort, setBrokerPort] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -29,7 +31,9 @@ export default function AddAccountPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brokerType,
-          server: server.trim(),
+          server: server.trim() || undefined,
+          brokerHost: brokerHost.trim() || undefined,
+          brokerPort: brokerPort.trim() || undefined,
           accountNumber: accountNumber.trim(),
           investorPassword: password,
           name: name.trim() || undefined
@@ -60,7 +64,7 @@ export default function AddAccountPage() {
           <div>
             <h1 className="text-xl font-semibold text-slate-50">Add trading account</h1>
             <p className="text-xs text-slate-500 mt-1">
-              Connect MT4 or MT5 via MetatraderApi.dev. We test the connection and save the account to your dashboard.
+              Connect MT4 or MT5 via mtapi.io (recommended) or MetatraderApi.dev. We test the connection and save the account.
             </p>
           </div>
           <Link href="/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
@@ -83,16 +87,38 @@ export default function AddAccountPage() {
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="block text-xs text-slate-400">Broker server</label>
+                <label className="block text-xs text-slate-400">Broker server (MetaAPI only)</label>
                 <input
                   type="text"
-                  required
                   value={server}
                   onChange={(e) => setServer(e.target.value)}
                   className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
                   placeholder="e.g. ICMarketsSC-MT5-4"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400">Broker host (mtapi)</label>
+                  <input
+                    type="text"
+                    value={brokerHost}
+                    onChange={(e) => setBrokerHost(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                    placeholder="e.g. 78.140.180.198"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400">Broker port (mtapi)</label>
+                  <input
+                    type="text"
+                    value={brokerPort}
+                    onChange={(e) => setBrokerPort(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                    placeholder="443"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">Use host + port for mtapi.io (open positions supported). Or server only for MetaAPI.</p>
               <div className="space-y-1">
                 <label className="block text-xs text-slate-400">Login (account number)</label>
                 <input
@@ -160,9 +186,12 @@ export default function AddAccountPage() {
         <div className="rounded-xl border border-slate-800 bg-surface/80 p-4 text-[11px] text-slate-400">
           <div className="text-slate-300 font-medium mb-2">How it works</div>
           <p className="mb-2">
-            We call MetatraderApi.dev <code className="text-slate-500">RegisterAccount</code>, then save the account and encrypted password to your RiskSent account.
+            <strong>mtapi.io:</strong> enter Broker host + port → we call <code className="text-slate-500">Connect</code> and save the session token. Open positions and alerts work.
           </p>
-          <p>Set <code className="text-slate-500">ENCRYPTION_KEY</code> (32+ chars) and <code className="text-slate-500">METATRADERAPI_API_KEY</code> in Vercel.</p>
+          <p className="mb-2">
+            <strong>MetaAPI:</strong> enter Broker server only → we call <code className="text-slate-500">RegisterAccount</code>. Set <code className="text-slate-500">METATRADERAPI_API_KEY</code> in Vercel.
+          </p>
+          <p>Set <code className="text-slate-500">ENCRYPTION_KEY</code> (32+ chars). Optional: <code className="text-slate-500">MTAPI_BASE_URL</code> (default mt5.mtapi.io).</p>
         </div>
       </aside>
     </div>

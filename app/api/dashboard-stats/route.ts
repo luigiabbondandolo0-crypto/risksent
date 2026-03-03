@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
-
-const METAAPI_BASE = "https://api.metatraderapi.dev";
+import {
+  getAccountSummary,
+  getClosedOrders,
+  getOpenPositions,
+  accountSelectColumns,
+  type TradingAccountRow
+} from "@/lib/tradingApi";
 
 type ClosedOrder = {
   closeTime?: string;
@@ -246,17 +251,27 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");
 
-  let accountId: string | null = uuid;
-  if (!accountId) {
+  let accountRow: TradingAccountRow | null = null;
+  if (uuid) {
+    const { data } = await supabase
+      .from("trading_account")
+      .select(accountSelectColumns())
+      .eq("user_id", user.id)
+      .eq("metaapi_account_id", uuid)
+      .limit(1)
+      .single();
+    accountRow = data && typeof data === "object" && "metaapi_account_id" in data ? (data as unknown as TradingAccountRow) : null;
+  }
+  if (!accountRow) {
     const { data: accounts } = await supabase
       .from("trading_account")
-      .select("metaapi_account_id")
+      .select(accountSelectColumns())
       .eq("user_id", user.id)
       .limit(1);
-    accountId = accounts?.[0]?.metaapi_account_id ?? null;
+    accountRow = (accounts?.[0] as unknown as TradingAccountRow) ?? null;
   }
 
-  if (!accountId) {
+  if (!accountRow?.metaapi_account_id) {
     return NextResponse.json({
       balance: 0,
       equity: 0,
@@ -268,81 +283,38 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "METATRADERAPI_API_KEY not set" }, { status: 500 });
-  }
-
-  const headers = { "x-api-key": apiKey, Accept: "application/json" };
+  const account: TradingAccountRow = {
+    ...accountRow,
+    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
+  };
 
   try {
-    const [summaryRes, closedRes] = await Promise.all([
-      fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(accountId)}`, { headers }),
-      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(accountId)}`, { headers })
+    console.log("[api/dashboard-stats] fetch", { provider: account.provider });
+    const [summaryResult, closedResult, openResult] = await Promise.all([
+      getAccountSummary(account, apiKey),
+      getClosedOrders(account, apiKey),
+      getOpenPositions(account, apiKey)
     ]);
-    
-    // Try multiple endpoint variations for open positions
-    // Based on docs: HistoryPositions or OrderHistory filtered by state="Started"
-    const endpoints = [
-      `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(accountId)}`,
-      `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(accountId)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`,
-      `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(accountId)}`,
-      `${METAAPI_BASE}/Positions?id=${encodeURIComponent(accountId)}`
-    ];
-    
-    let openRes: Response | null = null;
-    let rawData: unknown = null;
-    
-    for (const endpoint of endpoints) {
-      openRes = await fetch(endpoint, { headers });
-      if (openRes.ok) {
-        rawData = await openRes.json();
-        break; // Found working endpoint
-      }
-      if (openRes.status !== 403) {
-        continue; // Try next endpoint
-      }
-    }
 
-    if (!summaryRes.ok) {
-      const err = await summaryRes.text();
+    if (!summaryResult.ok || !summaryResult.summary) {
       return NextResponse.json(
-        { error: `MetatraderApi: ${summaryRes.status} ${err}` },
+        { error: summaryResult.error ?? "AccountSummary failed", balance: 0, equity: 0, winRate: null, maxDd: null, equityCurve: [] },
         { status: 502 }
       );
     }
-    const summary = await summaryRes.json();
+    const summary = summaryResult.summary;
     const balance = Number(summary.balance) ?? 0;
     const equity = Number(summary.equity) ?? 0;
     const currency = summary.currency ?? "EUR";
 
     let closedOrders: ClosedOrder[] = [];
-    if (closedRes.ok) {
-      const raw = await closedRes.json();
-      closedOrders = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
+    if (closedResult.ok) {
+      closedOrders = parseOrders(closedResult.orders);
     }
 
     let currentExposurePct: number | null = null;
-    if (openRes?.ok && rawData) {
-      let rawList: unknown[] = [];
-      
-      // Handle different response formats
-      if (Array.isArray(rawData)) {
-        rawList = rawData;
-      } else if (typeof rawData === 'object' && rawData !== null) {
-        // OrderHistory returns { orders: [...] }
-        if ('orders' in rawData && Array.isArray(rawData.orders)) {
-          // Filter for open positions: state="Started" or closeTime is null/empty
-          rawList = (rawData.orders as unknown[]).filter((o: any) => 
-            o?.state === "Started" || !o?.closeTime || o?.closeTime === ""
-          );
-        } else if ('positions' in rawData && Array.isArray(rawData.positions)) {
-          rawList = rawData.positions;
-        } else {
-          rawList = [rawData];
-        }
-      }
-      
-      const positions = parseOpenPositions(rawList);
+    if (openResult.ok && openResult.positions.length > 0) {
+      const positions = parseOpenPositions(openResult.positions);
       currentExposurePct = computeCurrentExposurePct(positions, equity > 0 ? equity : balance);
     }
 

@@ -20,7 +20,7 @@ create table if not exists public.app_user (
 alter table public.app_user add column if not exists role text not null default 'customer'
   check (role in ('admin', 'trader', 'customer'));
 
--- 2) trading_account (one MT account per row; UUID from MetatraderApi stored in metaapi_account_id)
+-- 2) trading_account (one MT account per row; UUID/token from MetaAPI or mtapi.io)
 create table if not exists public.trading_account (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
@@ -34,6 +34,9 @@ create table if not exists public.trading_account (
 );
 
 alter table public.trading_account add column if not exists account_name text;
+alter table public.trading_account add column if not exists provider text not null default 'metaapi' check (provider in ('metaapi', 'mtapi'));
+alter table public.trading_account add column if not exists broker_host text;
+alter table public.trading_account add column if not exists broker_port text;
 
 -- 3) trade
 create table if not exists public.trade (

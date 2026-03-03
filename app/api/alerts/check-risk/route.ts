@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { runRiskCheckForAccount } from "@/lib/riskCheckRun";
+import { accountSelectColumns } from "@/lib/tradingApi";
 
 /**
  * POST /api/alerts/check-risk
@@ -26,13 +27,25 @@ export async function POST(req: NextRequest) {
   } catch {
     // no body
   }
-  if (!uuid) {
+  type AccountRow = { metaapi_account_id?: string; provider?: string };
+  let accountRow: AccountRow | null = null;
+  if (uuid) {
+    const { data } = await supabase
+      .from("trading_account")
+      .select(accountSelectColumns())
+      .eq("user_id", user.id)
+      .eq("metaapi_account_id", uuid)
+      .limit(1)
+      .single();
+    accountRow = data && typeof data === "object" && "metaapi_account_id" in data ? (data as AccountRow) : null;
+  } else {
     const { data: accounts } = await supabase
       .from("trading_account")
-      .select("metaapi_account_id")
+      .select(accountSelectColumns())
       .eq("user_id", user.id)
       .limit(1);
-    uuid = accounts?.[0]?.metaapi_account_id ?? null;
+    accountRow = (accounts?.[0] as AccountRow) ?? null;
+    if (accountRow) uuid = accountRow.metaapi_account_id ?? null;
   }
   if (!uuid) {
     return NextResponse.json(
@@ -42,12 +55,14 @@ export async function POST(req: NextRequest) {
   }
 
   const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (!apiKey) {
+  const provider = (accountRow as { provider?: string })?.provider ?? "metaapi";
+  if (provider === "metaapi" && !apiKey) {
     return NextResponse.json(
-      { error: "METATRADERAPI_API_KEY not set", findings: [] },
+      { error: "METATRADERAPI_API_KEY not set (required for MetaAPI accounts)", findings: [] },
       { status: 500 }
     );
   }
+  console.log("[api/alerts/check-risk]", { provider, uuidLen: uuid.length });
 
   const result = await runRiskCheckForAccount({
     userId: user.id,

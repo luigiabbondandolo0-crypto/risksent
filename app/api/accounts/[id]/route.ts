@@ -20,7 +20,7 @@ export async function DELETE(
 
   const { data: account, error: fetchError } = await supabase
     .from("trading_account")
-    .select("id, user_id, metaapi_account_id")
+    .select("id, user_id, metaapi_account_id, provider")
     .eq("id", id)
     .single();
 
@@ -31,17 +31,21 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const apiKey = process.env.METATRADERAPI_API_KEY;
-  if (apiKey && account.metaapi_account_id) {
-    try {
-      await fetch(
-        `${METAAPI_BASE}/DeleteAccount?id=${encodeURIComponent(account.metaapi_account_id)}`,
-        { method: "GET", headers: { "x-api-key": apiKey } }
-      );
-    } catch {
-      // continue to delete from our DB even if provider call fails
+  const provider = (account as { provider?: string }).provider ?? "metaapi";
+  if (provider === "metaapi") {
+    const apiKey = process.env.METATRADERAPI_API_KEY;
+    if (apiKey && account.metaapi_account_id) {
+      try {
+        await fetch(
+          `${METAAPI_BASE}/DeleteAccount?id=${encodeURIComponent(account.metaapi_account_id)}`,
+          { method: "GET", headers: { "x-api-key": apiKey } }
+        );
+      } catch {
+        // continue to delete from our DB even if provider call fails
+      }
     }
   }
+  // mtapi: no DeleteAccount endpoint; just remove from DB
 
   const { error: deleteError } = await supabase
     .from("trading_account")

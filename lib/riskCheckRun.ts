@@ -6,8 +6,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRiskFindings, type OpenPositionForRisk, type RiskFinding, type RiskRules, type StatsForRisk } from "./riskCheck";
 import { sendAlertToTelegram } from "./telegramAlert";
-
-const METAAPI_BASE = "https://api.metatraderapi.dev";
+import {
+  getAccountSummary,
+  getClosedOrders,
+  getOpenPositions,
+  accountSelectColumns,
+  type TradingAccountRow
+} from "./tradingApi";
 const DEFAULT_CONTRACT_SIZE = 100_000;
 const DEDUPE_HOURS = 12;
 
@@ -181,62 +186,61 @@ export type RunRiskCheckResult = {
 };
 
 /**
- * Run full risk check for one user/account: fetch MetaAPI data, get rules, compute findings, dedupe and create alerts + Telegram.
+ * Run full risk check for one user/account: fetch Trading API (MetaAPI/mtapi) data, get rules, compute findings, dedupe and create alerts + Telegram.
  * supabase: use route client for authenticated user, or admin for cron (any user).
  */
 export async function runRiskCheckForAccount(params: {
   userId: string;
   uuid: string;
   supabase: SupabaseClient;
-  apiKey: string;
+  apiKey: string | undefined;
 }): Promise<RunRiskCheckResult> {
   const { userId, uuid, supabase, apiKey } = params;
 
-  const headers = { "x-api-key": apiKey, Accept: "application/json" };
   let balance = 0;
   let equity = 0;
   let orders: ClosedOrder[] = [];
   let openPositions: OpenPositionForRisk[] = [];
 
+  const { data: rawRow } = await supabase
+    .from("trading_account")
+    .select(accountSelectColumns())
+    .eq("user_id", userId)
+    .eq("metaapi_account_id", uuid)
+    .limit(1)
+    .single();
+
+  const accountRow = rawRow && typeof rawRow === "object" && "metaapi_account_id" in rawRow ? (rawRow as unknown as TradingAccountRow) : null;
+  if (!accountRow?.metaapi_account_id) {
+    console.error("[riskCheckRun] No account found for userId/uuid", { userId: userId.slice(0, 8), uuidLen: uuid?.length });
+    return { ok: false, error: "Account not found", findings: [] };
+  }
+
+  const account: TradingAccountRow = {
+    ...accountRow,
+    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
+  };
+  console.log("[riskCheckRun] runRiskCheckForAccount", { provider: account.provider, uuidLen: uuid.length });
+
   try {
-    const [summaryRes, closedRes] = await Promise.all([
-      fetch(`${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(uuid)}`, { headers }),
-      fetch(`${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`, { headers })
+    const [summaryResult, closedResult, openResult] = await Promise.all([
+      getAccountSummary(account, apiKey),
+      getClosedOrders(account, apiKey),
+      getOpenPositions(account, apiKey)
     ]);
-    if (summaryRes.ok) {
-      const summary = await summaryRes.json();
-      balance = Number(summary.balance) ?? 0;
-      equity = Number(summary.equity) ?? balance;
+    if (summaryResult.ok && summaryResult.summary) {
+      balance = summaryResult.summary.balance;
+      equity = summaryResult.summary.equity ?? balance;
     }
-    if (closedRes.ok) {
-      const raw = await closedRes.json();
-      orders = parseOrders(Array.isArray(raw) ? raw : raw?.orders ?? raw ?? []);
+    if (closedResult.ok) {
+      orders = parseOrders(closedResult.orders);
     }
     const useEquity = equity > 0 ? equity : balance;
-    try {
-      const endpoints = [
-        `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`,
-        `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`,
-        `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`,
-        `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`
-      ];
-      const mergedOpenList: unknown[] = [];
-      for (const endpoint of endpoints) {
-        const res = await fetch(endpoint, { headers });
-        if (!res.ok) continue;
-        const data = await res.json().catch(() => null);
-        const list = extractOpenListFromResponse(data);
-        if (Array.isArray(list) && list.length > 0) {
-          mergedOpenList.push(...list);
-        }
-      }
-      if (mergedOpenList.length > 0) {
-        openPositions = buildOpenPositionsForRisk(parseOpenPositions(mergedOpenList), useEquity);
-      }
-    } catch {
-      // OpenPositions may not exist or be available - silently skip
+    if (openResult.ok && openResult.positions.length > 0) {
+      openPositions = buildOpenPositionsForRisk(parseOpenPositions(openResult.positions), useEquity);
     }
   } catch (e) {
+    console.error("[riskCheckRun] fetch failed", e);
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Failed to fetch account",
@@ -341,12 +345,11 @@ export async function runRiskCheckDryRun(params: {
   userId: string;
   uuid: string;
   supabase: SupabaseClient;
-  apiKey: string;
+  apiKey: string | undefined;
   includeRaw?: boolean;
 }): Promise<RiskCheckDryRunResult> {
   const { userId, uuid, supabase, apiKey, includeRaw = true } = params;
 
-  const headers = { "x-api-key": apiKey, Accept: "application/json" };
   const connection = {
     accountSummary: { ok: false, status: 0 as number | undefined, error: "" },
     closedOrders: { ok: false, status: 0 as number | undefined, error: "" },
@@ -361,96 +364,88 @@ export async function runRiskCheckDryRun(params: {
   let rawOpen: unknown;
   let openOrdersResponses: { endpoint: string; status: number; body: unknown }[] = [];
 
-  // Debug: log UUID being used
-  console.log("[riskCheckDryRun] Using account UUID:", uuid);
-  console.log("[riskCheckDryRun] API Key configured:", apiKey ? "Yes" : "No");
-  console.log("[riskCheckDryRun] API Key length:", apiKey?.length ?? 0);
-  console.log("[riskCheckDryRun] API Key starts with:", apiKey?.substring(0, 10) ?? "N/A");
+  const { data: rawRow } = await supabase
+    .from("trading_account")
+    .select(accountSelectColumns())
+    .eq("user_id", userId)
+    .eq("metaapi_account_id", uuid)
+    .limit(1)
+    .single();
 
-  const accountSummaryUrl = `${METAAPI_BASE}/AccountSummary?id=${encodeURIComponent(uuid)}`;
-  const closedOrdersUrl = `${METAAPI_BASE}/ClosedOrders?id=${encodeURIComponent(uuid)}`;
-  
-  console.log("[riskCheckDryRun] AccountSummary URL:", accountSummaryUrl);
-  console.log("[riskCheckDryRun] ClosedOrders URL:", closedOrdersUrl);
+  const accountRow = rawRow && typeof rawRow === "object" && "metaapi_account_id" in rawRow ? (rawRow as unknown as TradingAccountRow) : null;
+  if (!accountRow?.metaapi_account_id) {
+    console.error("[riskCheckDryRun] No account found", { userId: userId.slice(0, 8), uuidLen: uuid?.length });
+    return {
+      ok: false,
+      error: "Account not found",
+      timestamp: new Date().toISOString(),
+      uuid,
+      connection,
+      balance: 0,
+      equity: 0,
+      closedOrdersCount: 0,
+      openPositionsCount: 0,
+      rules: { daily_loss_pct: 0, max_risk_per_trade_pct: 0, max_exposure_pct: 0, revenge_threshold_trades: 0 },
+      stats: { initialBalance: 0, dailyStats: [], highestDdPct: null, consecutiveLossesAtEnd: 0 },
+      openPositions: [],
+      currentExposurePct: null,
+      findings: []
+    };
+  }
+
+  const account: TradingAccountRow = {
+    ...accountRow,
+    provider: (accountRow.provider as "metaapi" | "mtapi") ?? "metaapi"
+  };
+  console.log("[riskCheckDryRun] provider=", account.provider, "uuidLen=", uuid.length, "apiKey=", apiKey ? "set" : "unset");
 
   try {
-    const [summaryRes, closedRes] = await Promise.all([
-      fetch(accountSummaryUrl, { headers }),
-      fetch(closedOrdersUrl, { headers })
+    const [summaryResult, closedResult, openResult] = await Promise.all([
+      getAccountSummary(account, apiKey),
+      getClosedOrders(account, apiKey),
+      getOpenPositions(account, apiKey)
     ]);
 
-    const summaryErrorText = summaryRes.ok ? "" : (await summaryRes.text().catch(() => "Unknown"));
-    console.log("[riskCheckDryRun] AccountSummary response:", {
-      ok: summaryRes.ok,
-      status: summaryRes.status,
-      error: summaryErrorText.substring(0, 200)
-    });
-    
     connection.accountSummary = {
-      ok: summaryRes.ok,
-      status: summaryRes.status,
-      error: summaryErrorText
+      ok: summaryResult.ok,
+      status: summaryResult.ok ? 200 : 0,
+      error: summaryResult.error ?? ""
     };
-    if (summaryRes.ok) {
-      rawSummary = await summaryRes.json();
-      const s = rawSummary as { balance?: number; equity?: number };
-      balance = Number(s?.balance) ?? 0;
-      equity = Number(s?.equity) ?? balance;
+    if (summaryResult.ok && summaryResult.summary) {
+      rawSummary = summaryResult.summary;
+      balance = summaryResult.summary.balance;
+      equity = summaryResult.summary.equity ?? balance;
     }
 
     connection.closedOrders = {
-      ok: closedRes.ok,
-      status: closedRes.status,
-      error: closedRes.ok ? "" : (await closedRes.text().catch(() => "Unknown"))
+      ok: closedResult.ok,
+      status: closedResult.ok ? 200 : 0,
+      error: closedResult.error ?? ""
     };
-    if (closedRes.ok) {
-      rawClosed = await closedRes.json();
-      orders = parseOrders(Array.isArray(rawClosed) ? rawClosed : (rawClosed as { orders?: unknown })?.orders ?? rawClosed ?? []);
+    if (closedResult.ok) {
+      rawClosed = closedResult.orders;
+      orders = parseOrders(closedResult.orders);
     }
 
-    const useEquity = equity > 0 ? equity : balance;
-    try {
-      const endpoints = [
-        { url: `${METAAPI_BASE}/HistoryPositions?id=${encodeURIComponent(uuid)}`, name: "HistoryPositions" },
-        { url: `${METAAPI_BASE}/OrderHistory?id=${encodeURIComponent(uuid)}&from=${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()}&sort=OpenTime&ascending=false`, name: "OrderHistory" },
-        { url: `${METAAPI_BASE}/OpenPositions?id=${encodeURIComponent(uuid)}`, name: "OpenPositions" },
-        { url: `${METAAPI_BASE}/Positions?id=${encodeURIComponent(uuid)}`, name: "Positions" }
+    connection.openOrders = {
+      ok: openResult.ok,
+      status: openResult.lastStatus ?? (openResult.ok ? 200 : 0),
+      error: openResult.error ?? ""
+    };
+    if (includeRaw) {
+      openOrdersResponses = [
+        { endpoint: account.provider === "mtapi" ? "OpenedOrders" : "OpenPositions", status: openResult.lastStatus ?? 0, body: openResult.positions }
       ];
-      const mergedOpenList: unknown[] = [];
-      openOrdersResponses = [];
-      let anyOk = false;
-      let lastStatus = 0;
-      let lastError = "";
-      for (const endpoint of endpoints) {
-        const res = await fetch(endpoint.url, { headers });
-        lastStatus = res.status;
-        const data = await res.json().catch(() => null);
-        if (includeRaw) openOrdersResponses.push({ endpoint: endpoint.name, status: res.status, body: data });
-        if (!res.ok) {
-          lastError = await res.text().catch(() => endpoint.name + " failed");
-          continue;
-        }
-        anyOk = true;
-        const list = extractOpenListFromResponse(data);
-        if (Array.isArray(list) && list.length > 0) {
-          mergedOpenList.push(...list);
-        }
-      }
-      connection.openOrders = {
-        ok: anyOk,
-        status: lastStatus,
-        error: anyOk ? (mergedOpenList.length === 0 ? "" : "") : (lastError || "All endpoints failed")
-      };
-      if (mergedOpenList.length > 0) {
-        rawOpen = mergedOpenList;
-        openPositions = buildOpenPositionsForRisk(parseOpenPositions(mergedOpenList), useEquity);
-      } else {
-        rawOpen = [];
-      }
-    } catch (e) {
-      connection.openOrders.error = e instanceof Error ? e.message : "Request failed";
+    }
+    const useEquity = equity > 0 ? equity : balance;
+    if (openResult.ok && openResult.positions.length > 0) {
+      rawOpen = openResult.positions;
+      openPositions = buildOpenPositionsForRisk(parseOpenPositions(openResult.positions), useEquity);
+    } else {
+      rawOpen = [];
     }
   } catch (e) {
+    console.error("[riskCheckDryRun] fetch failed", e);
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Failed to fetch",
