@@ -26,14 +26,19 @@ export async function POST(req: NextRequest) {
     const brokerType = String(body.brokerType ?? "").toUpperCase();
     const brokerHost = String(body.brokerHost ?? "").trim();
     const brokerPort = String(body.brokerPort ?? "").trim();
+    const brokerServer = String(body.brokerServer ?? "").trim(); // MT5 server name for ConnectEx
     const accountNumber = String(body.accountNumber ?? "").trim();
     const password = String(body.investorPassword ?? body.password ?? "").trim();
     const name = String(body.name ?? "").trim();
+
+    const useConnectEx = brokerType === "MT5" && brokerServer.length > 0;
 
     console.log(LOG, "request", {
       brokerType,
       host: brokerHost,
       port: brokerPort,
+      server: brokerServer || undefined,
+      useConnectEx,
       accountNumberLen: accountNumber.length
     });
 
@@ -43,9 +48,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!brokerHost || !brokerPort) {
+    if (!useConnectEx && (!brokerHost || !brokerPort)) {
       return NextResponse.json(
-        { ok: false, message: "Broker host and port are required (mtapi.io).", problems: ["Missing brokerHost or brokerPort."] },
+        { ok: false, message: "Broker host and port are required, or use MT5 server name.", problems: ["Missing brokerHost or brokerPort (or brokerServer for MT5)."] },
         { status: 400 }
       );
     }
@@ -63,14 +68,10 @@ export async function POST(req: NextRequest) {
     }
 
     const base = getMtapiBase();
-    const params = new URLSearchParams({
-      user: accountNumber,
-      password,
-      host: brokerHost,
-      port: brokerPort
-    });
-    const connectUrl = `${base}/Connect?${params.toString()}`;
-    console.log(LOG, "mtapi Connect", { base, host: brokerHost, port: brokerPort, user: accountNumber });
+    const connectUrl = useConnectEx
+      ? `${base}/ConnectEx?${new URLSearchParams({ user: accountNumber, password, server: brokerServer }).toString()}`
+      : `${base}/Connect?${new URLSearchParams({ user: accountNumber, password, host: brokerHost, port: brokerPort }).toString()}`;
+    console.log(LOG, useConnectEx ? "mtapi ConnectEx" : "mtapi Connect", useConnectEx ? { base, server: brokerServer, user: accountNumber } : { base, host: brokerHost, port: brokerPort, user: accountNumber });
     const res = await fetch(connectUrl, { headers: { Accept: "application/json" } });
     const rawBody = await res.text();
 
@@ -121,7 +122,10 @@ export async function POST(req: NextRequest) {
         { status: 502 }
       );
     }
-    console.log(LOG, "mtapi Connect ok", { tokenLen: accountId.length });
+    console.log(LOG, useConnectEx ? "mtapi ConnectEx ok" : "mtapi Connect ok", { tokenLen: accountId.length });
+
+    const storedHost = useConnectEx ? brokerServer : brokerHost;
+    const storedPort = useConnectEx ? "" : brokerPort;
 
     await supabase.from("app_user").upsert(
       { id: user.id, updated_at: new Date().toISOString() },
@@ -146,8 +150,8 @@ export async function POST(req: NextRequest) {
       investor_password_encrypted: encryptedPassword,
       metaapi_account_id: accountId,
       provider: "mtapi",
-      broker_host: brokerHost,
-      broker_port: brokerPort
+      broker_host: storedHost,
+      broker_port: storedPort
     });
 
     if (insertError) {

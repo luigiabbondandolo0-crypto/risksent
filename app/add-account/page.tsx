@@ -9,6 +9,7 @@ export default function AddAccountPage() {
   const [brokerType, setBrokerType] = useState<BrokerType>("MT5");
   const [brokerHost, setBrokerHost] = useState("");
   const [brokerPort, setBrokerPort] = useState("");
+  const [brokerServer, setBrokerServer] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -32,6 +33,7 @@ export default function AddAccountPage() {
           brokerType,
           brokerHost: brokerHost.trim(),
           brokerPort: brokerPort.trim(),
+          brokerServer: brokerServer.trim() || undefined,
           accountNumber: accountNumber.trim(),
           investorPassword: password,
           name: name.trim() || undefined
@@ -62,7 +64,7 @@ export default function AddAccountPage() {
           <div>
             <h1 className="text-xl font-semibold text-slate-50">Add trading account</h1>
             <p className="text-xs text-slate-500 mt-1">
-              Connect MT4 or MT5 via mtapi.io. Use the <strong>investor (read-only) password</strong>. Server and port must match your broker (e.g. from MT5 terminal: File → Open an account, or your broker’s connection details).
+              Connect MT4 or MT5 via mtapi.io. Use the <strong>investor (read-only) password</strong>. For MT5 you can use either <strong>host + port</strong> or the <strong>server name</strong> (as in MT5 terminal: File → Open an account).
             </p>
           </div>
           <Link href="/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
@@ -84,12 +86,25 @@ export default function AddAccountPage() {
                   <option value="MT5">MT5</option>
                 </select>
               </div>
+              {brokerType === "MT5" && (
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400">Server name (MT5, optional)</label>
+                  <input
+                    type="text"
+                    value={brokerServer}
+                    onChange={(e) => setBrokerServer(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                    placeholder="e.g. MetaQuotes-Demo or YourBroker-Live"
+                  />
+                  <p className="text-[11px] text-slate-500">If host:port fails, try the exact server name from MT5 (File → Open an account).</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <label className="block text-xs text-slate-400">Broker host</label>
                   <input
                     type="text"
-                    required
+                    required={!brokerServer}
                     value={brokerHost}
                     onChange={(e) => setBrokerHost(e.target.value)}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
@@ -100,15 +115,15 @@ export default function AddAccountPage() {
                   <label className="block text-xs text-slate-400">Broker port</label>
                   <input
                     type="text"
-                    required
+                    required={!brokerServer}
                     value={brokerPort}
                     onChange={(e) => setBrokerPort(e.target.value)}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
-                    placeholder="443"
+                    placeholder="443 or 4430"
                   />
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500">Host and port of your MT server (from broker or mtapi.io docs).</p>
+              <p className="text-[11px] text-slate-500">Host and port, or use server name above for MT5. If 443 fails, try port 4430.</p>
               <div className="space-y-1">
                 <label className="block text-xs text-slate-400">Login (account number)</label>
                 <input
