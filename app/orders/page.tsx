@@ -64,6 +64,8 @@ export default function OrdersPage() {
   const [operation, setOperation] = useState<string>("Buy");
   const [volume, setVolume] = useState("0.01");
   const [price, setPrice] = useState("");
+  const [stoploss, setStoploss] = useState("");
+  const [takeprofit, setTakeprofit] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
@@ -140,13 +142,17 @@ export default function OrdersPage() {
     }
 
     try {
-      const body: { uuid?: string; symbol: string; operation: string; volume: number; price?: number } = {
+      const body: { uuid?: string; symbol: string; operation: string; volume: number; price?: number; stoploss?: number; takeprofit?: number } = {
         symbol: symbol.trim(),
         operation,
         volume: vol
       };
       if (selectedUuid) body.uuid = selectedUuid;
       if (needsPrice) body.price = parseFloat(price);
+      const sl = parseFloat(stoploss);
+      const tp = parseFloat(takeprofit);
+      if (Number.isFinite(sl) && sl > 0) body.stoploss = sl;
+      if (Number.isFinite(tp) && tp > 0) body.takeprofit = tp;
 
       const res = await fetch("/api/orders/send", {
         method: "POST",
@@ -156,7 +162,9 @@ export default function OrdersPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.error ?? "Order failed.");
+        const err = data.error ?? "Order failed.";
+        const isMarginError = /not enough money|insufficient|margin|saldo/i.test(err);
+        setMessage(isMarginError ? `${err} Prova a ridurre il volume (es. 0.01 lotti) o controlla il saldo del conto.` : err);
         setIsError(true);
       } else {
         setMessage("Order sent successfully.");
@@ -376,6 +384,33 @@ export default function OrdersPage() {
                 />
               </div>
             )}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">Stop Loss (optional)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.00001"
+                  value={stoploss}
+                  onChange={(e) => setStoploss(e.target.value)}
+                  placeholder="price"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">Take Profit (optional)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.00001"
+                  value={takeprofit}
+                  onChange={(e) => setTakeprofit(e.target.value)}
+                  placeholder="price"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-500">SL/TP: price levels (e.g. 1.0800). Used by broker to close the position.</p>
           </div>
           <div className="space-y-3 flex flex-col justify-end">
             <button

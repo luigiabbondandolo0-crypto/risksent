@@ -153,16 +153,16 @@ export async function getOpenPositions(
   return { ok: true, positions, lastStatus: out.status };
 }
 
-/** Place order via mtapi OrderSend. operation: Buy | Sell | BuyStop | SellStop | BuyLimit | SellLimit. price required for pending. */
+/** Place order via mtapi OrderSend. operation: Buy | Sell | BuyStop | SellStop | BuyLimit | SellLimit. price required for pending. Optional stoploss, takeprofit (price levels). */
 export async function orderSend(
   account: TradingAccountRow,
-  params: { symbol: string; operation: string; volume: number; price?: number }
+  params: { symbol: string; operation: string; volume: number; price?: number; stoploss?: number; takeprofit?: number }
 ): Promise<{ ok: boolean; data: unknown; error?: string }> {
   const id = normalizeToken(account.metaapi_account_id);
   if (!id) {
     return { ok: false, data: null, error: "Missing session token" };
   }
-  const { symbol, operation, volume, price } = params;
+  const { symbol, operation, volume, price, stoploss, takeprofit } = params;
   const search = new URLSearchParams({
     id,
     symbol: symbol.trim(),
@@ -171,6 +171,12 @@ export async function orderSend(
   });
   if (price != null && Number.isFinite(price)) {
     search.set("price", String(price));
+  }
+  if (stoploss != null && Number.isFinite(stoploss)) {
+    search.set("stoploss", String(stoploss));
+  }
+  if (takeprofit != null && Number.isFinite(takeprofit)) {
+    search.set("takeprofit", String(takeprofit));
   }
   const url = `${getMtapiBase()}/OrderSend?${search.toString()}`;
   const out = await fetchMtapi(id, url, "OrderSend");

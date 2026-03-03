@@ -7,8 +7,8 @@ const PENDING_OPS = ["BuyStop", "SellStop", "BuyLimit", "SellLimit"];
 
 /**
  * POST /api/orders/send
- * Body: { uuid?: string, symbol: string, operation: string, volume: number, price?: number }
- * Places order via mtapi OrderSend. uuid = metaapi_account_id (token); if missing uses first account.
+ * Body: { uuid?, symbol, operation, volume, price?, stoploss?, takeprofit? }
+ * Places order via mtapi OrderSend. Optional stoploss/takeprofit = price levels.
  */
 export async function POST(req: NextRequest) {
   const supabase = createSupabaseRouteClient();
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { uuid?: string; symbol?: string; operation?: string; volume?: number; price?: number };
+  let body: { uuid?: string; symbol?: string; operation?: string; volume?: number; price?: number; stoploss?: number; takeprofit?: number };
   try {
     body = await req.json();
   } catch {
@@ -53,6 +53,10 @@ export async function POST(req: NextRequest) {
     }
     priceNum = price;
   }
+  const stoploss = typeof body.stoploss === "number" ? body.stoploss : Number(body.stoploss);
+  const takeprofit = typeof body.takeprofit === "number" ? body.takeprofit : Number(body.takeprofit);
+  const stoplossNum = Number.isFinite(stoploss) && stoploss > 0 ? stoploss : undefined;
+  const takeprofitNum = Number.isFinite(takeprofit) && takeprofit > 0 ? takeprofit : undefined;
 
   let accountRow: TradingAccountRow | null = null;
   if (uuid) {
@@ -83,7 +87,9 @@ export async function POST(req: NextRequest) {
     symbol,
     operation,
     volume,
-    price: priceNum
+    price: priceNum,
+    stoploss: stoplossNum,
+    takeprofit: takeprofitNum
   });
 
   if (!result.ok) {
