@@ -139,6 +139,34 @@ export async function getOpenPositions(
   return { ok: true, positions, lastStatus: out.status };
 }
 
+/** Place order via mtapi OrderSend. operation: Buy | Sell | BuyStop | SellStop | BuyLimit | SellLimit. price required for pending. */
+export async function orderSend(
+  account: TradingAccountRow,
+  params: { symbol: string; operation: string; volume: number; price?: number }
+): Promise<{ ok: boolean; data: unknown; error?: string }> {
+  const id = account.metaapi_account_id;
+  if (!id) {
+    return { ok: false, data: null, error: "Missing session token" };
+  }
+  const { symbol, operation, volume, price } = params;
+  const search = new URLSearchParams({
+    id,
+    symbol: symbol.trim(),
+    operation: String(operation).trim(),
+    volume: String(volume)
+  });
+  if (price != null && Number.isFinite(price)) {
+    search.set("price", String(price));
+  }
+  const url = `${getMtapiBase()}/OrderSend?${search.toString()}`;
+  const out = await fetchMtapi(id, url, "OrderSend");
+  if (!out.ok) {
+    return { ok: false, data: out.data, error: out.error };
+  }
+  verboseLog("OrderSend result", { data: out.data });
+  return { ok: true, data: out.data };
+}
+
 /** Columns to select for trading_account when using tradingApi. */
 export function accountSelectColumns(): string {
   return "id, metaapi_account_id, broker_host, broker_port, account_number, broker_type, investor_password_encrypted";

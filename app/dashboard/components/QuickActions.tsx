@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RefreshCw, SlidersHorizontal, Sparkles, MessageCircle } from "lucide-react";
+import { RefreshCw, SlidersHorizontal, Sparkles, MessageCircle, Send } from "lucide-react";
 
 type QuickActionsProps = {
   onSyncTrades?: () => void;
@@ -20,6 +20,13 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
         <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
         Sync Trades Now
       </button>
+      <Link
+        href="/orders"
+        className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2.5 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors"
+      >
+        <Send className="h-4 w-4" />
+        Open order
+      </Link>
       <Link
         href="/rules"
         className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/50 bg-cyan-500/20 px-4 py-2.5 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors"
