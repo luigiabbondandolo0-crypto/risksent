@@ -11,6 +11,13 @@ function getMtapiBase(): string {
   return "https://mt5.mtapi.io";
 }
 
+/** mtapi expects id without surrounding quotes; normalize token for URL params. */
+function normalizeToken(id: string | null | undefined): string {
+  if (id == null) return "";
+  const s = String(id).trim().replace(/^["']|["']$/g, "");
+  return s;
+}
+
 export type TradingAccountRow = {
   id?: string;
   metaapi_account_id: string | null;
@@ -42,10 +49,17 @@ async function fetchMtapi(
   label: string
 ): Promise<{ ok: boolean; status: number; data: unknown; error?: string }> {
   const fullUrl = url.startsWith("http") ? url : `${getMtapiBase()}${url.startsWith("/") ? "" : "/"}${url}`;
-  verboseLog(`${label}`, { url: fullUrl.replace(id, "***") });
+  verboseLog(`${label}`, { url: fullUrl.replace(normalizeToken(id), "***") });
   try {
     const res = await fetch(fullUrl, { headers: { Accept: "application/json" } });
     const data = await res.json().catch(() => null);
+    // mtapi: 201 = exception (error body with message/code), not success
+    if (res.status === 201) {
+      const errObj = data && typeof data === "object" ? (data as { message?: string; code?: string }) : {};
+      const errMsg = errObj.message ?? errObj.code ?? "Provider error (201)";
+      verboseErr(`${label} 201`, { message: errMsg });
+      return { ok: false, status: 201, data, error: errMsg };
+    }
     if (!res.ok) {
       verboseErr(`${label} failed`, {
         status: res.status,
@@ -65,7 +79,7 @@ async function fetchMtapi(
 export async function getAccountSummary(
   account: TradingAccountRow
 ): Promise<{ ok: boolean; summary: AccountSummary | null; error?: string }> {
-  const id = account.metaapi_account_id;
+  const id = normalizeToken(account.metaapi_account_id);
   if (!id) {
     return { ok: false, summary: null, error: "Missing session token" };
   }
@@ -97,7 +111,7 @@ export async function getAccountSummary(
 export async function getClosedOrders(
   account: TradingAccountRow
 ): Promise<{ ok: boolean; orders: unknown[]; error?: string }> {
-  const id = account.metaapi_account_id;
+  const id = normalizeToken(account.metaapi_account_id);
   if (!id) return { ok: false, orders: [], error: "Missing session token" };
   const from = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
   const to = new Date().toISOString();
@@ -122,7 +136,7 @@ export async function getClosedOrders(
 export async function getOpenPositions(
   account: TradingAccountRow
 ): Promise<{ ok: boolean; positions: unknown[]; lastStatus?: number; error?: string }> {
-  const id = account.metaapi_account_id;
+  const id = normalizeToken(account.metaapi_account_id);
   if (!id) return { ok: false, positions: [], error: "Missing session token" };
   const url = `${getMtapiBase()}/OpenedOrders?id=${encodeURIComponent(id)}`;
   const out = await fetchMtapi(id, url, "OpenedOrders");
@@ -144,7 +158,7 @@ export async function orderSend(
   account: TradingAccountRow,
   params: { symbol: string; operation: string; volume: number; price?: number }
 ): Promise<{ ok: boolean; data: unknown; error?: string }> {
-  const id = account.metaapi_account_id;
+  const id = normalizeToken(account.metaapi_account_id);
   if (!id) {
     return { ok: false, data: null, error: "Missing session token" };
   }

@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    // 200: response is token as text/plain
-    const accountId = rawBody.trim();
+    // 200: response is token as text/plain; strip surrounding quotes so mtapi URLs work
+    const accountId = rawBody.trim().replace(/^["']|["']$/g, "").trim();
     if (!accountId) {
       console.error(LOG, "mtapi Connect empty token", { body: rawBody.slice(0, 100) });
       return NextResponse.json(
