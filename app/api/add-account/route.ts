@@ -72,23 +72,52 @@ export async function POST(req: NextRequest) {
     const connectUrl = `${base}/Connect?${params.toString()}`;
     console.log(LOG, "mtapi Connect", { base, host: brokerHost, port: brokerPort, user: accountNumber });
     const res = await fetch(connectUrl, { headers: { Accept: "application/json" } });
-    const data = await res.json().catch(() => ({}));
+    const rawBody = await res.text();
+
+    // mtapi: 200 = token (text/plain), 201 = exception (application/json)
+    if (res.status === 201) {
+      let data: { message?: string; code?: string } = {};
+      try {
+        data = JSON.parse(rawBody) as { message?: string; code?: string };
+      } catch {
+        /* ignore */
+      }
+      const serverMsg = data.message ?? rawBody.slice(0, 200);
+      const hint =
+        serverMsg && /disposed|socket|disconnect/i.test(serverMsg)
+          ? "Broker closed the connection. Check: server address and port (MT5 often uses 443 or 4430), investor password, and that the broker allows API connections."
+          : "Check server address, port, account number and investor password.";
+      const message = serverMsg ? `${serverMsg.slice(0, 200)}. ${hint}` : hint;
+      console.error(LOG, "mtapi Connect 201", { message: serverMsg });
+      return NextResponse.json(
+        { ok: false, message, problems: [message] },
+        { status: 502 }
+      );
+    }
     if (!res.ok) {
-      const errMsg = (data as { error?: string }).error ?? (data as { message?: string }).message ?? res.statusText;
-      console.error(LOG, "mtapi Connect failed", { status: res.status, body: JSON.stringify(data).slice(0, 200) });
+      let data: { error?: string; message?: string } = {};
+      try {
+        data = JSON.parse(rawBody) as { error?: string; message?: string };
+      } catch {
+        /* ignore */
+      }
+      const errMsg = data.error ?? data.message ?? res.statusText;
+      console.error(LOG, "mtapi Connect failed", { status: res.status, body: rawBody.slice(0, 200) });
       return NextResponse.json(
         { ok: false, message: errMsg, problems: [String(errMsg)] },
         { status: 400 }
       );
     }
-    const accountId =
-      (data as { id?: string }).id ??
-      (data as { token?: string }).token ??
-      (data as Record<string, unknown>).token as string;
-    if (!accountId || typeof accountId !== "string") {
-      console.error(LOG, "mtapi Connect no token", { data: JSON.stringify(data).slice(0, 300) });
+    // 200: response is token as text/plain
+    const accountId = rawBody.trim();
+    if (!accountId) {
+      console.error(LOG, "mtapi Connect empty token", { body: rawBody.slice(0, 100) });
       return NextResponse.json(
-        { ok: false, message: "No token returned from mtapi Connect.", problems: ["Invalid response from provider."] },
+        {
+          ok: false,
+          message: "Empty token from broker. Check server address, port, account number and investor password.",
+          problems: ["Invalid response from provider."]
+        },
         { status: 502 }
       );
     }

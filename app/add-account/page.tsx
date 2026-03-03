@@ -62,7 +62,7 @@ export default function AddAccountPage() {
           <div>
             <h1 className="text-xl font-semibold text-slate-50">Add trading account</h1>
             <p className="text-xs text-slate-500 mt-1">
-              Connect MT4 or MT5 via mtapi.io. We connect to your broker and save the session for dashboard, open positions and alerts.
+              Connect MT4 or MT5 via mtapi.io. Use the <strong>investor (read-only) password</strong>. Server and port must match your broker (e.g. from MT5 terminal: File → Open an account, or your broker’s connection details).
             </p>
           </div>
           <Link href="/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
