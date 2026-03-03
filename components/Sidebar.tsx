@@ -10,11 +10,13 @@ import {
   User,
   Shield,
   Activity,
+  Send,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/trades", label: "Trades", icon: TrendingUp },
+  { href: "/orders", label: "Orders", icon: Send },
   { href: "/rules", label: "Rules and Alerts", icon: ShieldAlert },
   { href: "/simulator", label: "Simulator", icon: FlaskConical },
   { href: "/ai-coach", label: "AI Coach", icon: Bot },

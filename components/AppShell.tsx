@@ -7,6 +7,7 @@ const APP_PATHS = [
   "/dashboard",
   "/rules",
   "/trades",
+  "/orders",
   "/simulator",
   "/ai-coach",
   "/add-account",
