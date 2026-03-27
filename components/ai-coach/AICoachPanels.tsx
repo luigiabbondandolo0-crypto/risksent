@@ -30,6 +30,13 @@ function SectionTitle({ icon: Icon, children }: { icon: React.ComponentType<{ cl
   );
 }
 
+/** `string` avoids narrowing issues when mock data only uses a subset of severities. */
+function insightBoxClass(severity: string) {
+  if (severity === "high") return "border-red-500/35 bg-red-500/10";
+  if (severity === "medium") return "border-amber-500/35 bg-amber-500/10";
+  return "border-slate-700/80 bg-slate-950/40";
+}
+
 export function AICoachPanels({ variant, data }: Props) {
   const d = data;
   const isMock = variant === "mock";
@@ -272,13 +279,7 @@ export function AICoachPanels({ variant, data }: Props) {
           {(d?.insights ?? []).map((ins) => (
             <li
               key={ins.title}
-              className={`rounded-xl border p-4 ${
-                ins.severity === "medium"
-                  ? "border-amber-500/35 bg-amber-500/10"
-                  : ins.severity === "high"
-                    ? "border-red-500/35 bg-red-500/10"
-                    : "border-slate-700/80 bg-slate-950/40"
-              }`}
+              className={`rounded-xl border p-4 ${insightBoxClass(ins.severity)}`}
             >
               <p className="font-medium text-slate-100">{ins.title}</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">{ins.body}</p>
