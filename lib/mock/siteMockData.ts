@@ -7,6 +7,7 @@ export const MOCK_ACCOUNT = {
   uuid: "mock-uuid-001",
 };
 
+/** Extra days for calendar density (same month as mock “today”). */
 export const MOCK_DASHBOARD_STATS = {
   balance: 102_450.32,
   equity: 102_180.55,
@@ -15,7 +16,7 @@ export const MOCK_DASHBOARD_STATS = {
   winRate: 58.2,
   avgRiskReward: 1.35,
   avgWin: 420.5,
-  avgLoss: -280.0,
+  avgLoss: 280.0,
   avgWinPct: 0.41,
   avgLossPct: 0.28,
   profitFactor: 1.42,
@@ -38,11 +39,18 @@ export const MOCK_DASHBOARD_STATS = {
     };
   }),
   dailyStats: [
+    { date: "2026-03-05", profit: 45, trades: 2, wins: 1 },
+    { date: "2026-03-06", profit: -120, trades: 4, wins: 1 },
+    { date: "2026-03-10", profit: 200, trades: 3, wins: 2 },
+    { date: "2026-03-12", profit: 88, trades: 2, wins: 2 },
+    { date: "2026-03-15", profit: -40, trades: 6, wins: 2 },
+    { date: "2026-03-18", profit: 310, trades: 5, wins: 4 },
     { date: "2026-03-20", profit: 120, trades: 3, wins: 2 },
     { date: "2026-03-21", profit: -80, trades: 5, wins: 2 },
     { date: "2026-03-22", profit: 200, trades: 4, wins: 3 },
   ],
   initialBalance: 100_000,
+  updatedAt: new Date().toISOString(),
 };
 
 export const MOCK_RULES = {
@@ -104,29 +112,6 @@ export const MOCK_TRADES = [
   },
 ];
 
-export const MOCK_POSITIONS = [
-  {
-    ticket: 2001,
-    symbol: "EURUSD",
-    type: "Buy",
-    volume: 0.2,
-    openPrice: 1.0855,
-    profit: 45.2,
-    stopLoss: 1.081,
-    takeProfit: 1.092,
-  },
-  {
-    ticket: 2002,
-    symbol: "NAS100",
-    type: "Sell",
-    volume: 0.5,
-    openPrice: 21450,
-    profit: -28.4,
-    stopLoss: 21580,
-    takeProfit: 21100,
-  },
-];
-
 export const MOCK_ACCOUNTS = [
   {
     id: "acc-1",
@@ -146,13 +131,67 @@ export const MOCK_ACCOUNTS = [
   },
 ];
 
-export const MOCK_AI_INSIGHTS = [
-  {
-    title: "Post-loss sizing",
-    body: "After 2 consecutive losses you increased volume 40% on the next trade — consider a fixed risk % instead.",
+/** Rich AI Coach payload for mock — same sections as live UI when data is present. */
+export const MOCK_AI_COACH = {
+  analysisWindow: { lookbackDays: 90, minTrades: 10, lastComputed: "2026-03-22T18:00:00Z" },
+  model: { label: "Preview · static", provider: "mock", temperature: 0.2 },
+  scores: {
+    discipline: 72,
+    riskConsistency: 64,
+    emotionalReactivity: 58,
+    strategyAdherence: 81,
+    overall: 69,
   },
-  {
-    title: "Session focus",
-    body: "Most drawdown clusters around NY open; your win rate is 12% higher in London session.",
+  behavioral: {
+    avgSizeAfterLossPct: 38,
+    revengeTradesCount: 4,
+    tradesOutsidePlanPct: 12,
+    largestSingleLossPct: 2.1,
+    consecutiveLossMax: 3,
   },
-];
+  sessionWinRate: [
+    { session: "Asia", winPct: 52, trades: 18 },
+    { session: "London", winPct: 64, trades: 35 },
+    { session: "NY", winPct: 48, trades: 22 },
+  ],
+  symbolStats: [
+    { symbol: "EURUSD", trades: 28, netR: 1.42, avgHoldMin: 95 },
+    { symbol: "XAUUSD", trades: 14, netR: 0.88, avgHoldMin: 42 },
+    { symbol: "NAS100", trades: 8, netR: -0.35, avgHoldMin: 120 },
+  ],
+  parameters: [
+    { name: "Avg R after loss", value: "0.62", benchmark: "≥ 1.0", status: "warn" as const },
+    { name: "Risk per trade vs plan", value: "0.95%", benchmark: "≤ 1.0%", status: "ok" as const },
+    { name: "Trades / day (30d avg)", value: "4.2", benchmark: "≤ 6", status: "ok" as const },
+    { name: "News window trades", value: "22%", benchmark: "≤ 15%", status: "warn" as const },
+  ],
+  insights: [
+    {
+      title: "Post-loss sizing",
+      body: "After 2 consecutive losses you increased volume ~40% on the next trade — fixed % risk would stabilize expectancy.",
+      severity: "medium" as const,
+    },
+    {
+      title: "Session edge",
+      body: "Win rate is 12 points higher in London vs NY open; consider reducing size during NY first hour.",
+      severity: "low" as const,
+    },
+    {
+      title: "Symbol concentration",
+      body: "62% of R comes from EURUSD; a patch of losses on that pair drives most of the weekly swing.",
+      severity: "low" as const,
+    },
+  ],
+  weeklyFocus: [
+    "Cap risk at 0.75% until 20 more trades logged",
+    "No new positions in the 15m after red folder news",
+    "Journal one sentence before each trade for 1 week",
+  ],
+  checklist: [
+    { id: "c1", label: "Daily loss rule respected this week", done: true },
+    { id: "c2", label: "No revenge trades after 2 losses (streak)", done: false },
+    { id: "c3", label: "Reviewed largest loss and SL placement", done: true },
+  ],
+};
+
+export type AiCoachModel = typeof MOCK_AI_COACH;

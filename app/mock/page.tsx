@@ -2,22 +2,28 @@ import Link from "next/link";
 import {
   LayoutDashboard,
   TrendingUp,
-  Send,
   ShieldAlert,
   FlaskConical,
   Bot,
   CreditCard,
+  PlusCircle,
+  Activity,
+  Shield,
+  User,
   ArrowRight,
 } from "lucide-react";
 
 const cards = [
-  { href: "/mock/dashboard", title: "Dashboard", desc: "Equity, KPI, calendario e alert.", icon: LayoutDashboard },
-  { href: "/mock/trades", title: "Trades", desc: "Storico trade di esempio.", icon: TrendingUp },
-  { href: "/mock/orders", title: "Orders", desc: "Posizioni aperte e modulo ordine.", icon: Send },
-  { href: "/mock/rules", title: "Rules & alerts", desc: "Regole, Telegram, lista alert.", icon: ShieldAlert },
-  { href: "/mock/simulator", title: "Simulator", desc: "Challenge stats dimostrative.", icon: FlaskConical },
-  { href: "/mock/ai-coach", title: "AI Coach", desc: "Insight testuali di esempio.", icon: Bot },
-  { href: "/mock/accounts", title: "Accounts", desc: "Tabella account collegati (mock).", icon: CreditCard },
+  { href: "/mock/dashboard", title: "Dashboard", desc: "Overview, equity, KPI, calendario, alert, quick actions.", icon: LayoutDashboard },
+  { href: "/mock/trades", title: "Trades", desc: "Storico trade chiusi.", icon: TrendingUp },
+  { href: "/mock/rules", title: "Rules & alerts", desc: "Regole, Telegram, alert.", icon: ShieldAlert },
+  { href: "/mock/simulator", title: "Simulator", desc: "Challenge simulator e tab FTMO/Simplified.", icon: FlaskConical },
+  { href: "/mock/ai-coach", title: "AI Coach", desc: "Pannelli analisi e parametri (mock).", icon: Bot },
+  { href: "/mock/accounts", title: "Accounts", desc: "Gestione account collegati.", icon: CreditCard },
+  { href: "/mock/add-account", title: "Add account", desc: "Flusso collegamento MT.", icon: PlusCircle },
+  { href: "/mock/live-monitoring", title: "Live monitoring", desc: "Snapshot connessione MetaAPI.", icon: Activity },
+  { href: "/mock/admin", title: "Admin", desc: "Area admin (mock).", icon: Shield },
+  { href: "/mock/profile", title: "Profile", desc: "Profilo utente.", icon: User },
 ] as const;
 
 export default function MockHubPage() {
@@ -26,7 +32,8 @@ export default function MockHubPage() {
       <header>
         <h1 className="rs-page-title">Mock preview</h1>
         <p className="rs-page-sub">
-          Esplora l&apos;interfaccia RiskSent con dati dimostrativi. Nessuna autenticazione e nessuna
+          Stessa struttura di navigazione e sezioni dell&apos;app live (sidebar + pagine). Nessuna
+          autenticazione e nessuna
           chiamata a MetaTrader o al database reale.
         </p>
       </header>
@@ -45,7 +52,7 @@ export default function MockHubPage() {
               <ArrowRight className="h-4 w-4 shrink-0 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-violet-400" />
             </div>
             <h2 className="mt-4 text-base font-semibold text-slate-100">{title}</h2>
-            <p className="mt-1 text-sm text-slate-500 leading-relaxed">{desc}</p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-500">{desc}</p>
           </Link>
         ))}
       </div>

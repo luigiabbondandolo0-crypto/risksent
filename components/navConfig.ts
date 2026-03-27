@@ -9,7 +9,6 @@ import {
   CreditCard,
   Shield,
   Activity,
-  Send,
   User,
 } from "lucide-react";
 
@@ -22,7 +21,6 @@ export type NavItem = {
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/trades", label: "Trades", icon: TrendingUp },
-  { href: "/orders", label: "Orders", icon: Send },
   { href: "/rules", label: "Rules & alerts", icon: ShieldAlert },
   { href: "/simulator", label: "Simulator", icon: FlaskConical },
   { href: "/ai-coach", label: "AI Coach", icon: Bot },
@@ -67,7 +65,6 @@ export const APP_SHELL_PREFIXES = [
   "/dashboard",
   "/rules",
   "/trades",
-  "/orders",
   "/simulator",
   "/ai-coach",
   "/add-account",

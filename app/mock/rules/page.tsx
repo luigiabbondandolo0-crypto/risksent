@@ -1,17 +1,18 @@
+import { Link2 } from "lucide-react";
 import { MOCK_RULES, MOCK_ALERTS } from "@/lib/mock/siteMockData";
 
 export default function MockRulesPage() {
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       <header>
         <h1 className="rs-page-title">Rules &amp; alerts</h1>
         <p className="rs-page-sub">
-          Valori di esempio e alert dimostrativi. In produzione questi dati arrivano dal database e dallo stato live.
+          Stessa struttura della pagina live: regole personali, Telegram, lista alert (dati mock).
         </p>
       </header>
 
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <h2 className="text-base font-semibold text-slate-100">Regole</h2>
+      <section className="rs-card border-cyan-500/25 p-5 sm:p-6 shadow-rs-soft">
+        <h2 className="text-base font-semibold text-slate-100">Personal risk rules</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {(
             [
@@ -27,13 +28,23 @@ export default function MockRulesPage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-xs text-slate-500">
-          Telegram: in mock risulta &quot;non collegato&quot;. Nella app reale configuri il chat ID dalla stessa pagina.
-        </p>
       </section>
 
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <h2 className="text-base font-semibold text-slate-100">Alert recenti</h2>
+        <div className="mb-1 flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-cyan-400" />
+          <h2 className="text-sm font-medium text-slate-200">Link Telegram</h2>
+        </div>
+        <p className="text-xs text-slate-500">
+          In mock: bot non collegato. Nella app reale generi il link di collegamento e invii /start al bot.
+        </p>
+        <button type="button" disabled className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-500">
+          Generate link (mock)
+        </button>
+      </section>
+
+      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+        <h2 className="text-base font-semibold text-slate-100">Alerts</h2>
         <ul className="mt-4 space-y-3">
           {MOCK_ALERTS.map((a) => (
             <li

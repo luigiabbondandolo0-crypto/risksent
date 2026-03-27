@@ -1,35 +1,76 @@
 "use client";
 
-import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Sparkles, User } from "lucide-react";
+import type { MockNavItem } from "@/components/mock/mockNavConfig";
 import {
-  LayoutDashboard,
-  TrendingUp,
-  Send,
-  ShieldAlert,
-  FlaskConical,
-  Bot,
-  CreditCard,
-  Sparkles,
-  Home,
-} from "lucide-react";
-
-const MOCK_LINKS: { href: string; label: string; icon: ComponentType<{ className?: string }> }[] = [
-  { href: "/mock", label: "Hub", icon: Home },
-  { href: "/mock/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mock/trades", label: "Trades", icon: TrendingUp },
-  { href: "/mock/orders", label: "Orders", icon: Send },
-  { href: "/mock/rules", label: "Rules & alerts", icon: ShieldAlert },
-  { href: "/mock/simulator", label: "Simulator", icon: FlaskConical },
-  { href: "/mock/ai-coach", label: "AI Coach", icon: Bot },
-  { href: "/mock/accounts", label: "Accounts", icon: CreditCard },
-];
+  mockPrimaryNavItems,
+  mockAccountNavItems,
+  mockMonitoringNavItems,
+  mockAdminNavItems,
+  mockMobileNavItems,
+} from "@/components/mock/mockNavConfig";
 
 function linkActive(pathname: string | null, href: string) {
   if (!pathname) return false;
-  if (href === "/mock") return pathname === "/mock";
+  if (href === "/mock/dashboard") return pathname === "/mock" || pathname === "/mock/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function navLinkClass(active: boolean, mobile: boolean) {
+  const base = mobile
+    ? "flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium"
+    : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200";
+  if (mobile) {
+    return `${base} ${
+      active
+        ? "bg-violet-500/20 text-violet-100 ring-1 ring-violet-500/30"
+        : "text-slate-400 hover:bg-slate-800/80"
+    }`;
+  }
+  return `${base} ${
+    active
+      ? "border border-violet-500/40 bg-violet-500/15 text-violet-100 shadow-sm shadow-violet-500/5"
+      : "border border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-100"
+  }`;
+}
+
+function NavGroup({
+  title,
+  items,
+  pathname,
+  mobile,
+}: {
+  title: string;
+  items: readonly MockNavItem[];
+  pathname: string | null;
+  mobile: boolean;
+}) {
+  return (
+    <div>
+      <span
+        className={`mb-2 block font-semibold uppercase tracking-[0.18em] text-slate-600 ${
+          mobile ? "px-1 text-[9px]" : "px-1 text-[10px]"
+        }`}
+      >
+        {title}
+      </span>
+      <nav className={`flex ${mobile ? "gap-1" : "flex-col gap-0.5"}`}>
+        {items.map(({ href, label, icon: Icon }) => {
+          const active = linkActive(pathname, href);
+          return (
+            <Link key={href} href={href} className={navLinkClass(active, mobile)}>
+              <Icon
+                className={`shrink-0 ${mobile ? "h-3.5 w-3.5" : "h-4 w-4"} ${active ? "text-violet-300" : "text-slate-500"}`}
+              />
+              <span className={mobile ? "" : "truncate"}>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
 }
 
 export function MockSiteChrome({ children }: { children: React.ReactNode }) {
@@ -43,7 +84,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
             <Sparkles className="h-4 w-4 shrink-0 text-amber-300" />
             <span>
               <strong className="font-semibold text-white">Mock preview</strong>
-              <span className="text-violet-200/80"> — Dati dimostrativi. Nessuna chiamata API reale.</span>
+              <span className="text-violet-200/80"> — Stessa struttura dell&apos;app live, dati dimostrativi.</span>
             </span>
           </div>
           <Link
@@ -56,54 +97,53 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-[220px] shrink-0 flex-col border-r border-slate-800/60 bg-slate-950/60 px-3 py-6 backdrop-blur-sm lg:flex">
-          <p className="mb-3 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-            Mock navigation
-          </p>
-          <nav className="flex flex-col gap-0.5">
-            {MOCK_LINKS.map(({ href, label, icon: Icon }) => {
+        <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
+          <Link href="/mock/dashboard" className="mb-8 flex items-center gap-2.5 px-1">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/25 to-amber-500/10 text-xs font-bold text-violet-200 ring-1 ring-violet-500/25">
+              RS
+            </span>
+            <span className="text-sm font-semibold tracking-tight text-slate-100">RiskSent</span>
+          </Link>
+
+          <div className="flex flex-col gap-8">
+            <NavGroup title="Overview" items={mockPrimaryNavItems} pathname={pathname} mobile={false} />
+            <NavGroup title="Account" items={mockAccountNavItems} pathname={pathname} mobile={false} />
+            <NavGroup title="Monitoring" items={mockMonitoringNavItems} pathname={pathname} mobile={false} />
+            <NavGroup title="Admin" items={mockAdminNavItems} pathname={pathname} mobile={false} />
+            <div>
+              <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                User
+              </span>
+              <Link
+                href="/mock/profile"
+                className={navLinkClass(linkActive(pathname, "/mock/profile"), false)}
+              >
+                <User
+                  className={`h-4 w-4 shrink-0 ${linkActive(pathname, "/mock/profile") ? "text-violet-300" : "text-slate-500"}`}
+                />
+                <span className="truncate">Profile</span>
+              </Link>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="scrollbar-none flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-3 py-2.5 lg:hidden">
+            {mockMobileNavItems.map(({ href, label, icon: Icon }) => {
               const active = linkActive(pathname, href);
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "border border-violet-500/40 bg-violet-500/15 text-violet-100"
-                      : "border border-transparent text-slate-400 hover:bg-slate-800/70 hover:text-slate-100"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 shrink-0 ${active ? "text-violet-300" : "text-slate-500"}`} />
+                <Link key={href} href={href} className={navLinkClass(active, true)}>
+                  <Icon className={`h-3.5 w-3.5 ${active ? "text-violet-300" : "text-slate-500"}`} />
                   {label}
                 </Link>
               );
             })}
-          </nav>
-        </aside>
+          </div>
 
-        <aside className="scrollbar-none flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-4 py-2 lg:hidden">
-          {MOCK_LINKS.map(({ href, label, icon: Icon }) => {
-            const active = linkActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium ${
-                  active
-                    ? "bg-violet-500/20 text-violet-100 ring-1 ring-violet-500/30"
-                    : "text-slate-400 hover:bg-slate-800/80"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </Link>
-            );
-          })}
-        </aside>
-
-        <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {children}
-        </main>
+          <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );
