@@ -50,9 +50,9 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
   const score = computeHealthScore(winRate, highestDdPct, unread);
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Account Health</span>
+    <div className="rs-card p-5 shadow-rs-soft">
+      <div className="flex items-center justify-between gap-2">
+        <span className="rs-kpi-label">Account health</span>
         <button
           type="button"
           onClick={() => setInfoOpen(true)}
@@ -65,7 +65,7 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
           </svg>
         </button>
       </div>
-      <div className={`rounded-lg border inline-flex items-baseline gap-2 px-4 py-2.5 mt-2 ${healthBg(score)}`}>
+      <div className={`mt-3 inline-flex items-baseline gap-2 rounded-xl border px-4 py-2.5 ${healthBg(score)}`}>
         <span className={`text-2xl font-bold ${healthColor(score)}`}>{score}</span>
         <span className="text-slate-500 text-sm">/ 100</span>
       </div>

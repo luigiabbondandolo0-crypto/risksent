@@ -123,12 +123,9 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        console.log("[Dashboard] Fetching /api/accounts...");
         const accRes = await fetch("/api/accounts");
         const body = await accRes.json().catch(() => ({}));
-        console.log("[Dashboard] /api/accounts response:", { status: accRes.status, ok: accRes.ok, body });
         if (!accRes.ok) {
-          console.error("[Dashboard] /api/accounts failed:", accRes.status, body);
           setError(body?.error ?? "Failed to load accounts");
           return;
         }
@@ -137,8 +134,7 @@ export default function DashboardPage() {
         const first = list?.[0];
         if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
         else setSelectedUuid("");
-      } catch (e) {
-        console.error("[Dashboard] /api/accounts exception:", e);
+      } catch {
         setError("Failed to load accounts");
       } finally {
         setLoading(false);
@@ -246,70 +242,110 @@ export default function DashboardPage() {
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-50">Dashboard</h1>
+    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="rs-page-title">Dashboard</h1>
+          <p className="rs-page-sub">
+            Risk, performance, and activity for the selected account — updated on a short interval while you stay on this page.
+          </p>
           {stats?.updatedAt && (
-            <p className="text-xs text-slate-500 mt-1">
-              Last update: {new Date(stats.updatedAt).toLocaleTimeString()}
+            <p className="mt-2 text-xs text-slate-500">
+              Last updated{" "}
+              {new Date(stats.updatedAt).toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
             </p>
           )}
         </div>
-        <select
-          className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 outline-none focus:border-cyan-500"
-          value={selectedUuid ?? ""}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUuid(e.target.value || null)}
-          disabled={loading}
-        >
-          <option value="">Select account</option>
-          {accounts.map((a: Account) => (
-            <option key={a.id} value={a.metaapi_account_id ?? ""}>
-              {accountLabel(a)}
-            </option>
-          ))}
-        </select>
+        <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0">
+          <label htmlFor="dashboard-account" className="rs-section-title mb-2 block">
+            Trading account
+          </label>
+          <select
+            id="dashboard-account"
+            className="rs-input"
+            value={selectedUuid ?? ""}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUuid(e.target.value || null)}
+            disabled={loading}
+          >
+            <option value="">Select account</option>
+            {accounts.map((a: Account) => (
+              <option key={a.id} value={a.metaapi_account_id ?? ""}>
+                {accountLabel(a)}
+              </option>
+            ))}
+          </select>
+        </div>
       </header>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {loading && (
+        <div className="rs-card overflow-hidden p-6" aria-hidden>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-48 max-w-full rounded bg-slate-800/80 animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-slate-800/60 animate-pulse" />
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 rounded-xl bg-slate-800/50 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      )}
 
-      <section className="rounded-xl border border-slate-700/80 bg-gradient-to-br from-slate-800 to-slate-900 p-5 shadow-inner">
+      {error && (
+        <div
+          className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      {!loading && (
+      <>
+      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-sm font-semibold text-slate-200">Active risk rules</h3>
+          <h3 className="text-base font-semibold tracking-tight text-slate-100">Active risk rules</h3>
           {riskRules ? (
             <button
               type="button"
               onClick={() => setRulesPopupOpen(true)}
-              className="text-xs font-medium text-cyan-400 hover:text-cyan-300 border border-cyan-500/40 rounded-lg px-3 py-1.5 hover:bg-cyan-500/10 transition-colors"
+              className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
             >
               Edit
             </button>
           ) : (
             <Link
               href="/rules"
-              className="inline-flex items-center rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30"
+              className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
             >
               Set rules
             </Link>
           )}
         </div>
         {riskRules && (
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">Daily loss</div>
-              <div className="text-lg font-bold text-white">{riskRules.daily_loss_pct}%</div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Daily loss</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.daily_loss_pct}%</div>
             </div>
-            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">Risk/trade</div>
-              <div className="text-lg font-bold text-white">{riskRules.max_risk_per_trade_pct}%</div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Risk / trade</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_risk_per_trade_pct}%</div>
             </div>
-            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">Exposure</div>
-              <div className="text-lg font-bold text-white">{riskRules.max_exposure_pct}%</div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Exposure</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_exposure_pct}%</div>
             </div>
-            <div className="rounded-lg bg-slate-800/60 px-4 py-3 border border-slate-700/50">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">Revenge</div>
-              <div className="text-lg font-bold text-white">{riskRules.revenge_threshold_trades}</div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Revenge</div>
+              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.revenge_threshold_trades}</div>
             </div>
           </div>
         )}
@@ -338,14 +374,15 @@ export default function DashboardPage() {
       )}
 
       {/* Equity curve — full width, below Daily DD & above stats cards */}
-      <section className="w-full rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-        <div className="text-xs text-slate-400 uppercase tracking-wide mb-4">
-          Equity growth — absolute value and % from start (zoom/pan with bar below)
-        </div>
-        {stats?.error && <p className="text-sm text-amber-400">{stats.error}</p>}
+      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
+        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
+        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
+          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
+        </p>
+        {stats?.error && <p className="mb-3 text-sm text-amber-400/95">{stats.error}</p>}
         {curve.length === 0 && !stats?.error && (
-          <div className="h-72 flex items-center justify-center text-slate-500 text-sm">
-            {stats == null ? "Loading…" : "No data. Link an account and trade to see the curve."}
+          <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm text-slate-500">
+            {stats == null ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
           </div>
         )}
         {curve.length > 0 && (
@@ -424,10 +461,10 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
         {/* Balance + Equity in one card */}
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Balance & Equity</div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Balance & equity</div>
           <div className="mt-2 space-y-2">
             <div>
               <div className="text-lg font-bold text-white">
@@ -449,9 +486,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Win rate + Avg R:R + wins/losses gauge + info */}
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
+        <div className="rs-card p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase tracking-wide">Win rate & Avg R:R</span>
+            <span className="rs-kpi-label">Win rate & avg R:R</span>
             <button
               type="button"
               onClick={() => setRrTableOpen(true)}
@@ -489,8 +526,8 @@ export default function DashboardPage() {
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
 
         {/* Average Win + Average Loss + ratio + profit factor */}
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Average Win / Loss</div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Average win / loss</div>
           <div className="mt-2 space-y-2">
             <div>
               <span className="text-emerald-400 font-bold">{stats?.avgWin != null ? `+${stats.avgWin.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
@@ -508,8 +545,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Max DD — highest registered, $ + % + date */}
-        <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-          <div className="text-xs text-slate-400 uppercase tracking-wide">Max DD</div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-xl font-bold text-red-400">
             {stats?.maxDdDollars != null ? `${stats.maxDdDollars < 0 ? "" : "-"}${Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}
           </div>
@@ -528,12 +565,15 @@ export default function DashboardPage() {
       </section>
 
       {/* Calendar — traded days */}
-      <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs text-slate-400 uppercase tracking-wide">{monthLabel} — Traded days</span>
-          <div className="flex gap-2">
-            <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700">←</button>
-            <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700">→</button>
+      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-base font-semibold tracking-tight text-slate-100 capitalize">{monthLabel}</div>
+            <div className="mt-0.5 text-xs text-slate-500">Days with activity — tap a day to open trades</div>
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800" aria-label="Previous month">←</button>
+            <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800" aria-label="Next month">→</button>
           </div>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center">
@@ -589,9 +629,11 @@ export default function DashboardPage() {
       <AlertsOverview />
 
       <section>
-        <h2 className="text-sm font-semibold text-slate-200 mb-3">Quick Actions</h2>
+        <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>
         <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
       </section>
+      </>
+      )}
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.className} bg-background text-slate-100 min-h-screen`}
+        className={`${inter.className} min-h-screen bg-background text-slate-100 antialiased`}
       >
         <div className="min-h-screen flex flex-col">
           <Topbar />

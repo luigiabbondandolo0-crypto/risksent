@@ -39,22 +39,30 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
   const pending = alerts.filter((a) => !a.read).slice(0, 3);
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-slate-200">Imminent alerts</h2>
+    <section className="rs-card space-y-4 p-5 sm:p-6 shadow-rs-soft">
+      <div>
+        <h2 className="text-base font-semibold tracking-tight text-slate-100">Alerts</h2>
+        <p className="mt-0.5 text-xs text-slate-500">Unread items that need attention</p>
+      </div>
 
       {loading ? (
-        <p className="text-xs text-slate-500">Loading alerts…</p>
+        <div className="space-y-2">
+          <div className="h-12 rounded-xl bg-slate-800/60 animate-pulse" />
+          <div className="h-12 rounded-xl bg-slate-800/40 animate-pulse" />
+        </div>
       ) : pending.length === 0 ? (
-        <p className="text-xs text-slate-500">No pending alerts. All under control.</p>
+        <p className="rounded-xl border border-dashed border-slate-700/50 bg-slate-950/25 px-4 py-6 text-center text-sm text-slate-500">
+          No pending alerts. You&apos;re all clear.
+        </p>
       ) : (
         <ul className="space-y-3">
           {pending.map((a) => (
             <li
               key={a.id}
-              className={`rounded-lg border p-3 ${
+              className={`rounded-xl border p-3.5 transition-colors ${
                 a.severity === "high"
-                  ? "border-red-500/40 bg-red-500/10"
-                  : "border-amber-500/40 bg-amber-500/10"
+                  ? "border-red-500/35 bg-red-500/10"
+                  : "border-amber-500/35 bg-amber-500/10"
               }`}
             >
               <p className="text-sm font-medium text-slate-200 flex items-start gap-2">
@@ -78,9 +86,12 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
       {alerts.length > 0 && (
         <Link
           href="/rules#alerts"
-          className="inline-block text-xs font-medium text-cyan-400 hover:text-cyan-300"
+          className="inline-flex items-center text-xs font-medium text-cyan-400/95 transition-colors hover:text-cyan-300"
         >
-          See all alerts →
+          View all alerts
+          <span className="ml-1" aria-hidden>
+            →
+          </span>
         </Link>
       )}
     </section>

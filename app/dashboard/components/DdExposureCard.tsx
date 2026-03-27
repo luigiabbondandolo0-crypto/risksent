@@ -69,14 +69,15 @@ export function DdExposureCard({
   isMock
 }: DdExposureCardProps) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/90 to-slate-900/90 p-5 shadow-lg">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-          Daily DD & Exposure vs limits
-        </span>
+    <div className="rs-card p-5 sm:p-6 shadow-rs-soft">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div>
+          <div className="text-base font-semibold tracking-tight text-slate-100">Daily DD & exposure</div>
+          <p className="mt-0.5 text-xs text-slate-500">Compared to your rule limits</p>
+        </div>
         {isMock && (
-          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">
-            Mock data
+          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-medium text-amber-200">
+            Sample data
           </span>
         )}
       </div>

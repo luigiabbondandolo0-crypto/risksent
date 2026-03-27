@@ -1,99 +1,113 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { User } from "lucide-react";
+import type { NavItem } from "@/components/navConfig";
 import {
-  LayoutDashboard,
-  TrendingUp,
-  ShieldAlert,
-  FlaskConical,
-  Bot,
-  PlusCircle,
-  CreditCard,
-  User,
-  Shield,
-  Activity,
-  Send,
-} from "lucide-react";
+  primaryNavItems,
+  accountNavItems,
+  monitoringNavItems,
+  adminNavItems,
+  adminOnlySidebarItems,
+  isNavActive,
+} from "@/components/navConfig";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/trades", label: "Trades", icon: TrendingUp },
-  { href: "/orders", label: "Orders", icon: Send },
-  { href: "/rules", label: "Rules and Alerts", icon: ShieldAlert },
-  { href: "/simulator", label: "Simulator", icon: FlaskConical },
-  { href: "/ai-coach", label: "AI Coach", icon: Bot },
-] as const;
+function navLinkClass(active: boolean) {
+  return [
+    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+    active
+      ? "border border-cyan-500/25 bg-cyan-500/10 text-cyan-100 shadow-sm shadow-cyan-500/5"
+      : "border border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-100",
+  ].join(" ");
+}
 
-const secondaryItems = [
-  { href: "/accounts", label: "Manage Accounts", icon: CreditCard },
-  { href: "/add-account", label: "Add Account", icon: PlusCircle },
-] as const;
-
-const adminNavItems = [
-  { href: "/admin", label: "Admin", icon: Shield },
-  { href: "/admin/live-monitoring", label: "Live Monitoring", icon: Activity },
-] as const;
+function NavGroup({
+  title,
+  items,
+  pathname,
+}: {
+  title: string;
+  items: readonly NavItem[];
+  pathname: string | null;
+}) {
+  return (
+    <div>
+      <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+        {title}
+      </span>
+      <nav className="flex flex-col gap-0.5">
+        {items.map(({ href, label, icon: Icon }) => {
+          const active = isNavActive(pathname, href);
+          return (
+            <Link key={href} href={href} className={navLinkClass(active)}>
+              <Icon
+                className={`h-4 w-4 flex-shrink-0 ${active ? "text-cyan-400" : "text-slate-500"}`}
+              />
+              <span className="truncate">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
 
 export function Sidebar({ variant = "default" }: { variant?: "default" | "admin" }) {
+  const pathname = usePathname();
+
   if (variant === "admin") {
     return (
-      <aside className="hidden lg:flex flex-col w-56 border-r border-slate-800/60 bg-slate-950/40 px-4 py-6">
-        <span className="uppercase tracking-wider text-[11px] text-slate-500 mb-4 font-medium">
+      <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
+        <span className="mb-4 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
           Admin
         </span>
-        <nav className="flex flex-col gap-1">
-          {adminNavItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
-            >
-              <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-              <span className="uppercase tracking-wide">{label}</span>
-            </Link>
-          ))}
+        <nav className="flex flex-col gap-0.5">
+          {adminOnlySidebarItems.map(({ href, label, icon: Icon }) => {
+            const active = isNavActive(pathname, href);
+            return (
+              <Link key={href} href={href} className={navLinkClass(active)}>
+                <Icon
+                  className={`h-4 w-4 flex-shrink-0 ${active ? "text-cyan-400" : "text-slate-500"}`}
+                />
+                <span className="truncate">{label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </aside>
     );
   }
 
   return (
-    <aside className="hidden lg:flex flex-col w-56 border-r border-slate-800/60 bg-slate-950/40 px-4 py-6">
-      <span className="uppercase tracking-wider text-[11px] text-slate-500 mb-4 font-medium">
-        Menu
-      </span>
-      <nav className="flex flex-col gap-1">
-        {navItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
-          >
-            <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-            <span className="uppercase tracking-wide">{label}</span>
-          </Link>
-        ))}
-        <div className="mt-6 pt-4 border-t border-slate-800/60">
-          <span className="uppercase tracking-wider text-[11px] text-slate-600 mb-3 block font-medium">
-            Account
+    <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
+      <Link href="/dashboard" className="mb-8 flex items-center gap-2.5 px-1">
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 text-xs font-bold text-cyan-300 ring-1 ring-cyan-500/20">
+          RS
+        </span>
+        <span className="text-sm font-semibold tracking-tight text-slate-100">RiskSent</span>
+      </Link>
+
+      <div className="flex flex-col gap-8">
+        <NavGroup title="Overview" items={primaryNavItems} pathname={pathname} />
+        <NavGroup title="Account" items={accountNavItems} pathname={pathname} />
+        <NavGroup title="Monitoring" items={monitoringNavItems} pathname={pathname} />
+        <NavGroup title="Admin" items={adminNavItems} pathname={pathname} />
+        <div>
+          <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+            User
           </span>
-          {secondaryItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
-            >
-              <Icon className="h-4 w-4 flex-shrink-0 text-slate-500" />
-              <span className="uppercase tracking-wide">{label}</span>
-            </Link>
-          ))}
           <Link
             href="/profile"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 transition-colors"
+            className={navLinkClass(isNavActive(pathname, "/profile"))}
           >
-            <User className="h-4 w-4 flex-shrink-0 text-slate-500" />
-            <span className="uppercase tracking-wide">Profile</span>
+            <User
+              className={`h-4 w-4 flex-shrink-0 ${isNavActive(pathname, "/profile") ? "text-cyan-400" : "text-slate-500"}`}
+            />
+            <span className="truncate">Profile</span>
           </Link>
         </div>
-      </nav>
+      </div>
     </aside>
   );
 }
