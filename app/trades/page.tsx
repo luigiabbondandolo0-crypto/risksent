@@ -4,6 +4,12 @@ import { Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { MiniEquityChart } from "./components/MiniEquityChart";
 import { SanityBadge, getSanityLevel } from "./components/SanityBadge";
+import { TradeAiInsightButton } from "./components/TradeAiInsightButton";
+import {
+  buildTradeInsightIssues,
+  computeTradeSanityScore,
+  riskPctForTrade,
+} from "./lib/tradeInsight";
 
 function formatTradeDate(iso: string): string {
   const d = new Date(iso);
@@ -29,7 +35,6 @@ function normalizeType(t: string): "Buy" | "Sell" {
   return "Buy";
 }
 
-const CONTRACT_SIZE = 100_000;
 const PAGE_SIZE = 50;
 
 type Account = {
@@ -214,16 +219,12 @@ function TradesPageContent() {
     return sortedByTime.map((t) => {
       const equity = runningEquity;
       runningEquity += t.profit;
-      let riskPct: number | null = null;
-      if (
-        t.stopLoss != null &&
-        Number.isFinite(t.stopLoss) &&
-        t.lots > 0 &&
-        equity > 0
-      ) {
-        const riskAmount = t.lots * CONTRACT_SIZE * Math.abs(t.openPrice - t.stopLoss);
-        riskPct = (riskAmount / equity) * 100;
-      }
+      const riskPct = riskPctForTrade({
+        stopLoss: t.stopLoss,
+        lots: t.lots,
+        openPrice: t.openPrice,
+        equity,
+      });
       return { riskPct, equity };
     });
   }, [sortedByTime, initialBalance]);
@@ -485,6 +486,7 @@ function TradesPageContent() {
                   <th className="px-4 py-3 font-medium">Close</th>
                   <th className="px-4 py-3 font-medium">Profit</th>
                   <th className="px-4 py-3 font-medium" title="Sanity: green ok, yellow borderline, red revenge/risk">Sanity</th>
+                  <th className="px-3 py-3 font-medium text-right whitespace-nowrap">Score · AI</th>
                 </tr>
               </thead>
               <tbody>
@@ -501,6 +503,25 @@ function TradesPageContent() {
                     riskPct,
                     maxRiskPct: maxRisk,
                     revengeThreshold: revengeThr
+                  });
+                  const hasStopLoss = t.stopLoss != null && Number.isFinite(t.stopLoss);
+                  const sanityScore = computeTradeSanityScore({
+                    consecutiveLossesBefore: consec,
+                    riskPct,
+                    maxRiskPct: maxRisk,
+                    revengeThreshold: revengeThr,
+                    balance,
+                    profit: t.profit,
+                    hasStopLoss,
+                  });
+                  const localIssues = buildTradeInsightIssues({
+                    consecutiveLossesBefore: consec,
+                    riskPct,
+                    maxRiskPct: maxRisk,
+                    revengeThreshold: revengeThr,
+                    balance,
+                    profit: t.profit,
+                    hasStopLoss,
                   });
                   const rowTitle = `Ticket ${t.ticket}${t.comment ? ` · ${t.comment}` : ""}`;
 
@@ -550,6 +571,15 @@ function TradesPageContent() {
                       </td>
                       <td className="px-4 py-3" title={sanity.tooltip}>
                         <SanityBadge level={sanity.level} tooltip={sanity.tooltip} />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <TradeAiInsightButton
+                          ticket={t.ticket}
+                          symbol={t.symbol}
+                          sanityScore={sanityScore}
+                          localIssues={localIssues}
+                          aiCoachHref="/ai-coach"
+                        />
                       </td>
                     </tr>
                   );

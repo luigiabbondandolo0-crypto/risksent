@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Info, TrendingUp } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { ProgressBar } from "@/app/simulator/components/ProgressBar";
 
 const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
@@ -18,7 +27,25 @@ const MOCK_STATS = {
 export default function MockSimulatorPage() {
   const [rulesTab, setRulesTab] = useState<"ftmo2" | "ftmo1" | "simplified">("ftmo2");
   const [showInfo, setShowInfo] = useState(false);
+  const [whatIfBias, setWhatIfBias] = useState(42);
   const stats = MOCK_STATS;
+
+  const projectionCurve = useMemo(() => {
+    const days = 30;
+    const startPct = stats.profit_pct;
+    const dailyDrift = (whatIfBias / 100) * 0.35;
+    const out: { day: number; equity: number }[] = [];
+    for (let d = 0; d <= days; d++) {
+      const wave = Math.sin(d / 4.2) * 0.35;
+      const pct = startPct + dailyDrift * d + wave;
+      const eq = 100 * (1 + pct / 100);
+      out.push({
+        day: d,
+        equity: Math.round(eq * 100) / 100,
+      });
+    }
+    return out;
+  }, [stats.profit_pct, whatIfBias]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -162,12 +189,73 @@ export default function MockSimulatorPage() {
         )}
       </div>
 
-      <section className="rs-card p-5 shadow-rs-soft">
-        <h2 className="text-sm font-semibold text-slate-200">What-if / projection</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Nella build reale: slider e curve proiettate. Qui è un placeholder statico per la stessa sezione.
+      <section className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900 p-5 shadow-xl shadow-cyan-500/5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-100">
+              <TrendingUp className="h-5 w-5 text-cyan-400" />
+              What-if / projection
+            </h2>
+            <p className="mt-1 max-w-xl text-sm text-slate-500">
+              Muovi lo slider per simulare un bias giornaliero sul rendimento percentuale (mock). La curva aggiorna equity
+              normalizzata a 100 sullo stesso orizzonte della live.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3">
+            <label className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Scenario bias</label>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={whatIfBias}
+                onChange={(e) => setWhatIfBias(Number(e.target.value))}
+                className="h-2 w-40 accent-cyan-500 sm:w-48"
+              />
+              <span className="tabular-nums text-sm font-semibold text-cyan-300">{whatIfBias}</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-6 h-56 w-full rounded-xl border border-slate-800/80 bg-slate-950/50 p-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={projectionCurve} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mockWhatIfGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.45} />
+              <XAxis dataKey="day" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#475569" }} />
+              <YAxis
+                domain={["auto", "auto"]}
+                tick={{ fill: "#94a3b8", fontSize: 10 }}
+                axisLine={{ stroke: "#475569" }}
+                tickFormatter={(v) => `${v}`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: "10px",
+                }}
+                formatter={(v: number) => [`${v.toFixed(2)} (idx 100)`, "Equity"]}
+                labelFormatter={(d) => `Day ${d}`}
+              />
+              <Area
+                type="monotone"
+                dataKey="equity"
+                stroke="#22d3ee"
+                strokeWidth={2}
+                fill="url(#mockWhatIfGrad)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="mt-3 text-[11px] text-slate-500">
+          Endpoint reale in arrivo: stessa UI, ma i punti saranno calcolati da simulazione Monte Carlo sui tuoi trade
+          chiusi.
         </p>
-        <div className="mt-4 h-32 rounded-xl border border-dashed border-slate-700 bg-slate-950/40" />
       </section>
     </div>
   );

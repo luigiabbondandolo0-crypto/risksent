@@ -273,20 +273,30 @@ export function AICoachPanels({ variant, data }: Props) {
       </section>
 
       {/* Insights */}
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+      <section
+        className={
+          isMock
+            ? "relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-slate-950 via-slate-900/95 to-violet-950/40 p-5 shadow-xl shadow-violet-500/5 sm:p-7"
+            : "rs-card p-5 sm:p-6 shadow-rs-soft"
+        }
+      >
         <SectionTitle icon={Sparkles}>Insight narrativi</SectionTitle>
-        <ul className="space-y-3">
+        <ul className={isMock ? "mt-2 grid gap-4 sm:grid-cols-2" : "space-y-3"}>
           {(d?.insights ?? []).map((ins) => (
             <li
               key={ins.title}
-              className={`rounded-xl border p-4 ${insightBoxClass(ins.severity)}`}
+              className={
+                isMock
+                  ? `rounded-xl border p-4 shadow-lg backdrop-blur-sm ${insightBoxClass(ins.severity)} ring-1 ring-white/5`
+                  : `rounded-xl border p-4 ${insightBoxClass(ins.severity)}`
+              }
             >
               <p className="font-medium text-slate-100">{ins.title}</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">{ins.body}</p>
             </li>
           ))}
           {!d && (
-            <li className="rounded-xl border border-dashed border-slate-700 py-8 text-center text-slate-500">
+            <li className="rounded-xl border border-dashed border-slate-700 py-8 text-center text-slate-500 sm:col-span-2">
               Nessun insight ancora — collega l&apos;account e accumula trade.
             </li>
           )}
@@ -295,20 +305,57 @@ export function AICoachPanels({ variant, data }: Props) {
 
       {/* Weekly focus + checklist */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rs-card p-5 shadow-rs-soft">
+        <section
+          className={
+            isMock
+              ? "rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-slate-900/90 to-slate-950 p-5 shadow-lg ring-1 ring-cyan-500/10"
+              : "rs-card p-5 shadow-rs-soft"
+          }
+        >
           <SectionTitle icon={ListChecks}>Focus settimanale</SectionTitle>
-          <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-300">
-            {(d?.weeklyFocus ?? []).map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
+          <ol className={isMock ? "mt-3 space-y-3" : "list-decimal space-y-2 pl-5 text-sm text-slate-300"}>
+            {(d?.weeklyFocus ?? []).map((line, i) =>
+              isMock ? (
+                <li
+                  key={i}
+                  className="flex gap-3 rounded-xl border border-slate-800/80 bg-slate-950/50 px-3 py-2.5 text-sm leading-snug text-slate-300"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-xs font-bold text-cyan-300">
+                    {i + 1}
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ) : (
+                <li key={i} className="text-sm text-slate-300">
+                  {line}
+                </li>
+              )
+            )}
             {!d && <li className="text-slate-500">—</li>}
           </ol>
         </section>
-        <section className="rs-card p-5 shadow-rs-soft">
+        <section
+          className={
+            isMock
+              ? "rounded-2xl border border-emerald-500/15 bg-gradient-to-b from-slate-900/90 to-slate-950 p-5 shadow-lg ring-1 ring-emerald-500/10"
+              : "rs-card p-5 shadow-rs-soft"
+          }
+        >
           <SectionTitle icon={CheckCircle2}>Checklist</SectionTitle>
-          <ul className="space-y-2">
+          <ul className="mt-3 space-y-2">
             {(d?.checklist ?? []).map((c) => (
-              <li key={c.id} className="flex items-start gap-2 text-sm text-slate-300">
+              <li
+                key={c.id}
+                className={
+                  isMock
+                    ? `flex items-start gap-3 rounded-xl border px-3 py-2.5 text-sm ${
+                        c.done
+                          ? "border-emerald-500/25 bg-emerald-500/5 text-slate-200"
+                          : "border-slate-700/80 bg-slate-950/40 text-slate-400"
+                      }`
+                    : "flex items-start gap-2 text-sm text-slate-300"
+                }
+              >
                 {c.done ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
                 ) : (
@@ -318,7 +365,7 @@ export function AICoachPanels({ variant, data }: Props) {
               </li>
             ))}
             {!d && (
-              <li className="text-slate-500 flex items-center gap-2">
+              <li className="flex items-center gap-2 text-slate-500">
                 <Circle className="h-4 w-4" /> —
               </li>
             )}

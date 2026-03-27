@@ -16,6 +16,7 @@ import { DdExposureCard } from "@/app/dashboard/components/DdExposureCard";
 import { RiskRewardTableModal } from "@/app/dashboard/components/RiskRewardTableModal";
 import { WinsLossesGauge } from "@/app/dashboard/components/WinsLossesGauge";
 import { MockQuickActions } from "@/app/mock/components/MockQuickActions";
+import { DashboardAlertsSection } from "@/components/dashboard/DashboardAlertsSection";
 import {
   MOCK_CURRENCY,
   MOCK_DASHBOARD_STATS,
@@ -140,70 +141,6 @@ export function MockDashboardClient() {
         </div>
       </section>
 
-      <DdExposureCard
-        dailyDdPct={stats.dailyDdPct}
-        dailyLimitPct={riskRules.daily_loss_pct}
-        exposurePct={stats.currentExposurePct}
-        exposureLimitPct={riskRules.max_exposure_pct}
-        isMock
-      />
-
-      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
-        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
-        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
-          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
-        </p>
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={curve.map((p) => ({
-                ...p,
-                displayDate: new Date(p.date).toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "2-digit",
-                }),
-              }))}
-              margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-            >
-              <defs>
-                <linearGradient id="mockLiveEquityGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#475569" }} />
-              <YAxis
-                tickFormatter={(v: number) => `${v}%`}
-                tick={{ fill: "#94a3b8", fontSize: 10 }}
-                axisLine={{ stroke: "#475569" }}
-              />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
-                formatter={(value: number, _n: string, props: { payload?: { value?: number } }) => [
-                  `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
-                  "Growth",
-                ]}
-              />
-              <ReferenceLine
-                y={-riskRules.daily_loss_pct}
-                stroke="#ef4444"
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-              />
-              <Area
-                type="monotone"
-                dataKey="pctFromStart"
-                stroke="#22d3ee"
-                strokeWidth={2}
-                fill="url(#mockLiveEquityGrad)"
-              />
-              <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Balance & equity</div>
@@ -318,6 +255,70 @@ export function MockDashboardClient() {
         </div>
       </section>
 
+      <DdExposureCard
+        dailyDdPct={stats.dailyDdPct}
+        dailyLimitPct={riskRules.daily_loss_pct}
+        exposurePct={stats.currentExposurePct}
+        exposureLimitPct={riskRules.max_exposure_pct}
+        isMock
+      />
+
+      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
+        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
+        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
+          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
+        </p>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={curve.map((p) => ({
+                ...p,
+                displayDate: new Date(p.date).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "2-digit",
+                }),
+              }))}
+              margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+            >
+              <defs>
+                <linearGradient id="mockLiveEquityGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#475569" }} />
+              <YAxis
+                tickFormatter={(v: number) => `${v}%`}
+                tick={{ fill: "#94a3b8", fontSize: 10 }}
+                axisLine={{ stroke: "#475569" }}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
+                formatter={(value: number, _n: string, props: { payload?: { value?: number } }) => [
+                  `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
+                  "Growth",
+                ]}
+              />
+              <ReferenceLine
+                y={-riskRules.daily_loss_pct}
+                stroke="#ef4444"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+              />
+              <Area
+                type="monotone"
+                dataKey="pctFromStart"
+                stroke="#22d3ee"
+                strokeWidth={2}
+                fill="url(#mockLiveEquityGrad)"
+              />
+              <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
@@ -402,29 +403,21 @@ export function MockDashboardClient() {
         </div>
       </section>
 
-      <section className="rs-card space-y-4 p-5 sm:p-6 shadow-rs-soft">
-        <div>
-          <h2 className="text-base font-semibold tracking-tight text-slate-100">Alerts</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Unread items that need attention (mock)</p>
-        </div>
-        <ul className="space-y-3">
-          {MOCK_ALERTS.map((a) => (
-            <li
-              key={a.id}
-              className={`rounded-xl border p-3.5 ${
-                a.severity === "high" ? "border-red-500/35 bg-red-500/10" : "border-amber-500/35 bg-amber-500/10"
-              }`}
-            >
-              <p className="text-sm font-medium text-slate-200">{a.message}</p>
-              {a.solution && (
-                <p className="mt-1 text-xs text-slate-400">
-                  Solution: <span className="text-cyan-300">{a.solution}</span>
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <DashboardAlertsSection
+        title="Risk alerts"
+        subtitle="Mock preview — same layout as the live dashboard"
+        items={MOCK_ALERTS.map((a) => ({
+          id: a.id,
+          message: a.message,
+          severity: a.severity,
+          solution: a.solution,
+          alert_date: a.alert_date,
+          read: a.read,
+        }))}
+        loading={false}
+        viewAllHref="/mock/rules"
+        viewAllLabel="Open rules & alerts (mock)"
+      />
 
       <section>
         <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>

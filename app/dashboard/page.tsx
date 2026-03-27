@@ -362,105 +362,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Daily DD & Current Exposure — single card (mock values when no data) */}
-      {riskRules && (
-        <DdExposureCard
-          dailyDdPct={stats?.dailyDdPct ?? -0.52}
-          dailyLimitPct={riskRules.daily_loss_pct}
-          exposurePct={stats?.currentExposurePct ?? 2.3}
-          exposureLimitPct={riskRules.max_exposure_pct}
-          isMock={stats?.dailyDdPct == null && stats?.currentExposurePct == null}
-        />
-      )}
-
-      {/* Equity curve — full width, below Daily DD & above stats cards */}
-      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
-        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
-        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
-          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
-        </p>
-        {stats?.error && <p className="mb-3 text-sm text-amber-400/95">{stats.error}</p>}
-        {curve.length === 0 && !stats?.error && (
-          <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm text-slate-500">
-            {stats == null ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
-          </div>
-        )}
-        {curve.length > 0 && (
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
-                  ...p,
-                  pct: p.pctFromStart,
-                  displayDate: new Date(p.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "2-digit"
-                  })
-                }))}
-                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-              >
-                <defs>
-                  <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="displayDate"
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => `${v}%`}
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: "8px"
-                  }}
-                  labelStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
-                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
-                    "Growth"
-                  ]}
-                  labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
-                    payload?.[0]?.payload?.displayDate ?? ""
-                  }
-                />
-                {riskRules && (
-                  <ReferenceLine
-                    y={-riskRules.daily_loss_pct}
-                    stroke="#ef4444"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
-                  />
-                )}
-                <Area
-                  type="monotone"
-                  dataKey="pctFromStart"
-                  stroke="#22d3ee"
-                  strokeWidth={2}
-                  fill="url(#equityGrad)"
-                />
-                <Brush
-                  dataKey="displayDate"
-                  height={24}
-                  stroke="#475569"
-                  fill="#1e293b"
-                  tickFormatter={(v: string) => v}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </section>
-
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
         {/* Balance + Equity in one card */}
         <div className="rs-card p-5 shadow-rs-soft">
@@ -562,6 +463,105 @@ export default function DashboardPage() {
 
         {/* Account Health */}
         <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
+      </section>
+
+      {/* Daily DD & Current Exposure — single card (mock values when no data) */}
+      {riskRules && (
+        <DdExposureCard
+          dailyDdPct={stats?.dailyDdPct ?? -0.52}
+          dailyLimitPct={riskRules.daily_loss_pct}
+          exposurePct={stats?.currentExposurePct ?? 2.3}
+          exposureLimitPct={riskRules.max_exposure_pct}
+          isMock={stats?.dailyDdPct == null && stats?.currentExposurePct == null}
+        />
+      )}
+
+      {/* Equity curve — full width, below Daily DD & exposure */}
+      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
+        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
+        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
+          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
+        </p>
+        {stats?.error && <p className="mb-3 text-sm text-amber-400/95">{stats.error}</p>}
+        {curve.length === 0 && !stats?.error && (
+          <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm text-slate-500">
+            {stats == null ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
+          </div>
+        )}
+        {curve.length > 0 && (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
+                  ...p,
+                  pct: p.pctFromStart,
+                  displayDate: new Date(p.date).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "2-digit"
+                  })
+                }))}
+                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+              >
+                <defs>
+                  <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="displayDate"
+                  tick={{ fill: "#94a3b8", fontSize: 10 }}
+                  axisLine={{ stroke: "#475569" }}
+                  tickLine={{ stroke: "#475569" }}
+                />
+                <YAxis
+                  tickFormatter={(v: number) => `${v}%`}
+                  tick={{ fill: "#94a3b8", fontSize: 10 }}
+                  axisLine={{ stroke: "#475569" }}
+                  tickLine={{ stroke: "#475569" }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1e293b",
+                    border: "1px solid #334155",
+                    borderRadius: "8px"
+                  }}
+                  labelStyle={{ color: "#e2e8f0" }}
+                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
+                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
+                    "Growth"
+                  ]}
+                  labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
+                    payload?.[0]?.payload?.displayDate ?? ""
+                  }
+                />
+                {riskRules && (
+                  <ReferenceLine
+                    y={-riskRules.daily_loss_pct}
+                    stroke="#ef4444"
+                    strokeDasharray="4 4"
+                    strokeWidth={1.5}
+                  />
+                )}
+                <Area
+                  type="monotone"
+                  dataKey="pctFromStart"
+                  stroke="#22d3ee"
+                  strokeWidth={2}
+                  fill="url(#equityGrad)"
+                />
+                <Brush
+                  dataKey="displayDate"
+                  height={24}
+                  stroke="#475569"
+                  fill="#1e293b"
+                  tickFormatter={(v: string) => v}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </section>
 
       {/* Calendar — traded days */}

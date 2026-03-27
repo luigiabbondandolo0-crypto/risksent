@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
-import Link from "next/link";
+import { DashboardAlertsSection } from "@/components/dashboard/DashboardAlertsSection";
 
 type AlertRow = {
   id: string;
@@ -36,64 +35,14 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
     })();
   }, [onRefresh]);
 
-  const pending = alerts.filter((a) => !a.read).slice(0, 3);
-
   return (
-    <section className="rs-card space-y-4 p-5 sm:p-6 shadow-rs-soft">
-      <div>
-        <h2 className="text-base font-semibold tracking-tight text-slate-100">Alerts</h2>
-        <p className="mt-0.5 text-xs text-slate-500">Unread items that need attention</p>
-      </div>
-
-      {loading ? (
-        <div className="space-y-2">
-          <div className="h-12 rounded-xl bg-slate-800/60 animate-pulse" />
-          <div className="h-12 rounded-xl bg-slate-800/40 animate-pulse" />
-        </div>
-      ) : pending.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-700/50 bg-slate-950/25 px-4 py-6 text-center text-sm text-slate-500">
-          No pending alerts. You&apos;re all clear.
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {pending.map((a) => (
-            <li
-              key={a.id}
-              className={`rounded-xl border p-3.5 transition-colors ${
-                a.severity === "high"
-                  ? "border-red-500/35 bg-red-500/10"
-                  : "border-amber-500/35 bg-amber-500/10"
-              }`}
-            >
-              <p className="text-sm font-medium text-slate-200 flex items-start gap-2">
-                <AlertTriangle
-                  className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    a.severity === "high" ? "text-red-400" : "text-amber-400"
-                  }`}
-                />
-                {a.message}
-              </p>
-              {a.solution && (
-                <p className="text-xs text-slate-400 mt-1 ml-6">
-                  Solution: <span className="text-cyan-300">{a.solution}</span>
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {alerts.length > 0 && (
-        <Link
-          href="/rules#alerts"
-          className="inline-flex items-center text-xs font-medium text-cyan-400/95 transition-colors hover:text-cyan-300"
-        >
-          View all alerts
-          <span className="ml-1" aria-hidden>
-            →
-          </span>
-        </Link>
-      )}
-    </section>
+    <DashboardAlertsSection
+      items={alerts}
+      loading={loading}
+      maxItems={4}
+      viewAllHref="/rules#alerts"
+      viewAllLabel="Open alerts center"
+      subtitle="Unread items that need attention"
+    />
   );
 }

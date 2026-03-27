@@ -88,6 +88,7 @@ export const MOCK_TRADES = [
     lots: 0.5,
     openPrice: 1.0821,
     closePrice: 1.0845,
+    stopLoss: 1.0805,
     profit: 240,
   },
   {
@@ -98,6 +99,7 @@ export const MOCK_TRADES = [
     lots: 0.2,
     openPrice: 3025.4,
     closePrice: 3018.1,
+    stopLoss: 3032.0,
     profit: 146,
   },
   {
@@ -105,9 +107,10 @@ export const MOCK_TRADES = [
     closeTime: "2026-03-21T16:40:00Z",
     symbol: "GBPUSD",
     type: "buy",
-    lots: 0.3,
+    lots: 0.55,
     openPrice: 1.265,
     closePrice: 1.2628,
+    stopLoss: 1.262,
     profit: -132,
   },
 ];
@@ -167,30 +170,37 @@ export const MOCK_AI_COACH = {
   ],
   insights: [
     {
-      title: "Post-loss sizing",
-      body: "After 2 consecutive losses you increased volume ~40% on the next trade — fixed % risk would stabilize expectancy.",
+      title: "Post-loss sizing drift",
+      body: "After 2 consecutive losses you increased notional size ~38% on the next trade vs your 30d median — fixed % equity risk would cap this drift and smooth expectancy.",
       severity: "medium" as const,
     },
     {
       title: "Session edge",
-      body: "Win rate is 12 points higher in London vs NY open; consider reducing size during NY first hour.",
+      body: "Win rate is ~12 points higher in London vs NY open; consider halving size during NY first hour until sample size improves.",
       severity: "low" as const,
     },
     {
       title: "Symbol concentration",
-      body: "62% of R comes from EURUSD; a patch of losses on that pair drives most of the weekly swing.",
+      body: "62% of net R comes from EURUSD; a patch of correlated losses on that pair explains most of the weekly swing.",
       severity: "low" as const,
+    },
+    {
+      title: "News window",
+      body: "22% of trades fall inside the red-folder window vs your 15% target — tighten filters or widen the exclusion buffer.",
+      severity: "medium" as const,
     },
   ],
   weeklyFocus: [
-    "Cap risk at 0.75% until 20 more trades logged",
-    "No new positions in the 15m after red folder news",
-    "Journal one sentence before each trade for 1 week",
+    "Cap risk at 0.75% until 20 more trades are logged (discipline score target ≥ 75)",
+    "No new positions in the 15 minutes after red-folder macro prints",
+    "One-line journal before every market entry — link each trade to a valid setup tag",
+    "Review one full loss replay (SL distance vs actual volatility)",
   ],
   checklist: [
     { id: "c1", label: "Daily loss rule respected this week", done: true },
     { id: "c2", label: "No revenge trades after 2 losses (streak)", done: false },
     { id: "c3", label: "Reviewed largest loss and SL placement", done: true },
+    { id: "c4", label: "Exposure under max % at London open", done: false },
   ],
 };
 
