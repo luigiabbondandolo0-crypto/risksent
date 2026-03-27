@@ -181,13 +181,17 @@ export default function OrdersPage() {
 
   if (accounts.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6 animate-fade-in">
         <header>
-          <h1 className="text-xl font-semibold text-slate-50">Orders</h1>
-          <p className="text-xs text-slate-500 mt-1">Trading terminal: positions and new orders.</p>
+          <h1 className="rs-page-title">Orders</h1>
+          <p className="rs-page-sub">Trading terminal: open positions and new orders.</p>
         </header>
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-6 text-slate-400 text-sm">
-          No accounts linked. <Link href="/add-account" className="text-cyan-400 hover:text-cyan-300">Add an account</Link> first.
+        <div className="rs-card p-6 text-sm text-slate-400 shadow-rs-soft">
+          No accounts linked.{" "}
+          <Link href="/add-account" className="font-medium text-cyan-400 hover:text-cyan-300">
+            Add an account
+          </Link>{" "}
+          first.
         </div>
       </div>
     );
@@ -198,24 +202,32 @@ export default function OrdersPage() {
   const currency = summary?.currency ?? "";
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between">
+    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-50">Orders</h1>
-          <p className="text-xs text-slate-500 mt-1">Positions and orders in real time. Data refreshes every {POLL_INTERVAL_MS / 1000}s.</p>
+          <h1 className="rs-page-title">Orders</h1>
+          <p className="rs-page-sub">
+            Positions and orders in real time. Data refreshes every {POLL_INTERVAL_MS / 1000}s.
+          </p>
         </div>
-        <Link href="/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
-          Dashboard
+        <Link
+          href="/dashboard"
+          className="text-sm font-medium text-slate-400 transition-colors hover:text-cyan-300"
+        >
+          ← Dashboard
         </Link>
       </header>
 
       <div className="flex flex-wrap items-center gap-4">
-        <div className="min-w-[220px]">
-          <label className="block text-[11px] uppercase tracking-wider text-slate-500 mb-1">Account</label>
+        <div className="min-w-[220px] max-w-md">
+          <label htmlFor="orders-account" className="rs-section-title mb-2 block">
+            Account
+          </label>
           <select
+            id="orders-account"
             value={selectedUuid}
             onChange={(e) => setSelectedUuid(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+            className="rs-input"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.metaapi_account_id ?? ""}>
@@ -228,9 +240,9 @@ export default function OrdersPage() {
 
       {selectedUuid && (
         <>
-          <section className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-            <div className="border-b border-slate-800 px-4 py-2 flex items-center justify-between">
-              <h2 className="text-sm font-medium text-slate-300">Account summary</h2>
+          <section className="rs-card overflow-hidden shadow-rs-soft">
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-200">Account summary</h2>
               {overviewLoading && (
                 <span className="text-[11px] text-slate-500 animate-pulse">Updating…</span>
               )}
@@ -264,9 +276,9 @@ export default function OrdersPage() {
             )}
           </section>
 
-          <section className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-            <div className="border-b border-slate-800 px-4 py-2 flex items-center justify-between">
-              <h2 className="text-sm font-medium text-slate-300">Open positions</h2>
+          <section className="rs-card overflow-hidden shadow-rs-soft">
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-200">Open positions</h2>
               {overviewLoading && (
                 <span className="text-[11px] text-slate-500 animate-pulse">Updating…</span>
               )}
@@ -328,8 +340,8 @@ export default function OrdersPage() {
         </>
       )}
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
-        <h2 className="text-sm font-medium text-slate-300 mb-4">New order</h2>
+      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+        <h2 className="mb-4 text-base font-semibold text-slate-100">New order</h2>
         <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2 max-w-2xl">
           <div className="space-y-3">
             <div className="space-y-1">

@@ -326,9 +326,12 @@ export default function SimulatorPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-xl font-semibold text-slate-50">Challenge Simulator</h1>
-        <p className="text-slate-500 text-sm">Loading…</p>
+      <div className="space-y-6 animate-fade-in">
+        <h1 className="rs-page-title">Challenge simulator</h1>
+        <div className="rs-card p-8 shadow-rs-soft">
+          <div className="h-4 w-64 animate-pulse rounded bg-slate-800/80" />
+          <p className="mt-4 text-sm text-slate-500">Loading simulator…</p>
+        </div>
       </div>
     );
   }

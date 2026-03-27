@@ -166,14 +166,14 @@ export function SimulatorView(props: SimulatorViewProps) {
   ) : null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Hero */}
-      <header className="rounded-xl border border-slate-800 bg-surface p-6">
+      <header className="rs-card p-5 shadow-rs-soft sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2">
             <div>
-              <h1 className="text-xl font-semibold text-slate-50 uppercase tracking-wide">Challenge Simulator</h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <h1 className="rs-page-title">Challenge simulator</h1>
+              <p className="rs-page-sub mt-1">
                 Pass probability for each challenge based on your current trading behaviour.
               </p>
             </div>
@@ -189,7 +189,7 @@ export function SimulatorView(props: SimulatorViewProps) {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <select
-              className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 outline-none focus:border-cyan-500 min-w-[200px]"
+              className="rs-input min-w-[200px] max-w-xs"
               value={selectedUuid ?? ""}
               onChange={(e) => setSelectedUuid(e.target.value || null)}
             >

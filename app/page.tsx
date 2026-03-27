@@ -375,6 +375,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Mock preview — AI Coach */}
+      <section className="px-4 pb-14 sm:px-6 lg:px-10">
+        <div className="mx-auto max-w-6xl">
+          <div className="relative overflow-hidden rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-950/50 via-slate-950 to-slate-950 p-7 sm:p-10">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/20 blur-3xl" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                  AI Coach · Versione mock
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
+                  Prova tutto il product senza account
+                </h2>
+                <p className="mt-2 text-sm text-slate-300 sm:text-base">
+                  Dashboard, trades, ordini, regole, simulator e account con dati dimostrativi. Separato dall&apos;ambiente
+                  reale: nessuna API MetaTrader né database.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/mock"
+                  className="inline-flex items-center justify-center rounded-xl bg-violet-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-colors hover:bg-violet-400"
+                >
+                  Apri versione mock
+                </Link>
+                <Link
+                  href="/mock/ai-coach"
+                  className="inline-flex items-center justify-center rounded-xl border border-violet-500/40 px-6 py-3 text-sm font-medium text-violet-100 transition-colors hover:bg-violet-500/10"
+                >
+                  AI Coach (mock)
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="px-4 pb-16 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-6xl">

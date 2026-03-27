@@ -321,16 +321,21 @@ function TradesPageContent() {
   }, [selectedTickets, sortedByTime]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-50">Trades</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Closed orders. Sanity badge, equity curve and AI insight.
+          <h1 className="rs-page-title">Trades</h1>
+          <p className="rs-page-sub">
+            Closed orders, sanity badges, equity curve and AI insight on selected tickets.
           </p>
         </div>
+        <div className="w-full sm:max-w-xs">
+          <label htmlFor="trades-account" className="rs-section-title mb-2 block">
+            Trading account
+          </label>
         <select
-          className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 outline-none focus:border-cyan-500 min-w-[200px]"
+          id="trades-account"
+          className="rs-input min-w-0"
           value={selectedUuid ?? ""}
           onChange={(e) => setSelectedUuid(e.target.value || null)}
           disabled={loading}
@@ -342,15 +347,20 @@ function TradesPageContent() {
             </option>
           ))}
         </select>
+        </div>
       </header>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          {error}
+        </div>
+      )}
 
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
           placeholder="Search symbol, ticket, comment..."
-          className="rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-cyan-500 w-52"
+          className="rs-input max-w-xs"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
@@ -390,29 +400,29 @@ function TradesPageContent() {
 
       {filteredTrades.length > 0 && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Trades</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
+            <div className="rs-card p-3 shadow-rs-soft">
+              <p className="rs-kpi-label">Trades</p>
               <p className="text-lg font-semibold text-slate-200">{summary.total}</p>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Win %</p>
+            <div className="rs-card p-3 shadow-rs-soft">
+              <p className="rs-kpi-label">Win %</p>
               <p className="text-lg font-semibold text-emerald-400">{summary.winPct.toFixed(1)}%</p>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Win</p>
+            <div className="rs-card p-3 shadow-rs-soft">
+              <p className="rs-kpi-label">Avg win</p>
               <p className="text-lg font-semibold text-emerald-400">
                 +{summary.avgWin.toFixed(2)} {currency}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Loss</p>
+            <div className="rs-card p-3 shadow-rs-soft">
+              <p className="rs-kpi-label">Avg loss</p>
               <p className="text-lg font-semibold text-red-400">
                 {summary.avgLoss.toFixed(2)} {currency}
               </p>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">Max loss</p>
+            <div className="rs-card p-3 shadow-rs-soft">
+              <p className="rs-kpi-label">Max loss</p>
               <p className="text-lg font-semibold text-red-400">{summary.maxLoss.toFixed(2)} {currency}</p>
             </div>
           </div>
@@ -446,7 +456,7 @@ function TradesPageContent() {
         </>
       )}
 
-      <div className="rounded-xl border border-slate-800 bg-surface overflow-hidden">
+      <div className="rs-card overflow-hidden shadow-rs-soft">
         {loading && selectedUuid !== null ? (
           <div className="p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]">
             <div className="relative w-10 h-10">

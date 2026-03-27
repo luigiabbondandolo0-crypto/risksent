@@ -318,25 +318,27 @@ export default function RulesPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-xl font-semibold text-slate-50">Rules and Alerts</h1>
-        <p className="text-slate-500 text-sm">Loading…</p>
+      <div className="space-y-6 animate-fade-in">
+        <h1 className="rs-page-title">Rules and alerts</h1>
+        <div className="rs-card p-8 shadow-rs-soft">
+          <div className="h-4 w-56 animate-pulse rounded bg-slate-800/80" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in lg:space-y-10">
       <header>
-        <h1 className="text-xl font-semibold text-slate-50">Risk Rules & Alerts</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="rs-page-title">Rules &amp; alerts</h1>
+        <p className="rs-page-sub">
           Define your trading boundaries and monitor active risk violations in real time.
         </p>
       </header>
 
       <section className="flex flex-col gap-8 lg:flex-row">
         <div className="flex-1 space-y-6">
-          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6 shadow-sm">
+          <div className="rs-card border-cyan-500/25 p-6 shadow-rs-soft">
             <div className="flex items-center gap-2 mb-2">
               <SlidersHorizontal className="h-4 w-4 text-cyan-400" />
               <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>

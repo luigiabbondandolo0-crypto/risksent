@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Topbar } from "@/components/Topbar";
-import { AppShell } from "@/components/AppShell";
+import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,9 +25,8 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-screen bg-background text-slate-100 antialiased`}
       >
-        <div className="min-h-screen flex flex-col">
-          <Topbar />
-          <AppShell>{children}</AppShell>
+        <div className="flex min-h-screen flex-col">
+          <RootLayoutChrome>{children}</RootLayoutChrome>
         </div>
       </body>
     </html>

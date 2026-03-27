@@ -23,18 +23,14 @@ export default function ManageAccountsPage() {
     setLoading(true);
     setError(null);
     try {
-      console.log("[Accounts] Fetching /api/accounts...");
       const res = await fetch("/api/accounts");
       const data = await res.json().catch(() => ({}));
-      console.log("[Accounts] /api/accounts response:", { status: res.status, ok: res.ok, data });
       if (!res.ok) {
-        console.error("[Accounts] /api/accounts failed:", res.status, data);
         setError(data?.error ?? "Failed to load accounts");
         return;
       }
       setAccounts(data.accounts ?? []);
-    } catch (e) {
-      console.error("[Accounts] /api/accounts exception:", e);
+    } catch {
       setError("Failed to load accounts");
     } finally {
       setLoading(false);
@@ -64,17 +60,17 @@ export default function ManageAccountsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-50">Manage MT accounts</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="rs-page-title">Manage MT accounts</h1>
+          <p className="rs-page-sub">
             Each MT account is linked to your trader profile. Add, view, or remove accounts here.
           </p>
         </div>
         <Link
           href="/add-account"
-          className="inline-flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-black hover:bg-cyan-400 transition-colors"
+          className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-400"
         >
           <PlusCircle className="h-4 w-4" />
           Add account
@@ -82,13 +78,17 @@ export default function ManageAccountsPage() {
       </header>
 
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200" role="alert">
+          {error}
+        </div>
       )}
 
       {loading ? (
-        <p className="text-slate-500">Loading…</p>
+        <div className="rs-card p-8 shadow-rs-soft">
+          <div className="h-9 w-48 animate-pulse rounded-lg bg-slate-800/80" />
+        </div>
       ) : accounts.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center">
+        <div className="rs-card p-8 text-center shadow-rs-soft">
           <CreditCard className="mx-auto h-10 w-10 text-slate-600" />
           <p className="mt-2 text-slate-400">No MT accounts yet</p>
           <p className="text-xs text-slate-500 mt-1">Add an MT4 or MT5 account to see balance and equity on the dashboard.</p>
@@ -101,10 +101,10 @@ export default function ManageAccountsPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-800 bg-surface overflow-hidden">
+        <div className="rs-card overflow-hidden shadow-rs-soft">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-left text-xs text-slate-400 uppercase tracking-wide">
+              <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
                 <th className="px-4 py-3">Platform</th>
                 <th className="px-4 py-3">Login · Name</th>
                 <th className="px-4 py-3">Provider ID</th>
