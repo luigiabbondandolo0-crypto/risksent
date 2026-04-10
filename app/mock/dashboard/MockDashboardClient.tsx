@@ -49,10 +49,12 @@ function AnimatedNumber({
   value,
   decimals = 2,
   suffix = "",
+  forceNegative = false,
 }: {
   value: number | null | undefined;
   decimals?: number;
   suffix?: string;
+  forceNegative?: boolean;
 }) {
   const [display, setDisplay] = useState(0);
 
@@ -76,10 +78,11 @@ function AnimatedNumber({
   }, [value]);
 
   if (value == null) return <span>—</span>;
+  const shown = forceNegative ? -Math.abs(display) : display;
   return (
     <span>
-      {display >= 0 ? "+" : ""}
-      {display.toFixed(decimals)}
+      {shown >= 0 ? "+" : ""}
+      {shown.toFixed(decimals)}
       {suffix}
     </span>
   );
@@ -235,7 +238,7 @@ export function MockDashboardClient() {
       />
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats.balancePct} suffix="%" />
@@ -246,7 +249,7 @@ export function MockDashboardClient() {
             {stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats.equityPct} suffix="%" />
@@ -258,7 +261,7 @@ export function MockDashboardClient() {
           </div>
         </div>
 
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Win rate & avg R:R</span>
             <button
@@ -304,8 +307,8 @@ export function MockDashboardClient() {
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card p-5 shadow-rs-soft">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 sm:gap-5">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg win</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
             <AnimatedNumber value={stats.avgWin} suffix={` ${currency}`} />
@@ -314,16 +317,16 @@ export function MockDashboardClient() {
             {stats.avgWinPct.toFixed(2)}%
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg loss</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            <AnimatedNumber value={stats.avgLoss} suffix={` ${currency}`} />
+            <AnimatedNumber value={stats.avgLoss} suffix={` ${currency}`} forceNegative />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats.avgLossPct.toFixed(2)}%
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
             <AnimatedNumber value={-(Math.abs(stats.highestDdPct ?? 0))} suffix="%" />
@@ -334,7 +337,7 @@ export function MockDashboardClient() {
         </div>
       </section>
       <section className="flex justify-center">
-        <div className="rs-card w-full max-w-sm p-5 shadow-rs-soft">
+        <div className="rs-card-accent w-full p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Account health</span>
           </div>

@@ -87,11 +87,13 @@ function AnimatedNumber({
   decimals = 2,
   suffix = "",
   className = "",
+  forceNegative = false,
 }: {
   value: number | null | undefined;
   decimals?: number;
   suffix?: string;
   className?: string;
+  forceNegative?: boolean;
 }) {
   const [display, setDisplay] = useState(0);
 
@@ -115,10 +117,11 @@ function AnimatedNumber({
   }, [value]);
 
   if (value == null) return <span className={className}>—</span>;
+  const shown = forceNegative ? -Math.abs(display) : display;
   return (
     <span className={className}>
-      {display >= 0 ? "+" : ""}
-      {display.toFixed(decimals)}
+      {shown >= 0 ? "+" : ""}
+      {shown.toFixed(decimals)}
       {suffix}
     </span>
   );
@@ -445,7 +448,7 @@ export default function DashboardPage() {
       <AlertsOverview />
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats?.balancePct} suffix="%" />
@@ -456,7 +459,7 @@ export default function DashboardPage() {
             {stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats?.equityPct} suffix="%" />
@@ -467,7 +470,7 @@ export default function DashboardPage() {
             {stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Win rate & avg R:R</span>
             <button
@@ -509,8 +512,8 @@ export default function DashboardPage() {
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card p-5 shadow-rs-soft">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 sm:gap-5">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg win</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
             <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
@@ -519,17 +522,17 @@ export default function DashboardPage() {
             {stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
           </div>
         </div>
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg loss</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} />
+            <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
           </div>
         </div>
 
-        <div className="rs-card p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
             <AnimatedNumber
@@ -541,9 +544,7 @@ export default function DashboardPage() {
             {stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
           </div>
         </div>
-      </section>
-      <section className="flex justify-center">
-        <div className="w-full max-w-sm">
+        <div className="w-full">
           <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
         </div>
       </section>

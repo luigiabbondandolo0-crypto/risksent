@@ -161,7 +161,7 @@ export function DdExposureCard({
   isMock,
 }: DdExposureCardProps) {
   return (
-    <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+    <section className="rs-card-accent p-5 sm:p-6 shadow-rs-soft">
       <div className="mb-6 flex items-center justify-between gap-2">
         <div>
           <div className="text-base font-semibold tracking-tight text-slate-100">
