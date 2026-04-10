@@ -13,6 +13,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      ScrollTrigger.refresh();
 
       // Hero text stagger
       gsap.from(".hero-word", {
@@ -40,7 +41,7 @@ export default function HomePage() {
         ease: "power3.out",
       });
 
-      // Horizontal marquee on scroll
+      // Marquee
       gsap.to(".marquee-inner", {
         xPercent: -50,
         ease: "none",
@@ -48,12 +49,12 @@ export default function HomePage() {
           trigger: ".marquee-section",
           start: "top bottom",
           end: "bottom top",
-          scrub: 1,
+          scrub: 0.5,
         },
       });
 
-      // Feature sections — cinematic reveal
-      gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section, i) => {
+      // Feature sections
+      gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
         const heading = section.querySelector(".feature-heading");
         const body = section.querySelector(".feature-body");
         const num = section.querySelector(".feature-num");
@@ -63,7 +64,7 @@ export default function HomePage() {
           x: -40,
           duration: 0.8,
           ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
+          scrollTrigger: { trigger: section, start: "top 85%", toggleActions: "play none none none" },
         });
 
         gsap.from(heading, {
@@ -71,7 +72,7 @@ export default function HomePage() {
           opacity: 0,
           duration: 1,
           ease: "expo.out",
-          scrollTrigger: { trigger: section, start: "top 75%", toggleActions: "play none none none" },
+          scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
         });
 
         gsap.from(body, {
@@ -80,11 +81,11 @@ export default function HomePage() {
           duration: 0.8,
           delay: 0.2,
           ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 70%", toggleActions: "play none none none" },
+          scrollTrigger: { trigger: section, start: "top 75%", toggleActions: "play none none none" },
         });
       });
 
-      // Stats counter
+      // Stats
       gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el, i) => {
         gsap.from(el, {
           opacity: 0,
@@ -92,27 +93,32 @@ export default function HomePage() {
           duration: 0.7,
           delay: i * 0.1,
           ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 85%", toggleActions: "play none none none" },
+          scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none none" },
         });
       });
 
-      // Cards stagger
+      // Module cards — set visible immediately then animate
+      gsap.set(".module-card", { opacity: 1 });
       gsap.from(".module-card", {
         opacity: 0,
         y: 40,
         duration: 0.7,
-        stagger: 0.1,
+        stagger: 0.12,
         ease: "power3.out",
-        scrollTrigger: { trigger: ".modules-grid", start: "top 80%", toggleActions: "play none none none" },
+        scrollTrigger: {
+          trigger: ".modules-grid",
+          start: "top 95%",
+          toggleActions: "play none none none",
+        },
       });
 
-      // CTA final
+      // Final CTA
       gsap.from(".final-cta-text", {
-        yPercent: 40,
+        yPercent: 30,
         opacity: 0,
         duration: 1.2,
         ease: "expo.out",
-        scrollTrigger: { trigger: ".final-cta", start: "top 75%", toggleActions: "play none none none" },
+        scrollTrigger: { trigger: ".final-cta", start: "top 80%", toggleActions: "play none none none" },
       });
 
     }, containerRef);
@@ -125,15 +131,11 @@ export default function HomePage() {
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden">
-
-        {/* Noise texture overlay */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
-
-        {/* Gradient mesh */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(255,60,60,0.06) 0%, transparent 65%)" }} />
@@ -144,8 +146,6 @@ export default function HomePage() {
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full">
-
-          {/* Eyebrow */}
           <div className="hero-sub mb-8 flex items-center gap-3">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
@@ -156,7 +156,6 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Main headline — word by word */}
           <h1 className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
             style={{ fontFamily: "'Syne', sans-serif" }}>
             {["Stop", "trading", "blind."].map((word, i) => (
@@ -180,9 +179,8 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Sub + CTA */}
           <div className="hero-sub flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
               One subscription. Backtesting, Journaling,<br />
               Risk Manager, Live Alerts.<br />
               <span className="text-slate-300">Everything your edge needs.</span>
@@ -208,7 +206,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
           <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-500">Scroll</span>
           <div className="h-8 w-px bg-gradient-to-b from-slate-500 to-transparent" />
@@ -223,7 +220,7 @@ export default function HomePage() {
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex gap-16">
               {["Backtesting", "·", "Journaling", "·", "Risk Manager", "·", "Live Alerts", "·", "Telegram Alerts", "·", "Equity Curve", "·", "Drawdown Control", "·", "Win Rate Analytics", "·"].map((item, j) => (
-                <span key={j} className={`text-sm font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : "text-slate-500"}`}>
+                <span key={j} className={`text-[13px] font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : "text-slate-500"}`}>
                   {item}
                 </span>
               ))}
@@ -232,10 +229,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ─── FEATURE SECTIONS — cinematic ─── */}
+      {/* ─── FEATURE SECTIONS ─── */}
       <section className="px-6 lg:px-16 py-8">
         <div className="max-w-7xl mx-auto space-y-4">
-
           {[
             {
               num: "01",
@@ -290,12 +286,10 @@ export default function HomePage() {
                 border: "1px solid rgba(255,255,255,0.06)",
               }}
             >
-              {/* Accent glow on hover */}
               <div
                 className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{ background: `radial-gradient(ellipse at 0% 50%, ${feature.accent}0a 0%, transparent 60%)` }}
               />
-
               <div className="relative flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
                 <div className="lg:w-3/5">
                   <div className="flex items-center gap-4 mb-6">
@@ -314,12 +308,10 @@ export default function HomePage() {
                       {feature.heading}
                     </h2>
                   </div>
-                  <p className="feature-body mt-5 text-lg text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                  <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                     {feature.body}
                   </p>
                 </div>
-
-                {/* Stats */}
                 <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
                   {feature.stats.map((s, j) => (
                     <div key={j} className="stat-item">
@@ -345,7 +337,6 @@ export default function HomePage() {
       <section className="px-6 lg:px-16 py-24 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0"
           style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,60,60,0.05) 0%, transparent 60%)" }} />
-
         <div className="max-w-7xl mx-auto relative">
           <div className="mb-16 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -454,7 +445,6 @@ export default function HomePage() {
             backgroundSize: "80px 80px",
           }}
         />
-
         <div className="final-cta-text relative max-w-7xl mx-auto text-center">
           <h2
             className="text-[clamp(52px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
@@ -468,7 +458,7 @@ export default function HomePage() {
               One platform.
             </span>
           </h2>
-          <p className="mt-8 text-lg text-slate-500 max-w-xl mx-auto" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+          <p className="mt-8 text-slate-500 max-w-xl mx-auto" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
             Stop fragmenting your workflow across 4 tools.<br />
             RiskSent is everything you need — nothing you don&apos;t.
           </p>
