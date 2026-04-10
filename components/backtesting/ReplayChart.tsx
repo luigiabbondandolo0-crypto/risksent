@@ -70,7 +70,7 @@ export function ReplayChart({
           secondsVisible: false
         },
         handleScroll: true,
-        handleScale: true,
+        handleScale: true
       });
 
       const series = chart.addSeries(CandlestickSeries, {
@@ -114,6 +114,7 @@ export function ReplayChart({
     if (candles.length === 0) return;
 
     const data: CandlestickData[] = candles
+      .slice(0, currentIndex + 1)
       .filter(
         (c) =>
           Number.isFinite(c.time) &&
@@ -123,24 +124,16 @@ export function ReplayChart({
           Number.isFinite(c.close)
       )
       .map((c, i) => {
-        const isFuture = i > currentIndex;
         const isCurrent = i === currentIndex;
         const isBull = c.close >= c.open;
-        const color = isFuture
-          ? "rgba(0,0,0,0)"
-          : isCurrent
-          ? "#ff8c00"
-          : isBull
-          ? "#00e676"
-          : "#ff3c3c";
         return {
           time: c.time as UTCTimestamp,
-          open: isFuture ? c.close : c.open,
-          high: isFuture ? c.close : c.high,
-          low: isFuture ? c.close : c.low,
+          open: c.open,
+          high: c.high,
+          low: c.low,
           close: c.close,
-          color,
-          wickColor: color,
+          color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+          wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
           borderColor: "transparent"
         };
       });
