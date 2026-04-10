@@ -10,8 +10,8 @@ import {
 const cards = [
   { href: "/mock/dashboard", title: "Dashboard", desc: "Complete account overview and KPI metrics.", icon: LayoutDashboard },
   { href: "/mock/backtesting", title: "Backtesting", desc: "FX Replay-style experience: replay and scenarios.", icon: FlaskConical },
-  { href: "/mock/trades", title: "Journal", desc: "Complete trading journal experience in TradeZella style.", icon: TrendingUp },
-  { href: "/mock/rules", title: "Risk Sentinel", desc: "Live monitoring and live risk alerts.", icon: ShieldAlert },
+  { href: "/mock/journal", title: "Journal", desc: "Complete trading journal experience in TradeZella style.", icon: TrendingUp },
+  { href: "/mock/risk-manager", title: "Risk Manager", desc: "Live monitoring and live risk alerts.", icon: ShieldAlert },
 ] as const;
 
 export default function MockHubPage() {

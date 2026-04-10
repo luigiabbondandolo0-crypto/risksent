@@ -58,12 +58,12 @@ export default function AdminLiveMonitoringPage() {
       if (res.ok) {
         const data = await res.json();
         if (!data.isAdmin) {
-          router.push("/dashboard");
+          router.push("/app/dashboard");
           return;
         }
         setIsAdmin(true);
       } else {
-        router.push("/dashboard");
+        router.push("/app/dashboard");
       }
     };
     checkAdmin();

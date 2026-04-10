@@ -23,7 +23,7 @@ function LoginForm() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const redirectTo = useMemo(
-    () => searchParams.get("redirectedFrom") ?? "/dashboard",
+    () => searchParams.get("redirectedFrom") ?? "/app/dashboard",
     [searchParams]
   );
 
@@ -113,7 +113,7 @@ function LoginForm() {
           <div className="space-y-3">
             <button
               onClick={() => {
-                window.location.href = "/dashboard";
+                window.location.href = "/app/dashboard";
               }}
               className="w-full rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-black hover:bg-emerald-400 transition-colors"
             >

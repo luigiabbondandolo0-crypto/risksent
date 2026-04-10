@@ -233,7 +233,7 @@ export function MockDashboardClient() {
           read: a.read,
         }))}
         loading={false}
-        viewAllHref="/mock/rules"
+        viewAllHref="/mock/risk-manager"
         viewAllLabel="Open rules & alerts (mock)"
       />
 
@@ -482,7 +482,7 @@ export function MockDashboardClient() {
             return dayData ? (
               <Link
                 key={dateStr}
-                href={`/mock/trades?date=${dateStr}`}
+                href={`/mock/journal?date=${dateStr}`}
                 className={`${cellClass} transition-colors hover:ring-2 hover:ring-cyan-500/50`}
               >
                 {content}

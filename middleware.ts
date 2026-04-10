@@ -4,6 +4,7 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const PROTECTED_PATHS = [
+  "/app",
   "/dashboard",
   "/rules",
   "/trades",
@@ -95,7 +96,7 @@ export async function middleware(req: NextRequest) {
         console.error("  Hint:", roleError.hint);
         console.error("  Full error:", JSON.stringify(roleError, null, 2));
         const url = req.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
       
@@ -108,14 +109,14 @@ export async function middleware(req: NextRequest) {
       if (!appUser) {
         console.warn("[middleware] No app_user record found for user:", userId);
         const url = req.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
       if (appUser.role !== "admin") {
         console.log("[middleware] User is not admin, role:", appUser.role);
         const url = req.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
@@ -127,7 +128,7 @@ export async function middleware(req: NextRequest) {
       // If check fails, redirect to dashboard
       console.error("[middleware] Admin check exception:", err);
       const url = req.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = "/app/dashboard";
       return NextResponse.redirect(url);
     }
   }
@@ -152,7 +153,7 @@ export async function middleware(req: NextRequest) {
     
     // Non-admin users - redirect to dashboard
     const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/app/dashboard";
     return NextResponse.redirect(url);
   }
 

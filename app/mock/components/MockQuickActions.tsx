@@ -17,7 +17,7 @@ export function MockQuickActions() {
         Sync trades
       </span>
       <Link
-        href="/mock/rules"
+        href="/mock/risk-manager"
         className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
       >
         <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-400" />
@@ -31,7 +31,7 @@ export function MockQuickActions() {
         AI Coach
       </Link>
       <Link
-        href="/mock/rules"
+        href="/mock/risk-manager"
         className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
       >
         <MessageCircle className="h-4 w-4 shrink-0 text-slate-400" />

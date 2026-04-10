@@ -67,7 +67,7 @@ export default function AddAccountPage() {
               Connect MT4 or MT5 via mtapi.io. Use the <strong>investor (read-only) password</strong>. For MT5 you can use either <strong>host + port</strong> or the <strong>server name</strong> (as in MT5 terminal: File → Open an account).
             </p>
           </div>
-          <Link href="/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
+          <Link href="/app/dashboard" className="text-xs text-slate-400 hover:text-slate-200">
             Back to dashboard
           </Link>
         </header>

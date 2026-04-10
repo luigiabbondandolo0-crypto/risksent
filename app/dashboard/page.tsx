@@ -371,7 +371,7 @@ export default function DashboardPage() {
             </button>
           ) : (
             <Link
-              href="/rules"
+              href="/app/risk-manager"
               className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
             >
               Set rules

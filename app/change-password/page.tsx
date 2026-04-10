@@ -97,7 +97,7 @@ function ChangePasswordForm() {
       setConfirmPassword("");
       
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/app/dashboard");
       }, 2000);
     } catch (err) {
       setError("Unexpected error. Please try again.");
@@ -193,7 +193,7 @@ function ChangePasswordForm() {
         </form>
 
         <p className="mt-3 text-[11px] text-slate-500">
-          <Link href="/dashboard" className="text-slate-200 hover:text-emerald-300">
+          <Link href="/app/dashboard" className="text-slate-200 hover:text-emerald-300">
             Back to dashboard
           </Link>
         </p>

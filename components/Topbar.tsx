@@ -103,7 +103,7 @@ export function Topbar() {
           {email ? (
             <>
               {isAdminArea && (
-                <Link href="/dashboard"
+                <Link href="/app/dashboard"
                   className="flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-800/40 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700/50">
                   <LayoutDashboard className="h-3.5 w-3.5" />
                   <span>Dashboard</span>

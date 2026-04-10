@@ -54,7 +54,7 @@ export default function DemoDashboardPage() {
                 Refresh stats
               </button>
               <Link
-                href="/rules"
+                href="/app/risk-manager"
                 className="inline-flex items-center justify-center rounded-lg border border-cyan-500/70 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/20"
               >
                 Edit rules
@@ -215,14 +215,14 @@ export default function DemoDashboardPage() {
             </div>
             <div className="flex gap-2">
               <Link
-                href="/rules"
+                href="/app/risk-manager"
                 className="inline-flex items-center justify-center rounded-lg border border-cyan-500/60 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/10"
               >
                 See rules screen
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
               <Link
-                href="/dashboard"
+                href="/app/dashboard"
                 className="inline-flex items-center justify-center rounded-lg border border-slate-600 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-100 hover:border-cyan-400"
               >
                 Go to live dashboard
