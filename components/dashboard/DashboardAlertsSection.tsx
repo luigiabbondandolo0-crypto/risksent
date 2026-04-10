@@ -30,7 +30,6 @@ function severityStyles(sev: string) {
       glow: "shadow-[0_0_28px_-6px_rgba(255,60,60,0.5)]",
       badge: "bg-red-500/20 text-red-300 ring-red-500/30",
       icon: "text-red-400",
-      dot: "#ff3c3c",
       border: "border-red-500/20 hover:border-red-500/40",
     };
   }
@@ -39,7 +38,6 @@ function severityStyles(sev: string) {
     glow: "shadow-[0_0_20px_-4px_rgba(245,158,11,0.4)]",
     badge: "bg-amber-500/15 text-amber-200 ring-amber-500/25",
     icon: "text-amber-400",
-    dot: "#f59e0b",
     border: "border-amber-500/20 hover:border-amber-500/40",
   };
 }
@@ -56,7 +54,7 @@ export function DashboardAlertsSection({
   const pending = items.filter((a) => !a.read).slice(0, maxItems);
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">
+    <section className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">
       {/* Background glows */}
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/5 blur-3xl" />
@@ -68,7 +66,9 @@ export function DashboardAlertsSection({
             <Bell className="h-5 w-5 text-cyan-300" />
           </div>
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-slate-50">{title}</h2>
+            <h2 className="text-base font-semibold tracking-tight text-slate-50">
+              {title}
+            </h2>
             <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
           </div>
         </div>
@@ -114,12 +114,16 @@ export function DashboardAlertsSection({
                   key={a.id}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08, duration: 0.35, ease: "easeOut" }}
-                  className={`group relative overflow-hidden rounded-xl border bg-slate-950/50 p-4 transition-all duration-200 ${s.glow} ${s.border}`}
+                  transition={{
+                    delay: i * 0.08,
+                    duration: 0.35,
+                    ease: "easeOut",
+                  }}
+                  className={`group relative rounded-xl border bg-slate-950/50 p-4 transition-all duration-200 ${s.glow} ${s.border}`}
                 >
                   {/* Left bar */}
                   <div
-                    className={`absolute left-0 top-0 h-full w-[4px] bg-gradient-to-b ${s.bar}`}
+                    className={`absolute left-0 top-0 h-full w-[4px] rounded-l-xl bg-gradient-to-b ${s.bar}`}
                     aria-hidden
                   />
 
@@ -130,19 +134,24 @@ export function DashboardAlertsSection({
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
                         {/* Pulsing dot */}
-                        <span className="relative flex h-1.5 w-1.5">
+                        <span className="relative flex h-2 w-2 shrink-0">
                           <span
-                            className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-50"
-                            style={{ background: s.dot }}
+                            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${
+                              isHigh ? "bg-red-400" : "bg-amber-400"
+                            }`}
                           />
                           <span
-                            className="relative inline-flex h-1.5 w-1.5 rounded-full"
-                            style={{ background: s.dot }}
+                            className={`relative inline-flex h-2 w-2 rounded-full ${
+                              isHigh ? "bg-red-400" : "bg-amber-400"
+                            }`}
                           />
                         </span>
                         {isHigh ? "High" : "Watch"}
                       </span>
-                      <time className="text-[10px] text-slate-500" dateTime={a.alert_date}>
+                      <time
+                        className="text-[10px] text-slate-500"
+                        dateTime={a.alert_date}
+                      >
                         {new Date(a.alert_date).toLocaleString(undefined, {
                           dateStyle: "short",
                           timeStyle: "short",
@@ -152,7 +161,9 @@ export function DashboardAlertsSection({
 
                     {/* Message */}
                     <p className="mt-2 flex items-start gap-2 text-sm font-medium leading-snug text-slate-100">
-                      <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`} />
+                      <AlertTriangle
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`}
+                      />
                       {a.message}
                     </p>
 
@@ -165,13 +176,9 @@ export function DashboardAlertsSection({
                     )}
                   </div>
 
-                  {/* HIGH — red glow pulse on border */}
+                  {/* HIGH — glow pulse */}
                   {isHigh && (
-                    <motion.div
-                      className="pointer-events-none absolute inset-0 rounded-xl"
-                      animate={{ boxShadow: ["0 0 0px rgba(255,60,60,0)", "0 0 20px rgba(255,60,60,0.15)", "0 0 0px rgba(255,60,60,0)"] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
+                    <div className="pointer-events-none absolute inset-0 rounded-xl animate-[glow-pulse_2s_ease-in-out_infinite]" />
                   )}
                 </motion.li>
               );
