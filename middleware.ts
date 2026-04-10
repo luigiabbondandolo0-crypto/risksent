@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const PROTECTED_PATHS = [
@@ -29,18 +29,43 @@ export async function middleware(req: NextRequest) {
     console.log("[middleware] 🔍 Admin path requested:", req.nextUrl.pathname);
   }
   
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
+  let res = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("[middleware] Missing Supabase environment variables");
+    return res;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          req.cookies.set(name, value);
+          res.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
 
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
+    data: { user }
+  } = await supabase.auth.getUser();
   
   if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
     console.log("[middleware] Session check:", {
-      hasSession: !!session,
-      email: session?.user?.email || null,
-      userId: session?.user?.id || null
+      hasSession: !!user,
+      email: user?.email || null,
+      userId: user?.id || null
     });
   }
 
@@ -48,7 +73,7 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(path)
   );
 
-  if (isProtected && !session) {
+  if (isProtected && !user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectedFrom", req.nextUrl.pathname);
@@ -60,13 +85,13 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(path)
   );
 
-  if (isAdminPath && session) {
+  if (isAdminPath && user) {
     // Always log in development to see what's happening
-    console.log("[middleware] Checking admin access for:", session.user.email, "path:", req.nextUrl.pathname);
+    console.log("[middleware] Checking admin access for:", user.email, "path:", req.nextUrl.pathname);
     
     try {
       const admin = createSupabaseAdmin();
-      const userId = session.user.id;
+      const userId = user.id;
       
       // Use .maybeSingle() instead of .single() to handle missing records gracefully
       const { data: appUser, error: roleError } = await admin
@@ -79,7 +104,7 @@ export async function middleware(req: NextRequest) {
       if (process.env.NODE_ENV === "development") {
         console.log("[middleware] Admin check:", {
           userId,
-          email: session.user.email,
+          email: user.email,
           hasAppUser: !!appUser,
           role: appUser?.role,
           error: roleError?.message || null,
@@ -122,7 +147,7 @@ export async function middleware(req: NextRequest) {
 
       // Admin user - allow access
       if (process.env.NODE_ENV === "development") {
-        console.log("[middleware] ✅ Admin access granted for:", session.user.email);
+        console.log("[middleware] ✅ Admin access granted for:", user.email);
       }
     } catch (err) {
       // If check fails, redirect to dashboard
@@ -134,13 +159,13 @@ export async function middleware(req: NextRequest) {
   }
 
   // Don't auto-redirect admin users from login - let them choose area
-  if (req.nextUrl.pathname === "/login" && session) {
+  if (req.nextUrl.pathname === "/login" && user) {
     try {
       const admin = createSupabaseAdmin();
       const { data: appUser } = await admin
         .from("app_user")
         .select("role")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .maybeSingle();
 
       // If admin, don't redirect - let them choose area
