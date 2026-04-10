@@ -11,7 +11,12 @@
 
 import { useEffect, useState, FormEvent, ChangeEvent, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Save, AlertCircle, Lightbulb, SlidersHorizontal, Link2, RefreshCw, Info, Unlink } from "lucide-react";
+import { bt } from "@/components/backtesting/btClasses";
+
+const SITE_DOC_TITLE = "RiskSent – Trading Risk Dashboard";
+const RISK_MANAGER_DOC_TITLE = "Risk Manager – RiskSent";
 
 const SUGGESTED = {
   daily_loss_pct: 2,
@@ -126,6 +131,10 @@ function maskChatId(chatId: string): string {
 }
 
 export default function RulesPage() {
+  const pathname = usePathname();
+  const isAppRiskManager = pathname === "/app/risk-manager";
+  const pageTitle = isAppRiskManager ? "Risk Manager" : "Risk Sentinel";
+
   const [rules, setRules] = useState<Rules>(DEFAULT_RULES);
   const [formValues, setFormValues] = useState({
     daily_loss_pct: "",
@@ -227,6 +236,14 @@ export default function RulesPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isAppRiskManager) return;
+    document.title = RISK_MANAGER_DOC_TITLE;
+    return () => {
+      document.title = SITE_DOC_TITLE;
+    };
+  }, [isAppRiskManager]);
+
   const num = (s: string) => (s === "" || s === "-" ? NaN : Number(s));
   const inlineErrors = {
     daily_loss_pct: getInlineError("daily_loss_pct", num(formValues.daily_loss_pct)),
@@ -318,35 +335,40 @@ export default function RulesPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <h1 className="rs-page-title">Risk Sentinel</h1>
-        <div className="rs-card p-8 shadow-rs-soft">
-          <div className="h-4 w-56 animate-pulse rounded bg-slate-800/80" />
+      <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+        <h1 className={bt.h1}>{pageTitle}</h1>
+        <div className="rs-card p-6 shadow-rs-soft sm:p-8">
+          <div className="h-4 w-56 max-w-full animate-pulse rounded bg-slate-800/80" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in lg:space-y-10">
-      <header>
-        <h1 className="rs-page-title">Risk Sentinel</h1>
-        <p className="rs-page-sub">
-          Live monitoring and live alerts for your risk limits: exposure, daily loss and behavior breaches in real time.
-        </p>
+    <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className={bt.h1}>{pageTitle}</h1>
+          <p className={bt.sub}>
+            Live monitoring and alerts for your risk limits: exposure, daily loss, and behavior breaches in real time.
+          </p>
+        </div>
       </header>
 
-      <section className="flex flex-col gap-8 lg:flex-row">
-        <div className="flex-1 space-y-6">
-          <div className="rs-card border-cyan-500/25 p-6 shadow-rs-soft">
-            <div className="flex items-center gap-2 mb-2">
-              <SlidersHorizontal className="h-4 w-4 text-cyan-400" />
-              <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
+      <section className="flex flex-col gap-6 lg:flex-row lg:gap-8 lg:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-6 animate-fade-in-up">
+          <div className="rs-card-accent relative isolate z-0 p-5 shadow-rs-soft sm:p-6">
+            <div className="relative z-[1]">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-cyan-400" />
+              <h2 className="text-base font-semibold font-display tracking-tight text-slate-100">Personal risk rules</h2>
             </div>
-            <p className="text-xs text-slate-500 mb-4">Thresholds govern alert triggers and sanity scoring. When a limit is exceeded, an alert is created and sent to Telegram (if linked).</p>
-            <div className="rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2 mb-4 text-[11px] text-slate-400 space-y-1">
-              <p><strong className="text-slate-300">Test alerts:</strong> Use &quot;Send test alert&quot; below to verify Telegram. To trigger real risk alerts with small lots, lower e.g. Daily Loss to 0.5% so even a small loss can breach the limit.</p>
-              <p><strong className="text-slate-300">Stop Loss / Take Profit:</strong> Set them in the MetaTrader terminal or in your broker flow when opening a trade (price levels for protection).</p>
+            <p className="mb-4 text-xs font-mono leading-relaxed text-slate-500">
+              Thresholds govern alert triggers and sanity scoring. When a limit is exceeded, an alert is created and sent to Telegram (if linked).
+            </p>
+            <div className="mb-4 space-y-1.5 rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-2.5 text-[11px] font-mono leading-relaxed text-slate-400">
+              <p><span className="font-semibold text-slate-300">Test alerts:</span> Use &quot;Send test alert&quot; below to verify Telegram. To trigger real risk alerts with small lots, lower e.g. Daily Loss to 0.5% so even a small loss can breach the limit.</p>
+              <p><span className="font-semibold text-slate-300">Stop loss / take profit:</span> Set them in the MetaTrader terminal or in your broker flow when opening a trade (price levels for protection).</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -367,16 +389,16 @@ export default function RulesPage() {
                     : null;
                 return (
                   <div key={key} className="space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <label className="text-xs font-medium text-slate-400" htmlFor={key}>{label}</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className={bt.label} htmlFor={key}>{label}</label>
                       <span className="inline-flex items-center gap-1 text-slate-500" title={RECOMMENDED_RANGES[key]}>
                         <Info className="h-3 w-3" />
                       </span>
                       {!inlineErrors[key] && (
-                        <span className="text-[11px] text-emerald-500">Recommended: {RECOMMENDED_RANGES[key]}</span>
+                        <span className="text-[11px] font-mono text-emerald-500">Recommended: {RECOMMENDED_RANGES[key]}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                       <input
                         id={key}
                         type="range"
@@ -385,8 +407,9 @@ export default function RulesPage() {
                         step={step}
                         value={Number.isFinite(val) ? val : min}
                         onChange={(e) => setFormValues((prev) => ({ ...prev, [key]: e.target.value }))}
-                        className="flex-1 h-2 rounded-lg appearance-none bg-slate-700 accent-cyan-500"
+                        className="h-2 w-full flex-1 appearance-none rounded-lg bg-slate-700 accent-cyan-500 sm:min-w-0"
                       />
+                      <div className="flex items-center gap-2 sm:shrink-0">
                       <input
                         type="number"
                         min={min}
@@ -394,17 +417,18 @@ export default function RulesPage() {
                         step={step}
                         value={formValues[key]}
                         onChange={handleChange(key)}
-                        className="w-16 rounded border border-slate-700 bg-slate-900/50 px-2 py-1.5 text-sm text-slate-100"
+                        className="w-full min-w-[4.5rem] max-w-[6rem] rounded-xl border border-white/[0.08] bg-[#0c0c0e] px-2 py-2 text-sm font-mono text-slate-100 outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 sm:w-16 sm:max-w-none"
                       />
-                      <span className="text-slate-500 text-sm w-12">{unit}</span>
+                      <span className="w-10 shrink-0 font-mono text-sm text-slate-500">{unit}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       {inlineErrors[key] ? (
-                        <p className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="h-3 w-3 flex-shrink-0" /> {inlineErrors[key]}</p>
+                        <p className="flex items-center gap-1 text-xs font-mono text-red-400"><AlertCircle className="h-3 w-3 shrink-0" /> {inlineErrors[key]}</p>
                       ) : (
-                        <p className="text-[11px] text-slate-500">{RECOMMENDED_RANGES[key]}</p>
+                        <p className="text-[11px] font-mono text-slate-500">{RECOMMENDED_RANGES[key]}</p>
                       )}
-                      <span className={`text-xs ${badge.color}`} title={badgeDetail ?? undefined}>
+                      <span className={`text-xs font-mono ${badge.color}`} title={badgeDetail ?? undefined}>
                         {badge.label}{badgeDetail ? ` (${badgeDetail})` : ""}
                       </span>
                     </div>
@@ -413,40 +437,41 @@ export default function RulesPage() {
               })}
 
               {message && (
-                <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                <p className={`text-sm font-mono ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
                   {message.text}
                 </p>
               )}
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-4 py-2.5 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/20 px-4 py-2.5 text-sm font-medium font-display text-cyan-300 transition hover:bg-cyan-500/30 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                {saving ? "Saving…" : "Save Rules"}
+                {saving ? "Saving…" : "Save rules"}
               </button>
             </form>
+            </div>
           </div>
 
           {!live && (
-            <p className="text-xs text-slate-500 rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2">
+            <p className="rounded-lg border border-slate-700/80 bg-slate-950/40 px-3 py-2 text-xs font-mono text-slate-500">
               Connect an account in Dashboard to see live status badges.
             </p>
           )}
 
-          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Link2 className="h-4 w-4 text-cyan-400" />
-              <h2 className="text-sm font-medium text-slate-200">Link Telegram</h2>
+          <div id="telegram" className="rs-card p-5 shadow-rs-soft sm:p-6">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <Link2 className="h-4 w-4 shrink-0 text-cyan-400" />
+              <h2 className="text-base font-semibold font-display tracking-tight text-slate-100">Link Telegram</h2>
             </div>
-            <p className="text-xs text-slate-500 mb-4">
+            <p className="mb-4 text-xs font-mono leading-relaxed text-slate-500">
               One-time link: open the link and send /start to the bot. No other commands needed.
             </p>
             <div className="space-y-3">
               {rules.telegram_chat_id ? (
                 <>
-                  <p className="text-sm text-emerald-400 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Connected (chat_id: {maskChatId(rules.telegram_chat_id)})
+                  <p className="flex items-center gap-2 text-sm font-mono text-emerald-400">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" /> Connected (chat_id: {maskChatId(rules.telegram_chat_id)})
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -469,7 +494,7 @@ export default function RulesPage() {
                           setTestAlertSending(false);
                         }
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/20 px-3 py-2 text-sm font-medium font-display text-cyan-300 transition hover:bg-cyan-500/30 disabled:opacity-50"
                     >
                       {testAlertSending ? "Sending…" : "Send test alert"}
                     </button>
@@ -491,7 +516,7 @@ export default function RulesPage() {
                           setTelegramMessage({ type: "error", text: "Request failed" });
                         }
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium font-display text-slate-300 transition hover:bg-slate-700/50"
                     >
                       <Unlink className="h-4 w-4" /> Disconnect
                     </button>
@@ -499,7 +524,7 @@ export default function RulesPage() {
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-slate-400">No chat linked. Use &quot;Link now&quot; and complete /start in the bot.</p>
+                  <p className="text-xs font-mono text-slate-400">No chat linked. Use &quot;Link now&quot; and complete /start in the bot.</p>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -545,7 +570,7 @@ export default function RulesPage() {
                           setTelegramLinking(false);
                         }
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-cyan-500/20 px-3 py-2 text-sm font-medium text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/20 px-3 py-2 text-sm font-medium font-display text-cyan-300 transition hover:bg-cyan-500/30 disabled:opacity-50"
                     >
                       <Link2 className="h-4 w-4" />
                       {telegramLinking ? "Generating…" : "Link now"}
@@ -554,19 +579,19 @@ export default function RulesPage() {
                 </>
               )}
               {telegramMessage && (
-                <p className={`text-sm ${telegramMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                <p className={`text-sm font-mono ${telegramMessage.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
                   {telegramMessage.text}
                 </p>
               )}
               {telegramLink && (
-                <p className="text-xs text-slate-400 break-all">
+                <p className="break-all text-xs font-mono text-slate-400">
                   Link: <a href={telegramLink} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">{telegramLink}</a>
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-xl border border-cyan-500/20 bg-surface p-4">
+          <div className="rs-card p-4 shadow-rs-soft sm:p-5">
             <button
               type="button"
               onClick={async () => {
@@ -580,32 +605,32 @@ export default function RulesPage() {
                   setAiInsightText("Request failed. (Stub: connect AI later.)");
                 }
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700/50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2 text-sm font-medium font-display text-slate-300 transition hover:bg-slate-700/50"
             >
               <Lightbulb className="h-4 w-4" /> Analyze my rules with AI
             </button>
             {aiInsightOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setAiInsightOpen(false)}>
-                <div className="rounded-xl border border-slate-700 bg-slate-900 p-6 max-w-lg w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
-                  <h3 className="text-lg font-semibold text-slate-100 mb-3">AI rules insight</h3>
-                  <p className="text-sm text-slate-300 whitespace-pre-wrap">{aiInsightText}</p>
-                  <p className="text-[10px] text-slate-500 mt-2">Data: MOCK (stub until AI is wired).</p>
-                  <button type="button" className="mt-4 rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm text-slate-200" onClick={() => setAiInsightOpen(false)}>Close</button>
+                <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="mb-3 text-lg font-semibold font-display text-slate-100">AI rules insight</h3>
+                  <p className="whitespace-pre-wrap text-sm font-mono text-slate-300">{aiInsightText}</p>
+                  <p className="mt-2 text-[10px] font-mono text-slate-500">Data: MOCK (stub until AI is wired).</p>
+                  <button type="button" className="mt-4 rounded-xl bg-slate-700 px-4 py-2 text-sm font-display text-slate-200 transition hover:bg-slate-600" onClick={() => setAiInsightOpen(false)}>Close</button>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 lg:min-w-[320px]">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 animate-fade-in-up animate-delay-100 lg:min-w-[min(100%,22rem)]">
           {exceedAlert && Object.keys(exceedAlert).length > 0 && (
-            <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4">
-              <div className="flex items-center gap-2 text-amber-300 font-medium mb-2">
-                <AlertCircle className="h-4 w-4" />
+            <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 sm:p-5">
+              <div className="mb-2 flex items-center gap-2 font-medium font-display text-amber-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 Values above suggested limits
               </div>
-              <p className="text-xs text-slate-300 mb-3">You saved rules above the recommended maximums. Consider adjusting to reduce risk.</p>
-              <ul className="space-y-1.5 text-xs">
+              <p className="mb-3 text-xs font-mono text-slate-300">You saved rules above the recommended maximums. Consider adjusting to reduce risk.</p>
+              <ul className="space-y-1.5 text-xs font-mono">
                 {exceedAlert.daily_loss_pct && (
                   <li className="flex justify-between gap-2">
                     <span className="text-slate-400">Daily loss limit</span>
@@ -631,13 +656,14 @@ export default function RulesPage() {
                   </li>
                 )}
               </ul>
-              <button type="button" onClick={() => setExceedAlert(null)} className="mt-3 text-xs text-slate-400 hover:text-slate-200">Dismiss</button>
+              <button type="button" onClick={() => setExceedAlert(null)} className="mt-3 text-xs font-mono text-slate-400 transition hover:text-slate-200">Dismiss</button>
             </div>
           )}
 
-          <div className="rounded-xl border border-cyan-500/20 bg-surface p-6">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-sm font-medium text-slate-200">Alerts Center</h2>
+          <div className="rs-card-accent relative isolate z-0 p-5 shadow-rs-soft sm:p-6">
+            <div className="relative z-[1]">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold font-display tracking-tight text-slate-100">Alerts center</h2>
               <button
                 type="button"
                 onClick={async () => {
@@ -647,64 +673,65 @@ export default function RulesPage() {
                     setAlerts(a.alerts ?? []);
                   }
                 }}
-                className="inline-flex items-center gap-1 rounded border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs text-slate-400 hover:bg-slate-700/50"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-600 bg-slate-800/50 px-2 py-1 text-xs font-mono text-slate-400 transition hover:bg-slate-700/50"
               >
                 <RefreshCw className="h-3 w-3" /> Refresh
               </button>
             </div>
-            <p className="text-xs text-slate-500 mb-3">High alerts first.</p>
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="text-[10px] text-slate-500">Show:</span>
+            <p className="mb-3 text-xs font-mono text-slate-500">High alerts first.</p>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Show</span>
               {(["all", "high", "medium"] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setAlertFilter(f)}
-                  className={`rounded px-2 py-1 text-xs capitalize ${alertFilter === f ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40" : "border border-slate-600 text-slate-400 hover:bg-slate-800/50"}`}
+                  className={`rounded-lg px-2 py-1 text-xs font-mono capitalize transition ${alertFilter === f ? "border border-cyan-500/40 bg-cyan-500/20 text-cyan-300" : "border border-slate-600 text-slate-400 hover:bg-slate-800/50"}`}
                 >
                   {f}
                 </button>
               ))}
             </div>
             {filteredAlerts.length === 0 ? (
-              <p className="text-xs text-slate-500">No alerts. Alerts appear here when risk rules are breached.</p>
+              <p className="text-xs font-mono text-slate-500">No alerts. Alerts appear here when risk rules are breached.</p>
             ) : (
-              <div className="space-y-3 max-h-[420px] overflow-y-auto">
+              <div className="max-h-[min(420px,60vh)] space-y-3 overflow-y-auto sm:max-h-[420px]">
                 {filteredAlerts.map((a) => (
                   <div
                     key={a.id}
-                    className={`rounded-lg border p-3 ${a.severity === "high" ? "border-red-500/40 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"}`}
+                    className={`rounded-xl border p-3 sm:p-4 ${a.severity === "high" ? "border-red-500/40 bg-red-500/10" : "border-amber-500/40 bg-amber-500/10"}`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                      <span className={`text-xs font-medium ${a.severity === "high" ? "text-red-300" : "text-amber-300"}`}>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <span className={`text-xs font-medium font-mono ${a.severity === "high" ? "text-red-300" : "text-amber-300"}`}>
                         {a.severity === "high" ? "High" : "Medium"} {!a.read && "• New"}
                       </span>
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] font-mono text-slate-500">
                         {new Date(a.alert_date).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })} – {relativeTime(a.alert_date)}
                       </span>
                     </div>
-                    <p className="text-xs font-medium text-slate-300 mb-1">Problem</p>
-                    <p className="text-xs text-slate-400 mb-2">{a.message}</p>
+                    <p className="mb-1 text-xs font-medium font-display text-slate-300">Problem</p>
+                    <p className="mb-2 text-xs font-mono text-slate-400">{a.message}</p>
                     {a.solution && (
                       <>
-                        <p className="text-xs font-medium text-slate-300 mb-1 flex items-center gap-1"><Lightbulb className="h-3 w-3" /> Action</p>
-                        <p className="text-xs text-slate-400">{a.solution}</p>
+                        <p className="mb-1 flex items-center gap-1 text-xs font-medium font-display text-slate-300"><Lightbulb className="h-3 w-3" /> Action</p>
+                        <p className="text-xs font-mono text-slate-400">{a.solution}</p>
                       </>
                     )}
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {!a.read && (
-                        <button type="button" className="text-xs text-cyan-400 hover:underline" onClick={() => updateAlert(a.id, { read: true })}>Mark as read</button>
+                        <button type="button" className="text-xs font-mono text-cyan-400 hover:underline" onClick={() => updateAlert(a.id, { read: true })}>Mark as read</button>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </section>
 
-      <footer className="text-[10px] text-slate-600 border-t border-slate-800 pt-4">
+      <footer className="border-t border-slate-800 pt-4 text-[10px] font-mono text-slate-600">
         Rules & alerts: DB. Live badges: mtapi when account linked. AI insight: stub.
       </footer>
     </div>
