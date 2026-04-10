@@ -20,9 +20,9 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/trades", label: "Trades", icon: TrendingUp },
-  { href: "/rules", label: "Rules & alerts", icon: ShieldAlert },
-  { href: "/simulator", label: "Simulator", icon: FlaskConical },
+  { href: "/trades", label: "Journaling", icon: TrendingUp },
+  { href: "/rules", label: "Risk & alerts", icon: ShieldAlert },
+  { href: "/simulator", label: "Backtesting", icon: FlaskConical },
   { href: "/ai-coach", label: "AI Coach", icon: Bot },
 ] as const;
 
