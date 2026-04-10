@@ -50,7 +50,6 @@ function SemiGauge({
     if (!isInView) return;
     const duration = 1000;
     const startTime = performance.now();
-
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -58,7 +57,6 @@ function SemiGauge({
       setAnimatedPct(eased * targetPct);
       if (progress < 1) requestAnimationFrame(animate);
     };
-
     requestAnimationFrame(animate);
   }, [isInView, targetPct]);
 
@@ -73,15 +71,12 @@ function SemiGauge({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="flex flex-col items-center gap-1"
     >
-      {/* Label */}
-      <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mb-1">
+      <span className="text-[10px] font-[family-name:var(--font-mono)] font-medium text-slate-500 uppercase tracking-widest mb-1">
         {label}
       </span>
 
-      {/* Gauge */}
       <div className="relative w-36 h-[72px] overflow-hidden">
         <svg viewBox="0 0 100 50" className="w-full h-full">
-          {/* Background track */}
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
@@ -89,7 +84,6 @@ function SemiGauge({
             strokeWidth="10"
             strokeLinecap="round"
           />
-          {/* Secondary track glow */}
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
@@ -99,7 +93,6 @@ function SemiGauge({
             strokeDasharray={`${(animatedPct / 100) * arcLength} ${arcLength}`}
             opacity={0.15}
           />
-          {/* Main arc */}
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
@@ -109,7 +102,6 @@ function SemiGauge({
             strokeDasharray={`${(animatedPct / 100) * arcLength} ${arcLength}`}
             style={{ filter: glow }}
           />
-          {/* Limit tick */}
           <line
             x1="50" y1="8"
             x2="50" y2="14"
@@ -118,28 +110,26 @@ function SemiGauge({
             strokeLinecap="round"
           />
         </svg>
-
-        {/* Over limit badge */}
         {over > 0 && (
-          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-mono text-red-300">
+          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-[family-name:var(--font-mono)] text-red-300">
             +{(over * 100).toFixed(0)}%
           </span>
         )}
       </div>
 
-      {/* Value */}
-      <span className="text-xl font-bold font-mono" style={{ color: valueColor }}>
+      <span
+        className="text-xl font-bold font-[family-name:var(--font-mono)]"
+        style={{ color: valueColor }}
+      >
         {valuePct != null
           ? `${valuePct >= 0 ? "+" : ""}${valuePct.toFixed(2)}%`
           : "—"}
       </span>
 
-      {/* Limit */}
-      <span className="text-[10px] text-slate-600 font-mono">
+      <span className="text-[10px] text-slate-600 font-[family-name:var(--font-mono)]">
         limit {limitPct}%
       </span>
 
-      {/* Progress bar sotto */}
       <div className="w-full mt-1 h-[2px] rounded-full bg-[#1e1e1e] overflow-hidden" style={{ width: "144px" }}>
         <motion.div
           initial={{ width: 0 }}
@@ -164,31 +154,22 @@ export function DdExposureCard({
     <section className="rs-card-accent p-5 sm:p-6 shadow-rs-soft">
       <div className="mb-6 flex items-center justify-between gap-2">
         <div>
-          <div className="text-base font-semibold tracking-tight text-slate-100">
+          <div className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
             Daily DD & exposure
           </div>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
             Compared to your rule limits
           </p>
         </div>
         {isMock && (
-          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-medium text-amber-200">
+          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-[family-name:var(--font-mono)] font-medium text-amber-200">
             Sample data
           </span>
         )}
       </div>
-
       <div className="flex flex-wrap items-start justify-around gap-8">
-        <SemiGauge
-          valuePct={dailyDdPct}
-          limitPct={dailyLimitPct}
-          label="Daily DD (today)"
-        />
-        <SemiGauge
-          valuePct={exposurePct}
-          limitPct={exposureLimitPct}
-          label="Current Exposure"
-        />
+        <SemiGauge valuePct={dailyDdPct} limitPct={dailyLimitPct} label="Daily DD (today)" />
+        <SemiGauge valuePct={exposurePct} limitPct={exposureLimitPct} label="Current Exposure" />
       </div>
     </section>
   );

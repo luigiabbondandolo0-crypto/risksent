@@ -34,22 +34,16 @@ export function MetricCard({
       : value == null
       ? "neutral"
       : positiveIsGood
-      ? value >= 0
-        ? "up"
-        : "down"
-      : value < 0
-      ? "up"
-      : "down";
+      ? value >= 0 ? "up" : "down"
+      : value < 0 ? "up" : "down";
 
   const borderColor =
     inferredTrend === "up" ? "#00e676" : inferredTrend === "down" ? "#ff3c3c" : "#555";
 
   useEffect(() => {
     if (!isInView) return;
-    let start = 0;
     const duration = 1200;
     const startTime = performance.now();
-
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -58,7 +52,6 @@ export function MetricCard({
       setDisplay(parseFloat((eased * target).toFixed(decimals)));
       if (progress < 1) requestAnimationFrame(animate);
     };
-
     requestAnimationFrame(animate);
   }, [isInView, value, decimals]);
 
@@ -70,21 +63,18 @@ export function MetricCard({
       transition={{ duration: 0.4, ease: "easeOut" }}
       whileHover={{ scale: 1.02 }}
       style={{ borderLeft: `3px solid ${borderColor}` }}
-      className="bg-[#111] border border-[#1e1e1e] rounded-lg p-5 
-                 cursor-default transition-shadow hover:shadow-lg"
+      className="bg-[#111] border border-[#1e1e1e] rounded-lg p-5 cursor-default transition-shadow hover:shadow-lg"
     >
-      <p className="text-[11px] font-mono text-[#555] tracking-widest 
-                    uppercase mb-3">
+      <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#555] tracking-widest uppercase mb-3">
         {label}
       </p>
-      <p className="text-2xl font-bold font-display text-white 
-                    tracking-tight">
+      <p className="text-2xl font-bold font-[family-name:var(--font-display)] text-white tracking-tight">
         {value == null
           ? "—"
           : `${prefix}${display.toLocaleString("it-IT", { minimumFractionDigits: decimals })}${suffix}`}
       </p>
       {note && (
-        <p className="text-xs font-mono text-[#555] mt-1">{note}</p>
+        <p className="text-xs font-[family-name:var(--font-mono)] text-[#555] mt-1">{note}</p>
       )}
     </motion.div>
   );

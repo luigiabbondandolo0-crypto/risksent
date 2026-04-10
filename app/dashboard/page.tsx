@@ -88,14 +88,12 @@ function AnimatedNumber({
     const from = 0;
     const to = value;
     let raf = 0;
-
     const tick = (now: number) => {
       const p = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
       setDisplay(from + (to - from) * eased);
       if (p < 1) raf = requestAnimationFrame(tick);
     };
-
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [value]);
@@ -103,14 +101,13 @@ function AnimatedNumber({
   if (value == null) return <span className={className}>—</span>;
   const shown = forceNegative ? -Math.abs(display) : display;
   return (
-    <span className={className}>
+    <span className={`${className} font-[family-name:var(--font-mono)]`}>
       {shown >= 0 ? "+" : ""}
       {shown.toFixed(decimals)}
       {suffix}
     </span>
   );
 }
-
 
 const POLL_MS = 45_000;
 
@@ -163,31 +160,21 @@ export default function DashboardPage() {
       try {
         const res = await fetch("/api/accounts");
         if (!res.ok) {
-          if (!cancelled) {
-            setLinkedMetaId(null);
-            setAccountsResolved(true);
-          }
+          if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
           return;
         }
         const data = await res.json();
-        const accounts = (data.accounts ?? []) as {
-          metaapi_account_id?: string | null;
-        }[];
+        const accounts = (data.accounts ?? []) as { metaapi_account_id?: string | null }[];
         const linked = accounts.find((a) => Boolean(a.metaapi_account_id));
         if (!cancelled) {
           setLinkedMetaId(linked?.metaapi_account_id ?? null);
           setAccountsResolved(true);
         }
       } catch {
-        if (!cancelled) {
-          setLinkedMetaId(null);
-          setAccountsResolved(true);
-        }
+        if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -222,10 +209,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (linkedMetaId == null) {
-      setStats(null);
-      return;
-    }
+    if (linkedMetaId == null) { setStats(null); return; }
     setStats(null);
     fetchStats(linkedMetaId);
     const t = setInterval(() => fetchStats(linkedMetaId), POLL_MS);
@@ -236,7 +220,6 @@ export default function DashboardPage() {
   const curve = stats?.equityCurve ?? [];
   const dailyStats = stats?.dailyStats ?? [];
 
-  // Win rate trend: last 7 days vs previous 7 days (from dailyStats)
   const winRateTrend = (() => {
     if (!dailyStats.length) return null;
     const now = new Date();
@@ -250,11 +233,9 @@ export default function DashboardPage() {
     for (const d of dailyStats) {
       if (d.date > fourteenDaysAgo.toISOString().slice(0, 10) && d.date <= today) {
         if (d.date > sevenDaysAgo.toISOString().slice(0, 10)) {
-          last7.trades += d.trades;
-          last7.wins += d.wins;
+          last7.trades += d.trades; last7.wins += d.wins;
         } else {
-          prev7.trades += d.trades;
-          prev7.wins += d.wins;
+          prev7.trades += d.trades; prev7.wins += d.wins;
         }
       }
     }
@@ -267,7 +248,6 @@ export default function DashboardPage() {
 
   const handleSyncTrades = useCallback(() => {}, []);
 
-  // Calendar: displayed month (navigable)
   const year = calendarMonth.getFullYear();
   const month = calendarMonth.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -277,10 +257,7 @@ export default function DashboardPage() {
   const dailyByDate = new Map<string, DayStat>(dailyStats.map((d) => [d.date, d]));
   const now = new Date();
 
-  const monthLabel = firstDay.toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric"
-  });
+  const monthLabel = firstDay.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   const goPrevMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
@@ -288,17 +265,15 @@ export default function DashboardPage() {
     <div className="space-y-6 lg:space-y-8 animate-fade-in">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="rs-page-title">Dashboard</h1>
-          <p className="rs-page-sub">
+          <h1 className="rs-page-title font-[family-name:var(--font-display)]">Dashboard</h1>
+          <p className="rs-page-sub font-[family-name:var(--font-mono)]">
             Risk, performance, and activity for the selected account — updated on a short interval while you stay on this page.
           </p>
           {stats?.updatedAt && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs font-[family-name:var(--font-mono)] text-slate-500">
               Last updated{" "}
               {new Date(stats.updatedAt).toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
+                hour: "2-digit", minute: "2-digit", second: "2-digit",
               })}
             </p>
           )}
@@ -324,446 +299,325 @@ export default function DashboardPage() {
       )}
 
       {pageReady && (
-      <>
-      <section className="rs-card-accent p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-base font-semibold tracking-tight text-slate-100">Active risk rules</h3>
-          {rulesConfigured && riskRules ? (
-            <button
-              type="button"
-              onClick={() => setRulesPopupOpen(true)}
-              className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
-            >
-              Edit
-            </button>
-          ) : (
-            <Link
-              href="/app/risk-manager"
-              className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
-            >
-              Set your risk rules
-            </Link>
-          )}
-        </div>
-        {rulesConfigured && riskRules ? (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Daily loss</div>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs rs-mono font-semibold uppercase tracking-wide
-                border-inherit">
-                <span className={`h-2 w-2 rounded-full ${
-                  getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct) === "watch"
-                    ? "bg-orange-400 animate-pulse"
-                    : getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct) === "high"
-                    ? "bg-red-400"
-                    : "bg-emerald-400"
-                }`} />
-                <span className={`${ruleStatusPill(getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct))} rounded-full border px-2 py-0.5`}>
-                  {riskRules.daily_loss_pct}% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Risk / trade</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
-                  {riskRules.max_risk_per_trade_pct}% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Exposure</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${
-                  getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) === "watch"
-                    ? "bg-orange-400 animate-pulse"
-                    : getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) === "high"
-                    ? "bg-red-400"
-                    : "bg-emerald-400"
-                }`} />
-                <span className={`${ruleStatusPill(getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
-                  {riskRules.max_exposure_pct}% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Revenge</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
-                  {riskRules.revenge_threshold_trades} losses
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Daily loss</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-600" />
-                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
-                  0% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Risk / trade</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-600" />
-                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
-                  0% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Exposure</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-600" />
-                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
-                  0% limit
-                </span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-              <div className="rs-kpi-label">Revenge</div>
-              <div className="mt-2 inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-slate-600" />
-                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
-                  0 losses
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-      {rulesConfigured && riskRules && (
-        <RulesEditPopup
-          open={rulesPopupOpen}
-          onClose={() => setRulesPopupOpen(false)}
-          initialRules={riskRules}
-          onSaved={(r) => {
-            setRiskRules(r);
-            setRulesPopupOpen(false);
-          }}
-        />
-      )}
-
-      <AlertsOverview hasLinkedAccount={!noLinkedAccount} />
-
-      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="rs-kpi-label">Balance</div>
-          <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {noKpi ? (
-              <span>No data</span>
-            ) : kpiLoading ? (
-              <span className="text-slate-500">Loading…</span>
-            ) : (
-              <AnimatedNumber value={stats?.balancePct} suffix="%" />
-            )}
-          </div>
-          <div className={`mt-1 text-sm font-semibold rs-mono ${
-            noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}>
-            {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-          </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="rs-kpi-label">Equity</div>
-          <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {noKpi ? (
-              <span>No data</span>
-            ) : kpiLoading ? (
-              <span className="text-slate-500">Loading…</span>
-            ) : (
-              <AnimatedNumber value={stats?.equityPct} suffix="%" />
-            )}
-          </div>
-          <div className={`mt-1 text-sm font-semibold rs-mono ${
-            noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}>
-            {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-          </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="flex items-center justify-between">
-            <span className="rs-kpi-label">Win rate & avg R:R</span>
-            <button
-              type="button"
-              onClick={() => setRrTableOpen(true)}
-              className="rounded-full p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 transition-colors"
-              title="Risk:Reward & Win Rate"
-              aria-label="Info"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-            </button>
-          </div>
-          <div className="flex items-start justify-between gap-3 mt-1">
-            <div>
-              <div className="text-2xl font-bold text-white">
-                {noKpi ? (
-                  <span>No data</span>
-                ) : kpiLoading ? (
-                  <span className="text-slate-500">Loading…</span>
-                ) : (
-                  <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />
-                )}
-              </div>
-              {!noKpi && !kpiLoading && winRateTrend != null && (
-                <p className="mt-0.5 text-xs text-slate-400">
-                  {winRateTrend.diff >= 0 ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span> : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
-                </p>
+        <>
+          {/* Active risk rules */}
+          <section className="rs-card-accent p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h3 className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
+                Active risk rules
+              </h3>
+              {rulesConfigured && riskRules ? (
+                <button
+                  type="button"
+                  onClick={() => setRulesPopupOpen(true)}
+                  className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
+                >
+                  Edit
+                </button>
+              ) : (
+                <Link
+                  href="/app/risk-manager"
+                  className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
+                >
+                  Set your risk rules
+                </Link>
               )}
-              <div className="mt-2 pt-2 border-t border-slate-700/50">
-                <span className="text-xs text-slate-500">Avg R:R </span>
-                <span className="text-lg font-bold text-white">
-                  {noKpi ? (
-                    "No data"
-                  ) : kpiLoading ? (
-                    <span className="text-slate-500">Loading…</span>
-                  ) : (
-                    <AnimatedNumber value={stats?.avgRiskReward} />
-                  )}
-                </span>
+            </div>
+            {rulesConfigured && riskRules ? (
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                {[
+                  { label: "Daily loss", value: `${riskRules.daily_loss_pct}% limit`, status: getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct) },
+                  { label: "Risk / trade", value: `${riskRules.max_risk_per_trade_pct}% limit`, status: "safe" as RuleStatus },
+                  { label: "Exposure", value: `${riskRules.max_exposure_pct}% limit`, status: getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) },
+                  { label: "Revenge", value: `${riskRules.revenge_threshold_trades} losses`, status: "safe" as RuleStatus },
+                ].map(({ label, value, status }) => (
+                  <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+                    <div className="rs-kpi-label font-[family-name:var(--font-mono)]">{label}</div>
+                    <div className="mt-2 inline-flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${
+                        status === "watch" ? "bg-orange-400 animate-pulse" :
+                        status === "high" ? "bg-red-400" : "bg-emerald-400"
+                      }`} />
+                      <span className={`${ruleStatusPill(status)} rounded-full border px-2 py-0.5 text-xs font-[family-name:var(--font-mono)] font-semibold`}>
+                        {value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                {["Daily loss", "Risk / trade", "Exposure", "Revenge"].map((label) => (
+                  <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+                    <div className="rs-kpi-label font-[family-name:var(--font-mono)]">{label}</div>
+                    <div className="mt-2 inline-flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-slate-600" />
+                      <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-[family-name:var(--font-mono)] font-semibold text-slate-400">
+                        {label === "Revenge" ? "0 losses" : "0% limit"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {rulesConfigured && riskRules && (
+            <RulesEditPopup
+              open={rulesPopupOpen}
+              onClose={() => setRulesPopupOpen(false)}
+              initialRules={riskRules}
+              onSaved={(r) => { setRiskRules(r); setRulesPopupOpen(false); }}
+            />
+          )}
+
+          <AlertsOverview hasLinkedAccount={!noLinkedAccount} />
+
+          {/* KPI row 1 */}
+          <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Balance</div>
+              <div className="mt-1 text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+                {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.balancePct} suffix="%" />}
+              </div>
+              <div className={`mt-1 text-sm font-semibold font-[family-name:var(--font-mono)] ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
             </div>
-            {!noKpi && !kpiLoading && (stats?.winsCount != null || stats?.lossesCount != null) && (
-              <WinsLossesGauge
-                wins={stats?.winsCount ?? 0}
-                losses={stats?.lossesCount ?? 0}
-                draws={stats?.drawsCount ?? 0}
-              />
-            )}
-          </div>
-        </div>
-        <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
-      </section>
 
-      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="rs-kpi-label">Avg win</div>
-          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
-            {noKpi ? (
-              "No data"
-            ) : kpiLoading ? (
-              <span className="text-slate-500">Loading…</span>
-            ) : (
-              <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
-            )}
-          </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
-          </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="rs-kpi-label">Avg loss</div>
-          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
-            {noKpi ? (
-              "No data"
-            ) : kpiLoading ? (
-              <span className="text-slate-500">Loading…</span>
-            ) : (
-              <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />
-            )}
-          </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
-          </div>
-        </div>
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Equity</div>
+              <div className="mt-1 text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+                {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.equityPct} suffix="%" />}
+              </div>
+              <div className={`mt-1 text-sm font-semibold font-[family-name:var(--font-mono)] ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+              </div>
+            </div>
 
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-          <div className="rs-kpi-label">Max drawdown</div>
-          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
-            {noKpi ? (
-              "No data"
-            ) : kpiLoading ? (
-              <span className="text-slate-500">Loading…</span>
-            ) : (
-              <AnimatedNumber
-                value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
-                suffix="%"
-              />
-            )}
-          </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
-          </div>
-        </div>
-      </section>
-
-      {/* Daily DD & Current Exposure */}
-      <DdExposureCard
-        dailyDdPct={noLinkedAccount ? 0 : stats?.dailyDdPct ?? null}
-        dailyLimitPct={rulesConfigured && riskRules ? riskRules.daily_loss_pct : 0}
-        exposurePct={noLinkedAccount ? 0 : stats?.currentExposurePct ?? null}
-        exposureLimitPct={rulesConfigured && riskRules ? riskRules.max_exposure_pct : 0}
-        isMock={false}
-      />
-
-      {/* Equity curve — full width, below Daily DD & exposure */}
-      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
-        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
-        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
-          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
-        </p>
-        {stats?.error && <p className="mb-3 text-sm text-amber-400/95">{stats.error}</p>}
-        {curve.length === 0 && !stats?.error && (
-          <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm text-slate-500">
-            {noLinkedAccount
-              ? "No data"
-              : kpiLoading
-                ? "Loading…"
-                : "No data yet. Link an account and place trades to see the curve."}
-          </div>
-        )}
-        {curve.length > 0 && (
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={curve.map((p: { date: string; value: number; pctFromStart: number }) => ({
-                  ...p,
-                  pct: p.pctFromStart,
-                  displayDate: new Date(p.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "2-digit"
-                  })
-                }))}
-                margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
-              >
-                <defs>
-                  <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="displayDate"
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => `${v}%`}
-                  tick={{ fill: "#94a3b8", fontSize: 10 }}
-                  axisLine={{ stroke: "#475569" }}
-                  tickLine={{ stroke: "#475569" }}
-                />
-                <Tooltip
-                  cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload || !payload[0]?.payload) return null;
-                    const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
-                    return (
-                      <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
-                        <p className="text-[11px] text-slate-400">{row.displayDate}</p>
-                        <p className="text-sm font-semibold text-slate-100 rs-mono">
-                          {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-                        </p>
-                      </div>
-                    );
-                  }}
-                />
-                {rulesConfigured && riskRules && riskRules.daily_loss_pct > 0 && (
-                  <ReferenceLine
-                    y={-riskRules.daily_loss_pct}
-                    stroke="#ef4444"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="flex items-center justify-between">
+                <span className="rs-kpi-label font-[family-name:var(--font-mono)]">Win rate & avg R:R</span>
+                <button
+                  type="button"
+                  onClick={() => setRrTableOpen(true)}
+                  className="rounded-full p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 transition-colors"
+                  title="Risk:Reward & Win Rate"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex items-start justify-between gap-3 mt-1">
+                <div>
+                  <div className="text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+                    {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />}
+                  </div>
+                  {!noKpi && !kpiLoading && winRateTrend != null && (
+                    <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-400">
+                      {winRateTrend.diff >= 0
+                        ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span>
+                        : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
+                    </p>
+                  )}
+                  <div className="mt-2 pt-2 border-t border-slate-700/50">
+                    <span className="text-xs font-[family-name:var(--font-mono)] text-slate-500">Avg R:R </span>
+                    <span className="text-lg font-bold font-[family-name:var(--font-display)] text-white">
+                      {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgRiskReward} />}
+                    </span>
+                  </div>
+                </div>
+                {!noKpi && !kpiLoading && (stats?.winsCount != null || stats?.lossesCount != null) && (
+                  <WinsLossesGauge
+                    wins={stats?.winsCount ?? 0}
+                    losses={stats?.lossesCount ?? 0}
+                    draws={stats?.drawsCount ?? 0}
                   />
                 )}
-                <Area
-                  type="monotone"
-                  dataKey="pctFromStart"
-                  stroke="#ff3c3c"
-                  strokeWidth={2.5}
-                  fill="url(#equityGrad)"
-                  isAnimationActive
-                  animationDuration={900}
-                  animationEasing="ease-out"
-                />
-                <Brush
-                  dataKey="displayDate"
-                  height={24}
-                  stroke="#475569"
-                  fill="#1e293b"
-                  tickFormatter={(v: string) => v}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </section>
-
-      {/* Calendar — traded days */}
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-base font-semibold tracking-tight text-slate-100 capitalize">{monthLabel}</div>
-            <div className="mt-0.5 text-xs text-slate-500">Days with activity — tap a day to open trades</div>
-          </div>
-          <div className="flex gap-1.5">
-            <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800" aria-label="Previous month">←</button>
-            <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800" aria-label="Next month">→</button>
-          </div>
-        </div>
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} className="text-[10px] text-slate-500 font-medium py-1">{d}</div>
-          ))}
-          {Array.from({ length: startWeekday }, (_, i) => (
-            <div key={`pad-${i}`} className="min-h-[64px]" />
-          ))}
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const dayData = dailyByDate.get(dateStr);
-            const isFuture = new Date(year, month, day) > now;
-            const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
-            const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
-            const cellClass = `min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
-              isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
-              dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
-              "border-slate-700/50 bg-slate-800/30 text-slate-500"
-            }`;
-            const content = (
-              <>
-                <span className="text-xs font-medium text-slate-300">{day}</span>
-                {dayData && (
-                  <>
-                    <span className={`text-xs font-semibold ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
-                    </span>
-                    <span className="text-[10px] text-slate-400">{dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}</span>
-                  </>
-                )}
-              </>
-            );
-            return dayData ? (
-              <Link
-                key={dateStr}
-                href={`/trades?date=${dateStr}${linkedMetaId ? `&uuid=${encodeURIComponent(linkedMetaId)}` : ""}`}
-                className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
-                title={`View trades on ${dateStr}`}
-              >
-                {content}
-              </Link>
-            ) : (
-              <div key={dateStr} className={cellClass}>
-                {content}
               </div>
-            );
-          })}
-        </div>
-      </section>
+            </div>
+            <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
+          </section>
 
-      <section>
-        <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>
-        <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
-      </section>
-      </>
+          {/* KPI row 2 */}
+          <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Avg win</div>
+              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
+                {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />}
+              </div>
+              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+                {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
+              </div>
+            </div>
+
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Avg loss</div>
+              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+                {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />}
+              </div>
+              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+                {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
+              </div>
+            </div>
+
+            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Max drawdown</div>
+              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+                {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : (
+                  <AnimatedNumber value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null} suffix="%" />
+                )}
+              </div>
+              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+                {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.peakDdDate
+                  ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                  : "No data"}
+              </div>
+            </div>
+          </section>
+
+          <DdExposureCard
+            dailyDdPct={noLinkedAccount ? 0 : stats?.dailyDdPct ?? null}
+            dailyLimitPct={rulesConfigured && riskRules ? riskRules.daily_loss_pct : 0}
+            exposurePct={noLinkedAccount ? 0 : stats?.currentExposurePct ?? null}
+            exposureLimitPct={rulesConfigured && riskRules ? riskRules.max_exposure_pct : 0}
+            isMock={false}
+          />
+
+          {/* Equity curve */}
+          <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
+            <div className="mb-1 text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
+              Equity growth
+            </div>
+            <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-slate-500 leading-relaxed">
+              % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
+            </p>
+            {stats?.error && <p className="mb-3 text-sm font-[family-name:var(--font-mono)] text-amber-400/95">{stats.error}</p>}
+            {curve.length === 0 && !stats?.error && (
+              <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm font-[family-name:var(--font-mono)] text-slate-500">
+                {noLinkedAccount ? "No data" : kpiLoading ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
+              </div>
+            )}
+            {curve.length > 0 && (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={curve.map((p) => ({
+                      ...p,
+                      pct: p.pctFromStart,
+                      displayDate: new Date(p.date).toLocaleDateString("en-GB", {
+                        day: "numeric", month: "short", year: "2-digit"
+                      })
+                    }))}
+                    margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
+                  >
+                    <defs>
+                      <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={{ stroke: "#475569" }} tickLine={{ stroke: "#475569" }} />
+                    <YAxis tickFormatter={(v: number) => `${v}%`} tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={{ stroke: "#475569" }} tickLine={{ stroke: "#475569" }} />
+                    <Tooltip
+                      cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || !payload[0]?.payload) return null;
+                        const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
+                        return (
+                          <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
+                            <p className="text-[11px] font-[family-name:var(--font-mono)] text-slate-400">{row.displayDate}</p>
+                            <p className="text-sm font-semibold font-[family-name:var(--font-mono)] text-slate-100">
+                              {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    {rulesConfigured && riskRules && riskRules.daily_loss_pct > 0 && (
+                      <ReferenceLine y={-riskRules.daily_loss_pct} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} />
+                    )}
+                    <Area type="monotone" dataKey="pctFromStart" stroke="#ff3c3c" strokeWidth={2.5} fill="url(#equityGrad)" isAnimationActive animationDuration={900} animationEasing="ease-out" />
+                    <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" tickFormatter={(v: string) => v} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </section>
+
+          {/* Calendar */}
+          <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100 capitalize">
+                  {monthLabel}
+                </div>
+                <div className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+                  Days with activity — tap a day to open trades
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition-colors hover:bg-slate-800">←</button>
+                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition-colors hover:bg-slate-800">→</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-[10px] font-[family-name:var(--font-mono)] text-slate-500 font-medium py-1">{d}</div>
+              ))}
+              {Array.from({ length: startWeekday }, (_, i) => (
+                <div key={`pad-${i}`} className="min-h-[64px]" />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const dayData = dailyByDate.get(dateStr);
+                const isFuture = new Date(year, month, day) > now;
+                const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
+                const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
+                const cellClass = `min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
+                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
+                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
+                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
+                }`;
+                const content = (
+                  <>
+                    <span className="text-xs font-[family-name:var(--font-mono)] font-medium text-slate-300">{day}</span>
+                    {dayData && (
+                      <>
+                        <span className={`text-xs font-semibold font-[family-name:var(--font-mono)] ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
+                        </span>
+                        <span className="text-[10px] font-[family-name:var(--font-mono)] text-slate-400">
+                          {dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}
+                        </span>
+                      </>
+                    )}
+                  </>
+                );
+                return dayData ? (
+                  <Link
+                    key={dateStr}
+                    href={`/trades?date=${dateStr}${linkedMetaId ? `&uuid=${encodeURIComponent(linkedMetaId)}` : ""}`}
+                    className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={dateStr} className={cellClass}>{content}</div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="rs-section-title font-[family-name:var(--font-display)] mb-3 text-slate-400">
+              Quick actions
+            </h2>
+            <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
+          </section>
+        </>
       )}
     </div>
   );

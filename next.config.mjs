@@ -1,6 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  /**
+   * TradingView Charting Library is served from `public/charting_library/` at `/charting_library/*`.
+   * Next.js already exposes `public/` as static files; these headers improve caching for the large bundle.
+   */
+  async headers() {
+    return [
+      {
+        source: "/charting_library/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }
+        ]
+      }
+    ];
+  },
   async redirects() {
     return [
       { source: "/backtesting", destination: "/app/backtesting", permanent: false },

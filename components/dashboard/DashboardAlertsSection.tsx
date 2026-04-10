@@ -21,7 +21,6 @@ type Props = {
   viewAllLabel?: string;
   title?: string;
   subtitle?: string;
-  /** When the empty state is shown, override the default “All clear” copy */
   emptyHeadline?: string;
   emptyDescription?: string;
 };
@@ -60,7 +59,6 @@ export function DashboardAlertsSection({
 
   return (
     <section className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">
-      {/* Background glows */}
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/5 blur-3xl" />
 
@@ -71,16 +69,18 @@ export function DashboardAlertsSection({
             <Bell className="h-5 w-5 text-cyan-300" />
           </div>
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-slate-50">
+            <h2 className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-50">
               {title}
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+            <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+              {subtitle}
+            </p>
           </div>
         </div>
         {items.length > 0 && (
           <Link
             href={viewAllHref}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-medium text-cyan-300/95 transition-colors hover:border-cyan-500/40 hover:bg-slate-800/70"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-300/95 transition-colors hover:border-cyan-500/40 hover:bg-slate-800/70"
           >
             {viewAllLabel}
             <ChevronRight className="h-3.5 w-3.5 opacity-80" />
@@ -104,8 +104,12 @@ export function DashboardAlertsSection({
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/30">
               <Sparkles className="h-6 w-6 text-emerald-400/90" />
             </div>
-            <p className="text-sm font-medium text-emerald-200/90">{emptyHeadline}</p>
-            <p className="mt-1 max-w-sm text-xs text-slate-500">{emptyDescription}</p>
+            <p className="text-sm font-semibold font-[family-name:var(--font-display)] text-emerald-200/90">
+              {emptyHeadline}
+            </p>
+            <p className="mt-1 max-w-sm text-xs font-[family-name:var(--font-mono)] text-slate-500">
+              {emptyDescription}
+            </p>
           </motion.div>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -117,11 +121,7 @@ export function DashboardAlertsSection({
                   key={a.id}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: i * 0.08,
-                    duration: 0.35,
-                    ease: "easeOut",
-                  }}
+                  transition={{ delay: i * 0.08, duration: 0.35, ease: "easeOut" }}
                   className={`group relative rounded-xl border bg-slate-950/50 p-4 transition-all duration-200 ${s.glow} ${s.border}`}
                 >
                   {/* Left bar */}
@@ -134,25 +134,16 @@ export function DashboardAlertsSection({
                     {/* Badge row */}
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
-                        {/* Pulsing dot */}
                         <span className="relative flex h-2 w-2 shrink-0">
-                          <span
-                            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${
-                              isHigh ? "bg-red-400" : "bg-amber-400"
-                            }`}
-                          />
-                          <span
-                            className={`relative inline-flex h-2 w-2 rounded-full ${
-                              isHigh ? "bg-red-400" : "bg-amber-400"
-                            }`}
-                          />
+                          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${isHigh ? "bg-red-400" : "bg-amber-400"}`} />
+                          <span className={`relative inline-flex h-2 w-2 rounded-full ${isHigh ? "bg-red-400" : "bg-amber-400"}`} />
                         </span>
                         {isHigh ? "High" : "Watch"}
                       </span>
                       <time
-                        className="text-[10px] text-slate-500"
+                        className="text-[10px] font-[family-name:var(--font-mono)] text-slate-500"
                         dateTime={a.alert_date}
                       >
                         {new Date(a.alert_date).toLocaleString(undefined, {
@@ -163,23 +154,20 @@ export function DashboardAlertsSection({
                     </div>
 
                     {/* Message */}
-                    <p className="mt-2 flex items-start gap-2 text-sm font-medium leading-snug text-slate-100">
-                      <AlertTriangle
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`}
-                      />
+                    <p className="mt-2 flex items-start gap-2 text-sm font-medium font-[family-name:var(--font-display)] leading-snug text-slate-100">
+                      <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`} />
                       {a.message}
                     </p>
 
                     {/* Solution */}
                     {a.solution && (
-                      <p className="mt-2 border-t border-slate-800/80 pt-2 text-xs leading-relaxed text-slate-400">
+                      <p className="mt-2 border-t border-slate-800/80 pt-2 text-xs font-[family-name:var(--font-mono)] leading-relaxed text-slate-400">
                         <span className="text-slate-500">Next step: </span>
                         {a.solution}
                       </p>
                     )}
                   </div>
 
-                  {/* HIGH — glow pulse */}
                   {isHigh && (
                     <div className="pointer-events-none absolute inset-0 rounded-xl animate-[glow-pulse_2s_ease-in-out_infinite]" />
                   )}
