@@ -23,9 +23,6 @@ type Props = {
   accentTp?: string;
 };
 
-// Quante candele mostrare nel viewport
-const VISIBLE_CANDLES = 80;
-
 export function ReplayChart({
   candles,
   currentIndex,
@@ -40,7 +37,7 @@ export function ReplayChart({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const linesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
-  const initialFitDone = useRef(false);
+  const prevCandlesLen = useRef(0);
 
   useLayoutEffect(() => {
     let chart: IChartApi | null = null;
@@ -75,8 +72,9 @@ export function ReplayChart({
           borderColor: "rgba(255,255,255,0.07)",
           timeVisible: true,
           secondsVisible: false,
-          rightOffset: 5,
-          barSpacing: 8
+          rightOffset: 10,
+          barSpacing: 6,
+          minBarSpacing: 2
         },
         handleScroll: true,
         handleScale: true
@@ -92,7 +90,7 @@ export function ReplayChart({
 
       chartRef.current = chart;
       seriesRef.current = series;
-      initialFitDone.current = false;
+      prevCandlesLen.current = 0;
 
       ro = new ResizeObserver(() => {
         const container = containerRef.current;
@@ -115,7 +113,7 @@ export function ReplayChart({
       chart?.remove();
       chartRef.current = null;
       seriesRef.current = null;
-      initialFitDone.current = false;
+      prevCandlesLen.current = 0;
     };
   }, []);
 
@@ -125,9 +123,11 @@ export function ReplayChart({
     if (!series || !chart) return;
     if (candles.length === 0) return;
 
-    // Solo le candele fino a currentIndex
-    const slice = candles
-      .slice(0, currentIndex + 1)
+    const isFirstLoad = prevCandlesLen.current === 0;
+    prevCandlesLen.current = candles.length;
+
+    // Tutte le candele — passate visibili, future grigie
+    const data: CandlestickData[] = candles
       .filter(
         (c) =>
           Number.isFinite(c.time) &&
@@ -135,36 +135,59 @@ export function ReplayChart({
           Number.isFinite(c.high) &&
           Number.isFinite(c.low) &&
           Number.isFinite(c.close)
-      );
+      )
+      .map((c, i) => {
+        const isFuture = i > currentIndex;
+        const isCurrent = i === currentIndex;
+        const isBull = c.close >= c.open;
 
-    const data: CandlestickData[] = slice.map((c, i) => {
-      const isCurrent = i === slice.length - 1;
-      const isBull = c.close >= c.open;
-      return {
-        time: c.time as UTCTimestamp,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
-        wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
-        borderColor: "transparent"
-      };
-    });
+        if (isFuture) {
+          return {
+            time: c.time as UTCTimestamp,
+            open: c.close,
+            high: c.close,
+            low: c.close,
+            close: c.close,
+            color: "rgba(255,255,255,0.06)",
+            wickColor: "rgba(255,255,255,0.06)",
+            borderColor: "transparent"
+          };
+        }
+
+        return {
+          time: c.time as UTCTimestamp,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+          wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+          borderColor: "transparent"
+        };
+      });
 
     series.setData(data);
 
-    // Prima volta: fit completo
-    if (!initialFitDone.current && data.length > 0) {
-      chart.timeScale().fitContent();
-      initialFitDone.current = true;
-      return;
-    }
-
-    // Poi: scrolla solo per tenere la candela corrente visibile a destra
-    if (data.length > 0) {
-      const lastTime = data[data.length - 1].time;
-      chart.timeScale().scrollToRealTime();
+    if (isFirstLoad) {
+      // Prima volta: vai alla candela corrente con 80 candele di contesto a sinistra
+      const visibleFrom = Math.max(0, currentIndex - 80);
+      const visibleTo = Math.min(candles.length - 1, currentIndex + 20);
+      if (candles[visibleFrom] && candles[visibleTo]) {
+        chart.timeScale().setVisibleRange({
+          from: candles[visibleFrom].time as UTCTimestamp,
+          to: candles[visibleTo].time as UTCTimestamp
+        });
+      }
+    } else {
+      // Ad ogni step: mantieni la candela corrente visibile con contesto
+      const visibleFrom = Math.max(0, currentIndex - 80);
+      const visibleTo = Math.min(candles.length - 1, currentIndex + 20);
+      if (candles[visibleFrom] && candles[visibleTo]) {
+        chart.timeScale().setVisibleRange({
+          from: candles[visibleFrom].time as UTCTimestamp,
+          to: candles[visibleTo].time as UTCTimestamp
+        });
+      }
     }
   }, [candles, currentIndex]);
 
