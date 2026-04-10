@@ -10,8 +10,8 @@ import { HomeBacktestingDashboardPreview } from "@/components/home/HomeBacktesti
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Marketing landing for Backtesting (moved from /backtesting when the app module uses /backtesting). */
-export default function BacktestingLabPage() {
+/** Public marketing landing for backtesting (app module lives under `/app/backtesting`). */
+export default function BacktestMarketingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

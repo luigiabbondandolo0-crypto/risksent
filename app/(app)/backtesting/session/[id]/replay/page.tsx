@@ -6,5 +6,5 @@ export default async function BacktestingSessionReplayPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <SessionReplayView sessionId={id} basePath="/backtesting" />;
+  return <SessionReplayView sessionId={id} basePath="/app/backtesting" />;
 }

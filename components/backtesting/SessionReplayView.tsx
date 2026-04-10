@@ -22,6 +22,7 @@ type SessionPayload = {
 
 type Props = {
   sessionId: string;
+  /** Public app prefix for navigation, e.g. `/app/backtesting` (matches `next.config` redirects/rewrites). */
   basePath: string;
 };
 

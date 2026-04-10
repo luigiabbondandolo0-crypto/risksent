@@ -12,7 +12,7 @@ import {
   HOME_MOCK_TP
 } from "@/components/home/mockBtCandles";
 
-/** Dashboard-style preview only (e.g. backtesting-lab marketing page). */
+/** Dashboard-style preview only (e.g. `/backtest` marketing page). */
 export function HomeBacktestingDashboardPreview() {
   return (
     <motion.div

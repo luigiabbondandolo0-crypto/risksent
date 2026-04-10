@@ -15,10 +15,10 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/backtesting", label: "Backtesting", icon: FlaskConical },
+  { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journal", label: "Journal", icon: TrendingUp },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
-  { href: "/ai-coach", label: "AI Coach", icon: Sparkles },
+  { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
@@ -39,12 +39,7 @@ export const mobileNavItems: readonly NavItem[] = [
 ] as const;
 
 /** Routes that use the app shell (sidebar + padded main). */
-export const APP_SHELL_PREFIXES = [
-  "/app",
-  "/admin",
-  "/ai-coach",
-  "/backtesting",
-] as const;
+export const APP_SHELL_PREFIXES = ["/app", "/admin"] as const;
 
 export function isAppShellPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
@@ -56,5 +51,11 @@ export function isAppShellPath(pathname: string | null | undefined): boolean {
 export function isNavActive(pathname: string | null | undefined, href: string): boolean {
   if (!pathname) return false;
   if (href === "/app/dashboard") return pathname === "/app/dashboard";
+  if (href === "/app/backtesting") {
+    return pathname === "/app/backtesting" || pathname.startsWith("/app/backtesting/");
+  }
+  if (href === "/app/ai-coach") {
+    return pathname === "/app/ai-coach" || pathname.startsWith("/app/ai-coach/");
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems } from "@/components/navConfig";
 
 const marketingNav = [
-  { href: "/backtesting-lab", label: "Backtesting" },
+  { href: "/backtest", label: "Backtesting" },
   { href: "/journaling", label: "Journaling" },
   { href: "/risk-manager", label: "Risk Manager" },
   { href: "/live-alerts", label: "Live Alerts" },

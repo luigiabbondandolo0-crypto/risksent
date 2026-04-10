@@ -22,12 +22,6 @@ type Props = {
   accentTp?: string;
 };
 
-/**
- * Lightweight Charts init lives here (not in replay/page.tsx — that file only renders SessionReplayView).
- *
- * Chart is created in useLayoutEffect so the series exists before the first paint; candle data is applied
- * in a following useEffect so setData always runs after the chart + series refs are set (avoids empty chart).
- */
 export function ReplayChart({
   candles,
   entryPrice,
@@ -46,47 +40,63 @@ export function ReplayChart({
     const el = containerRef.current;
     if (!el) return;
 
-    const w = Math.max(el.clientWidth || el.offsetWidth, 200);
-    const h = Math.max(el.clientHeight || el.offsetHeight, 280);
+    let chart: IChartApi | null = null;
+    let ro: ResizeObserver | null = null;
 
-    const chart = createChart(el, {
-      width: w,
-      height: h,
-      layout: {
-        background: { type: ColorType.Solid, color: "#080809" },
-        textColor: "#94a3b8"
-      },
-      grid: {
-        vertLines: { color: "rgba(255,255,255,0.04)" },
-        horzLines: { color: "rgba(255,255,255,0.04)" }
-      },
-      crosshair: { mode: 1 },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.07)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.07)", timeVisible: true, secondsVisible: false }
-    });
+    const init = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const w = Math.max(rect.width, 200);
+      const h = Math.max(rect.height, 320);
 
-    const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#00e676",
-      downColor: "#ff3c3c",
-      borderVisible: false,
-      wickUpColor: "#00e676",
-      wickDownColor: "#ff3c3c"
-    });
+      chart = createChart(containerRef.current, {
+        width: w,
+        height: h,
+        layout: {
+          background: { type: ColorType.Solid, color: "#080809" },
+          textColor: "#94a3b8"
+        },
+        grid: {
+          vertLines: { color: "rgba(255,255,255,0.04)" },
+          horzLines: { color: "rgba(255,255,255,0.04)" }
+        },
+        crosshair: { mode: 1 },
+        rightPriceScale: { borderColor: "rgba(255,255,255,0.07)" },
+        timeScale: {
+          borderColor: "rgba(255,255,255,0.07)",
+          timeVisible: true,
+          secondsVisible: false
+        }
+      });
 
-    chartRef.current = chart;
-    seriesRef.current = series;
+      const series = chart.addSeries(CandlestickSeries, {
+        upColor: "#00e676",
+        downColor: "#ff3c3c",
+        borderVisible: false,
+        wickUpColor: "#00e676",
+        wickDownColor: "#ff3c3c"
+      });
 
-    const ro = new ResizeObserver(() => {
-      const { width, height } = el.getBoundingClientRect();
-      const nw = Math.max(width, 200);
-      const nh = Math.max(height, 280);
-      chart.applyOptions({ width: nw, height: nh });
-    });
-    ro.observe(el);
+      chartRef.current = chart;
+      seriesRef.current = series;
+
+      ro = new ResizeObserver(() => {
+        if (!containerRef.current || !chartRef.current) return;
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        chartRef.current.applyOptions({
+          width: Math.max(width, 200),
+          height: Math.max(height, 320)
+        });
+      });
+      ro.observe(containerRef.current);
+    };
+
+    const raf = requestAnimationFrame(init);
 
     return () => {
-      ro.disconnect();
-      chart.remove();
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      chart?.remove();
       chartRef.current = null;
       seriesRef.current = null;
     };
@@ -162,5 +172,10 @@ export function ReplayChart({
     }
   }, [entryPrice, stopLoss, takeProfit, accentEntry, accentSl, accentTp]);
 
-  return <div ref={containerRef} className="h-full min-h-[320px] w-full rounded-xl border border-white/[0.06]" />;
+  return (
+    <div
+      ref={containerRef}
+      className="h-full min-h-[320px] w-full rounded-xl border border-white/[0.06]"
+    />
+  );
 }

@@ -15,7 +15,7 @@ const base =
 const buttons = [
   { type: "sync" },
   { href: "/app/risk-manager", icon: SlidersHorizontal, label: "Edit rules" },
-  { href: "/ai-coach", icon: Sparkles, label: "AI Coach" },
+  { href: "/app/ai-coach", icon: Sparkles, label: "AI Coach" },
   { href: "/app/risk-manager#telegram", icon: MessageCircle, label: "Telegram setup" },
 ];
 
@@ -49,7 +49,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
       {/* AI Coach */}
       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
         <Link
-          href="/ai-coach"
+          href="/app/ai-coach"
           className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
         >
           <Sparkles className="h-4 w-4 shrink-0 text-slate-400" />

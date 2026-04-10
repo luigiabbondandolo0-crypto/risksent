@@ -578,7 +578,7 @@ function TradesPageContent() {
                           symbol={t.symbol}
                           sanityScore={sanityScore}
                           localIssues={localIssues}
-                          aiCoachHref="/ai-coach"
+                          aiCoachHref="/app/ai-coach"
                         />
                       </td>
                     </tr>

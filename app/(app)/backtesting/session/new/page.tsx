@@ -10,7 +10,7 @@ export default function BacktestingSessionNewPage() {
         </div>
       }
     >
-      <BacktestingSessionNew basePath="/backtesting" />
+      <BacktestingSessionNew basePath="/app/backtesting" />
     </Suspense>
   );
 }

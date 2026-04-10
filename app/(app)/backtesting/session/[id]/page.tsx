@@ -6,5 +6,5 @@ export default async function BacktestingSessionSummaryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <SessionSummaryView sessionId={id} basePath="/backtesting" />;
+  return <SessionSummaryView sessionId={id} basePath="/app/backtesting" />;
 }
