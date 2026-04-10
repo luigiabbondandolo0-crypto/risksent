@@ -4,8 +4,8 @@ import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 
 const inter = Inter({ subsets: ["latin"] });
-const syne = Syne({ subsets: ["latin"], variable: "--font-display" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const syne = Syne({ subsets: ["latin"], variable: "--font-display", weight: ["400", "600", "700", "800"] });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
 
 export const metadata: Metadata = {
   title: "RiskSent – Trading Risk Dashboard",
