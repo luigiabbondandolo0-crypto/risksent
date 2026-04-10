@@ -15,7 +15,7 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
+  { href: "/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journal", label: "Journal", icon: TrendingUp },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/ai-coach", label: "AI Coach", icon: Sparkles },
@@ -43,6 +43,7 @@ export const APP_SHELL_PREFIXES = [
   "/app",
   "/admin",
   "/ai-coach",
+  "/backtesting",
 ] as const;
 
 export function isAppShellPath(pathname: string | null | undefined): boolean {

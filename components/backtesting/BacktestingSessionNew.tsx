@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import type { BtTimeframe } from "@/lib/backtesting/btTypes";
+import { DEFAULT_SESSION_SYMBOL, SESSION_SYMBOL_GROUPS } from "@/lib/backtesting/sessionSymbols";
 import { bt } from "./btClasses";
-
-const TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
-const SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "BTCUSD", "AUDUSD"];
 
 type StrategyOpt = { id: string; name: string };
 
@@ -22,8 +19,7 @@ export function BacktestingSessionNew({ basePath }: Props) {
   const [strategies, setStrategies] = useState<StrategyOpt[]>([]);
   const [name, setName] = useState("Replay session");
   const [strategyId, setStrategyId] = useState(preStrategy);
-  const [symbol, setSymbol] = useState("EURUSD");
-  const [timeframe, setTimeframe] = useState<BtTimeframe>("H1");
+  const [symbol, setSymbol] = useState(DEFAULT_SESSION_SYMBOL);
   const [dateFrom, setDateFrom] = useState("2024-01-01");
   const [dateTo, setDateTo] = useState("2024-06-01");
   const [initialBalance, setInitialBalance] = useState(10000);
@@ -69,7 +65,6 @@ export function BacktestingSessionNew({ basePath }: Props) {
         strategy_id: strategyId,
         name: name.trim(),
         symbol,
-        timeframe,
         date_from: dateFrom,
         date_to: dateTo,
         initial_balance: initialBalance
@@ -93,6 +88,9 @@ export function BacktestingSessionNew({ basePath }: Props) {
         ← Back
       </Link>
       <h1 className={bt.h1}>New session</h1>
+      <p className="text-xs text-slate-500 font-[family-name:var(--font-mono)]">
+        Timeframe is chosen on the replay chart. Pick symbol and date range here.
+      </p>
       <form onSubmit={(e) => void submit(e)} className={`${bt.card} space-y-4`}>
         {err && <p className="text-sm text-red-400 font-[family-name:var(--font-mono)]">{err}</p>}
         <div>
@@ -125,24 +123,14 @@ export function BacktestingSessionNew({ basePath }: Props) {
         <div>
           <label className={bt.label}>Symbol</label>
           <select className={bt.input} value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-            {SYMBOLS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={bt.label}>Timeframe</label>
-          <select
-            className={bt.input}
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value as BtTimeframe)}
-          >
-            {TIMEFRAMES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
+            {SESSION_SYMBOL_GROUPS.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.symbols.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>

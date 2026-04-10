@@ -176,7 +176,7 @@ export function BacktestingDashboard({ basePath }: Props) {
                         <div>
                           <p className="text-sm font-medium text-slate-200">{se.name}</p>
                           <p className="text-[11px] text-slate-500 font-[family-name:var(--font-mono)]">
-                            {se.symbol} · {se.timeframe} · {se.status}
+                            {se.symbol} · {se.date_from} → {se.date_to} · {se.status}
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">

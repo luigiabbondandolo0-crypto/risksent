@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, BarChart3, CheckCircle2 } from "lucide-react";
+import { ArrowRight, BarChart3 } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function BacktestingPage() {
+/** Marketing landing for Backtesting (moved from /backtesting when the app module uses /backtesting). */
+export default function BacktestingLabPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -113,7 +114,6 @@ export default function BacktestingPage() {
                 </span>
               </div>
 
-              {/* Mock stats */}
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
                 {[
                   { label: "Total tests", val: "278", color: "#22d3ee" },
@@ -129,7 +129,6 @@ export default function BacktestingPage() {
                 ))}
               </div>
 
-              {/* Mock chart */}
               <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                 <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Equity curve — strategy vs benchmark</p>
                 <svg viewBox="0 0 800 160" className="w-full" fill="none">
@@ -138,17 +137,10 @@ export default function BacktestingPage() {
                       <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
                       <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
                     </linearGradient>
-                    <linearGradient id="btGrad2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                    </linearGradient>
                   </defs>
-                  {/* Benchmark */}
                   <path d="M0 120 C100 115 200 110 300 105 C400 100 500 95 600 92 C700 89 750 88 800 86" stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 4" fill="none" opacity="0.5" />
-                  {/* Strategy */}
                   <path d="M0 130 C50 125 100 118 150 108 C200 98 250 105 300 95 C350 85 400 75 450 65 C500 55 550 48 600 40 C650 32 720 28 800 22" stroke="#22d3ee" strokeWidth="2.5" fill="none" />
                   <path d="M0 130 C50 125 100 118 150 108 C200 98 250 105 300 95 C350 85 400 75 450 65 C500 55 550 48 600 40 C650 32 720 28 800 22 L800 160 L0 160 Z" fill="url(#btGrad)" />
-                  {/* Grid lines */}
                   {[0, 40, 80, 120, 160].map(y => (
                     <line key={y} x1="0" y1={y} x2="800" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
                   ))}
@@ -169,7 +161,6 @@ export default function BacktestingPage() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="px-6 lg:px-16 py-16">
         <div className="max-w-7xl mx-auto">
           <div className="bt-reveal mb-12">
@@ -205,7 +196,6 @@ export default function BacktestingPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="px-6 lg:px-16 py-24">
         <div className="max-w-7xl mx-auto">
           <div className="bt-reveal relative overflow-hidden rounded-3xl p-px"

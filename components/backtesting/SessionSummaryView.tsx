@@ -123,7 +123,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
         )}
         <h1 className={`${bt.h1} mt-2`}>{session.name}</h1>
         <p className={bt.sub}>
-          {session.symbol} · {session.timeframe} · {session.date_from} → {session.date_to}
+          {session.symbol} · {session.date_from} → {session.date_to}
         </p>
       </div>
 

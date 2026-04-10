@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import type { BtTimeframe } from "@/lib/backtesting/btTypes";
 
-const TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
-
-function isTimeframe(s: string): s is BtTimeframe {
-  return (TIMEFRAMES as string[]).includes(s);
-}
+const DEFAULT_TIMEFRAME: BtTimeframe = "H1";
 
 export async function GET(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -55,7 +51,6 @@ export async function POST(req: NextRequest) {
     strategy_id?: string;
     name?: string;
     symbol?: string;
-    timeframe?: string;
     date_from?: string;
     date_to?: string;
     initial_balance?: number;
@@ -69,7 +64,6 @@ export async function POST(req: NextRequest) {
   const strategyId = String(body.strategy_id ?? "").trim();
   const name = String(body.name ?? "").trim() || "Session";
   const symbol = String(body.symbol ?? "").trim().toUpperCase();
-  const tfRaw = String(body.timeframe ?? "").toUpperCase();
   const dateFrom = String(body.date_from ?? "").trim();
   const dateTo = String(body.date_to ?? "").trim();
   const initial =
@@ -82,9 +76,6 @@ export async function POST(req: NextRequest) {
   }
   if (!symbol) {
     return NextResponse.json({ error: "symbol is required" }, { status: 400 });
-  }
-  if (!isTimeframe(tfRaw)) {
-    return NextResponse.json({ error: "invalid timeframe" }, { status: 400 });
   }
   if (!dateFrom || !dateTo) {
     return NextResponse.json({ error: "date_from and date_to are required" }, { status: 400 });
@@ -111,12 +102,12 @@ export async function POST(req: NextRequest) {
       strategy_id: strategyId,
       name,
       symbol,
-      timeframe: tfRaw,
+      timeframe: DEFAULT_TIMEFRAME,
       date_from: dateFrom,
       date_to: dateTo,
       initial_balance: initial,
       current_balance: initial,
-      status: "ready"
+      status: "active"
     })
     .select(
       "id, user_id, strategy_id, name, symbol, timeframe, date_from, date_to, initial_balance, current_balance, status, created_at"

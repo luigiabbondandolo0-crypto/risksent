@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
-import type { BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
+import type { BtTimeframe, BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
+
+const CHART_TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
 import { checkSlTpHit, unrealizedPl } from "@/lib/backtesting/replayEngine";
 import { ReplayChart } from "./ReplayChart";
 import { TradeOpenModal } from "./TradeOpenModal";
@@ -13,7 +15,6 @@ import { bt } from "./btClasses";
 type SessionPayload = {
   id: string;
   symbol: string;
-  timeframe: string;
   date_from: string;
   date_to: string;
   initial_balance: number;
@@ -26,14 +27,17 @@ type Props = {
   basePath: string;
 };
 
-function lsKeyCandles(id: string) {
-  return `bt_candles_${id}`;
+function lsKeyTf(id: string) {
+  return `bt_chart_tf_${id}`;
 }
-function lsKeyIndex(id: string) {
-  return `bt_replay_idx_${id}`;
+function lsKeyCandles(id: string, tf: string) {
+  return `bt_candles_${id}_${tf}`;
 }
-function lsKeyOpenMeta(id: string) {
-  return `bt_open_meta_${id}`;
+function lsKeyIndex(id: string, tf: string) {
+  return `bt_replay_idx_${id}_${tf}`;
+}
+function lsKeyOpenMeta(id: string, tf: string) {
+  return `bt_open_meta_${id}_${tf}`;
 }
 
 export function SessionReplayView({ sessionId, basePath }: Props) {
@@ -48,6 +52,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   });
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<1 | 2 | 5>(1);
+  const [timeframe, setTimeframe] = useState<BtTimeframe>("H1");
   const entryIndexRef = useRef<number | null>(null);
 
   const visible = useMemo(() => candles.slice(0, currentIndex + 1), [candles, currentIndex]);
@@ -70,15 +75,28 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     void loadSession();
   }, [loadSession]);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(lsKeyTf(sessionId));
+      if (raw && (CHART_TIMEFRAMES as string[]).includes(raw)) {
+        setTimeframe(raw as BtTimeframe);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [sessionId]);
+
   const hydrateCandles = useCallback(
-    async (sess: SessionPayload) => {
-      const cached = typeof window !== "undefined" ? localStorage.getItem(lsKeyCandles(sessionId)) : null;
+    async (sess: SessionPayload, tf: BtTimeframe) => {
+      setLoadErr(null);
+      const cacheKey = lsKeyCandles(sessionId, tf);
+      const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
       if (cached) {
         try {
           const parsed = JSON.parse(cached) as Candle[];
           if (Array.isArray(parsed) && parsed.length > 0) {
             setCandles(parsed);
-            const idxRaw = localStorage.getItem(lsKeyIndex(sessionId));
+            const idxRaw = localStorage.getItem(lsKeyIndex(sessionId, tf));
             const idx = idxRaw ? Math.min(Number(idxRaw), parsed.length - 1) : 0;
             setCurrentIndex(Number.isFinite(idx) ? idx : 0);
             return;
@@ -90,7 +108,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
       const q = new URLSearchParams({
         symbol: sess.symbol,
-        timeframe: sess.timeframe,
+        timeframe: tf,
         from: sess.date_from,
         to: sess.date_to
       });
@@ -98,13 +116,14 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       const j = await res.json();
       if (!res.ok) {
         setLoadErr(j.error ?? "Failed to load OHLCV");
+        setCandles([]);
         return;
       }
       const list = j.candles as Candle[];
       setCandles(list);
       setCurrentIndex(0);
       try {
-        localStorage.setItem(lsKeyCandles(sessionId), JSON.stringify(list));
+        localStorage.setItem(cacheKey, JSON.stringify(list));
       } catch {
         /* ignore */
       }
@@ -114,23 +133,31 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
   useEffect(() => {
     if (!session) return;
-    void hydrateCandles(session);
-  }, [session, hydrateCandles]);
+    void hydrateCandles(session, timeframe);
+  }, [session, timeframe, hydrateCandles]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(lsKeyIndex(sessionId), String(currentIndex));
+      localStorage.setItem(lsKeyIndex(sessionId, timeframe), String(currentIndex));
     } catch {
       /* ignore */
     }
-  }, [currentIndex, sessionId]);
+  }, [currentIndex, sessionId, timeframe]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(lsKeyTf(sessionId), timeframe);
+    } catch {
+      /* ignore */
+    }
+  }, [sessionId, timeframe]);
 
   useEffect(() => {
     if (!openTrade) {
       entryIndexRef.current = null;
       return;
     }
-    const raw = localStorage.getItem(lsKeyOpenMeta(sessionId));
+    const raw = localStorage.getItem(lsKeyOpenMeta(sessionId, timeframe));
     if (raw) {
       try {
         const meta = JSON.parse(raw) as { tradeId?: string; entryIndex?: number };
@@ -143,7 +170,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       }
     }
     if (entryIndexRef.current == null) entryIndexRef.current = 0;
-  }, [openTrade, sessionId]);
+  }, [openTrade, sessionId, timeframe]);
 
   const closeTradeApi = useCallback(
     async (tradeId: string, exitPrice: number, exitIso: string) => {
@@ -155,12 +182,12 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       if (!res.ok) return;
       await loadSession();
       try {
-        localStorage.removeItem(lsKeyOpenMeta(sessionId));
+        localStorage.removeItem(lsKeyOpenMeta(sessionId, timeframe));
       } catch {
         /* ignore */
       }
     },
-    [loadSession, sessionId]
+    [loadSession, sessionId, timeframe]
   );
 
   const stepForward = useCallback(async () => {
@@ -239,7 +266,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     entryIndexRef.current = currentIndex;
     try {
       localStorage.setItem(
-        lsKeyOpenMeta(sessionId),
+        lsKeyOpenMeta(sessionId, timeframe),
         JSON.stringify({ tradeId: tr.id, entryIndex: currentIndex })
       );
     } catch {
@@ -324,7 +351,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           </Link>
           <h1 className={bt.h1}>{session.name}</h1>
           <p className={bt.sub}>
-            {session.symbol} · {session.timeframe} · {session.date_from} → {session.date_to}
+            {session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}
           </p>
         </div>
         <div className="text-right font-[family-name:var(--font-mono)] text-xs text-slate-500">
@@ -341,6 +368,22 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
       <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(280px,3fr)] lg:items-stretch">
         <div className={`${bt.card} flex min-h-[480px] flex-col p-0 overflow-hidden lg:min-h-[calc(100vh-220px)]`}>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
+            <span className={bt.label}>Chart timeframe</span>
+            <select
+              className={`${bt.input} max-w-[160px] py-2`}
+              value={timeframe}
+              disabled={!!openTrade}
+              title={openTrade ? "Close or finish the open trade before changing timeframe" : undefined}
+              onChange={(e) => setTimeframe(e.target.value as BtTimeframe)}
+            >
+              {CHART_TIMEFRAMES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex flex-1 min-h-[360px] flex-col p-4">
             <ReplayChart
               candles={visible}

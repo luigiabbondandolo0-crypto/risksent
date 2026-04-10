@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { BacktestingSessionNew } from "@/components/backtesting/BacktestingSessionNew";
 
-export default function AppBacktestingSessionNewPage() {
+export default function BacktestingSessionNewPage() {
   return (
     <Suspense
       fallback={
@@ -10,7 +10,7 @@ export default function AppBacktestingSessionNewPage() {
         </div>
       }
     >
-      <BacktestingSessionNew basePath="/app/backtesting" />
+      <BacktestingSessionNew basePath="/backtesting" />
     </Suspense>
   );
 }
