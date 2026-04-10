@@ -85,9 +85,9 @@ export default function MockRulesPage() {
   return (
     <div className="space-y-8 animate-fade-in lg:space-y-10">
       <header>
-        <h1 className="rs-page-title">Rules &amp; alerts</h1>
+        <h1 className="rs-page-title">Risk Sentinel</h1>
         <p className="rs-page-sub">
-          Stessa struttura della pagina live: regole con slider, Telegram, AI stub e centro alert con filtri (dati mock).
+          Full mock of Risk Sentinel: live monitoring flow, rule thresholds and live alerts center.
         </p>
       </header>
 

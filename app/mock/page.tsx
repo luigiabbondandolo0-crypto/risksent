@@ -4,26 +4,14 @@ import {
   TrendingUp,
   ShieldAlert,
   FlaskConical,
-  Bot,
-  CreditCard,
-  PlusCircle,
-  Activity,
-  Shield,
-  User,
   ArrowRight,
 } from "lucide-react";
 
 const cards = [
-  { href: "/mock/dashboard", title: "Dashboard", desc: "Overview, equity, KPI, calendario, alert, quick actions.", icon: LayoutDashboard },
-  { href: "/mock/trades", title: "Trades", desc: "Storico trade chiusi.", icon: TrendingUp },
-  { href: "/mock/rules", title: "Rules & alerts", desc: "Regole, Telegram, alert.", icon: ShieldAlert },
-  { href: "/mock/simulator", title: "Simulator", desc: "Challenge simulator e tab FTMO/Simplified.", icon: FlaskConical },
-  { href: "/mock/ai-coach", title: "AI Coach", desc: "Pannelli analisi e parametri (mock).", icon: Bot },
-  { href: "/mock/accounts", title: "Accounts", desc: "Gestione account collegati.", icon: CreditCard },
-  { href: "/mock/add-account", title: "Add account", desc: "Flusso collegamento MT.", icon: PlusCircle },
-  { href: "/mock/live-monitoring", title: "Live monitoring", desc: "Snapshot connessione MetaAPI.", icon: Activity },
-  { href: "/mock/admin", title: "Admin", desc: "Area admin (mock).", icon: Shield },
-  { href: "/mock/profile", title: "Profile", desc: "Profilo utente.", icon: User },
+  { href: "/mock/dashboard", title: "Dashboard", desc: "Overview completa del conto e KPI.", icon: LayoutDashboard },
+  { href: "/mock/simulator", title: "Backtesting", desc: "Esperienza stile FX Replay: replay e scenari.", icon: FlaskConical },
+  { href: "/mock/trades", title: "Journal", desc: "Trading journal completo in stile TradeZella.", icon: TrendingUp },
+  { href: "/mock/rules", title: "Risk Sentinel", desc: "Live monitoring e live alerts sul rischio.", icon: ShieldAlert },
 ] as const;
 
 export default function MockHubPage() {
@@ -32,9 +20,7 @@ export default function MockHubPage() {
       <header>
         <h1 className="rs-page-title">Mock preview</h1>
         <p className="rs-page-sub">
-          Stessa struttura di navigazione e sezioni dell&apos;app live (sidebar + pagine). Nessuna
-          autenticazione e nessuna
-          chiamata a MetaTrader o al database reale.
+          Versione demo con le stesse 4 sezioni della live: Dashboard, Backtesting, Journal e Risk Sentinel.
         </p>
       </header>
 

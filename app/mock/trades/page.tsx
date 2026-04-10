@@ -67,9 +67,9 @@ export default function MockTradesPage() {
     <div className="space-y-6 lg:space-y-8 animate-fade-in">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="rs-page-title">Trades</h1>
+          <h1 className="rs-page-title">Journal</h1>
           <p className="rs-page-sub">
-            Stessa struttura della pagina live: KPI, sanity, Sanity Score 0–100 e AI Insight per ogni trade (mock).
+            Full mock of a complete trading journal (TradeZella style): detailed history, stats, sanity score and AI insight.
           </p>
         </div>
         <div className="w-full sm:max-w-xs">

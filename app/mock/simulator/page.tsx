@@ -53,9 +53,9 @@ export default function MockSimulatorPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2">
             <div>
-              <h1 className="rs-page-title">Challenge simulator</h1>
+              <h1 className="rs-page-title">Backtesting</h1>
               <p className="rs-page-sub mt-1">
-                Stessa struttura della pagina live: probabilità e tab per challenge (dati mock).
+                Full mock for the backtesting workspace (FX Replay style): replay, scenario controls and projected curve.
               </p>
             </div>
             <button

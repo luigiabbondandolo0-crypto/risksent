@@ -327,10 +327,10 @@ export default function SimulatorPage() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <h1 className="rs-page-title">Challenge simulator</h1>
+        <h1 className="rs-page-title">Backtesting</h1>
         <div className="rs-card p-8 shadow-rs-soft">
           <div className="h-4 w-64 animate-pulse rounded bg-slate-800/80" />
-          <p className="mt-4 text-sm text-slate-500">Loading simulator…</p>
+          <p className="mt-4 text-sm text-slate-500">Loading backtesting workspace…</p>
         </div>
       </div>
     );

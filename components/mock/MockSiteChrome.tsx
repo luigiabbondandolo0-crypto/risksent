@@ -2,13 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, User } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import type { MockNavItem } from "@/components/mock/mockNavConfig";
 import {
   mockPrimaryNavItems,
-  mockAccountNavItems,
-  mockMonitoringNavItems,
-  mockAdminNavItems,
   mockMobileNavItems,
 } from "@/components/mock/mockNavConfig";
 
@@ -106,24 +103,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex flex-col gap-8">
-            <NavGroup title="Overview" items={mockPrimaryNavItems} pathname={pathname} mobile={false} />
-            <NavGroup title="Account" items={mockAccountNavItems} pathname={pathname} mobile={false} />
-            <NavGroup title="Monitoring" items={mockMonitoringNavItems} pathname={pathname} mobile={false} />
-            <NavGroup title="Admin" items={mockAdminNavItems} pathname={pathname} mobile={false} />
-            <div>
-              <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
-                User
-              </span>
-              <Link
-                href="/mock/profile"
-                className={navLinkClass(linkActive(pathname, "/mock/profile"), false)}
-              >
-                <User
-                  className={`h-4 w-4 shrink-0 ${linkActive(pathname, "/mock/profile") ? "text-violet-300" : "text-slate-500"}`}
-                />
-                <span className="truncate">Profile</span>
-              </Link>
-            </div>
+            <NavGroup title="Platform" items={mockPrimaryNavItems} pathname={pathname} mobile={false} />
           </div>
         </aside>
 

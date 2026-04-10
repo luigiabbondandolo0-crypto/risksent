@@ -325,9 +325,9 @@ function TradesPageContent() {
     <div className="space-y-6 lg:space-y-8 animate-fade-in">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="rs-page-title">Trades</h1>
+          <h1 className="rs-page-title">Journal</h1>
           <p className="rs-page-sub">
-            Closed orders, sanity badges, equity curve and AI insight on selected tickets.
+            Complete trading journal inspired by TradeZella: filters, stats, equity curve, sanity score and AI insights.
           </p>
         </div>
         <div className="w-full sm:max-w-xs">

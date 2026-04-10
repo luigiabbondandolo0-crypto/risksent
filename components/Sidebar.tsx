@@ -2,13 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User } from "lucide-react";
 import type { NavItem } from "@/components/navConfig";
 import {
   primaryNavItems,
-  accountNavItems,
-  monitoringNavItems,
-  adminNavItems,
   adminOnlySidebarItems,
   isNavActive,
 } from "@/components/navConfig";
@@ -89,24 +85,7 @@ export function Sidebar({ variant = "default" }: { variant?: "default" | "admin"
       </Link>
 
       <div className="flex flex-col gap-8">
-        <NavGroup title="Overview" items={primaryNavItems} pathname={pathname} />
-        <NavGroup title="Account" items={accountNavItems} pathname={pathname} />
-        <NavGroup title="Monitoring" items={monitoringNavItems} pathname={pathname} />
-        <NavGroup title="Admin" items={adminNavItems} pathname={pathname} />
-        <div>
-          <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
-            User
-          </span>
-          <Link
-            href="/profile"
-            className={navLinkClass(isNavActive(pathname, "/profile"))}
-          >
-            <User
-              className={`h-4 w-4 flex-shrink-0 ${isNavActive(pathname, "/profile") ? "text-cyan-400" : "text-slate-500"}`}
-            />
-            <span className="truncate">Profile</span>
-          </Link>
-        </div>
+        <NavGroup title="Platform" items={primaryNavItems} pathname={pathname} />
       </div>
     </aside>
   );

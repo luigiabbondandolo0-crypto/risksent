@@ -319,7 +319,7 @@ export default function RulesPage() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <h1 className="rs-page-title">Rules and alerts</h1>
+        <h1 className="rs-page-title">Risk Sentinel</h1>
         <div className="rs-card p-8 shadow-rs-soft">
           <div className="h-4 w-56 animate-pulse rounded bg-slate-800/80" />
         </div>
@@ -330,9 +330,9 @@ export default function RulesPage() {
   return (
     <div className="space-y-8 animate-fade-in lg:space-y-10">
       <header>
-        <h1 className="rs-page-title">Rules &amp; alerts</h1>
+        <h1 className="rs-page-title">Risk Sentinel</h1>
         <p className="rs-page-sub">
-          Define your trading boundaries and monitor active risk violations in real time.
+          Live monitoring and live alerts for your risk limits: exposure, daily loss and behavior breaches in real time.
         </p>
       </header>
 

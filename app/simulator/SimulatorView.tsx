@@ -157,7 +157,7 @@ export function SimulatorView(props: SimulatorViewProps) {
 
   const emptyState = !selectedUuid ? (
     <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-      Select an account to run the simulator.
+      Select an account to start backtesting.
     </div>
   ) : !stats ? (
     <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
@@ -172,9 +172,9 @@ export function SimulatorView(props: SimulatorViewProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2">
             <div>
-              <h1 className="rs-page-title">Challenge simulator</h1>
+              <h1 className="rs-page-title">Backtesting</h1>
               <p className="rs-page-sub mt-1">
-                Pass probability for each challenge based on your current trading behaviour.
+                Backtesting workspace inspired by FX Replay: replay performance, scenario testing and pass probability.
               </p>
             </div>
             <button
@@ -362,7 +362,7 @@ export function SimulatorView(props: SimulatorViewProps) {
             <div className="rounded-xl border border-slate-800 bg-surface p-5">
               <h2 className="text-sm font-medium text-slate-200 mb-1">Projection & What-If</h2>
               <p className="text-xs text-slate-500 mb-4">
-                Current equity curve vs projected curve with the settings below. Adjust risk per trade, max trades per day and stop after consecutive losses to see how your account would have performed. The AI will evaluate how these changes affect your chance of passing the challenge.
+                Replay your equity path and compare it with projected scenarios. Adjust risk per trade, daily trade cap and stop-after-losses to evaluate how strategy changes impact outcomes.
               </p>
               <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-2">

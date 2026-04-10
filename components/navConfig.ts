@@ -4,12 +4,6 @@ import {
   TrendingUp,
   ShieldAlert,
   FlaskConical,
-  Bot,
-  PlusCircle,
-  CreditCard,
-  Shield,
-  Activity,
-  User,
 } from "lucide-react";
 
 export type NavItem = {
@@ -20,45 +14,27 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/trades", label: "Journaling", icon: TrendingUp },
-  { href: "/rules", label: "Risk & alerts", icon: ShieldAlert },
   { href: "/simulator", label: "Backtesting", icon: FlaskConical },
-  { href: "/ai-coach", label: "AI Coach", icon: Bot },
-] as const;
+  { href: "/trades", label: "Journal", icon: TrendingUp },
+  { href: "/rules", label: "Risk Sentinel", icon: ShieldAlert },
+];
 
-export const accountNavItems: readonly NavItem[] = [
-  { href: "/accounts", label: "Accounts", icon: CreditCard },
-  { href: "/add-account", label: "Add account", icon: PlusCircle },
-] as const;
+export const accountNavItems: readonly NavItem[] = [];
 
-export const monitoringNavItems: readonly NavItem[] = [
-  { href: "/live-monitoring", label: "Live monitoring", icon: Activity },
-] as const;
+export const monitoringNavItems: readonly NavItem[] = [];
 
-export const adminNavItems: readonly NavItem[] = [
-  { href: "/admin", label: "Admin", icon: Shield },
-] as const;
+export const adminNavItems: readonly NavItem[] = [];
 
 /** Admin-only sidebar (under /admin layout). */
 export const adminOnlySidebarItems: readonly NavItem[] = [
-  { href: "/admin", label: "Admin", icon: Shield },
-  { href: "/admin/live-monitoring", label: "Live monitoring", icon: Activity },
+  { href: "/admin", label: "Admin", icon: LayoutDashboard },
+  { href: "/admin/live-monitoring", label: "Live monitoring", icon: ShieldAlert },
 ] as const;
-
-const profileNavItem: NavItem = {
-  href: "/profile",
-  label: "Profile",
-  icon: User,
-};
 
 /** Horizontal scroll nav on small screens (full app map). */
 export const mobileNavItems: readonly NavItem[] = [
   ...primaryNavItems,
-  ...accountNavItems,
-  profileNavItem,
-  ...monitoringNavItems,
-  ...adminNavItems,
-];
+] as const;
 
 /** Routes that use the app shell (sidebar + padded main). */
 export const APP_SHELL_PREFIXES = [
@@ -66,7 +42,6 @@ export const APP_SHELL_PREFIXES = [
   "/rules",
   "/trades",
   "/simulator",
-  "/ai-coach",
   "/add-account",
   "/accounts",
   "/admin",
