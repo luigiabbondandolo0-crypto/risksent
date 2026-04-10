@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "RiskSent — Mock preview",
-  description: "Dimostrazione con dati finti. Non collegata agli account reali.",
+  description: "Demo with fake data. Not connected to real accounts.",
   robots: { index: false, follow: false },
 };
 

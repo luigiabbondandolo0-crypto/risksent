@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 
 const cards = [
-  { href: "/mock/dashboard", title: "Dashboard", desc: "Overview completa del conto e KPI.", icon: LayoutDashboard },
-  { href: "/mock/simulator", title: "Backtesting", desc: "Esperienza stile FX Replay: replay e scenari.", icon: FlaskConical },
-  { href: "/mock/trades", title: "Journal", desc: "Trading journal completo in stile TradeZella.", icon: TrendingUp },
-  { href: "/mock/rules", title: "Risk Sentinel", desc: "Live monitoring e live alerts sul rischio.", icon: ShieldAlert },
+  { href: "/mock/dashboard", title: "Dashboard", desc: "Complete account overview and KPI metrics.", icon: LayoutDashboard },
+  { href: "/mock/simulator", title: "Backtesting", desc: "FX Replay-style experience: replay and scenarios.", icon: FlaskConical },
+  { href: "/mock/trades", title: "Journal", desc: "Complete trading journal experience in TradeZella style.", icon: TrendingUp },
+  { href: "/mock/rules", title: "Risk Sentinel", desc: "Live monitoring and live risk alerts.", icon: ShieldAlert },
 ] as const;
 
 export default function MockHubPage() {
@@ -20,7 +20,7 @@ export default function MockHubPage() {
       <header>
         <h1 className="rs-page-title">Mock preview</h1>
         <p className="rs-page-sub">
-          Versione demo con le stesse 4 sezioni della live: Dashboard, Backtesting, Journal e Risk Sentinel.
+          Demo version with the same 4 sections as live: Dashboard, Backtesting, Journal, and Risk Sentinel.
         </p>
       </header>
 

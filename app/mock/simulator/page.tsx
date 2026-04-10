@@ -179,12 +179,12 @@ export default function MockSimulatorPage() {
 
         {rulesTab === "ftmo1" && (
           <p className="text-sm text-slate-400">
-            FTMO 1-Step rules (mock) — stessa UI della live con tab dedicata.
+            FTMO 1-Step rules (mock) — same UI as live with a dedicated tab.
           </p>
         )}
         {rulesTab === "simplified" && (
           <p className="text-sm text-slate-400">
-            Simplified challenge (mock) — progress bar e limiti come in produzione.
+            Simplified challenge (mock) — progress bar and limits as in production.
           </p>
         )}
       </div>
@@ -197,8 +197,8 @@ export default function MockSimulatorPage() {
               What-if / projection
             </h2>
             <p className="mt-1 max-w-xl text-sm text-slate-500">
-              Muovi lo slider per simulare un bias giornaliero sul rendimento percentuale (mock). La curva aggiorna equity
-              normalizzata a 100 sullo stesso orizzonte della live.
+              Move the slider to simulate a daily bias on percentage returns (mock). The curve updates normalized equity
+              to 100 over the same horizon as live.
             </p>
           </div>
           <div className="rounded-xl border border-slate-700/80 bg-slate-950/60 px-4 py-3">
@@ -253,8 +253,7 @@ export default function MockSimulatorPage() {
           </ResponsiveContainer>
         </div>
         <p className="mt-3 text-[11px] text-slate-500">
-          Endpoint reale in arrivo: stessa UI, ma i punti saranno calcolati da simulazione Monte Carlo sui tuoi trade
-          chiusi.
+          Live endpoint coming soon: same UI, but points will be calculated with Monte Carlo simulation on your closed trades.
         </p>
       </section>
     </div>

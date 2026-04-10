@@ -4,11 +4,11 @@ export default function MockAdminPage() {
       <header>
         <h1 className="rs-page-title">Admin</h1>
         <p className="rs-page-sub">
-          Area amministrativa — mock. In produzione richiede ruolo admin.
+          Admin area — mock. In production it requires admin role.
         </p>
       </header>
       <section className="rs-card p-5 shadow-rs-soft">
-        <p className="text-sm text-slate-400">Statistiche utenti e sistema: placeholder statico.</p>
+        <p className="text-sm text-slate-400">User and system metrics: static placeholder.</p>
       </section>
     </div>
   );

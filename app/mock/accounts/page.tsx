@@ -8,11 +8,11 @@ export default function MockAccountsPage() {
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="rs-page-title">Account</h1>
-          <p className="rs-page-sub">Tabella dimostrativa. In produzione i conti sono collegati a MetaAPI.</p>
+          <p className="rs-page-sub">Demo table. In production, accounts are connected to MetaAPI.</p>
         </div>
         <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-slate-500">
           <PlusCircle className="h-4 w-4" />
-          Aggiungi account (solo live)
+          Add account (live only)
         </span>
       </header>
 
@@ -20,10 +20,10 @@ export default function MockAccountsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
-              <th className="px-4 py-3 font-medium">Piattaforma</th>
-              <th className="px-4 py-3 font-medium">Login · Nome</th>
+              <th className="px-4 py-3 font-medium">Platform</th>
+              <th className="px-4 py-3 font-medium">Login · Name</th>
               <th className="px-4 py-3 font-medium">Provider ID</th>
-              <th className="px-4 py-3 font-medium">Aggiunto</th>
+              <th className="px-4 py-3 font-medium">Added</th>
             </tr>
           </thead>
           <tbody>
@@ -36,7 +36,7 @@ export default function MockAccountsPage() {
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{a.metaapi_account_id}</td>
                 <td className="px-4 py-3 text-slate-500">
-                  {new Date(a.created_at).toLocaleDateString("it-IT")}
+                  {new Date(a.created_at).toLocaleDateString("en-GB")}
                 </td>
               </tr>
             ))}
@@ -47,11 +47,11 @@ export default function MockAccountsPage() {
       <div className="rs-card flex items-start gap-3 p-4 shadow-rs-soft">
         <CreditCard className="h-5 w-5 shrink-0 text-slate-500" />
         <p className="text-sm text-slate-500">
-          Per collegare un account vero torna al{" "}
+          To connect a real account, go back to the{" "}
           <Link href="/" className="text-cyan-400 hover:text-cyan-300">
-            sito principale
+            main site
           </Link>{" "}
-          e registrati.
+          and sign up.
         </p>
       </div>
     </div>

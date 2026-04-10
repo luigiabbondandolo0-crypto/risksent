@@ -99,11 +99,11 @@ export default function MockRulesPage() {
               <h2 className="text-sm font-medium text-slate-200">Personal Risk Rules</h2>
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              Thresholds govern alert triggers and sanity scoring. In produzione i valori sono salvati nel database.
+              Thresholds govern alert triggers and sanity scoring. In production, values are saved in the database.
             </p>
             <div className="mb-4 space-y-1 rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2 text-[11px] text-slate-400">
               <p>
-                <strong className="text-slate-300">Mock:</strong> slider disabilitati — riflettono{" "}
+                <strong className="text-slate-300">Mock:</strong> sliders are disabled — they mirror{" "}
                 <span className="text-cyan-300/90">MOCK_RULES</span> in{" "}
                 <code className="text-slate-500">siteMockData</code>.
               </p>
@@ -150,10 +150,10 @@ export default function MockRulesPage() {
               <h2 className="text-sm font-medium text-slate-200">Link Telegram</h2>
             </div>
             <p className="mb-4 text-xs text-slate-500">
-              One-time link: nella build reale apri il link e invii /start al bot.
+              One-time link: in the real build, open the link and send /start to the bot.
             </p>
             <p className="mb-3 text-xs text-amber-400/95">
-              Mock: nessun chat collegato — stessa UI della live con stati disabilitati.
+              Mock: no linked chat — same UI as live with disabled states.
             </p>
             <button
               type="button"
@@ -174,7 +174,7 @@ export default function MockRulesPage() {
             >
               <Lightbulb className="h-4 w-4" /> Analyze my rules with AI
             </button>
-            <p className="mt-2 text-[10px] text-slate-500">In mock: apre un pannello dimostrativo (nessuna API).</p>
+            <p className="mt-2 text-[10px] text-slate-500">In mock: opens a demo panel (no API calls).</p>
           </div>
         </div>
 
@@ -185,13 +185,13 @@ export default function MockRulesPage() {
               Values above suggested limits (demo)
             </div>
             <p className="mb-2 text-xs text-slate-400">
-              Esempio di banner come in live quando salvi sopra i massimi consigliati.
+              Example banner as in live when you save above suggested maximums.
             </p>
             <ul className="space-y-1 text-xs text-slate-300">
               <li className="flex justify-between gap-2">
                 <span className="text-slate-500">Max exposure</span>
                 <span>
-                  <span className="text-amber-300">{MOCK_RULES.max_exposure_pct}%</span> vs suggerito 15%
+                  <span className="text-amber-300">{MOCK_RULES.max_exposure_pct}%</span> vs suggested 15%
                 </span>
               </li>
             </ul>
@@ -204,7 +204,7 @@ export default function MockRulesPage() {
                 <RefreshCw className="h-3 w-3" /> Mock
               </span>
             </div>
-            <p className="mb-3 text-xs text-slate-500">High alerts first — stessi controlli della live.</p>
+            <p className="mb-3 text-xs text-slate-500">High alerts first — same controls as live.</p>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-[10px] text-slate-500">Show:</span>
               {(["all", "high", "medium"] as const).map((f) => (
@@ -261,7 +261,7 @@ export default function MockRulesPage() {
               href="/mock/dashboard"
               className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-cyan-400 hover:text-cyan-300"
             >
-              <Sparkles className="h-3 w-3" /> Torna alla dashboard mock
+              <Sparkles className="h-3 w-3" /> Back to mock dashboard
             </Link>
           </div>
         </div>
@@ -278,8 +278,8 @@ export default function MockRulesPage() {
           >
             <h3 className="mb-2 text-lg font-semibold text-slate-100">AI rules insight (mock)</h3>
             <p className="text-sm leading-relaxed text-slate-300">
-              Con i valori attuali, l&apos;esposizione massima è sopra il range consigliato: in live l&apos;AI sintetizzerebbe
-              impatto su alert e sanity score. Nessuna chiamata rete in questa anteprima.
+              With current values, maximum exposure is above the suggested range: in live, AI would summarize
+              impact on alerts and sanity score. No network call in this preview.
             </p>
             <button
               type="button"
@@ -300,7 +300,7 @@ function SaveHint() {
     <span className="flex items-start gap-2">
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
       <span>
-        Save Rules è disabilitato in mock. La live usa <code className="text-slate-500">PATCH /api/rules</code>.
+        Save Rules is disabled in mock. Live uses <code className="text-slate-500">PATCH /api/rules</code>.
       </span>
     </span>
   );

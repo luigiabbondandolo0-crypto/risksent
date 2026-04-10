@@ -7,7 +7,7 @@ type PerformanceFeedbackMockProps = {
   periodLabel?: string;
 };
 
-export function PerformanceFeedbackMock({ tradesCount, periodLabel = "periodo analizzato" }: PerformanceFeedbackMockProps) {
+export function PerformanceFeedbackMock({ tradesCount, periodLabel = "analysis period" }: PerformanceFeedbackMockProps) {
   return (
     <div className="rounded-xl border border-slate-800 bg-surface p-5">
       <h3 className="text-sm font-medium text-slate-200 mb-3 flex items-center gap-2">
@@ -15,18 +15,18 @@ export function PerformanceFeedbackMock({ tradesCount, periodLabel = "periodo an
         Feedback performance (mock)
       </h3>
       <p className="text-xs text-slate-500 mb-4">
-        In futuro questo blocco sarà alimentato da analisi AI. Per ora mostra dati di esempio.
+        In the future this block will be powered by AI analysis. For now it shows sample data.
       </p>
 
       <div className="space-y-4">
         <div>
           <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <TrendingUp className="h-3.5 w-3.5" />
-            Proiezione prossime mosse
+            Next-move projection
           </h4>
           <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-sm text-slate-300">
             <p className="italic">
-              Mantenere risk per trade sotto il 2%; evitare nuovi ingressi in sessioni già in drawdown. Possibile target su area di liquidità a +1,5% dal prezzo corrente.
+              Keep risk per trade below 2%; avoid new entries in sessions already in drawdown. Possible target around a liquidity area at +1.5% from current price.
             </p>
           </div>
         </div>
@@ -34,11 +34,11 @@ export function PerformanceFeedbackMock({ tradesCount, periodLabel = "periodo an
         <div>
           <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <Activity className="h-3.5 w-3.5" />
-            Trade nel {periodLabel}
+            Trades in {periodLabel}
           </h4>
           <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-sm text-slate-300">
             <p>
-              <strong>{tradesCount}</strong> trade chiusi. Distribuzione temporale e PnL saranno analizzati dall’AI per suggerimenti su timing e dimensione posizione.
+              <strong>{tradesCount}</strong> closed trades. Time distribution and PnL will be analyzed by AI for timing and position-size suggestions.
             </p>
           </div>
         </div>
@@ -46,11 +46,11 @@ export function PerformanceFeedbackMock({ tradesCount, periodLabel = "periodo an
         <div>
           <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-            Errori gravi
+            Critical errors
           </h4>
           <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-sm text-slate-300">
             <p className="text-slate-400">
-              Nessun errore grave rilevato nel periodo. L’AI in futuro segnalerà sovraesposizione, violazioni di regole o pattern ripetuti da correggere.
+              No critical errors detected in this period. In the future, AI will flag overexposure, rule violations, and repeated patterns to fix.
             </p>
           </div>
         </div>

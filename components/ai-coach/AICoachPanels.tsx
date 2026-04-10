@@ -46,8 +46,8 @@ export function AICoachPanels({ variant, data }: Props) {
       <header>
         <h1 className="rs-page-title">AI Coach</h1>
         <p className="rs-page-sub">
-          Analisi comportamentale, sessioni, simboli e parametri di rischio. Con dati reali richiede storico trade sufficiente;
-          l&apos;LLM sarà integrato nella release completa.
+          Behavioral analysis, sessions, symbols, and risk parameters. With live data, enough trade history is required;
+          the LLM will be integrated in the full release.
         </p>
       </header>
 
@@ -59,9 +59,9 @@ export function AICoachPanels({ variant, data }: Props) {
                 <Sparkles className="h-6 w-6 text-violet-300" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-white">Versione mock</h2>
+                <h2 className="text-lg font-semibold text-white">Mock version</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Stessi pannelli della vista live, popolati con dati dimostrativi. Nessuna chiamata a modelli esterni.
+                  Same panels as the live view, populated with demo data. No external model calls.
                 </p>
               </div>
             </div>
@@ -69,7 +69,7 @@ export function AICoachPanels({ variant, data }: Props) {
               href="/mock"
               className="inline-flex shrink-0 items-center justify-center rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2 text-sm font-medium text-violet-100 hover:bg-violet-500/25"
             >
-              Hub mock
+              Mock hub
             </Link>
           </div>
         </section>
@@ -78,35 +78,34 @@ export function AICoachPanels({ variant, data }: Props) {
       {!isMock && (
         <section className="rs-card border-cyan-500/20 bg-cyan-950/20 p-5 shadow-rs-soft">
           <p className="text-sm text-slate-300">
-            I punteggi dettagliati si popoleranno quando il backend AI sarà collegato. La struttura sotto riflette il layout
-            previsto.
+            Detailed scores will populate when the AI backend is connected. The structure below reflects the intended layout.
           </p>
         </section>
       )}
 
       {/* Analysis window + model */}
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <SectionTitle icon={Timer}>Finestra di analisi</SectionTitle>
+        <SectionTitle icon={Timer}>Analysis window</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-3">
             <p className="rs-kpi-label">Lookback</p>
-            <p className="mt-1 text-lg font-semibold text-white">{d ? `${d.analysisWindow.lookbackDays} giorni` : "—"}</p>
+            <p className="mt-1 text-lg font-semibold text-white">{d ? `${d.analysisWindow.lookbackDays} days` : "—"}</p>
           </div>
           <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-3">
-            <p className="rs-kpi-label">Trade minimi</p>
+            <p className="rs-kpi-label">Minimum trades</p>
             <p className="mt-1 text-lg font-semibold text-white">{d ? d.analysisWindow.minTrades : "—"}</p>
           </div>
           <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-3">
-            <p className="rs-kpi-label">Ultimo calcolo</p>
+            <p className="rs-kpi-label">Last calculation</p>
             <p className="mt-1 text-sm text-slate-300">
-              {d ? new Date(d.analysisWindow.lastComputed).toLocaleString("it-IT") : "—"}
+              {d ? new Date(d.analysisWindow.lastComputed).toLocaleString("en-GB") : "—"}
             </p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-800/60 pt-4 text-xs text-slate-500">
           <Brain className="h-4 w-4 text-slate-600" />
           <span>
-            Modello: <span className="text-slate-300">{d?.model.label ?? "—"}</span>
+            Model: <span className="text-slate-300">{d?.model.label ?? "—"}</span>
             {d && (
               <>
                 {" "}
@@ -120,15 +119,15 @@ export function AICoachPanels({ variant, data }: Props) {
 
       {/* Scores */}
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <SectionTitle icon={Gauge}>Punteggi (0–100)</SectionTitle>
+        <SectionTitle icon={Gauge}>Scores (0–100)</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {(
             [
-              ["Disciplina", "discipline"],
-              ["Coerenza rischio", "riskConsistency"],
-              ["Reattività emotiva", "emotionalReactivity"],
-              ["Aderenza strategia", "strategyAdherence"],
-              ["Complessivo", "overall"],
+              ["Discipline", "discipline"],
+              ["Risk consistency", "riskConsistency"],
+              ["Emotional reactivity", "emotionalReactivity"],
+              ["Strategy adherence", "strategyAdherence"],
+              ["Overall", "overall"],
             ] as const
           ).map(([label, key]) => (
             <div key={key} className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-3">
@@ -143,13 +142,13 @@ export function AICoachPanels({ variant, data }: Props) {
 
       {/* Behavioral metrics */}
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <SectionTitle icon={Activity}>Metriche comportamentali</SectionTitle>
+        <SectionTitle icon={Activity}>Behavioral metrics</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {(
             [
               ["↑ size dopo loss (media)", "avgSizeAfterLossPct", "%"],
-              ["Trade revenge (90g)", "revengeTradesCount", ""],
-              ["Fuori piano (stima)", "tradesOutsidePlanPct", "%"],
+              ["Revenge trades (90d)", "revengeTradesCount", ""],
+              ["Outside plan (estimate)", "tradesOutsidePlanPct", "%"],
               ["Max loss singola / equity", "largestSingleLossPct", "%"],
               ["Max losing streak", "consecutiveLossMax", ""],
             ] as const
@@ -167,12 +166,12 @@ export function AICoachPanels({ variant, data }: Props) {
       {/* Sessions + symbols */}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rs-card p-5 shadow-rs-soft">
-          <SectionTitle icon={BarChart3}>Win rate per sessione</SectionTitle>
+          <SectionTitle icon={BarChart3}>Win rate by session</SectionTitle>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
-                  <th className="py-2 font-medium">Sessione</th>
+                  <th className="py-2 font-medium">Session</th>
                   <th className="py-2 font-medium">Win %</th>
                   <th className="py-2 font-medium">Trade</th>
                 </tr>
@@ -188,7 +187,7 @@ export function AICoachPanels({ variant, data }: Props) {
                 {!d && (
                   <tr>
                     <td colSpan={3} className="py-6 text-center text-slate-500">
-                      Nessun dato
+                      No data
                     </td>
                   </tr>
                 )}
@@ -197,12 +196,12 @@ export function AICoachPanels({ variant, data }: Props) {
           </div>
         </section>
         <section className="rs-card p-5 shadow-rs-soft">
-          <SectionTitle icon={BarChart3}>Per simbolo</SectionTitle>
+          <SectionTitle icon={BarChart3}>By symbol</SectionTitle>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
-                  <th className="py-2 font-medium">Simbolo</th>
+                  <th className="py-2 font-medium">Symbol</th>
                   <th className="py-2 font-medium">Trade</th>
                   <th className="py-2 font-medium">Net R</th>
                   <th className="py-2 font-medium">Hold (min)</th>
@@ -220,7 +219,7 @@ export function AICoachPanels({ variant, data }: Props) {
                 {!d && (
                   <tr>
                     <td colSpan={4} className="py-6 text-center text-slate-500">
-                      Nessun dato
+                      No data
                     </td>
                   </tr>
                 )}
@@ -232,15 +231,15 @@ export function AICoachPanels({ variant, data }: Props) {
 
       {/* Parameters table */}
       <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-        <SectionTitle icon={ListChecks}>Parametri vs benchmark</SectionTitle>
+        <SectionTitle icon={ListChecks}>Parameters vs benchmark</SectionTitle>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-800 text-left text-xs text-slate-500">
-                <th className="py-2 pr-4 font-medium">Parametro</th>
-                <th className="py-2 pr-4 font-medium">Valore</th>
+                <th className="py-2 pr-4 font-medium">Parameter</th>
+                <th className="py-2 pr-4 font-medium">Value</th>
                 <th className="py-2 pr-4 font-medium">Target</th>
-                <th className="py-2 font-medium">Stato</th>
+                <th className="py-2 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -280,7 +279,7 @@ export function AICoachPanels({ variant, data }: Props) {
             : "rs-card p-5 sm:p-6 shadow-rs-soft"
         }
       >
-        <SectionTitle icon={Sparkles}>Insight narrativi</SectionTitle>
+        <SectionTitle icon={Sparkles}>Narrative insights</SectionTitle>
         <ul className={isMock ? "mt-2 grid gap-4 sm:grid-cols-2" : "space-y-3"}>
           {(d?.insights ?? []).map((ins) => (
             <li
@@ -297,7 +296,7 @@ export function AICoachPanels({ variant, data }: Props) {
           ))}
           {!d && (
             <li className="rounded-xl border border-dashed border-slate-700 py-8 text-center text-slate-500 sm:col-span-2">
-              Nessun insight ancora — collega l&apos;account e accumula trade.
+              No insights yet — connect the account and accumulate trades.
             </li>
           )}
         </ul>
@@ -312,7 +311,7 @@ export function AICoachPanels({ variant, data }: Props) {
               : "rs-card p-5 shadow-rs-soft"
           }
         >
-          <SectionTitle icon={ListChecks}>Focus settimanale</SectionTitle>
+          <SectionTitle icon={ListChecks}>Weekly focus</SectionTitle>
           <ol className={isMock ? "mt-3 space-y-3" : "list-decimal space-y-2 pl-5 text-sm text-slate-300"}>
             {(d?.weeklyFocus ?? []).map((line, i) =>
               isMock ? (

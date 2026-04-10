@@ -346,7 +346,7 @@ export default function RulesPage() {
             <p className="text-xs text-slate-500 mb-4">Thresholds govern alert triggers and sanity scoring. When a limit is exceeded, an alert is created and sent to Telegram (if linked).</p>
             <div className="rounded-lg border border-slate-700 bg-slate-800/30 px-3 py-2 mb-4 text-[11px] text-slate-400 space-y-1">
               <p><strong className="text-slate-300">Test alerts:</strong> Use &quot;Send test alert&quot; below to verify Telegram. To trigger real risk alerts with small lots, lower e.g. Daily Loss to 0.5% so even a small loss can breach the limit.</p>
-              <p><strong className="text-slate-300">Stop Loss / Take Profit:</strong> Impostali nel terminale MetaTrader o nel flusso del broker quando apri un trade (livelli prezzo per protezione).</p>
+              <p><strong className="text-slate-300">Stop Loss / Take Profit:</strong> Set them in the MetaTrader terminal or in your broker flow when opening a trade (price levels for protection).</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

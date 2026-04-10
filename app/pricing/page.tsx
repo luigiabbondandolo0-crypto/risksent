@@ -118,7 +118,7 @@ export default function PricingPage() {
                 <p className="text-xl font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.name}</p>
                 <div className="mt-3 flex items-end gap-2">
                   <span className="text-[56px] leading-none font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.price}</span>
-                  <span className="mb-2 text-slate-500 font-mono">/ mese</span>
+                  <span className="mb-2 text-slate-500 font-mono">/ month</span>
                 </div>
                 <p className="mt-2 text-xs text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{plan.subtitle}</p>
                 <Link href="/signup"
@@ -141,7 +141,7 @@ export default function PricingPage() {
           ))}
         </div>
         <div className="max-w-5xl mx-auto mt-4 text-center">
-          <p className="text-[11px] font-mono text-slate-600">Piani mensili · cancellazione in qualsiasi momento</p>
+          <p className="text-[11px] font-mono text-slate-600">Monthly plans · cancel anytime</p>
         </div>
       </section>
 
