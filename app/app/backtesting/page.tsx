@@ -1,7 +1,5 @@
-"use client";
+import { BacktestingDashboard } from "@/components/backtesting/BacktestingDashboard";
 
-import { BacktestingApp } from "@/components/backtesting/BacktestingApp";
-
-export default function LiveBacktestingPage() {
-  return <BacktestingApp variant="live" />;
+export default function AppBacktestingPage() {
+  return <BacktestingDashboard basePath="/app/backtesting" />;
 }
