@@ -17,7 +17,6 @@ import { AlertsOverview } from "./components/AlertsOverview";
 import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
-import { AccountHealthCard } from "./components/AccountHealthCard";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
 
 type Account = {
@@ -448,7 +447,7 @@ export default function DashboardPage() {
       <AlertsOverview />
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats?.balancePct} suffix="%" />
@@ -459,7 +458,7 @@ export default function DashboardPage() {
             {stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
             <AnimatedNumber value={stats?.equityPct} suffix="%" />
@@ -470,7 +469,7 @@ export default function DashboardPage() {
             {stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Win rate & avg R:R</span>
             <button
@@ -512,8 +511,8 @@ export default function DashboardPage() {
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Avg win</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
             <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
@@ -522,7 +521,7 @@ export default function DashboardPage() {
             {stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
           </div>
         </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Avg loss</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
             <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />
@@ -532,7 +531,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rs-card-accent p-5 shadow-rs-soft">
+        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
             <AnimatedNumber
@@ -543,9 +542,6 @@ export default function DashboardPage() {
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
           </div>
-        </div>
-        <div className="w-full">
-          <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
         </div>
       </section>
 
