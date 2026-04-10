@@ -8,7 +8,7 @@ import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const { isAdmin } = await checkAdminRole();
 
@@ -28,7 +28,7 @@ export async function PATCH(
     }
 
     const admin = createSupabaseAdmin();
-    const userId = params.id;
+    const { id: userId } = await context.params;
 
     // Update the role in app_user
     const { error: updateError } = await admin
