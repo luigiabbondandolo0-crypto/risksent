@@ -17,6 +17,7 @@ import { RiskRewardTableModal } from "@/app/dashboard/components/RiskRewardTable
 import { WinsLossesGauge } from "@/app/dashboard/components/WinsLossesGauge";
 import { MockQuickActions } from "@/app/mock/components/MockQuickActions";
 import { DashboardAlertsSection } from "@/components/dashboard/DashboardAlertsSection";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 import {
   MOCK_CURRENCY,
   MOCK_DASHBOARD_STATS,
@@ -27,15 +28,20 @@ import {
 const MOCK_UUID = "mock-uuid";
 const MOCK_ACCOUNT_LABEL = "500123 · FTMO Demo";
 
-function PctLabel({ value }: { value: number | null }) {
-  if (value == null) return null;
-  const isPos = value >= 0;
-  return (
-    <span className={isPos ? "text-emerald-400" : "text-red-400"}>
-      {isPos ? "+" : ""}
-      {value.toFixed(2)}%
-    </span>
-  );
+type RuleStatus = "safe" | "watch" | "high";
+
+function getRuleStatus(current: number | null, limit: number): RuleStatus {
+  if (current == null || limit <= 0) return "safe";
+  const ratio = Math.abs(current) / limit;
+  if (ratio >= 0.95) return "high";
+  if (ratio >= 0.75) return "watch";
+  return "safe";
+}
+
+function ruleStatusPill(status: RuleStatus) {
+  if (status === "high") return "border-red-500/40 bg-red-500/15 text-red-300";
+  if (status === "watch") return "border-orange-500/40 bg-orange-500/15 text-orange-300";
+  return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
 }
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
@@ -124,45 +130,68 @@ export function MockDashboardClient() {
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
             <div className="rs-kpi-label">Daily loss</div>
-            <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.daily_loss_pct}%</div>
+            <div className="mt-2 inline-flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${
+                getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct) === "watch"
+                  ? "bg-orange-400 animate-pulse"
+                  : getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct) === "high"
+                  ? "bg-red-400"
+                  : "bg-emerald-400"
+              }`} />
+              <span className={`${ruleStatusPill(getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
+                {riskRules.daily_loss_pct}% limit
+              </span>
+            </div>
           </div>
           <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
             <div className="rs-kpi-label">Risk / trade</div>
-            <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_risk_per_trade_pct}%</div>
+            <div className="mt-2 inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
+                {riskRules.max_risk_per_trade_pct}% limit
+              </span>
+            </div>
           </div>
           <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
             <div className="rs-kpi-label">Exposure</div>
-            <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_exposure_pct}%</div>
+            <div className="mt-2 inline-flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${
+                getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct) === "watch"
+                  ? "bg-orange-400 animate-pulse"
+                  : getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct) === "high"
+                  ? "bg-red-400"
+                  : "bg-emerald-400"
+              }`} />
+              <span className={`${ruleStatusPill(getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
+                {riskRules.max_exposure_pct}% limit
+              </span>
+            </div>
           </div>
           <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
             <div className="rs-kpi-label">Revenge</div>
-            <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.revenge_threshold_trades}</div>
+            <div className="mt-2 inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
+                {riskRules.revenge_threshold_trades} losses
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Balance & equity</div>
-          <div className="mt-2 space-y-2">
-            <div>
-              <div className="text-lg font-bold text-white">
-                {stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-              </div>
-              <div className="text-sm">
-                <PctLabel value={stats.balancePct} /> <span className="text-xs text-slate-500">balance</span>
-              </div>
-            </div>
-            <div>
-              <div className="text-lg font-bold text-cyan-400">
-                {stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-              </div>
-              <div className="text-sm">
-                <PctLabel value={stats.equityPct} /> <span className="text-xs text-slate-500">equity</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <MetricCard
+          label="Balance %"
+          value={stats.balancePct}
+          suffix="%"
+          note={`${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+        />
+        <MetricCard
+          label="Equity %"
+          value={stats.equityPct}
+          suffix="%"
+          note={`${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+        />
 
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
@@ -205,44 +234,27 @@ export function MockDashboardClient() {
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
 
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Average win / loss</div>
-          <div className="mt-2 space-y-2">
-            <div>
-              <span className="font-bold text-emerald-400">
-                +{stats.avgWin.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-              </span>
-              <span className="ml-1 text-xs text-slate-500">({stats.avgWinPct.toFixed(2)}%)</span>
-            </div>
-            <div>
-              <span className="font-bold text-red-400">
-                -{Math.abs(stats.avgLoss).toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-              </span>
-              <span className="ml-1 text-xs text-slate-500">({stats.avgLossPct.toFixed(2)}%)</span>
-            </div>
-          </div>
-          <div className="mt-2 border-t border-slate-700/50 pt-2 text-sm">
-            <span className="text-slate-500">Profit factor </span>
-            <span className="font-bold text-white">{stats.profitFactor.toFixed(2)}</span>
-          </div>
-        </div>
+        <MetricCard
+          label="Avg Win %"
+          value={stats.avgWinPct}
+          suffix="%"
+          note={`+${stats.avgWin.toFixed(2)} ${currency}`}
+        />
+        <MetricCard
+          label="Avg Loss %"
+          value={stats.avgLossPct}
+          suffix="%"
+          positiveIsGood={false}
+          note={`${stats.avgLoss.toFixed(2)} ${currency}`}
+        />
 
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Max drawdown</div>
-          <div className="mt-1 text-xl font-bold text-red-400">
-            {Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-          </div>
-          <span className="mt-1 inline-block rounded-full bg-red-500/20 px-2 py-0.5 text-sm font-semibold text-red-400">
-            -{stats.highestDdPct?.toFixed(2)}%
-          </span>
-          <p className="mt-2 text-[11px] text-slate-500">
-            {new Date(stats.peakDdDate).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </p>
-        </div>
+        <MetricCard
+          label="Max Drawdown %"
+          value={-Math.abs(stats.highestDdPct ?? 0)}
+          suffix="%"
+          positiveIsGood={false}
+          note={new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+        />
 
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
@@ -283,8 +295,8 @@ export function MockDashboardClient() {
             >
               <defs>
                 <linearGradient id="mockLiveEquityGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#475569" }} />
@@ -294,11 +306,19 @@ export function MockDashboardClient() {
                 axisLine={{ stroke: "#475569" }}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "8px" }}
-                formatter={(value: number, _n: string, props: { payload?: { value?: number } }) => [
-                  `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
-                  "Growth",
-                ]}
+                cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload[0]?.payload) return null;
+                  const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
+                  return (
+                    <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
+                      <p className="text-[11px] text-slate-400">{row.displayDate}</p>
+                      <p className="text-sm font-semibold text-slate-100 rs-mono">
+                        {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+                      </p>
+                    </div>
+                  );
+                }}
               />
               <ReferenceLine
                 y={-riskRules.daily_loss_pct}
@@ -309,9 +329,12 @@ export function MockDashboardClient() {
               <Area
                 type="monotone"
                 dataKey="pctFromStart"
-                stroke="#22d3ee"
-                strokeWidth={2}
+                stroke="#ff3c3c"
+                strokeWidth={2.5}
                 fill="url(#mockLiveEquityGrad)"
+                isAnimationActive
+                animationDuration={900}
+                animationEasing="ease-out"
               />
               <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" />
             </AreaChart>

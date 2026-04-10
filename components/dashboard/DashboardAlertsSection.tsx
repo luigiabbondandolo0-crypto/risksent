@@ -26,7 +26,7 @@ function severityStyles(sev: string) {
   if (sev === "high") {
     return {
       bar: "from-red-500 via-rose-500 to-orange-500",
-      glow: "shadow-[0_0_24px_-4px_rgba(239,68,68,0.45)]",
+      glow: "shadow-[0_0_28px_-6px_rgba(255,60,60,0.45)]",
       badge: "bg-red-500/20 text-red-300 ring-red-500/30",
       icon: "text-red-400",
     };
@@ -97,10 +97,11 @@ export function DashboardAlertsSection({
               return (
                 <li
                   key={a.id}
-                  className={`group relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-950/50 p-4 transition-all duration-200 hover:border-slate-600/80 ${s.glow}`}
+                  className={`group relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-950/50 p-4 transition-all duration-200 hover:border-slate-600/80 ${s.glow} ${a.severity === "high" ? "animate-alert-shake-in" : ""}`}
                 >
                   <div
                     className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b ${s.bar} opacity-90`}
+                    style={{ width: "4px" }}
                     aria-hidden
                   />
                   <div className="pl-3">
@@ -108,7 +109,7 @@ export function DashboardAlertsSection({
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
-                        {!a.read && (
+                        {a.severity === "medium" && (
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-40" />
                             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />

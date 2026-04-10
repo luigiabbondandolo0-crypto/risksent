@@ -19,6 +19,7 @@ import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { AccountHealthCard } from "./components/AccountHealthCard";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 
 type Account = {
   id: string;
@@ -66,20 +67,25 @@ type Stats = {
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
 
+type RuleStatus = "safe" | "watch" | "high";
+
+function getRuleStatus(current: number | null, limit: number): RuleStatus {
+  if (current == null || limit <= 0) return "safe";
+  const ratio = Math.abs(current) / limit;
+  if (ratio >= 0.95) return "high";
+  if (ratio >= 0.75) return "watch";
+  return "safe";
+}
+
+function ruleStatusPill(status: RuleStatus) {
+  if (status === "high") return "border-red-500/40 bg-red-500/15 text-red-300";
+  if (status === "watch") return "border-orange-500/40 bg-orange-500/15 text-orange-300";
+  return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+}
+
 
 const POLL_MS = 45_000;
 const CHECK_RISK_THROTTLE_MS = 1 * 60 * 1000; // 1 min — live-ish when dashboard open; cron runs every 2 min for all accounts
-
-function PctLabel({ value }: { value: number | null }) {
-  if (value == null) return null;
-  const isPos = value >= 0;
-  return (
-    <span className={isPos ? "text-emerald-400" : "text-red-400"}>
-      {isPos ? "+" : ""}
-      {value.toFixed(2)}%
-    </span>
-  );
-}
 
 export default function DashboardPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -333,19 +339,52 @@ export default function DashboardPage() {
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="rs-kpi-label">Daily loss</div>
-              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.daily_loss_pct}%</div>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs rs-mono font-semibold uppercase tracking-wide
+                border-inherit">
+                <span className={`h-2 w-2 rounded-full ${
+                  getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct) === "watch"
+                    ? "bg-orange-400 animate-pulse"
+                    : getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct) === "high"
+                    ? "bg-red-400"
+                    : "bg-emerald-400"
+                }`} />
+                <span className={`${ruleStatusPill(getRuleStatus(stats?.dailyDdPct ?? null, riskRules.daily_loss_pct))} rounded-full border px-2 py-0.5`}>
+                  {riskRules.daily_loss_pct}% limit
+                </span>
+              </div>
             </div>
             <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="rs-kpi-label">Risk / trade</div>
-              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_risk_per_trade_pct}%</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
+                  {riskRules.max_risk_per_trade_pct}% limit
+                </span>
+              </div>
             </div>
             <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="rs-kpi-label">Exposure</div>
-              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.max_exposure_pct}%</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${
+                  getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) === "watch"
+                    ? "bg-orange-400 animate-pulse"
+                    : getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) === "high"
+                    ? "bg-red-400"
+                    : "bg-emerald-400"
+                }`} />
+                <span className={`${ruleStatusPill(getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
+                  {riskRules.max_exposure_pct}% limit
+                </span>
+              </div>
             </div>
             <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="rs-kpi-label">Revenge</div>
-              <div className="mt-1 text-lg font-semibold tabular-nums text-white">{riskRules.revenge_threshold_trades}</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
+                  {riskRules.revenge_threshold_trades} losses
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -363,28 +402,18 @@ export default function DashboardPage() {
       )}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
-        {/* Balance + Equity in one card */}
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Balance & equity</div>
-          <div className="mt-2 space-y-2">
-            <div>
-              <div className="text-lg font-bold text-white">
-                {stats == null || stats.error ? "—" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-              </div>
-              {stats && !stats.error && stats.balancePct != null && (
-                <div className="text-sm"><PctLabel value={stats.balancePct} /> <span className="text-slate-500 text-xs">balance</span></div>
-              )}
-            </div>
-            <div>
-              <div className="text-lg font-bold text-cyan-400">
-                {stats == null || stats.error ? "—" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-              </div>
-              {stats && !stats.error && stats.equityPct != null && (
-                <div className="text-sm"><PctLabel value={stats.equityPct} /> <span className="text-slate-500 text-xs">equity</span></div>
-              )}
-            </div>
-          </div>
-        </div>
+        <MetricCard
+          label="Balance %"
+          value={stats?.balancePct ?? null}
+          suffix="%"
+          note={stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+        />
+        <MetricCard
+          label="Equity %"
+          value={stats?.equityPct ?? null}
+          suffix="%"
+          note={stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+        />
 
         {/* Win rate + Avg R:R + wins/losses gauge + info */}
         <div className="rs-card p-5 shadow-rs-soft">
@@ -426,40 +455,28 @@ export default function DashboardPage() {
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
 
-        {/* Average Win + Average Loss + ratio + profit factor */}
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Average win / loss</div>
-          <div className="mt-2 space-y-2">
-            <div>
-              <span className="text-emerald-400 font-bold">{stats?.avgWin != null ? `+${stats.avgWin.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
-              {stats?.avgWinPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgWinPct.toFixed(2)}%)</span>}
-            </div>
-            <div>
-              <span className="text-red-400 font-bold">{stats?.avgLoss != null ? `-${stats.avgLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}</span>
-              {stats?.avgLossPct != null && <span className="text-slate-500 text-xs ml-1">({stats.avgLossPct.toFixed(2)}%)</span>}
-            </div>
-          </div>
-          <div className="mt-2 pt-2 border-t border-slate-700/50 text-sm">
-            <span className="text-slate-500">Profit factor </span>
-            <span className="font-bold text-white">{stats?.profitFactor != null ? stats.profitFactor.toFixed(2) : "—"}</span>
-          </div>
-        </div>
+        <MetricCard
+          label="Avg Win %"
+          value={stats?.avgWinPct ?? null}
+          suffix="%"
+          note={stats?.avgWin != null ? `+${stats.avgWin.toFixed(2)} ${currency}` : "No data"}
+        />
+        <MetricCard
+          label="Avg Loss %"
+          value={stats?.avgLossPct ?? null}
+          suffix="%"
+          positiveIsGood={false}
+          note={stats?.avgLoss != null ? `${stats.avgLoss.toFixed(2)} ${currency}` : "No data"}
+        />
 
         {/* Max DD — highest registered, $ + % + date */}
-        <div className="rs-card p-5 shadow-rs-soft">
-          <div className="rs-kpi-label">Max drawdown</div>
-          <div className="mt-1 text-xl font-bold text-red-400">
-            {stats?.maxDdDollars != null ? `${stats.maxDdDollars < 0 ? "" : "-"}${Math.abs(stats.maxDdDollars).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}` : "—"}
-          </div>
-          {stats?.highestDdPct != null && (
-            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-sm font-semibold">
-              -{stats.highestDdPct.toFixed(2)}%
-            </span>
-          )}
-          {stats?.peakDdDate && (
-            <p className="mt-2 text-[11px] text-slate-500">{new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
-          )}
-        </div>
+        <MetricCard
+          label="Max Drawdown %"
+          value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
+          suffix="%"
+          positiveIsGood={false}
+          note={stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
+        />
 
         {/* Account Health */}
         <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
@@ -505,8 +522,8 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <XAxis
@@ -522,19 +539,19 @@ export default function DashboardPage() {
                   tickLine={{ stroke: "#475569" }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: "8px"
+                  cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || !payload[0]?.payload) return null;
+                    const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
+                    return (
+                      <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
+                        <p className="text-[11px] text-slate-400">{row.displayDate}</p>
+                        <p className="text-sm font-semibold text-slate-100 rs-mono">
+                          {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+                        </p>
+                      </div>
+                    );
                   }}
-                  labelStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number, _name: string, props: { payload?: { value?: number; pctFromStart?: number } }) => [
-                    `${Number(value).toFixed(2)}% · ${(props.payload?.value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`,
-                    "Growth"
-                  ]}
-                  labelFormatter={(_: string, payload: { payload?: { displayDate?: string } }[]) =>
-                    payload?.[0]?.payload?.displayDate ?? ""
-                  }
                 />
                 {riskRules && (
                   <ReferenceLine
@@ -547,9 +564,12 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="pctFromStart"
-                  stroke="#22d3ee"
-                  strokeWidth={2}
+                  stroke="#ff3c3c"
+                  strokeWidth={2.5}
                   fill="url(#equityGrad)"
+                  isAnimationActive
+                  animationDuration={900}
+                  animationEasing="ease-out"
                 />
                 <Brush
                   dataKey="displayDate"

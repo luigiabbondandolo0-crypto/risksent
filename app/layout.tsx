@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 
 const inter = Inter({ subsets: ["latin"] });
+const syne = Syne({ subsets: ["latin"], variable: "--font-display" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "RiskSent – Trading Risk Dashboard",
@@ -23,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.className} min-h-screen bg-background text-slate-100 antialiased`}
+        className={`${inter.className} ${syne.variable} ${jetbrainsMono.variable} min-h-screen bg-background text-slate-100 antialiased`}
       >
         <div className="flex min-h-screen flex-col">
           <RootLayoutChrome>{children}</RootLayoutChrome>
