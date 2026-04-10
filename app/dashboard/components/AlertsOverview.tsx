@@ -15,9 +15,11 @@ type AlertRow = {
 
 type AlertsOverviewProps = {
   onRefresh?: () => void;
+  /** When false, empty state shows “No alerts” (no linked trading account). */
+  hasLinkedAccount?: boolean;
 };
 
-export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
+export function AlertsOverview({ onRefresh, hasLinkedAccount = true }: AlertsOverviewProps) {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +45,12 @@ export function AlertsOverview({ onRefresh }: AlertsOverviewProps) {
       viewAllHref="/rules#alerts"
       viewAllLabel="Open alerts center"
       subtitle="Unread items that need attention"
+      emptyHeadline={hasLinkedAccount ? undefined : "No alerts"}
+      emptyDescription={
+        hasLinkedAccount
+          ? undefined
+          : "Link a trading account to receive live risk alerts."
+      }
     />
   );
 }

@@ -115,15 +115,21 @@ function AnimatedNumber({
 const POLL_MS = 45_000;
 
 export default function DashboardPage() {
-  const [selectedUuid] = useState<string | null>(null);
+  const [linkedMetaId, setLinkedMetaId] = useState<string | null>(null);
+  const [accountsResolved, setAccountsResolved] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
+  const [rulesConfigured, setRulesConfigured] = useState(false);
+  const [rulesResolved, setRulesResolved] = useState(false);
   const [rulesPopupOpen, setRulesPopupOpen] = useState(false);
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [syncing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const pageReady = accountsResolved && rulesResolved;
+  const noLinkedAccount = accountsResolved && !linkedMetaId;
+  const kpiLoading = Boolean(linkedMetaId && stats === null);
+  const noKpi = noLinkedAccount || Boolean(stats?.error);
 
   const fetchStats = useCallback(async (uuid: string | null) => {
     if (uuid === null) return;
@@ -152,8 +158,36 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Official live dashboard: no account linking / mtapi dependency.
-    setLoading(false);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/accounts");
+        if (!res.ok) {
+          if (!cancelled) {
+            setLinkedMetaId(null);
+            setAccountsResolved(true);
+          }
+          return;
+        }
+        const data = await res.json();
+        const accounts = (data.accounts ?? []) as {
+          metaapi_account_id?: string | null;
+        }[];
+        const linked = accounts.find((a) => Boolean(a.metaapi_account_id));
+        if (!cancelled) {
+          setLinkedMetaId(linked?.metaapi_account_id ?? null);
+          setAccountsResolved(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setLinkedMetaId(null);
+          setAccountsResolved(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -162,28 +196,41 @@ export default function DashboardPage() {
         const res = await fetch("/api/rules");
         if (res.ok) {
           const r = await res.json();
-          setRiskRules({
-            daily_loss_pct: Number(r.daily_loss_pct) ?? 5,
-            max_risk_per_trade_pct: Number(r.max_risk_per_trade_pct) ?? 1,
-            max_exposure_pct: Number(r.max_exposure_pct) ?? 6,
-            revenge_threshold_trades: Number(r.revenge_threshold_trades) ?? 3
-          });
+          const configured = r.configured !== false;
+          setRulesConfigured(configured);
+          if (configured) {
+            setRiskRules({
+              daily_loss_pct: Number(r.daily_loss_pct) ?? 5,
+              max_risk_per_trade_pct: Number(r.max_risk_per_trade_pct) ?? 1,
+              max_exposure_pct: Number(r.max_exposure_pct) ?? 6,
+              revenge_threshold_trades: Number(r.revenge_threshold_trades) ?? 3
+            });
+          } else {
+            setRiskRules(null);
+          }
         } else {
+          setRulesConfigured(false);
           setRiskRules(null);
         }
       } catch {
+        setRulesConfigured(false);
         setRiskRules(null);
+      } finally {
+        setRulesResolved(true);
       }
     })();
   }, []);
 
   useEffect(() => {
-    if (selectedUuid == null) return;
+    if (linkedMetaId == null) {
+      setStats(null);
+      return;
+    }
     setStats(null);
-    fetchStats(selectedUuid);
-    const t = setInterval(() => fetchStats(selectedUuid), POLL_MS);
+    fetchStats(linkedMetaId);
+    const t = setInterval(() => fetchStats(linkedMetaId), POLL_MS);
     return () => clearInterval(t);
-  }, [selectedUuid, fetchStats]);
+  }, [linkedMetaId, fetchStats]);
 
   const currency = stats?.currency ?? "EUR";
   const curve = stats?.equityCurve ?? [];
@@ -259,7 +306,7 @@ export default function DashboardPage() {
         <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0" />
       </header>
 
-      {loading && (
+      {!pageReady && (
         <div className="rs-card overflow-hidden p-6" aria-hidden>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
@@ -276,21 +323,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {error && (
-        <div
-          className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-          role="alert"
-        >
-          {error}
-        </div>
-      )}
-
-      {!loading && (
+      {pageReady && (
       <>
       <section className="rs-card-accent p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h3 className="text-base font-semibold tracking-tight text-slate-100">Active risk rules</h3>
-          {riskRules ? (
+          {rulesConfigured && riskRules ? (
             <button
               type="button"
               onClick={() => setRulesPopupOpen(true)}
@@ -303,11 +341,11 @@ export default function DashboardPage() {
               href="/app/risk-manager"
               className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
             >
-              Set rules
+              Set your risk rules
             </Link>
           )}
         </div>
-        {riskRules && (
+        {rulesConfigured && riskRules ? (
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="rs-kpi-label">Daily loss</div>
@@ -359,9 +397,48 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Daily loss</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
+                  0% limit
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Risk / trade</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
+                  0% limit
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Exposure</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
+                  0% limit
+                </span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+              <div className="rs-kpi-label">Revenge</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-slate-600" />
+                <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-semibold text-slate-400 rs-mono">
+                  0 losses
+                </span>
+              </div>
+            </div>
+          </div>
         )}
       </section>
-      {riskRules && (
+      {rulesConfigured && riskRules && (
         <RulesEditPopup
           open={rulesPopupOpen}
           onClose={() => setRulesPopupOpen(false)}
@@ -373,29 +450,41 @@ export default function DashboardPage() {
         />
       )}
 
-      <AlertsOverview />
+      <AlertsOverview hasLinkedAccount={!noLinkedAccount} />
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            <AnimatedNumber value={stats?.balancePct} suffix="%" />
+            {noKpi ? (
+              <span>No data</span>
+            ) : kpiLoading ? (
+              <span className="text-slate-500">Loading…</span>
+            ) : (
+              <AnimatedNumber value={stats?.balancePct} suffix="%" />
+            )}
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
-            (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+            noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
           }`}>
-            {stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+            {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            <AnimatedNumber value={stats?.equityPct} suffix="%" />
+            {noKpi ? (
+              <span>No data</span>
+            ) : kpiLoading ? (
+              <span className="text-slate-500">Loading…</span>
+            ) : (
+              <AnimatedNumber value={stats?.equityPct} suffix="%" />
+            )}
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
-            (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+            noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
           }`}>
-            {stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+            {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
           </div>
         </div>
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
@@ -414,9 +503,15 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-3 mt-1">
             <div>
               <div className="text-2xl font-bold text-white">
-                <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />
+                {noKpi ? (
+                  <span>No data</span>
+                ) : kpiLoading ? (
+                  <span className="text-slate-500">Loading…</span>
+                ) : (
+                  <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />
+                )}
               </div>
-              {winRateTrend != null && (
+              {!noKpi && !kpiLoading && winRateTrend != null && (
                 <p className="mt-0.5 text-xs text-slate-400">
                   {winRateTrend.diff >= 0 ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span> : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
                 </p>
@@ -424,11 +519,17 @@ export default function DashboardPage() {
               <div className="mt-2 pt-2 border-t border-slate-700/50">
                 <span className="text-xs text-slate-500">Avg R:R </span>
                 <span className="text-lg font-bold text-white">
-                  <AnimatedNumber value={stats?.avgRiskReward} />
+                  {noKpi ? (
+                    "No data"
+                  ) : kpiLoading ? (
+                    <span className="text-slate-500">Loading…</span>
+                  ) : (
+                    <AnimatedNumber value={stats?.avgRiskReward} />
+                  )}
                 </span>
               </div>
             </div>
-            {(stats?.winsCount != null || stats?.lossesCount != null) && (
+            {!noKpi && !kpiLoading && (stats?.winsCount != null || stats?.lossesCount != null) && (
               <WinsLossesGauge
                 wins={stats?.winsCount ?? 0}
                 losses={stats?.lossesCount ?? 0}
@@ -443,47 +544,63 @@ export default function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Avg win</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
-            <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
+          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
+            {noKpi ? (
+              "No data"
+            ) : kpiLoading ? (
+              <span className="text-slate-500">Loading…</span>
+            ) : (
+              <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
+            )}
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
+            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
           </div>
         </div>
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Avg loss</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />
+          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+            {noKpi ? (
+              "No data"
+            ) : kpiLoading ? (
+              <span className="text-slate-500">Loading…</span>
+            ) : (
+              <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />
+            )}
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
+            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
           </div>
         </div>
 
         <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
           <div className="rs-kpi-label">Max drawdown</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            <AnimatedNumber
-              value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
-              suffix="%"
-            />
+          <div className={`mt-1 text-2xl font-bold rs-mono ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+            {noKpi ? (
+              "No data"
+            ) : kpiLoading ? (
+              <span className="text-slate-500">Loading…</span>
+            ) : (
+              <AnimatedNumber
+                value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
+                suffix="%"
+              />
+            )}
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
+            {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
           </div>
         </div>
       </section>
 
-      {/* Daily DD & Current Exposure — single card (mock values when no data) */}
-      {riskRules && (
-        <DdExposureCard
-          dailyDdPct={stats?.dailyDdPct ?? -0.52}
-          dailyLimitPct={riskRules.daily_loss_pct}
-          exposurePct={stats?.currentExposurePct ?? 2.3}
-          exposureLimitPct={riskRules.max_exposure_pct}
-          isMock={stats?.dailyDdPct == null && stats?.currentExposurePct == null}
-        />
-      )}
+      {/* Daily DD & Current Exposure */}
+      <DdExposureCard
+        dailyDdPct={noLinkedAccount ? 0 : stats?.dailyDdPct ?? null}
+        dailyLimitPct={rulesConfigured && riskRules ? riskRules.daily_loss_pct : 0}
+        exposurePct={noLinkedAccount ? 0 : stats?.currentExposurePct ?? null}
+        exposureLimitPct={rulesConfigured && riskRules ? riskRules.max_exposure_pct : 0}
+        isMock={false}
+      />
 
       {/* Equity curve — full width, below Daily DD & exposure */}
       <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
@@ -494,7 +611,11 @@ export default function DashboardPage() {
         {stats?.error && <p className="mb-3 text-sm text-amber-400/95">{stats.error}</p>}
         {curve.length === 0 && !stats?.error && (
           <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm text-slate-500">
-            {stats == null ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
+            {noLinkedAccount
+              ? "No data"
+              : kpiLoading
+                ? "Loading…"
+                : "No data yet. Link an account and place trades to see the curve."}
           </div>
         )}
         {curve.length > 0 && (
@@ -545,7 +666,7 @@ export default function DashboardPage() {
                     );
                   }}
                 />
-                {riskRules && (
+                {rulesConfigured && riskRules && riskRules.daily_loss_pct > 0 && (
                   <ReferenceLine
                     y={-riskRules.daily_loss_pct}
                     stroke="#ef4444"
@@ -623,7 +744,7 @@ export default function DashboardPage() {
             return dayData ? (
               <Link
                 key={dateStr}
-                href={`/trades?date=${dateStr}${selectedUuid ? `&uuid=${encodeURIComponent(selectedUuid)}` : ""}`}
+                href={`/trades?date=${dateStr}${linkedMetaId ? `&uuid=${encodeURIComponent(linkedMetaId)}` : ""}`}
                 className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
                 title={`View trades on ${dateStr}`}
               >

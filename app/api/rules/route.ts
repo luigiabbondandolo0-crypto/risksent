@@ -30,6 +30,7 @@ export async function GET() {
 
   if (error || !row) {
     return NextResponse.json({
+      configured: false,
       daily_loss_pct: 2,
       max_risk_per_trade_pct: 1,
       max_exposure_pct: 15,
@@ -40,6 +41,7 @@ export async function GET() {
 
   const chatId = row.telegram_chat_id;
   return NextResponse.json({
+    configured: true,
     daily_loss_pct: Number(row.daily_loss_pct) ?? 2,
     max_risk_per_trade_pct: Number(row.max_risk_per_trade_pct) ?? 1,
     max_exposure_pct: Number(row.max_exposure_pct) ?? 15,

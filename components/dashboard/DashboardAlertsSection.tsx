@@ -21,6 +21,9 @@ type Props = {
   viewAllLabel?: string;
   title?: string;
   subtitle?: string;
+  /** When the empty state is shown, override the default “All clear” copy */
+  emptyHeadline?: string;
+  emptyDescription?: string;
 };
 
 function severityStyles(sev: string) {
@@ -50,6 +53,8 @@ export function DashboardAlertsSection({
   viewAllLabel = "Alerts center",
   title = "Live alerts",
   subtitle = "Unread and recent risk signals",
+  emptyHeadline = "All clear",
+  emptyDescription = "No pending alerts — rules are quiet for now.",
 }: Props) {
   const pending = items.filter((a) => !a.read).slice(0, maxItems);
 
@@ -99,10 +104,8 @@ export function DashboardAlertsSection({
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/30">
               <Sparkles className="h-6 w-6 text-emerald-400/90" />
             </div>
-            <p className="text-sm font-medium text-emerald-200/90">All clear</p>
-            <p className="mt-1 max-w-sm text-xs text-slate-500">
-              No pending alerts — rules are quiet for now.
-            </p>
+            <p className="text-sm font-medium text-emerald-200/90">{emptyHeadline}</p>
+            <p className="mt-1 max-w-sm text-xs text-slate-500">{emptyDescription}</p>
           </motion.div>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
