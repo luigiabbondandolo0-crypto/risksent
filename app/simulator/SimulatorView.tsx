@@ -1,18 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, Info } from "lucide-react";
-import { ProgressBar } from "./components/ProgressBar";
-import { EquityCurveChart } from "./components/EquityCurveChart";
-import { WhatIfSliders, type WhatIfParams } from "./components/WhatIfSliders";
-import { FeedbackAICard, type AIFeedbackData } from "./components/FeedbackAICard";
-import { AlertsBar, type ImminentAlert } from "./components/AlertsBar";
-
-const FTMO_PHASE1 = { profit_target_pct: 10, daily_loss_limit_pct: 5, max_loss_pct: 10 };
-const FTMO_PHASE2 = { profit_target_pct: 5, daily_loss_limit_pct: 5, max_loss_pct: 10 };
-const FTMO_1STEP = { profit_target_pct: 10, daily_loss_limit_pct: 3, max_loss_pct: 10 };
-const SIMPLIFIED_PHASE1 = { profit_target_pct: 8, daily_loss_limit_pct: 4, max_loss_pct: 8 };
-const SIMPLIFIED_PHASE2 = { profit_target_pct: 4, daily_loss_limit_pct: 4, max_loss_pct: 8 };
+import { RefreshCw, Info, Play, BarChart3, Lightbulb } from "lucide-react";
+import type { EquityPoint } from "./components/EquityCurveChart";
+import type { WhatIfParams } from "./components/WhatIfSliders";
 
 export type Account = {
   id: string;
@@ -21,12 +12,6 @@ export type Account = {
   account_name?: string | null;
   metaapi_account_id: string | null;
 };
-
-function accountLabel(a: Account): string {
-  const login = a.account_number ?? "";
-  const name = a.account_name?.trim();
-  return name ? `${login} · ${name}` : login;
-}
 
 export type SimulatorStats = {
   profit_pct: number;
@@ -43,8 +28,8 @@ export type SimulatorViewProps = {
   setSelectedUuid: (v: string | null) => void;
   error: string | null;
   stats: SimulatorStats | null;
-  equityCurve: { index: number; date: string; balance: number; pct: number }[];
-  projectedEquityCurve: { index: number; date: string; balance: number; pct: number }[];
+  equityCurve: EquityPoint[];
+  projectedEquityCurve: EquityPoint[];
   whatIfParams: WhatIfParams;
   onWhatIfChange: (p: WhatIfParams) => void;
   passProbFtmo2StepP1: number;
@@ -72,127 +57,46 @@ export type SimulatorViewProps = {
   tradesCount: number;
 };
 
-const TRADING_DAYS_CAP = 30;
-
-function probColor(p: number): string {
-  return p >= 60 ? "text-emerald-400" : p >= 30 ? "text-amber-400" : "text-red-400";
+function accountLabel(a: Account): string {
+  const login = a.account_number ?? "";
+  const name = a.account_name?.trim();
+  return name ? `${login} · ${name}` : login;
 }
 
 export function SimulatorView(props: SimulatorViewProps) {
-  const {
-    accounts,
-    selectedUuid,
-    setSelectedUuid,
-    error,
-    stats,
-    equityCurve,
-    projectedEquityCurve,
-    whatIfParams,
-    onWhatIfChange,
-    passProbFtmo2StepP1,
-    passProbFtmo2StepP2,
-    passProbFtmo1Step,
-    passProbSimplifiedP1,
-    passProbSimplifiedP2,
-    estimatedDaysToTarget,
-    status,
-    breachRiskPct,
-    onRefresh,
-    refreshing = false,
-    ftmoPhase1Pass,
-    ftmoPhase2Pass,
-    ftmo1StepPass,
-    ftmo1StepDailyBreach,
-    ftmo1StepMaxLossBreach,
-    simplifiedPhase1Pass,
-    simplifiedPhase2Pass,
-    simplifiedDailyBreach,
-    simplifiedMaxLossBreach,
-    initialBalance,
-    balance,
-    currency,
-    tradesCount
-  } = props;
-
-  const [rulesTab, setRulesTab] = useState<"ftmo2" | "ftmo1" | "simplified">("ftmo2");
+  const { accounts, selectedUuid, setSelectedUuid, onRefresh, refreshing = false, stats, tradesCount, error } = props;
   const [showInfo, setShowInfo] = useState(false);
+  const [strategyName, setStrategyName] = useState("London Breakout v2");
+  const [sessionName, setSessionName] = useState("Q2 EURUSD Replay");
+  const [timeframe, setTimeframe] = useState("M15");
+  const [sessionPreset, setSessionPreset] = useState<"manual" | "london" | "newyork">("london");
 
-  const statusLabel =
-    status === "fuori_gioco" ? "Out of the game" : status === "a_rischio" ? "At breach risk" : "On track";
-  const statusColor =
-    status === "fuori_gioco" ? "bg-red-500/20 text-red-400" : status === "a_rischio" ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400";
-
-  const aiFeedback: AIFeedbackData = {
-    summary: stats
-      ? `You are in Phase 1 at ${stats.profit_pct >= 0 ? "+" : ""}${stats.profit_pct.toFixed(2)}%. Revenge and overtrading patterns are analysed over the last ${tradesCount} trades.`
-      : "Connect an account and close trades to see the analysis.",
-    errors: [
-      "Revenge on major pairs after 3 losses (size +78%)",
-      "Afternoon overtrading (38% WR after 14:00)",
-      "Exposure >6% on 2 trades (rule violation)"
-    ],
-    tips: [
-      "After 2 losses: cut size 50% for the next 5 trades",
-      "Trading cut-off at 14:00 – +22% WR expected",
-      "Max exposure 5% – reduce correlated positions"
-    ],
-    healthScore: stats ? (stats.daily_loss_breach || stats.max_loss_breach ? 35 : 62) : 50
-  };
-
-  const imminentAlerts: ImminentAlert[] = [];
-  if (stats && breachRiskPct >= 50) {
-    imminentAlerts.push({
-      id: "breach-risk",
-      message: `Daily DD breach risk in the next trades (probability ~${Math.round(breachRiskPct)}%)`,
-      severity: breachRiskPct >= 70 ? "error" : "warning"
-    });
-  }
-  if (stats && status === "a_rischio") {
-    imminentAlerts.push({
-      id: "at-risk",
-      message: "You are close to daily or max DD limit – reduce size or stop for today.",
-      severity: "warning"
-    });
-  }
-
-  const emptyState = !selectedUuid ? (
-    <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-      Select an account to start backtesting.
-    </div>
-  ) : !stats ? (
-    <div className="rounded-xl border border-slate-800 bg-surface p-8 text-center text-slate-500 text-sm">
-      No trade data yet. Connect the account and close some trades to see results.
-    </div>
-  ) : null;
+  const sessionPnl = stats?.profit_pct ?? 0;
+  const worstDay = stats?.worst_daily_pct ?? 0;
+  const maxDd = stats?.max_drawdown_pct ?? 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Hero */}
       <header className="rs-card p-5 shadow-rs-soft sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2">
             <div>
               <h1 className="rs-page-title">Backtesting</h1>
               <p className="rs-page-sub mt-1">
-                Backtesting workspace inspired by FX Replay: replay performance, scenario testing and pass probability.
+                Clean backtesting page: strategy/session setup, historical replay, analytics, and improvement advice.
               </p>
             </div>
             <button
               type="button"
               onClick={() => setShowInfo((v) => !v)}
-              className="shrink-0 rounded-full p-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors"
-              title="What is this page?"
+              className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-800/50 hover:text-cyan-400"
               aria-label="Info"
             >
               <Info className="h-5 w-5" />
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <select
-              className="rs-input min-w-[200px] max-w-xs"
-              value={selectedUuid ?? ""}
-              onChange={(e) => setSelectedUuid(e.target.value || null)}
-            >
+            <select className="rs-input min-w-[200px] max-w-xs" value={selectedUuid ?? ""} onChange={(e) => setSelectedUuid(e.target.value || null)}>
               <option value="">All accounts</option>
               {accounts.map((a) => (
                 <option key={a.id} value={a.metaapi_account_id ?? ""}>
@@ -207,191 +111,112 @@ export function SimulatorView(props: SimulatorViewProps) {
               className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700/50 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              Refresh live stats
+              Refresh session data
             </button>
           </div>
         </div>
-
         {showInfo && (
-          <div className="mt-4 p-4 rounded-lg bg-slate-800/70 border border-slate-700 text-sm text-slate-300 space-y-2">
-            <p className="font-medium text-slate-200">What does this page do?</p>
-            <p>
-              This page simulates your progress against FTMO 2-Step, FTMO 1-Step and Simplified challenge rules. It shows your current pass probability for each challenge based on your closed trades (profit target, daily loss limit, max drawdown).
-            </p>
-            <p className="font-medium text-slate-200 mt-2">How can it help you as a trader?</p>
-            <p>
-              You can see at a glance whether you are on track or at risk of breaching. The Rules & Status section shows how close you are to each limit. The Proiezione & What-If section lets you explore how reducing risk, capping trades per day or stopping after consecutive losses would change your estimated pass probability and breach risk—so you can adjust your behaviour before it is too late.
-            </p>
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-800/70 p-4 text-sm text-slate-300">
+            Build your strategy and session, replay historical market context, then evaluate analytics and improve your rules.
           </div>
-        )}
-
-        {!emptyState && stats && (
-          <>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 2-Step P1</p>
-                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo2StepP1)}`}>{passProbFtmo2StepP1}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 2-Step P2</p>
-                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo2StepP2)}`}>{passProbFtmo2StepP2}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">FTMO 1-Step</p>
-                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbFtmo1Step)}`}>{passProbFtmo1Step}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Simplified P1</p>
-                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbSimplifiedP1)}`}>{passProbSimplifiedP1}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Simplified P2</p>
-                <p className={`text-xl font-semibold tabular-nums ${probColor(passProbSimplifiedP2)}`}>{passProbSimplifiedP2}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-800/50 p-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
-                <span className={`inline-block mt-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>
-                  {statusLabel}
-                </span>
-                <p className="text-xs text-slate-500 mt-1">Days to target: {estimatedDaysToTarget} / {TRADING_DAYS_CAP}</p>
-              </div>
-            </div>
-          </>
         )}
       </header>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {emptyState ? (
-        emptyState
-      ) : (
-        stats && (
-          <>
-            {/* Rules & Status – tabs for FTMO 2-Step, FTMO 1-Step, Simplified */}
-            <div className="rounded-xl border border-slate-800 bg-surface p-5">
-              <div className="flex flex-wrap gap-2 mb-4">
+      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="text-sm font-medium text-slate-200 mb-1">Strategy & session setup</h2>
+        <p className="text-xs text-slate-500 mb-4">Create your strategy, define session context, and prepare replay testing.</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-700/80 bg-slate-900/40 p-4 space-y-3">
+            <label className="block text-xs text-slate-400">
+              Strategy name
+              <input
+                value={strategyName}
+                onChange={(e) => setStrategyName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+              />
+            </label>
+            <label className="block text-xs text-slate-400">
+              Timeframe
+              <select
+                value={timeframe}
+                onChange={(e) => setTimeframe(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+              >
+                {["M1", "M5", "M15", "H1", "H4"].map((tf) => (
+                  <option key={tf} value={tf}>
+                    {tf}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="rounded-lg border border-slate-700/80 bg-slate-900/40 p-4 space-y-3">
+            <label className="block text-xs text-slate-400">
+              Session name
+              <input
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["manual", "Manual"],
+                ["london", "London"],
+                ["newyork", "New York"],
+              ] as const).map(([id, label]) => (
                 <button
+                  key={id}
                   type="button"
-                  onClick={() => setRulesTab("ftmo2")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    rulesTab === "ftmo2" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
+                  onClick={() => setSessionPreset(id)}
+                  className={`rounded-lg px-3 py-1.5 text-xs ${
+                    sessionPreset === id
+                      ? "border border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
+                      : "border border-slate-700 text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  FTMO 2-STEP
+                  {label} session
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRulesTab("ftmo1")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    rulesTab === "ftmo1" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  FTMO 1-STEP
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRulesTab("simplified")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    rulesTab === "simplified" ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Simplified
-                </button>
-              </div>
-
-              {rulesTab === "ftmo2" && (
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1</h3>
-                    <div className="space-y-3">
-                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_PHASE1.profit_target_pct} variant="profit" />
-                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_PHASE1.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE1.daily_loss_limit_pct}%`} />
-                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_PHASE1.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE1.max_loss_pct}%`} />
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2">
-                      {stats.worst_daily_pct > -FTMO_PHASE1.daily_loss_limit_pct
-                        ? `${(FTMO_PHASE1.daily_loss_limit_pct + stats.worst_daily_pct).toFixed(1)}% headroom to daily DD limit`
-                        : "Daily DD limit already breached"}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 2</h3>
-                    <div className="space-y-3">
-                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_PHASE2.profit_target_pct} variant="profit" />
-                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_PHASE2.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE2.daily_loss_limit_pct}%`} />
-                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_PHASE2.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_PHASE2.max_loss_pct}%`} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {rulesTab === "ftmo1" && (
-                <div>
-                  <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1 (single step)</h3>
-                  <div className="space-y-3 max-w-md">
-                    <ProgressBar label="Profit target" value={stats.profit_pct} limit={FTMO_1STEP.profit_target_pct} variant="profit" />
-                    <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-FTMO_1STEP.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${FTMO_1STEP.daily_loss_limit_pct}%`} />
-                    <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={FTMO_1STEP.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${FTMO_1STEP.max_loss_pct}%`} />
-                  </div>
-                </div>
-              )}
-
-              {rulesTab === "simplified" && (
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 1</h3>
-                    <div className="space-y-3">
-                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={SIMPLIFIED_PHASE1.profit_target_pct} variant="profit" />
-                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-SIMPLIFIED_PHASE1.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE1.daily_loss_limit_pct}%`} />
-                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={SIMPLIFIED_PHASE1.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE1.max_loss_pct}%`} />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-300 mb-3">Phase 2</h3>
-                    <div className="space-y-3">
-                      <ProgressBar label="Profit target" value={stats.profit_pct} limit={SIMPLIFIED_PHASE2.profit_target_pct} variant="profit" />
-                      <ProgressBar label="Daily DD" value={stats.worst_daily_pct} limit={-SIMPLIFIED_PHASE2.daily_loss_limit_pct} variant="loss" valueLabel={`${stats.worst_daily_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE2.daily_loss_limit_pct}%`} />
-                      <ProgressBar label="Max DD" value={stats.max_drawdown_pct} limit={SIMPLIFIED_PHASE2.max_loss_pct} variant="loss" valueLabel={`${stats.max_drawdown_pct.toFixed(2)}%`} limitLabel={`${SIMPLIFIED_PHASE2.max_loss_pct}%`} />
-                    </div>
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Projection & What-If */}
-            <div className="rounded-xl border border-slate-800 bg-surface p-5">
-              <h2 className="text-sm font-medium text-slate-200 mb-1">Projection & What-If</h2>
-              <p className="text-xs text-slate-500 mb-4">
-                Replay your equity path and compare it with projected scenarios. Adjust risk per trade, daily trade cap and stop-after-losses to evaluate how strategy changes impact outcomes.
-              </p>
-              <div className="grid gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                  <EquityCurveChart
-                    data={equityCurve}
-                    projectedData={projectedEquityCurve}
-                    initialBalance={initialBalance}
-                    targetPct={rulesTab === "ftmo2" ? FTMO_PHASE1.profit_target_pct : rulesTab === "ftmo1" ? FTMO_1STEP.profit_target_pct : SIMPLIFIED_PHASE1.profit_target_pct}
-                    height={220}
-                  />
-                </div>
-                <div>
-                  <WhatIfSliders
-                    value={whatIfParams}
-                    onChange={onWhatIfChange}
-                    baselineProbPhase1={passProbFtmo2StepP1}
-                    baselineDaysToTarget={estimatedDaysToTarget}
-                    baselineBreachRisk={breachRiskPct}
-                  />
-                </div>
-              </div>
-            </div>
+      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="flex items-center gap-2 text-sm font-medium text-slate-200 mb-1">
+          <Play className="h-4 w-4 text-cyan-400" />
+          Historical replay backtest
+        </h2>
+        <p className="text-xs text-slate-500">Replay old market candles and execute your strategy to validate edge before going live.</p>
+      </section>
 
-            <FeedbackAICard data={aiFeedback} tradesCount={tradesCount} periodLabel="last 30 trades" />
+      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="flex items-center gap-2 text-sm font-medium text-slate-200 mb-1">
+          <BarChart3 className="h-4 w-4 text-cyan-400" />
+          Session analytics
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-4">
+          <div className="rounded-lg bg-slate-800/40 p-3"><p className="text-xs text-slate-500">Trades tested</p><p className="text-xl text-cyan-300 mt-1">{tradesCount}</p></div>
+          <div className="rounded-lg bg-slate-800/40 p-3"><p className="text-xs text-slate-500">Session PnL</p><p className={`text-xl mt-1 ${sessionPnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>{sessionPnl >= 0 ? "+" : ""}{sessionPnl.toFixed(2)}%</p></div>
+          <div className="rounded-lg bg-slate-800/40 p-3"><p className="text-xs text-slate-500">Worst day</p><p className="text-xl text-amber-400 mt-1">{worstDay.toFixed(2)}%</p></div>
+          <div className="rounded-lg bg-slate-800/40 p-3"><p className="text-xs text-slate-500">Max drawdown</p><p className="text-xl text-red-400 mt-1">{maxDd.toFixed(2)}%</p></div>
+        </div>
+      </section>
 
-            <AlertsBar alerts={imminentAlerts} onBlockTrading={imminentAlerts.length > 0 ? () => {} : undefined} />
-          </>
-        )
-      )}
+      <section className="rounded-xl border border-slate-800 bg-surface p-5">
+        <h2 className="flex items-center gap-2 text-sm font-medium text-slate-200 mb-1">
+          <Lightbulb className="h-4 w-4 text-cyan-400" />
+          Strategy improvement advice
+        </h2>
+        <div className="grid gap-3 md:grid-cols-3 mt-4">
+          <div className="rounded-lg border border-slate-700/80 bg-slate-900/40 p-3 text-xs text-slate-300">Reduce risk per trade after two consecutive losses.</div>
+          <div className="rounded-lg border border-slate-700/80 bg-slate-900/40 p-3 text-xs text-slate-300">Focus only on high expectancy sessions for this strategy.</div>
+          <div className="rounded-lg border border-slate-700/80 bg-slate-900/40 p-3 text-xs text-slate-300">Keep only A+ setups and remove low-quality entries.</div>
+        </div>
+      </section>
     </div>
   );
 }
