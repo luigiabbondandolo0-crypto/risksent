@@ -359,7 +359,7 @@ export default function DashboardPage() {
 
       {!loading && (
       <>
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+      <section className="rs-card-accent p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h3 className="text-base font-semibold tracking-tight text-slate-100">Active risk rules</h3>
           {riskRules ? (
