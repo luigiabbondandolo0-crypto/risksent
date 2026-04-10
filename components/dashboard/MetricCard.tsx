@@ -5,12 +5,12 @@ import { motion, useInView } from "framer-motion";
 
 interface MetricCardProps {
   label: string;
-  value: number;
+  value: number | null;
   prefix?: string;
   suffix?: string;
   trend?: "up" | "down" | "neutral";
   decimals?: number;
-  sublabel?: string;
+  note?: string;
 }
 
 export function MetricCard({
@@ -20,7 +20,7 @@ export function MetricCard({
   suffix = "",
   trend = "neutral",
   decimals = 2,
-  sublabel,
+  note,
 }: MetricCardProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
@@ -39,7 +39,8 @@ export function MetricCard({
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(parseFloat((eased * value).toFixed(decimals)));
+      const target = value ?? 0;
+      setDisplay(parseFloat((eased * target).toFixed(decimals)));
       if (progress < 1) requestAnimationFrame(animate);
     };
 
@@ -63,12 +64,12 @@ export function MetricCard({
       </p>
       <p className="text-2xl font-bold font-display text-white 
                     tracking-tight">
-        {prefix}{display.toLocaleString("it-IT", { 
-          minimumFractionDigits: decimals 
-        })}{suffix}
+        {value == null
+          ? "—"
+          : `${prefix}${display.toLocaleString("it-IT", { minimumFractionDigits: decimals })}${suffix}`}
       </p>
-      {sublabel && (
-        <p className="text-xs font-mono text-[#555] mt-1">{sublabel}</p>
+      {note && (
+        <p className="text-xs font-mono text-[#555] mt-1">{note}</p>
       )}
     </motion.div>
   );
