@@ -4,6 +4,7 @@ import {
   TrendingUp,
   ShieldAlert,
   FlaskConical,
+  Sparkles,
 } from "lucide-react";
 
 /** Mirrors live `Sidebar` groups — hrefs prefixed with /mock. */
@@ -20,6 +21,7 @@ export const mockPrimaryNavItems: readonly MockNavItem[] = [
   { href: "/mock/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/mock/journal", label: "Journal", icon: TrendingUp },
   { href: "/mock/risk-manager", label: "Risk Manager", icon: ShieldAlert },
+  { href: "/mock/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
 
 export const mockAccountNavItems: readonly MockNavItem[] = [];

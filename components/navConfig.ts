@@ -4,6 +4,7 @@ import {
   TrendingUp,
   ShieldAlert,
   FlaskConical,
+  Sparkles,
 } from "lucide-react";
 
 export type NavItem = {
@@ -17,6 +18,7 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journal", label: "Journal", icon: TrendingUp },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
+  { href: "/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
@@ -40,6 +42,7 @@ export const mobileNavItems: readonly NavItem[] = [
 export const APP_SHELL_PREFIXES = [
   "/app",
   "/admin",
+  "/ai-coach",
 ] as const;
 
 export function isAppShellPath(pathname: string | null | undefined): boolean {
