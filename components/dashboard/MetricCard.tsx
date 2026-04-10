@@ -9,6 +9,7 @@ interface MetricCardProps {
   prefix?: string;
   suffix?: string;
   trend?: "up" | "down" | "neutral";
+  positiveIsGood?: boolean;
   decimals?: number;
   note?: string;
 }
@@ -19,6 +20,7 @@ export function MetricCard({
   prefix = "",
   suffix = "",
   trend = "neutral",
+  positiveIsGood = true,
   decimals = 2,
   note,
 }: MetricCardProps) {
@@ -26,8 +28,21 @@ export function MetricCard({
   const isInView = useInView(ref, { once: true });
   const [display, setDisplay] = useState(0);
 
+  const inferredTrend: "up" | "down" | "neutral" =
+    trend !== "neutral"
+      ? trend
+      : value == null
+      ? "neutral"
+      : positiveIsGood
+      ? value >= 0
+        ? "up"
+        : "down"
+      : value < 0
+      ? "up"
+      : "down";
+
   const borderColor =
-    trend === "up" ? "#00e676" : trend === "down" ? "#ff3c3c" : "#555";
+    inferredTrend === "up" ? "#00e676" : inferredTrend === "down" ? "#ff3c3c" : "#555";
 
   useEffect(() => {
     if (!isInView) return;
