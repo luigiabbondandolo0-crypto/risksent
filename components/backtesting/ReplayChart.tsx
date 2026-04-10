@@ -23,6 +23,9 @@ type Props = {
   accentTp?: string;
 };
 
+// Quante candele mostrare nel viewport
+const VISIBLE_CANDLES = 80;
+
 export function ReplayChart({
   candles,
   currentIndex,
@@ -37,6 +40,7 @@ export function ReplayChart({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const linesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
+  const initialFitDone = useRef(false);
 
   useLayoutEffect(() => {
     let chart: IChartApi | null = null;
@@ -63,11 +67,16 @@ export function ReplayChart({
           horzLines: { color: "rgba(255,255,255,0.04)" }
         },
         crosshair: { mode: 1 },
-        rightPriceScale: { borderColor: "rgba(255,255,255,0.07)" },
+        rightPriceScale: {
+          borderColor: "rgba(255,255,255,0.07)",
+          scaleMargins: { top: 0.1, bottom: 0.1 }
+        },
         timeScale: {
           borderColor: "rgba(255,255,255,0.07)",
           timeVisible: true,
-          secondsVisible: false
+          secondsVisible: false,
+          rightOffset: 5,
+          barSpacing: 8
         },
         handleScroll: true,
         handleScale: true
@@ -83,6 +92,7 @@ export function ReplayChart({
 
       chartRef.current = chart;
       seriesRef.current = series;
+      initialFitDone.current = false;
 
       ro = new ResizeObserver(() => {
         const container = containerRef.current;
@@ -105,15 +115,18 @@ export function ReplayChart({
       chart?.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      initialFitDone.current = false;
     };
   }, []);
 
   useEffect(() => {
     const series = seriesRef.current;
-    if (!series) return;
+    const chart = chartRef.current;
+    if (!series || !chart) return;
     if (candles.length === 0) return;
 
-    const data: CandlestickData[] = candles
+    // Solo le candele fino a currentIndex
+    const slice = candles
       .slice(0, currentIndex + 1)
       .filter(
         (c) =>
@@ -122,24 +135,37 @@ export function ReplayChart({
           Number.isFinite(c.high) &&
           Number.isFinite(c.low) &&
           Number.isFinite(c.close)
-      )
-      .map((c, i) => {
-        const isCurrent = i === currentIndex;
-        const isBull = c.close >= c.open;
-        return {
-          time: c.time as UTCTimestamp,
-          open: c.open,
-          high: c.high,
-          low: c.low,
-          close: c.close,
-          color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
-          wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
-          borderColor: "transparent"
-        };
-      });
+      );
+
+    const data: CandlestickData[] = slice.map((c, i) => {
+      const isCurrent = i === slice.length - 1;
+      const isBull = c.close >= c.open;
+      return {
+        time: c.time as UTCTimestamp,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+        wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+        borderColor: "transparent"
+      };
+    });
 
     series.setData(data);
-    chartRef.current?.timeScale().fitContent();
+
+    // Prima volta: fit completo
+    if (!initialFitDone.current && data.length > 0) {
+      chart.timeScale().fitContent();
+      initialFitDone.current = true;
+      return;
+    }
+
+    // Poi: scrolla solo per tenere la candela corrente visibile a destra
+    if (data.length > 0) {
+      const lastTime = data[data.length - 1].time;
+      chart.timeScale().scrollToRealTime();
+    }
   }, [candles, currentIndex]);
 
   useEffect(() => {
