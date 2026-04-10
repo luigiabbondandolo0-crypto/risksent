@@ -47,7 +47,6 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const [timeframe, setTimeframe] = useState<BtTimeframe>("H1");
   const entryIndexRef = useRef<number | null>(null);
 
-  // RIMOSSA: const visible = useMemo(...)
   const currentCandle = candles[currentIndex] ?? null;
   const openTrade = useMemo(() => trades.find((t) => t.status === "open") ?? null, [trades]);
 
@@ -87,7 +86,12 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           }
         } catch { /* fall through */ }
       }
-      const q = new URLSearchParams({ symbol: sess.symbol, timeframe: tf, from: sess.date_from, to: sess.date_to });
+      const q = new URLSearchParams({
+        symbol: sess.symbol,
+        timeframe: tf,
+        from: sess.date_from,
+        to: sess.date_to
+      });
       const res = await fetch(`/api/backtesting/ohlcv?${q}`);
       const j = await res.json();
       if (!res.ok) { setLoadErr(j.error ?? "Failed to load OHLCV"); setCandles([]); return; }
@@ -99,7 +103,10 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     [sessionId]
   );
 
-  useEffect(() => { if (!session) return; void hydrateCandles(session, timeframe); }, [session, timeframe, hydrateCandles]);
+  useEffect(() => {
+    if (!session) return;
+    void hydrateCandles(session, timeframe);
+  }, [session, timeframe, hydrateCandles]);
 
   useEffect(() => {
     try { localStorage.setItem(lsKeyIndex(sessionId, timeframe), String(currentIndex)); } catch { /* ignore */ }
@@ -156,7 +163,9 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     setCurrentIndex(nextIndex);
   }, [candles, currentIndex, trades, closeTradeApi]);
 
-  const stepBack = useCallback(() => { setCurrentIndex((i) => Math.max(0, i - 1)); }, []);
+  const stepBack = useCallback(() => {
+    setCurrentIndex((i) => Math.max(0, i - 1));
+  }, []);
 
   useEffect(() => {
     if (!playing) return;
@@ -205,7 +214,10 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     const tr = j.trade as BtTradeRow;
     entryIndexRef.current = currentIndex;
     try {
-      localStorage.setItem(lsKeyOpenMeta(sessionId, timeframe), JSON.stringify({ tradeId: tr.id, entryIndex: currentIndex }));
+      localStorage.setItem(
+        lsKeyOpenMeta(sessionId, timeframe),
+        JSON.stringify({ tradeId: tr.id, entryIndex: currentIndex })
+      );
     } catch { /* ignore */ }
     setModal((m) => ({ ...m, open: false }));
     await loadSession();
@@ -225,7 +237,9 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     let peak = session?.initial_balance ?? 0;
     let maxDd = 0;
     let bal = session?.initial_balance ?? 0;
-    const sorted = [...closed].sort((a, b) => new Date(a.exit_time ?? "").getTime() - new Date(b.exit_time ?? "").getTime());
+    const sorted = [...closed].sort(
+      (a, b) => new Date(a.exit_time ?? "").getTime() - new Date(b.exit_time ?? "").getTime()
+    );
     for (const t of sorted) {
       bal += t.pl ?? 0;
       if (bal > peak) peak = bal;
@@ -259,15 +273,23 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${bt.page} space-y-4`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href={basePath} className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]">
+          <Link
+            href={basePath}
+            className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]"
+          >
             <ChevronLeft className="h-3 w-3" />
             Dashboard
           </Link>
           <h1 className={bt.h1}>{session.name}</h1>
-          <p className={bt.sub}>{session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}</p>
+          <p className={bt.sub}>
+            {session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}
+          </p>
         </div>
         <div className="text-right font-[family-name:var(--font-mono)] text-xs text-slate-500">
-          Candle <span className="text-[#ff8c00]">{candles.length ? currentIndex + 1 : 0} / {candles.length}</span>
+          Candle{" "}
+          <span className="text-[#ff8c00]">
+            {candles.length ? currentIndex + 1 : 0} / {candles.length}
+          </span>
         </div>
       </div>
 
@@ -276,7 +298,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       )}
 
       <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(280px,3fr)] lg:items-stretch">
-        <div className={`${bt.card} flex min-h-[480px] flex-col p-0 overflow-hidden lg:min-h-[calc(100vh-220px)]`}>
+        <div className={`${bt.card} flex min-h-[600px] flex-col p-0 overflow-hidden lg:min-h-[calc(100vh-220px)]`}>
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
             <span className={bt.label}>Chart timeframe</span>
             <select
@@ -292,8 +314,11 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             </select>
           </div>
 
-          <div className="flex flex-1 min-h-[360px] flex-col p-4">
-            {/* CAMBIATO: passa candles e currentIndex invece di visible */}
+          {/* CHART CONTAINER — altezza esplicita */}
+          <div
+            className="p-4"
+            style={{ flex: "1 1 0", minHeight: "400px", position: "relative" }}
+          >
             <ReplayChart
               candles={candles}
               currentIndex={currentIndex}
@@ -304,30 +329,62 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] px-4 py-3">
-            <button type="button" className={bt.btnGhost} onClick={stepBack} disabled={currentIndex <= 0} title="Previous candle">
+            <button
+              type="button"
+              className={bt.btnGhost}
+              onClick={stepBack}
+              disabled={currentIndex <= 0}
+              title="Previous candle"
+            >
               <SkipBack className="h-4 w-4" />
             </button>
-            <button type="button" className={bt.btnGhost} onClick={() => void stepForward()} disabled={!candles.length || currentIndex >= candles.length - 1} title="Next candle (Space)">
+            <button
+              type="button"
+              className={bt.btnGhost}
+              onClick={() => void stepForward()}
+              disabled={!candles.length || currentIndex >= candles.length - 1}
+              title="Next candle (Space)"
+            >
               <SkipForward className="h-4 w-4" />
             </button>
-            <button type="button" className={bt.btnGhost} onClick={() => setPlaying((p) => !p)} disabled={!candles.length || currentIndex >= candles.length - 1}>
+            <button
+              type="button"
+              className={bt.btnGhost}
+              onClick={() => setPlaying((p) => !p)}
+              disabled={!candles.length || currentIndex >= candles.length - 1}
+            >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
             <div className="flex items-center gap-1 pl-2 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
               Speed
               {([1, 2, 5] as const).map((s) => (
-                <button key={s} type="button" className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#ff3c3c]/20 text-[#ff3c3c]" : "text-slate-500"}`} onClick={() => setSpeed(s)}>
+                <button
+                  key={s}
+                  type="button"
+                  className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#ff3c3c]/20 text-[#ff3c3c]" : "text-slate-500"}`}
+                  onClick={() => setSpeed(s)}
+                >
                   {s}x
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 border-t border-white/[0.06] px-4 py-4 sm:grid-cols-2">
-            <button type="button" disabled={!!openTrade || !currentCandle} onClick={() => void onOpenTrade("BUY")} className="rounded-2xl bg-gradient-to-r from-[#00e676] to-[#00a056] py-4 text-center text-sm font-bold text-black shadow-lg shadow-[#00e676]/30 disabled:opacity-40">
+          <div className="grid grid-cols-2 gap-3 border-t border-white/[0.06] px-4 py-4">
+            <button
+              type="button"
+              disabled={!!openTrade || !currentCandle}
+              onClick={() => void onOpenTrade("BUY")}
+              className="rounded-2xl bg-gradient-to-r from-[#00e676] to-[#00a056] py-4 text-center text-sm font-bold text-black shadow-lg shadow-[#00e676]/30 disabled:opacity-40"
+            >
               BUY
             </button>
-            <button type="button" disabled={!!openTrade || !currentCandle} onClick={() => void onOpenTrade("SELL")} className="rounded-2xl bg-gradient-to-r from-[#ff3c3c] to-[#991b1b] py-4 text-center text-sm font-bold text-white shadow-lg shadow-[#ff3c3c]/30 disabled:opacity-40">
+            <button
+              type="button"
+              disabled={!!openTrade || !currentCandle}
+              onClick={() => void onOpenTrade("SELL")}
+              className="rounded-2xl bg-gradient-to-r from-[#ff3c3c] to-[#991b1b] py-4 text-center text-sm font-bold text-white shadow-lg shadow-[#ff3c3c]/30 disabled:opacity-40"
+            >
               SELL
             </button>
           </div>
@@ -369,7 +426,9 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             <p className={bt.label}>Total P&amp;L</p>
             <p className={`font-[family-name:var(--font-mono)] text-lg ${analytics.totalPl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}`}>
               {analytics.totalPl >= 0 ? "+" : ""}{analytics.totalPl.toFixed(2)}{" "}
-              <span className="text-slate-500">({analytics.plPct >= 0 ? "+" : ""}{analytics.plPct.toFixed(2)}%)</span>
+              <span className="text-slate-500">
+                ({analytics.plPct >= 0 ? "+" : ""}{analytics.plPct.toFixed(2)}%)
+              </span>
             </p>
           </div>
 
@@ -377,11 +436,16 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             <p className={bt.label}>Closed trades</p>
             <ul className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">
               {trades.filter((t) => t.status === "closed").map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-[family-name:var(--font-mono)]">
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-[family-name:var(--font-mono)]"
+                >
                   <span className={t.direction === "BUY" ? "rounded bg-[#00e676]/15 px-1.5 py-0.5 text-[#00e676]" : "rounded bg-[#ff3c3c]/15 px-1.5 py-0.5 text-[#ff3c3c]"}>
                     {t.direction}
                   </span>
-                  <span className="text-slate-400">{t.entry_price.toFixed(5)} → {t.exit_price?.toFixed(5) ?? "—"}</span>
+                  <span className="text-slate-400">
+                    {t.entry_price.toFixed(5)} → {t.exit_price?.toFixed(5) ?? "—"}
+                  </span>
                   <span className={t.pl != null && t.pl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}>
                     {(t.pl ?? 0) >= 0 ? "+" : ""}{(t.pl ?? 0).toFixed(0)}
                   </span>
@@ -393,7 +457,10 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             </ul>
           </div>
 
-          <Link href={`${basePath}/session/${sessionId}`} className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-[family-name:var(--font-mono)]">
+          <Link
+            href={`${basePath}/session/${sessionId}`}
+            className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-[family-name:var(--font-mono)]"
+          >
             Session summary →
           </Link>
         </aside>

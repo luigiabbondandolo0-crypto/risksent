@@ -39,19 +39,19 @@ export function ReplayChart({
   const linesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
 
   useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
     let chart: IChartApi | null = null;
     let ro: ResizeObserver | null = null;
+    let raf: number;
 
     const init = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const w = Math.max(rect.width, 200);
-      const h = Math.max(rect.height, 320);
+      const el = containerRef.current;
+      if (!el) return;
 
-      chart = createChart(containerRef.current, {
+      const rect = el.getBoundingClientRect();
+      const w = Math.max(rect.width, 300);
+      const h = Math.max(rect.height, 400);
+
+      chart = createChart(el, {
         width: w,
         height: h,
         layout: {
@@ -68,7 +68,9 @@ export function ReplayChart({
           borderColor: "rgba(255,255,255,0.07)",
           timeVisible: true,
           secondsVisible: false
-        }
+        },
+        handleScroll: true,
+        handleScale: true,
       });
 
       const series = chart.addSeries(CandlestickSeries, {
@@ -83,17 +85,19 @@ export function ReplayChart({
       seriesRef.current = series;
 
       ro = new ResizeObserver(() => {
-        if (!containerRef.current || !chartRef.current) return;
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        chartRef.current.applyOptions({
-          width: Math.max(width, 200),
-          height: Math.max(height, 320)
+        const container = containerRef.current;
+        const c = chartRef.current;
+        if (!container || !c) return;
+        const r = container.getBoundingClientRect();
+        c.applyOptions({
+          width: Math.max(r.width, 300),
+          height: Math.max(r.height, 400)
         });
       });
-      ro.observe(containerRef.current);
+      ro.observe(el);
     };
 
-    const raf = requestAnimationFrame(init);
+    raf = requestAnimationFrame(init);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -107,6 +111,7 @@ export function ReplayChart({
   useEffect(() => {
     const series = seriesRef.current;
     if (!series) return;
+    if (candles.length === 0) return;
 
     const data: CandlestickData[] = candles
       .filter(
@@ -117,22 +122,31 @@ export function ReplayChart({
           Number.isFinite(c.low) &&
           Number.isFinite(c.close)
       )
-      .map((c, i) => ({
-        time: c.time as UTCTimestamp,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        color: i > currentIndex ? "transparent" : i === currentIndex ? "#ff8c00" : c.close >= c.open ? "#00e676" : "#ff3c3c",
-        wickColor: i > currentIndex ? "transparent" : i === currentIndex ? "#ff8c00" : c.close >= c.open ? "#00e676" : "#ff3c3c",
-        borderColor: i > currentIndex ? "transparent" : "transparent",
-      }));
+      .map((c, i) => {
+        const isFuture = i > currentIndex;
+        const isCurrent = i === currentIndex;
+        const isBull = c.close >= c.open;
+        const color = isFuture
+          ? "rgba(0,0,0,0)"
+          : isCurrent
+          ? "#ff8c00"
+          : isBull
+          ? "#00e676"
+          : "#ff3c3c";
+        return {
+          time: c.time as UTCTimestamp,
+          open: isFuture ? c.close : c.open,
+          high: isFuture ? c.close : c.high,
+          low: isFuture ? c.close : c.low,
+          close: c.close,
+          color,
+          wickColor: color,
+          borderColor: "transparent"
+        };
+      });
 
     series.setData(data);
-
-    if (data.length > 0 && currentIndex >= 0) {
-      chartRef.current?.timeScale().fitContent();
-    }
+    chartRef.current?.timeScale().fitContent();
   }, [candles, currentIndex]);
 
   useEffect(() => {
@@ -181,7 +195,8 @@ export function ReplayChart({
   return (
     <div
       ref={containerRef}
-      className="h-full min-h-[320px] w-full rounded-xl border border-white/[0.06]"
+      style={{ width: "100%", height: "100%", minHeight: "400px" }}
+      className="rounded-xl border border-white/[0.06]"
     />
   );
 }
