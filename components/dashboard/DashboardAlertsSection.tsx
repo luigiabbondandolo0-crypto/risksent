@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, Bell, ChevronRight, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 export type DashboardAlertItem = {
   id: string;
@@ -26,9 +27,11 @@ function severityStyles(sev: string) {
   if (sev === "high") {
     return {
       bar: "from-red-500 via-rose-500 to-orange-500",
-      glow: "shadow-[0_0_28px_-6px_rgba(255,60,60,0.45)]",
+      glow: "shadow-[0_0_28px_-6px_rgba(255,60,60,0.5)]",
       badge: "bg-red-500/20 text-red-300 ring-red-500/30",
       icon: "text-red-400",
+      dot: "#ff3c3c",
+      border: "border-red-500/20 hover:border-red-500/40",
     };
   }
   return {
@@ -36,6 +39,8 @@ function severityStyles(sev: string) {
     glow: "shadow-[0_0_20px_-4px_rgba(245,158,11,0.4)]",
     badge: "bg-amber-500/15 text-amber-200 ring-amber-500/25",
     icon: "text-amber-400",
+    dot: "#f59e0b",
+    border: "border-amber-500/20 hover:border-amber-500/40",
   };
 }
 
@@ -52,9 +57,11 @@ export function DashboardAlertsSection({
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">
+      {/* Background glows */}
       <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/5 blur-3xl" />
 
+      {/* Header */}
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/25 to-violet-500/20 ring-1 ring-cyan-500/25">
@@ -76,6 +83,7 @@ export function DashboardAlertsSection({
         )}
       </div>
 
+      {/* Content */}
       <div className="relative mt-5">
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -83,54 +91,72 @@ export function DashboardAlertsSection({
             <div className="h-28 animate-pulse rounded-xl bg-slate-800/40" />
           </div>
         ) : pending.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-emerald-500/25 bg-emerald-500/[0.06] py-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center rounded-xl border border-dashed border-emerald-500/25 bg-emerald-500/[0.06] py-10 text-center"
+          >
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/30">
               <Sparkles className="h-6 w-6 text-emerald-400/90" />
             </div>
             <p className="text-sm font-medium text-emerald-200/90">All clear</p>
-            <p className="mt-1 max-w-sm text-xs text-slate-500">No pending alerts — rules are quiet for now.</p>
-          </div>
+            <p className="mt-1 max-w-sm text-xs text-slate-500">
+              No pending alerts — rules are quiet for now.
+            </p>
+          </motion.div>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
-            {pending.map((a) => {
+            {pending.map((a, i) => {
               const s = severityStyles(a.severity);
+              const isHigh = a.severity === "high";
               return (
-                <li
+                <motion.li
                   key={a.id}
-                  className={`group relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-950/50 p-4 transition-all duration-200 hover:border-slate-600/80 ${s.glow} ${a.severity === "high" ? "animate-alert-shake-in" : ""}`}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08, duration: 0.35, ease: "easeOut" }}
+                  className={`group relative overflow-hidden rounded-xl border bg-slate-950/50 p-4 transition-all duration-200 ${s.glow} ${s.border}`}
                 >
+                  {/* Left bar */}
                   <div
-                    className={`absolute left-0 top-0 h-full w-1 bg-gradient-to-b ${s.bar} opacity-90`}
-                    style={{ width: "4px" }}
+                    className={`absolute left-0 top-0 h-full w-[4px] bg-gradient-to-b ${s.bar}`}
                     aria-hidden
                   />
+
                   <div className="pl-3">
+                    {/* Badge row */}
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
-                        {a.severity === "medium" && (
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-current opacity-40" />
-                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-current" />
-                          </span>
-                        )}
-                        {a.severity === "high" ? "High" : "Watch"}
+                        {/* Pulsing dot */}
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span
+                            className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-50"
+                            style={{ background: s.dot }}
+                          />
+                          <span
+                            className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                            style={{ background: s.dot }}
+                          />
+                        </span>
+                        {isHigh ? "High" : "Watch"}
                       </span>
-                      <time
-                        className="text-[10px] text-slate-500"
-                        dateTime={a.alert_date}
-                      >
+                      <time className="text-[10px] text-slate-500" dateTime={a.alert_date}>
                         {new Date(a.alert_date).toLocaleString(undefined, {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
                       </time>
                     </div>
+
+                    {/* Message */}
                     <p className="mt-2 flex items-start gap-2 text-sm font-medium leading-snug text-slate-100">
                       <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`} />
                       {a.message}
                     </p>
+
+                    {/* Solution */}
                     {a.solution && (
                       <p className="mt-2 border-t border-slate-800/80 pt-2 text-xs leading-relaxed text-slate-400">
                         <span className="text-slate-500">Next step: </span>
@@ -138,7 +164,16 @@ export function DashboardAlertsSection({
                       </p>
                     )}
                   </div>
-                </li>
+
+                  {/* HIGH — red glow pulse on border */}
+                  {isHigh && (
+                    <motion.div
+                      className="pointer-events-none absolute inset-0 rounded-xl"
+                      animate={{ boxShadow: ["0 0 0px rgba(255,60,60,0)", "0 0 20px rgba(255,60,60,0.15)", "0 0 0px rgba(255,60,60,0)"] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  )}
+                </motion.li>
               );
             })}
           </ul>
