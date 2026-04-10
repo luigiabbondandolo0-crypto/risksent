@@ -22,24 +22,15 @@ type SessionPayload = {
 
 type Props = {
   sessionId: string;
-  /** Public app prefix for navigation, e.g. `/app/backtesting` (matches `next.config` redirects/rewrites). */
   basePath: string;
 };
 
 const CHART_TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
 
-function lsKeyTf(id: string) {
-  return `bt_chart_tf_${id}`;
-}
-function lsKeyCandles(id: string, tf: string) {
-  return `bt_candles_${id}_${tf}`;
-}
-function lsKeyIndex(id: string, tf: string) {
-  return `bt_replay_idx_${id}_${tf}`;
-}
-function lsKeyOpenMeta(id: string, tf: string) {
-  return `bt_open_meta_${id}_${tf}`;
-}
+function lsKeyTf(id: string) { return `bt_chart_tf_${id}`; }
+function lsKeyCandles(id: string, tf: string) { return `bt_candles_${id}_${tf}`; }
+function lsKeyIndex(id: string, tf: string) { return `bt_replay_idx_${id}_${tf}`; }
+function lsKeyOpenMeta(id: string, tf: string) { return `bt_open_meta_${id}_${tf}`; }
 
 export function SessionReplayView({ sessionId, basePath }: Props) {
   const [session, setSession] = useState<SessionPayload | null>(null);
@@ -56,25 +47,19 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const [timeframe, setTimeframe] = useState<BtTimeframe>("H1");
   const entryIndexRef = useRef<number | null>(null);
 
-  const visible = useMemo(() => candles.slice(0, currentIndex + 1), [candles, currentIndex]);
+  // RIMOSSA: const visible = useMemo(...)
   const currentCandle = candles[currentIndex] ?? null;
-
   const openTrade = useMemo(() => trades.find((t) => t.status === "open") ?? null, [trades]);
 
   const loadSession = useCallback(async () => {
     const res = await fetch(`/api/backtesting/sessions/${sessionId}`);
-    if (!res.ok) {
-      setLoadErr("Session not found or unauthorized");
-      return;
-    }
+    if (!res.ok) { setLoadErr("Session not found or unauthorized"); return; }
     const j = await res.json();
     setSession(j.session);
     setTrades(j.trades ?? []);
   }, [sessionId]);
 
-  useEffect(() => {
-    void loadSession();
-  }, [loadSession]);
+  useEffect(() => { void loadSession(); }, [loadSession]);
 
   useEffect(() => {
     try {
@@ -82,9 +67,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       if (raw && (CHART_TIMEFRAMES as string[]).includes(raw)) {
         setTimeframe(raw as BtTimeframe);
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* ignore */ }
   }, [sessionId]);
 
   const hydrateCandles = useCallback(
@@ -102,62 +85,32 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             setCurrentIndex(Number.isFinite(idx) ? idx : 0);
             return;
           }
-        } catch {
-          /* fall through */
-        }
+        } catch { /* fall through */ }
       }
-
-      const q = new URLSearchParams({
-        symbol: sess.symbol,
-        timeframe: tf,
-        from: sess.date_from,
-        to: sess.date_to
-      });
+      const q = new URLSearchParams({ symbol: sess.symbol, timeframe: tf, from: sess.date_from, to: sess.date_to });
       const res = await fetch(`/api/backtesting/ohlcv?${q}`);
       const j = await res.json();
-      if (!res.ok) {
-        setLoadErr(j.error ?? "Failed to load OHLCV");
-        setCandles([]);
-        return;
-      }
+      if (!res.ok) { setLoadErr(j.error ?? "Failed to load OHLCV"); setCandles([]); return; }
       const list = j.candles as Candle[];
       setCandles(list);
       setCurrentIndex(0);
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify(list));
-      } catch {
-        /* ignore */
-      }
+      try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* ignore */ }
     },
     [sessionId]
   );
 
-  useEffect(() => {
-    if (!session) return;
-    void hydrateCandles(session, timeframe);
-  }, [session, timeframe, hydrateCandles]);
+  useEffect(() => { if (!session) return; void hydrateCandles(session, timeframe); }, [session, timeframe, hydrateCandles]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(lsKeyIndex(sessionId, timeframe), String(currentIndex));
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.setItem(lsKeyIndex(sessionId, timeframe), String(currentIndex)); } catch { /* ignore */ }
   }, [currentIndex, sessionId, timeframe]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(lsKeyTf(sessionId), timeframe);
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.setItem(lsKeyTf(sessionId), timeframe); } catch { /* ignore */ }
   }, [sessionId, timeframe]);
 
   useEffect(() => {
-    if (!openTrade) {
-      entryIndexRef.current = null;
-      return;
-    }
+    if (!openTrade) { entryIndexRef.current = null; return; }
     const raw = localStorage.getItem(lsKeyOpenMeta(sessionId, timeframe));
     if (raw) {
       try {
@@ -166,9 +119,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           entryIndexRef.current = meta.entryIndex;
           return;
         }
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
     }
     if (entryIndexRef.current == null) entryIndexRef.current = 0;
   }, [openTrade, sessionId, timeframe]);
@@ -182,11 +133,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       });
       if (!res.ok) return;
       await loadSession();
-      try {
-        localStorage.removeItem(lsKeyOpenMeta(sessionId, timeframe));
-      } catch {
-        /* ignore */
-      }
+      try { localStorage.removeItem(lsKeyOpenMeta(sessionId, timeframe)); } catch { /* ignore */ }
     },
     [loadSession, sessionId, timeframe]
   );
@@ -194,7 +141,6 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const stepForward = useCallback(async () => {
     if (candles.length === 0) return;
     if (currentIndex >= candles.length - 1) return;
-
     const nextIndex = currentIndex + 1;
     const candle = candles[nextIndex];
     const ot = trades.find((t) => t.status === "open");
@@ -210,20 +156,13 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     setCurrentIndex(nextIndex);
   }, [candles, currentIndex, trades, closeTradeApi]);
 
-  const stepBack = useCallback(() => {
-    setCurrentIndex((i) => Math.max(0, i - 1));
-  }, []);
+  const stepBack = useCallback(() => { setCurrentIndex((i) => Math.max(0, i - 1)); }, []);
 
   useEffect(() => {
     if (!playing) return;
-    if (candles.length > 0 && currentIndex >= candles.length - 1) {
-      setPlaying(false);
-      return;
-    }
+    if (candles.length > 0 && currentIndex >= candles.length - 1) { setPlaying(false); return; }
     const ms = 800 / speed;
-    const id = window.setInterval(() => {
-      void stepForward();
-    }, ms);
+    const id = window.setInterval(() => { void stepForward(); }, ms);
     return () => window.clearInterval(id);
   }, [playing, speed, stepForward, candles.length, currentIndex]);
 
@@ -266,13 +205,8 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     const tr = j.trade as BtTradeRow;
     entryIndexRef.current = currentIndex;
     try {
-      localStorage.setItem(
-        lsKeyOpenMeta(sessionId, timeframe),
-        JSON.stringify({ tradeId: tr.id, entryIndex: currentIndex })
-      );
-    } catch {
-      /* ignore */
-    }
+      localStorage.setItem(lsKeyOpenMeta(sessionId, timeframe), JSON.stringify({ tradeId: tr.id, entryIndex: currentIndex }));
+    } catch { /* ignore */ }
     setModal((m) => ({ ...m, open: false }));
     await loadSession();
   };
@@ -288,45 +222,27 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     const totalPl = closed.reduce((a, t) => a + (t.pl ?? 0), 0);
     const init = session?.initial_balance ?? 0;
     const plPct = init > 0 ? (totalPl / init) * 100 : 0;
-
     let peak = session?.initial_balance ?? 0;
     let maxDd = 0;
     let bal = session?.initial_balance ?? 0;
-    const sorted = [...closed].sort(
-      (a, b) => new Date(a.exit_time ?? "").getTime() - new Date(b.exit_time ?? "").getTime()
-    );
+    const sorted = [...closed].sort((a, b) => new Date(a.exit_time ?? "").getTime() - new Date(b.exit_time ?? "").getTime());
     for (const t of sorted) {
       bal += t.pl ?? 0;
       if (bal > peak) peak = bal;
       const dd = peak > 0 ? ((peak - bal) / peak) * 100 : 0;
       if (dd > maxDd) maxDd = dd;
     }
-
     const mark = currentCandle?.close ?? 0;
     let unreal = 0;
-    if (openTrade) {
-      unreal = unrealizedPl(mark, openTrade.entry_price, openTrade.lot_size, openTrade.direction);
-    }
-
-    return {
-      wins,
-      losses,
-      winRate,
-      avgRr,
-      totalPl,
-      plPct,
-      maxDd,
-      unreal
-    };
+    if (openTrade) { unreal = unrealizedPl(mark, openTrade.entry_price, openTrade.lot_size, openTrade.direction); }
+    return { wins, losses, winRate, avgRr, totalPl, plPct, maxDd, unreal };
   }, [trades, session, currentCandle, openTrade]);
 
   if (loadErr && !session) {
     return (
       <div className={bt.page}>
         <p className="text-red-400 font-[family-name:var(--font-mono)] text-sm">{loadErr}</p>
-        <Link href={basePath} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">
-          Back
-        </Link>
+        <Link href={basePath} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">Back</Link>
       </div>
     );
   }
@@ -343,23 +259,15 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`${bt.page} space-y-4`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link
-            href={basePath}
-            className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]"
-          >
+          <Link href={basePath} className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]">
             <ChevronLeft className="h-3 w-3" />
             Dashboard
           </Link>
           <h1 className={bt.h1}>{session.name}</h1>
-          <p className={bt.sub}>
-            {session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}
-          </p>
+          <p className={bt.sub}>{session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}</p>
         </div>
         <div className="text-right font-[family-name:var(--font-mono)] text-xs text-slate-500">
-          Candle{" "}
-          <span className="text-[#ff8c00]">
-            {candles.length ? currentIndex + 1 : 0} / {candles.length}
-          </span>
+          Candle <span className="text-[#ff8c00]">{candles.length ? currentIndex + 1 : 0} / {candles.length}</span>
         </div>
       </div>
 
@@ -379,15 +287,16 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
               onChange={(e) => setTimeframe(e.target.value as BtTimeframe)}
             >
               {CHART_TIMEFRAMES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
+                <option key={t} value={t}>{t}</option>
               ))}
             </select>
           </div>
+
           <div className="flex flex-1 min-h-[360px] flex-col p-4">
+            {/* CAMBIATO: passa candles e currentIndex invece di visible */}
             <ReplayChart
-              candles={visible}
+              candles={candles}
+              currentIndex={currentIndex}
               entryPrice={openTrade?.entry_price ?? null}
               stopLoss={openTrade?.stop_loss ?? null}
               takeProfit={openTrade?.take_profit ?? null}
@@ -395,41 +304,19 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.06] px-4 py-3">
-            <button
-              type="button"
-              className={bt.btnGhost}
-              onClick={stepBack}
-              disabled={currentIndex <= 0}
-              title="Previous candle"
-            >
+            <button type="button" className={bt.btnGhost} onClick={stepBack} disabled={currentIndex <= 0} title="Previous candle">
               <SkipBack className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              className={bt.btnGhost}
-              onClick={() => void stepForward()}
-              disabled={!candles.length || currentIndex >= candles.length - 1}
-              title="Next candle (Space)"
-            >
+            <button type="button" className={bt.btnGhost} onClick={() => void stepForward()} disabled={!candles.length || currentIndex >= candles.length - 1} title="Next candle (Space)">
               <SkipForward className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              className={bt.btnGhost}
-              onClick={() => setPlaying((p) => !p)}
-              disabled={!candles.length || currentIndex >= candles.length - 1}
-            >
+            <button type="button" className={bt.btnGhost} onClick={() => setPlaying((p) => !p)} disabled={!candles.length || currentIndex >= candles.length - 1}>
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
             <div className="flex items-center gap-1 pl-2 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
               Speed
               {([1, 2, 5] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#ff3c3c]/20 text-[#ff3c3c]" : "text-slate-500"}`}
-                  onClick={() => setSpeed(s)}
-                >
+                <button key={s} type="button" className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#ff3c3c]/20 text-[#ff3c3c]" : "text-slate-500"}`} onClick={() => setSpeed(s)}>
                   {s}x
                 </button>
               ))}
@@ -437,20 +324,10 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-3 border-t border-white/[0.06] px-4 py-4 sm:grid-cols-2">
-            <button
-              type="button"
-              disabled={!!openTrade || !currentCandle}
-              onClick={() => void onOpenTrade("BUY")}
-              className="rounded-2xl bg-gradient-to-r from-[#00e676] to-[#00a056] py-4 text-center text-sm font-bold text-black shadow-lg shadow-[#00e676]/30 disabled:opacity-40"
-            >
+            <button type="button" disabled={!!openTrade || !currentCandle} onClick={() => void onOpenTrade("BUY")} className="rounded-2xl bg-gradient-to-r from-[#00e676] to-[#00a056] py-4 text-center text-sm font-bold text-black shadow-lg shadow-[#00e676]/30 disabled:opacity-40">
               BUY
             </button>
-            <button
-              type="button"
-              disabled={!!openTrade || !currentCandle}
-              onClick={() => void onOpenTrade("SELL")}
-              className="rounded-2xl bg-gradient-to-r from-[#ff3c3c] to-[#991b1b] py-4 text-center text-sm font-bold text-white shadow-lg shadow-[#ff3c3c]/30 disabled:opacity-40"
-            >
+            <button type="button" disabled={!!openTrade || !currentCandle} onClick={() => void onOpenTrade("SELL")} className="rounded-2xl bg-gradient-to-r from-[#ff3c3c] to-[#991b1b] py-4 text-center text-sm font-bold text-white shadow-lg shadow-[#ff3c3c]/30 disabled:opacity-40">
               SELL
             </button>
           </div>
@@ -464,8 +341,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             </p>
             {openTrade && (
               <p className="mt-1 text-xs text-[#ff8c00] font-[family-name:var(--font-mono)]">
-                Open P&amp;L (mark) {analytics.unreal >= 0 ? "+" : ""}
-                {analytics.unreal.toFixed(2)}
+                Open P&amp;L (mark) {analytics.unreal >= 0 ? "+" : ""}{analytics.unreal.toFixed(2)}
               </p>
             )}
           </div>
@@ -492,53 +368,32 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           <div>
             <p className={bt.label}>Total P&amp;L</p>
             <p className={`font-[family-name:var(--font-mono)] text-lg ${analytics.totalPl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}`}>
-              {analytics.totalPl >= 0 ? "+" : ""}
-              {analytics.totalPl.toFixed(2)}{" "}
-              <span className="text-slate-500">
-                ({analytics.plPct >= 0 ? "+" : ""}
-                {analytics.plPct.toFixed(2)}%)
-              </span>
+              {analytics.totalPl >= 0 ? "+" : ""}{analytics.totalPl.toFixed(2)}{" "}
+              <span className="text-slate-500">({analytics.plPct >= 0 ? "+" : ""}{analytics.plPct.toFixed(2)}%)</span>
             </p>
           </div>
 
           <div>
             <p className={bt.label}>Closed trades</p>
             <ul className="mt-2 max-h-56 space-y-2 overflow-y-auto pr-1">
-              {trades
-                .filter((t) => t.status === "closed")
-                .map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-[family-name:var(--font-mono)]"
-                  >
-                    <span
-                      className={
-                        t.direction === "BUY"
-                          ? "rounded bg-[#00e676]/15 px-1.5 py-0.5 text-[#00e676]"
-                          : "rounded bg-[#ff3c3c]/15 px-1.5 py-0.5 text-[#ff3c3c]"
-                      }
-                    >
-                      {t.direction}
-                    </span>
-                    <span className="text-slate-400">
-                      {t.entry_price.toFixed(5)} → {t.exit_price?.toFixed(5) ?? "—"}
-                    </span>
-                    <span className={t.pl != null && t.pl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}>
-                      {(t.pl ?? 0) >= 0 ? "+" : ""}
-                      {(t.pl ?? 0).toFixed(0)}
-                    </span>
-                  </li>
-                ))}
+              {trades.filter((t) => t.status === "closed").map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-[family-name:var(--font-mono)]">
+                  <span className={t.direction === "BUY" ? "rounded bg-[#00e676]/15 px-1.5 py-0.5 text-[#00e676]" : "rounded bg-[#ff3c3c]/15 px-1.5 py-0.5 text-[#ff3c3c]"}>
+                    {t.direction}
+                  </span>
+                  <span className="text-slate-400">{t.entry_price.toFixed(5)} → {t.exit_price?.toFixed(5) ?? "—"}</span>
+                  <span className={t.pl != null && t.pl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}>
+                    {(t.pl ?? 0) >= 0 ? "+" : ""}{(t.pl ?? 0).toFixed(0)}
+                  </span>
+                </li>
+              ))}
               {trades.filter((t) => t.status === "closed").length === 0 && (
                 <li className="text-xs text-slate-600">No closed trades yet.</li>
               )}
             </ul>
           </div>
 
-          <Link
-            href={`${basePath}/session/${sessionId}`}
-            className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-[family-name:var(--font-mono)]"
-          >
+          <Link href={`${basePath}/session/${sessionId}`} className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-[family-name:var(--font-mono)]">
             Session summary →
           </Link>
         </aside>

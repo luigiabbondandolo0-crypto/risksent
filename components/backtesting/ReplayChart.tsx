@@ -14,6 +14,7 @@ import type { Candle } from "@/lib/backtesting/btTypes";
 
 type Props = {
   candles: Candle[];
+  currentIndex: number;
   entryPrice?: number | null;
   stopLoss?: number | null;
   takeProfit?: number | null;
@@ -24,6 +25,7 @@ type Props = {
 
 export function ReplayChart({
   candles,
+  currentIndex,
   entryPrice,
   stopLoss,
   takeProfit,
@@ -115,19 +117,23 @@ export function ReplayChart({
           Number.isFinite(c.low) &&
           Number.isFinite(c.close)
       )
-      .map((c) => ({
+      .map((c, i) => ({
         time: c.time as UTCTimestamp,
         open: c.open,
         high: c.high,
         low: c.low,
-        close: c.close
+        close: c.close,
+        color: i > currentIndex ? "transparent" : i === currentIndex ? "#ff8c00" : c.close >= c.open ? "#00e676" : "#ff3c3c",
+        wickColor: i > currentIndex ? "transparent" : i === currentIndex ? "#ff8c00" : c.close >= c.open ? "#00e676" : "#ff3c3c",
+        borderColor: i > currentIndex ? "transparent" : "transparent",
       }));
 
     series.setData(data);
-    if (data.length > 0) {
+
+    if (data.length > 0 && currentIndex >= 0) {
       chartRef.current?.timeScale().fitContent();
     }
-  }, [candles]);
+  }, [candles, currentIndex]);
 
   useEffect(() => {
     const series = seriesRef.current;
