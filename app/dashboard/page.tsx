@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   XAxis,
@@ -18,21 +18,6 @@ import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
-
-type Account = {
-  id: string;
-  broker_type: string;
-  account_number: string;
-  account_name?: string | null;
-  metaapi_account_id: string | null;
-  created_at: string;
-};
-
-function accountLabel(a: Account): string {
-  const login = a.account_number ?? "";
-  const name = a.account_name?.trim();
-  return name ? `${login} · ${name}` : login;
-}
 
 type Stats = {
   balance: number;
@@ -128,20 +113,17 @@ function AnimatedNumber({
 
 
 const POLL_MS = 45_000;
-const CHECK_RISK_THROTTLE_MS = 1 * 60 * 1000; // 1 min — live-ish when dashboard open; cron runs every 2 min for all accounts
 
 export default function DashboardPage() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
+  const [selectedUuid] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
   const [rulesPopupOpen, setRulesPopupOpen] = useState(false);
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
-  const [syncing, setSyncing] = useState(false);
+  const [syncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const lastCheckRiskRef = useRef<{ uuid: string; at: number } | null>(null);
 
   const fetchStats = useCallback(async (uuid: string | null) => {
     if (uuid === null) return;
@@ -170,25 +152,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const accRes = await fetch("/api/accounts");
-        const body = await accRes.json().catch(() => ({}));
-        if (!accRes.ok) {
-          setError(body?.error ?? "Failed to load accounts");
-          return;
-        }
-        const list = body.accounts ?? [];
-        setAccounts(list);
-        const first = list?.[0];
-        if (first?.metaapi_account_id) setSelectedUuid(first.metaapi_account_id);
-        else setSelectedUuid("");
-      } catch {
-        setError("Failed to load accounts");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // Official live dashboard: no account linking / mtapi dependency.
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -213,26 +178,12 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedUuid === null) return;
+    if (selectedUuid == null) return;
     setStats(null);
     fetchStats(selectedUuid);
     const t = setInterval(() => fetchStats(selectedUuid), POLL_MS);
     return () => clearInterval(t);
   }, [selectedUuid, fetchStats]);
-
-  // Risk check: quando le stats sono caricate, invia a check-risk (throttle 5 min per account)
-  useEffect(() => {
-    if (!stats || stats.error || !selectedUuid) return;
-    const now = Date.now();
-    const last = lastCheckRiskRef.current;
-    if (last && last.uuid === selectedUuid && now - last.at < CHECK_RISK_THROTTLE_MS) return;
-    lastCheckRiskRef.current = { uuid: selectedUuid, at: now };
-    fetch("/api/alerts/check-risk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uuid: selectedUuid })
-    }).catch(() => {});
-  }, [stats, selectedUuid]);
 
   const currency = stats?.currency ?? "EUR";
   const curve = stats?.equityCurve ?? [];
@@ -267,11 +218,7 @@ export default function DashboardPage() {
     return { wrLast, wrPrev, diff };
   })();
 
-  const handleSyncTrades = useCallback(() => {
-    if (!selectedUuid) return;
-    setSyncing(true);
-    fetchStats(selectedUuid).finally(() => setSyncing(false));
-  }, [selectedUuid, fetchStats]);
+  const handleSyncTrades = useCallback(() => {}, []);
 
   // Calendar: displayed month (navigable)
   const year = calendarMonth.getFullYear();
@@ -309,35 +256,8 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-        <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0">
-          <label htmlFor="dashboard-account" className="rs-section-title mb-2 block">
-            Trading account
-          </label>
-          <select
-            id="dashboard-account"
-            className="rs-input"
-            value={selectedUuid ?? ""}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUuid(e.target.value || null)}
-            disabled={loading}
-          >
-            <option value="">Select account</option>
-            {accounts.map((a: Account) => (
-              <option key={a.id} value={a.metaapi_account_id ?? ""}>
-                {accountLabel(a)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0" />
       </header>
-
-      {!loading && accounts.length === 0 && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Non hai un account collegato -{" "}
-          <Link href="/add-account" className="font-semibold underline hover:text-amber-100">
-            Aggiungilo
-          </Link>
-        </div>
-      )}
 
       {loading && (
         <div className="rs-card overflow-hidden p-6" aria-hidden>
