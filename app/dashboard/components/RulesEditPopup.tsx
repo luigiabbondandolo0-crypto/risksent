@@ -84,7 +84,7 @@ export function RulesEditPopup({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-slate-100">Edit risk rules</h3>
+          <h3 className="text-base font-semibold font-display text-slate-100">Edit risk rules</h3>
           <button
             type="button"
             onClick={onClose}
@@ -97,7 +97,7 @@ export function RulesEditPopup({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Daily loss %</label>
+            <label className="mb-1 block text-xs font-medium font-mono text-slate-400">Daily loss %</label>
             <input
               type="range"
               min={0}
@@ -107,10 +107,10 @@ export function RulesEditPopup({
               onChange={handleChange("daily_loss_pct")}
               className="w-full h-2 rounded-full bg-slate-700 accent-cyan-500"
             />
-            <span className="text-sm text-slate-300">{rules.daily_loss_pct}%</span>
+            <span className="text-sm font-mono text-slate-300">{rules.daily_loss_pct}%</span>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Max risk per trade %</label>
+            <label className="mb-1 block text-xs font-medium font-mono text-slate-400">Max risk per trade %</label>
             <input
               type="range"
               min={0}
@@ -120,10 +120,10 @@ export function RulesEditPopup({
               onChange={handleChange("max_risk_per_trade_pct")}
               className="w-full h-2 rounded-full bg-slate-700 accent-cyan-500"
             />
-            <span className="text-sm text-slate-300">{rules.max_risk_per_trade_pct}%</span>
+            <span className="text-sm font-mono text-slate-300">{rules.max_risk_per_trade_pct}%</span>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Max exposure %</label>
+            <label className="mb-1 block text-xs font-medium font-mono text-slate-400">Max exposure %</label>
             <input
               type="range"
               min={0}
@@ -133,10 +133,10 @@ export function RulesEditPopup({
               onChange={handleChange("max_exposure_pct")}
               className="w-full h-2 rounded-full bg-slate-700 accent-cyan-500"
             />
-            <span className="text-sm text-slate-300">{rules.max_exposure_pct}%</span>
+            <span className="text-sm font-mono text-slate-300">{rules.max_exposure_pct}%</span>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Revenge threshold (consecutive losses)</label>
+            <label className="mb-1 block text-xs font-medium font-mono text-slate-400">Revenge threshold (consecutive losses)</label>
             <input
               type="range"
               min={1}
@@ -146,11 +146,11 @@ export function RulesEditPopup({
               onChange={handleChange("revenge_threshold_trades")}
               className="w-full h-2 rounded-full bg-slate-700 accent-cyan-500"
             />
-            <span className="text-sm text-slate-300">{rules.revenge_threshold_trades}</span>
+            <span className="text-sm font-mono text-slate-300">{rules.revenge_threshold_trades}</span>
           </div>
 
           {message && (
-            <p className={`text-sm ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
+            <p className={`text-sm font-mono ${message.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
               {message.text}
             </p>
           )}
@@ -159,14 +159,14 @@ export function RulesEditPopup({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="flex-1 rounded-lg border border-slate-600 px-3 py-2 text-sm font-display text-slate-300 hover:bg-slate-800"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-lg bg-cyan-500/20 border border-cyan-500/40 px-3 py-2 text-sm font-medium text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
+              className="flex-1 rounded-lg border border-cyan-500/40 bg-cyan-500/20 px-3 py-2 text-sm font-medium font-display text-cyan-300 hover:bg-cyan-500/30 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save"}
             </button>

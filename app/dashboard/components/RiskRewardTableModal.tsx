@@ -29,7 +29,7 @@ export function RiskRewardTableModal({ open, onClose }: RiskRewardTableModalProp
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-          <h3 className="text-base font-semibold text-slate-100">Risk:Reward & Win Rate</h3>
+          <h3 className="text-base font-semibold font-display text-slate-100">Risk:Reward & Win Rate</h3>
           <button
             type="button"
             onClick={onClose}
@@ -39,16 +39,16 @@ export function RiskRewardTableModal({ open, onClose }: RiskRewardTableModalProp
             <X className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-xs text-slate-500 px-5 pt-3">
+        <p className="px-5 pt-3 text-xs font-mono text-slate-500">
           Ideal combinations to be profitable. Green = profitable, orange = break even, red = not profitable.
         </p>
         <div className="p-5 overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          <table className="w-full border-collapse text-sm font-mono">
             <thead>
               <tr>
-                <th className="text-left py-2 pr-4 text-slate-400 font-medium">R:R</th>
+                <th className="py-2 pr-4 text-left font-medium text-slate-400">R:R</th>
                 {WIN_RATES.map((wr) => (
-                  <th key={wr} className="py-2 px-2 text-slate-400 font-medium text-center">
+                  <th key={wr} className="px-2 py-2 text-center font-medium text-slate-400">
                     {wr}%
                   </th>
                 ))}

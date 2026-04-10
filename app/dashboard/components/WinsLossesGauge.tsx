@@ -62,13 +62,13 @@ export function WinsLossesGauge({ wins, losses, draws = 0 }: WinsLossesGaugeProp
         </svg>
       </div>
       <div className="flex gap-1.5 mt-2 flex-wrap justify-center">
-        <span className="rounded-full bg-emerald-500/30 text-emerald-400 px-2 py-0.5 text-xs font-semibold">
+        <span className="rounded-full bg-emerald-500/30 px-2 py-0.5 text-xs font-semibold font-mono text-emerald-400">
           {wins}
         </span>
-        <span className="rounded-full bg-blue-500/30 text-blue-400 px-2 py-0.5 text-xs font-semibold">
+        <span className="rounded-full bg-blue-500/30 px-2 py-0.5 text-xs font-semibold font-mono text-blue-400">
           {draws}
         </span>
-        <span className="rounded-full bg-red-500/30 text-red-400 px-2 py-0.5 text-xs font-semibold">
+        <span className="rounded-full bg-red-500/30 px-2 py-0.5 text-xs font-semibold font-mono text-red-400">
           {losses}
         </span>
       </div>

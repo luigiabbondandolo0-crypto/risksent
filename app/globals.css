@@ -106,16 +106,15 @@ body {
   }
 
   .rs-section-title {
-    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500;
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 font-mono;
   }
 
   .rs-page-title {
-    @apply text-2xl font-semibold tracking-tight text-slate-50 sm:text-[1.65rem];
-    font-family: var(--font-display), ui-sans-serif, system-ui;
+    @apply font-display text-2xl font-extrabold tracking-tight text-slate-50 sm:text-3xl;
   }
 
   .rs-page-sub {
-    @apply mt-1 text-sm leading-relaxed max-w-2xl;
+    @apply mt-1 max-w-2xl text-sm leading-relaxed font-mono;
     color: rgba(148, 163, 184, 0.7);
   }
 
@@ -133,7 +132,7 @@ body {
   }
 
   .rs-kpi-label {
-    @apply text-[11px] font-medium uppercase tracking-[0.12em];
+    @apply text-[11px] font-medium uppercase tracking-[0.12em] font-mono;
     color: rgba(100, 116, 139, 0.8);
   }
 

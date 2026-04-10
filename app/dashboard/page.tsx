@@ -12,6 +12,7 @@ import {
   ReferenceLine,
   Brush
 } from "recharts";
+import { bt } from "@/components/backtesting/btClasses";
 import { DdExposureCard } from "./components/DdExposureCard";
 import { AlertsOverview } from "./components/AlertsOverview";
 import { QuickActions } from "./components/QuickActions";
@@ -262,11 +263,11 @@ export default function DashboardPage() {
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
   return (
-    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+    <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="rs-page-title font-display">Dashboard</h1>
-          <p className="rs-page-sub font-mono">
+          <h1 className={bt.h1}>Dashboard</h1>
+          <p className={bt.sub}>
             Risk, performance, and activity for the selected account — updated on a short interval while you stay on this page.
           </p>
           {stats?.updatedAt && (
@@ -332,7 +333,7 @@ export default function DashboardPage() {
                   { label: "Revenge", value: `${riskRules.revenge_threshold_trades} losses`, status: "safe" as RuleStatus },
                 ].map(({ label, value, status }) => (
                   <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-                    <div className="rs-kpi-label font-mono">{label}</div>
+                    <div className="rs-kpi-label">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className={`h-2 w-2 rounded-full ${
                         status === "watch" ? "bg-orange-400 animate-pulse" :
@@ -349,7 +350,7 @@ export default function DashboardPage() {
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
                 {["Daily loss", "Risk / trade", "Exposure", "Revenge"].map((label) => (
                   <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-                    <div className="rs-kpi-label font-mono">{label}</div>
+                    <div className="rs-kpi-label">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-slate-600" />
                       <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-mono font-semibold text-slate-400">
@@ -376,7 +377,7 @@ export default function DashboardPage() {
           {/* KPI row 1 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-mono">Balance</div>
+              <div className="rs-kpi-label">Balance</div>
               <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.balancePct} suffix="%" />}
               </div>
@@ -386,7 +387,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-mono">Equity</div>
+              <div className="rs-kpi-label">Equity</div>
               <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.equityPct} suffix="%" />}
               </div>
@@ -397,7 +398,7 @@ export default function DashboardPage() {
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
               <div className="flex items-center justify-between">
-                <span className="rs-kpi-label font-mono">Win rate & avg R:R</span>
+                <span className="rs-kpi-label">Win rate & avg R:R</span>
                 <button
                   type="button"
                   onClick={() => setRrTableOpen(true)}
@@ -443,7 +444,7 @@ export default function DashboardPage() {
           {/* KPI row 2 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-mono">Avg win</div>
+              <div className="rs-kpi-label">Avg win</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />}
               </div>
@@ -453,7 +454,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-mono">Avg loss</div>
+              <div className="rs-kpi-label">Avg loss</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />}
               </div>
@@ -463,7 +464,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-mono">Max drawdown</div>
+              <div className="rs-kpi-label">Max drawdown</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : (
                   <AnimatedNumber value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null} suffix="%" />
@@ -612,7 +613,7 @@ export default function DashboardPage() {
           </section>
 
           <section>
-            <h2 className="rs-section-title font-display mb-3 text-slate-400">
+            <h2 className="rs-section-title mb-3 text-slate-400">
               Quick actions
             </h2>
             <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />

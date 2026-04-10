@@ -45,12 +45,12 @@ export function DdExposureGauge({
   return (
     <div className="rounded-xl border border-slate-800 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-4">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className="text-xs font-medium font-mono text-slate-400 uppercase tracking-wide">{label}</span>
         {valueLabel != null && (
-          <span className="text-xs text-slate-500">{valueLabel}</span>
+          <span className="text-xs font-mono text-slate-500">{valueLabel}</span>
         )}
       </div>
-      <p className="text-lg font-bold text-white mb-2">
+      <p className="mb-2 text-lg font-bold font-display text-white">
         {valuePct != null ? (
           <span className={valuePct >= 0 ? "text-emerald-400" : "text-red-400"}>
             {valuePct >= 0 ? "+" : ""}
@@ -59,7 +59,7 @@ export function DdExposureGauge({
         ) : (
           "—"
         )}
-        <span className="text-slate-500 font-normal text-sm ml-2">vs limite {limitPct}%</span>
+        <span className="ml-2 text-sm font-normal font-mono text-slate-500">vs limite {limitPct}%</span>
       </p>
       <div className="h-2 w-full rounded-full bg-slate-700 overflow-hidden">
         <div
