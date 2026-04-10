@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = "support@risksent.com";
 
 export interface WelcomeEmailParams {
@@ -13,12 +11,14 @@ export interface WelcomeEmailParams {
  * Sends a welcome email to a new user
  */
 export async function sendWelcomeEmail({ to, userName }: WelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("[Email] RESEND_API_KEY not set, skipping welcome email");
-    return { success: false, error: "RESEND_API_KEY not configured" };
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[Email] Provider not configured, skipping welcome email");
+    return { success: true };
   }
 
   try {
+    const resend = new Resend(apiKey);
     const displayName = userName || to.split("@")[0];
     
     const { data, error } = await resend.emails.send({
