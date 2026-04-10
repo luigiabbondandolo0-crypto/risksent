@@ -14,7 +14,7 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/simulator", label: "Backtesting", icon: FlaskConical },
+  { href: "/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/trades", label: "Journal", icon: TrendingUp },
   { href: "/rules", label: "Risk Sentinel", icon: ShieldAlert },
 ];
@@ -41,6 +41,7 @@ export const APP_SHELL_PREFIXES = [
   "/dashboard",
   "/rules",
   "/trades",
+  "/backtesting",
   "/simulator",
   "/add-account",
   "/accounts",

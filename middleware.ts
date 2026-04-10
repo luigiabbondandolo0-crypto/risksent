@@ -7,6 +7,7 @@ const PROTECTED_PATHS = [
   "/dashboard",
   "/rules",
   "/trades",
+  "/backtesting",
   "/simulator",
   "/ai-coach",
   "/add-account",

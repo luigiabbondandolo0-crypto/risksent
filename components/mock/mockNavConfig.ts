@@ -17,7 +17,7 @@ export type MockNavItem = {
 
 export const mockPrimaryNavItems: readonly MockNavItem[] = [
   { href: "/mock/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/mock/simulator", label: "Backtesting", icon: FlaskConical },
+  { href: "/mock/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/mock/trades", label: "Journal", icon: TrendingUp },
   { href: "/mock/rules", label: "Risk Sentinel", icon: ShieldAlert },
 ];
