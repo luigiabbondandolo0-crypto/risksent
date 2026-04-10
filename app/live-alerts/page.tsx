@@ -80,8 +80,8 @@ export default function LiveAlertsPage() {
               <div className="la-fade flex flex-col gap-6">
                 <p className="max-w-lg text-slate-400 leading-relaxed"
                   style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                  One blunt Telegram ping the instant a rule breaks — not after the damage, not when it&apos;s convenient.<br />
-                  <span className="text-slate-300">Treat it like a floor call: you comply, or you stand down.</span>
+                  A formal Telegram notice is delivered the moment a configured rule is breached — timestamped and actionable.<br />
+                  <span className="text-slate-300">Designed for disciplined follow-through in line with your stated risk policy.</span>
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/signup"

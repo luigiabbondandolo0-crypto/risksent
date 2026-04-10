@@ -50,14 +50,15 @@ export function HomeLiveAlertsPhone() {
                   <Send className="h-5 w-5" strokeWidth={2.2} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-white">RiskSent · Risk Manager</p>
+                  <p className="text-[11px] font-semibold text-white">RiskSent · Risk desk</p>
                   <p className="mt-1 text-[11px] leading-snug text-slate-300 font-[family-name:var(--font-mono)]">
-                    That&apos;s <span className="font-semibold text-[#ff8c00]">loss #2 today</span>. You&apos;re{" "}
-                    <span className="text-white">done trading for the session</span> — flat, no new risk. Step away
-                    now or you&apos;ll bleed the account with revenge and overtrading.
+                    <span className="font-semibold text-slate-200">Policy notice:</span> a second losing outcome has
+                    been recorded for the current session. In line with your configured rules,{" "}
+                    <span className="text-slate-200">additional new risk is not recommended</span> until the next
+                    session. Please suspend discretionary entries and review your plan.
                   </p>
                   <p className="mt-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">
-                    Live alert · now
+                    Automated alert · delivered now
                   </p>
                 </div>
               </div>
@@ -184,7 +185,7 @@ export function HomeLiveAlertsPhone() {
               <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[8px] font-mono text-slate-500">
                 <span>Vol</span>
                 <span className={showAlert ? "animate-pulse text-[#ff3c3c]" : "text-slate-400"}>
-                  {showAlert ? "Stop loss" : "Price into stop"}
+                  {showAlert ? "Stop loss" : "Approaching stop"}
                 </span>
               </div>
             </div>
@@ -193,7 +194,7 @@ export function HomeLiveAlertsPhone() {
       </motion.div>
 
       <p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-slate-600">
-        MetaTrader on your phone → Telegram fires instantly
+        MetaTrader mobile · policy alert via Telegram
       </p>
     </div>
   );

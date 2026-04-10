@@ -148,7 +148,7 @@ export default function PricingPage() {
                       {f.included ? (
                         <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#00e676" }} />
                       ) : (
-                        <X className="h-4 w-4 shrink-0 mt-0.5 text-slate-600" aria-hidden />
+                        <X className="h-4 w-4 shrink-0 mt-0.5 text-[#ff3c3c]" strokeWidth={2.5} aria-hidden />
                       )}
                       <span
                         className={`text-sm ${f.included ? "text-slate-300" : "text-slate-500"}`}

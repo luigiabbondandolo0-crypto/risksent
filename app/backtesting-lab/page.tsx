@@ -6,7 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { ArrowRight, BarChart3 } from "lucide-react";
-import { HomeBacktestingShowcase } from "@/components/home/HomeBacktestingShowcase";
+import { HomeBacktestingDashboardPreview } from "@/components/home/HomeBacktestingShowcase";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -99,13 +99,13 @@ export default function BacktestingLabPage() {
         </div>
       </section>
 
-      {/* Replay + dashboard (same UI as app) */}
+      {/* Dashboard preview (same UI as app) */}
       <section className="px-6 lg:px-16 py-16">
         <div className="max-w-7xl mx-auto">
           <div className="bt-reveal relative overflow-hidden rounded-3xl p-px"
             style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(99,102,241,0.2), rgba(255,255,255,0.05))" }}>
             <div className="rounded-3xl p-6 sm:p-8 lg:p-10" style={{ background: "#0e0e12" }}>
-              <HomeBacktestingShowcase />
+              <HomeBacktestingDashboardPreview />
             </div>
           </div>
         </div>

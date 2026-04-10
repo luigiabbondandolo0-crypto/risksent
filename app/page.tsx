@@ -271,7 +271,7 @@ export default function HomePage() {
             {
               num: "04",
               heading: "One alert.\nOne decision.",
-              body: "When a rule breaks, you get one blunt, actionable ping — no debate, no second-guessing. Telegram fires the instant it happens. Treat it like a floor manager: you comply, or you stand down.",
+              body: "When a rule is breached, you receive a single, documented notice via Telegram at the time of the event. No ambiguity — aligned with the risk parameters you set. Appropriate action is advised in accordance with your trading plan.",
               accent: "#ff8c00",
               tag: "Live Alerts",
               stats: [
