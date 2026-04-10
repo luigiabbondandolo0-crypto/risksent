@@ -10,7 +10,7 @@ import { accountSelectColumns } from "@/lib/tradingApi";
  * Body: { uuid?: string }
  */
 export async function POST(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

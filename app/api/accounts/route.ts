@@ -10,7 +10,7 @@ export async function GET() {
   try {
     LOG(`[${requestId}] GET /api/accounts start`);
 
-    const supabase = createSupabaseRouteClient();
+    const supabase = await createSupabaseRouteClient();
     LOG(`[${requestId}] Supabase client created`);
 
     const {

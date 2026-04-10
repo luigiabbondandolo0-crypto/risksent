@@ -6,7 +6,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
  * Get current user's profile data
  */
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError
@@ -49,7 +49,7 @@ export async function GET() {
  * Update current user's profile data
  */
 export async function PATCH(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

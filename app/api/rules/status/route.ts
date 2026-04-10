@@ -15,7 +15,7 @@ import {
  * Live data: from mtapi (dashboard-stats logic). If no account or API error, live values are null.
  */
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

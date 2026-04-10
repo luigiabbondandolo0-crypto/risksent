@@ -8,7 +8,7 @@ import { sendAlertToTelegram } from "@/lib/telegramAlert";
  * Auth: required (user must be logged in).
  */
 export async function POST() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

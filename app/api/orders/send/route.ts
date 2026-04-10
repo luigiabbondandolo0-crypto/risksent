@@ -11,7 +11,7 @@ const PENDING_OPS = ["BuyStop", "SellStop", "BuyLimit", "SellLimit"];
  * Places order via mtapi OrderSend. Optional stoploss/takeprofit = price levels.
  */
 export async function POST(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

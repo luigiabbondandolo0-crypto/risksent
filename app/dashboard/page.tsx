@@ -330,6 +330,15 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {!loading && accounts.length === 0 && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Non hai un account collegato -{" "}
+          <Link href="/add-account" className="font-semibold underline hover:text-amber-100">
+            Aggiungilo
+          </Link>
+        </div>
+      )}
+
       {loading && (
         <div className="rs-card overflow-hidden p-6" aria-hidden>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

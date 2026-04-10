@@ -7,7 +7,7 @@ import { runRiskCheckDryRun } from "@/lib/riskCheckRun";
  * Runs risk check in dry-run mode (no alerts, no Telegram). Returns full detail for live-monitoring page.
  */
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

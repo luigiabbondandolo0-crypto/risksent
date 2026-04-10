@@ -6,7 +6,7 @@ import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
  * Returns { isAdmin: boolean, userId: string | null }
  */
 export async function checkAdminRole(): Promise<{ isAdmin: boolean; userId: string | null }> {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

@@ -22,7 +22,7 @@ type CheckItem = {
  */
 export async function GET() {
   const checks: CheckItem[] = [];
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

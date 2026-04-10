@@ -238,7 +238,7 @@ function buildRealStats(
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

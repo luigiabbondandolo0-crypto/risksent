@@ -7,7 +7,7 @@ import { getAccountSummary, accountSelectColumns, type TradingAccountRow } from 
  * Returns connection status for mtapi and Supabase (for live-monitoring page).
  */
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

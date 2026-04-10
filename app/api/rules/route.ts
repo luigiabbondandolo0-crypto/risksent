@@ -3,7 +3,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError
@@ -49,7 +49,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

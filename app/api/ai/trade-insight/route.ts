@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

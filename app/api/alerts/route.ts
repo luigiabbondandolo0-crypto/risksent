@@ -3,7 +3,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { sendAlertToTelegram } from "@/lib/telegramAlert";
 
 export async function GET() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError
@@ -33,7 +33,7 @@ export async function GET() {
  * Body: { message: string, severity?: 'medium' | 'high', solution?: string }
  */
 export async function POST(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

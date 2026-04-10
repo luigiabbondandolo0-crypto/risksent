@@ -12,7 +12,7 @@ function getMtapiBase(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createSupabaseRouteClient();
+    const supabase = await createSupabaseRouteClient();
     const {
       data: { user },
       error: authError

@@ -8,7 +8,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
  * Called after successful signup
  */
 export async function POST(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

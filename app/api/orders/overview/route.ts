@@ -57,7 +57,7 @@ function parsePositions(raw: unknown[]): PositionRow[] {
  * Returns account summary (balance, equity, currency) and open positions for the given account.
  */
 export async function GET(req: NextRequest) {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError

@@ -7,7 +7,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
  * Replace with real AI call (rules + recent trades) when ready.
  */
 export async function POST() {
-  const supabase = createSupabaseRouteClient();
+  const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
     error: authError
