@@ -101,15 +101,7 @@ export default function BacktestingLabPage() {
 
       {/* Replay + dashboard (same UI as app) */}
       <section className="px-6 lg:px-16 py-16">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="bt-reveal">
-            <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-2">Product preview</p>
-            <h2 className="text-[clamp(28px,4vw,44px)] font-black leading-[0.95] tracking-[-0.03em] text-white max-w-2xl"
-              style={{ fontFamily: "'Syne', sans-serif" }}>
-              Replay, Buy/Sell, session stats<br />
-              <span className="text-slate-500">and the same dashboard layout as the app.</span>
-            </h2>
-          </div>
+        <div className="max-w-7xl mx-auto">
           <div className="bt-reveal relative overflow-hidden rounded-3xl p-px"
             style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(99,102,241,0.2), rgba(255,255,255,0.05))" }}>
             <div className="rounded-3xl p-6 sm:p-8 lg:p-10" style={{ background: "#0e0e12" }}>

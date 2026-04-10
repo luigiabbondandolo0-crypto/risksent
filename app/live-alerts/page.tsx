@@ -80,9 +80,8 @@ export default function LiveAlertsPage() {
               <div className="la-fade flex flex-col gap-6">
                 <p className="max-w-lg text-slate-400 leading-relaxed"
                   style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                  Telegram alerts that hit your phone the second<br />
-                  your rules are broken. Not after. Not during.<br />
-                  <span className="text-slate-300">The exact moment it matters.</span>
+                  One blunt Telegram ping the instant a rule breaks — not after the damage, not when it&apos;s convenient.<br />
+                  <span className="text-slate-300">Treat it like a floor call: you comply, or you stand down.</span>
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/signup"
@@ -100,7 +99,7 @@ export default function LiveAlertsPage() {
               </div>
             </div>
 
-            <div className="la-fade flex shrink-0 justify-center lg:justify-end lg:pt-8">
+            <div className="la-fade flex shrink-0 justify-center pt-20 lg:justify-end lg:pt-8">
               <HomeLiveAlertsPhone />
             </div>
           </div>

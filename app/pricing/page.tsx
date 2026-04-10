@@ -105,21 +105,30 @@ export default function PricingPage() {
 
       {/* Pricing cards */}
       <section className="px-6 lg:px-16 py-8">
-        <div className="max-w-5xl mx-auto grid gap-5 lg:grid-cols-2">
+        <div className="max-w-5xl mx-auto grid gap-5 lg:grid-cols-2 lg:items-stretch">
           {plans.map((plan) => (
             <motion.div
               key={plan.name}
               initial={false}
               whileHover={{ y: -8, transition: { type: "spring", stiffness: 400, damping: 26 } }}
               whileTap={{ scale: 0.995 }}
-              className="pr-reveal relative overflow-hidden rounded-3xl p-px shadow-lg shadow-black/20 transition-shadow hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
-              style={{ background: plan.highlight ? "linear-gradient(135deg, rgba(255,60,60,0.5), rgba(255,140,0,0.35), rgba(255,255,255,0.08))" : "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.06))" }}>
-              <div className="relative rounded-3xl p-8 lg:p-9" style={{ background: "#0e0e12" }}>
-                {plan.highlight && (
+              className="pr-reveal relative flex min-h-full overflow-hidden rounded-3xl p-px shadow-lg shadow-black/20 transition-shadow hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
+              style={{
+                background: plan.highlight
+                  ? "linear-gradient(135deg, rgba(255,60,60,0.5), rgba(255,140,0,0.35), rgba(255,255,255,0.08))"
+                  : "linear-gradient(135deg, rgba(34,211,238,0.42), rgba(99,102,241,0.22), rgba(255,255,255,0.08))"
+              }}>
+              <div
+                className="relative flex min-h-full flex-1 flex-col rounded-[22px] p-8 lg:p-9"
+                style={{ background: "#0e0e12" }}
+              >
+                {plan.highlight ? (
                   <div className="mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-widest"
                     style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.35)", background: "rgba(255,140,0,0.08)" }}>
                     Most complete
                   </div>
+                ) : (
+                  <div className="mb-4 h-[26px]" aria-hidden />
                 )}
                 <p className="text-xl font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.name}</p>
                 <div className="mt-3 flex items-end gap-2">

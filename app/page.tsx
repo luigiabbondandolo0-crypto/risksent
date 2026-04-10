@@ -6,7 +6,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { HomeBacktestingShowcase } from "@/components/home/HomeBacktestingShowcase";
 import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -272,7 +271,7 @@ export default function HomePage() {
             {
               num: "04",
               heading: "One alert.\nOne decision.",
-              body: "Telegram alerts that hit your phone the second your rules are broken. Not after. Not during. The exact moment it matters.",
+              body: "When a rule breaks, you get one blunt, actionable ping — no debate, no second-guessing. Telegram fires the instant it happens. Treat it like a floor manager: you comply, or you stand down.",
               accent: "#ff8c00",
               tag: "Live Alerts",
               stats: [
@@ -296,94 +295,91 @@ export default function HomePage() {
                 className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{ background: `radial-gradient(ellipse at 0% 50%, ${feature.accent}0a 0%, transparent 60%)` }}
               />
-              <div
-                className={`relative flex flex-col gap-10 ${i === 0 || i === 3 ? "lg:flex-row lg:items-start lg:justify-between" : "lg:flex-row lg:items-center lg:justify-between"}`}
-              >
-                <div className={i === 0 || i === 3 ? "min-w-0 lg:max-w-xl lg:flex-1" : "lg:w-3/5"}>
-                  <div className="flex items-center gap-4 mb-6">
-                    <span
-                      className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
-                      style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
-                    >
-                      {feature.tag}
-                    </span>
-                  </div>
-                  <div className="overflow-hidden">
-                    <h2
-                      className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
-                      style={{ fontFamily: "'Syne', sans-serif" }}
-                    >
-                      {feature.heading}
-                    </h2>
-                  </div>
-                  <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                    {feature.body}
-                  </p>
-                  {i !== 0 && i !== 3 && (
-                    <div className="mt-10 flex gap-8 lg:hidden">
+              <div className="relative flex flex-col gap-10">
+                {i === 3 ? (
+                  <>
+                    <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="lg:w-3/5">
+                        <div className="flex items-center gap-4 mb-6">
+                          <span
+                            className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
+                            style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
+                          >
+                            {feature.tag}
+                          </span>
+                        </div>
+                        <div className="overflow-hidden">
+                          <h2
+                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                            style={{ fontFamily: "'Syne', sans-serif" }}
+                          >
+                            {feature.heading}
+                          </h2>
+                        </div>
+                        <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                          {feature.body}
+                        </p>
+                      </div>
+                      <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
+                        {feature.stats.map((s, j) => (
+                          <div key={j} className="stat-item">
+                            <div
+                              className="text-4xl font-black tracking-tight"
+                              style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
+                            >
+                              {s.val}
+                            </div>
+                            <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                              {s.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-center border-t border-white/[0.06] pt-12 lg:pt-14">
+                      <HomeLiveAlertsPhone />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="lg:w-3/5">
+                      <div className="flex items-center gap-4 mb-6">
+                        <span
+                          className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
+                          style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
+                        >
+                          {feature.tag}
+                        </span>
+                      </div>
+                      <div className="overflow-hidden">
+                        <h2
+                          className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                          style={{ fontFamily: "'Syne', sans-serif" }}
+                        >
+                          {feature.heading}
+                        </h2>
+                      </div>
+                      <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                        {feature.body}
+                      </p>
+                    </div>
+                    <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
                       {feature.stats.map((s, j) => (
                         <div key={j} className="stat-item">
                           <div
-                            className="text-3xl font-black tracking-tight"
+                            className="text-4xl font-black tracking-tight"
                             style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
                           >
                             {s.val}
                           </div>
-                          <div className="mt-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                          <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
                             {s.label}
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {i === 0 && (
-                  <div className="w-full min-w-0 lg:max-w-[min(520px,46vw)] lg:shrink-0">
-                    <HomeBacktestingShowcase />
                   </div>
                 )}
-                {i === 3 && (
-                  <div className="flex w-full justify-center lg:w-auto lg:shrink-0 lg:pt-4">
-                    <HomeLiveAlertsPhone />
-                  </div>
-                )}
-
-                {(i === 0 || i === 3) && (
-                  <div className="flex flex-wrap gap-8 lg:hidden">
-                    {feature.stats.map((s, j) => (
-                      <div key={j} className="stat-item">
-                        <div
-                          className="text-3xl font-black tracking-tight"
-                          style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
-                        >
-                          {s.val}
-                        </div>
-                        <div className="mt-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                          {s.label}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div
-                  className={`flex gap-8 lg:flex-col lg:gap-6 ${i === 0 || i === 3 ? "hidden lg:flex lg:w-44 lg:shrink-0" : "lg:w-1/4"}`}
-                >
-                  {feature.stats.map((s, j) => (
-                    <div key={j} className="stat-item">
-                      <div
-                        className="text-4xl font-black tracking-tight"
-                        style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
-                      >
-                        {s.val}
-                      </div>
-                      <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                        {s.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </motion.div>
           ))}
