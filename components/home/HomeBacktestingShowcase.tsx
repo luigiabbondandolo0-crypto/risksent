@@ -160,6 +160,7 @@ export function HomeBacktestingShowcase() {
         <div className="h-[220px] w-full sm:h-[260px]">
           <ReplayChart
             candles={candles}
+            currentIndex={Math.max(0, candles.length - 1)}
             entryPrice={HOME_MOCK_ENTRY}
             stopLoss={side === "BUY" ? HOME_MOCK_SL : HOME_MOCK_TP}
             takeProfit={side === "BUY" ? HOME_MOCK_TP : HOME_MOCK_SL}
