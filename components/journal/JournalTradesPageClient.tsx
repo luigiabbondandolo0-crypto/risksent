@@ -15,7 +15,9 @@ function netPl(t: JournalTradeRow) {
   return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
 }
 
-export function JournalTradesPageClient() {
+type JournalTradesPageClientProps = { linkBase?: string };
+
+export function JournalTradesPageClient({ linkBase = "/app/journaling" }: JournalTradesPageClientProps) {
   const router = useRouter();
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -176,11 +178,11 @@ export function JournalTradesPageClient() {
                     role="link"
                     tabIndex={0}
                     className={`cursor-pointer border-b border-white/[0.04] transition hover:bg-white/[0.05] ${rowTint}`}
-                    onClick={() => router.push(`/app/journaling/trade/${t.id}`)}
+                    onClick={() => router.push(`${linkBase}/trade/${t.id}`)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        router.push(`/app/journaling/trade/${t.id}`);
+                        router.push(`${linkBase}/trade/${t.id}`);
                       }
                     }}
                   >
@@ -216,7 +218,7 @@ export function JournalTradesPageClient() {
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/app/journaling/trade/${t.id}`}
+                        href={`${linkBase}/trade/${t.id}`}
                         className="text-xs font-mono text-[#ff3c3c] underline hover:text-[#ff6b6b]"
                         onClick={(e) => e.stopPropagation()}
                       >

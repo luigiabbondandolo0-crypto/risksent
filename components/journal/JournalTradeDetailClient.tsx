@@ -15,9 +15,9 @@ function netPl(t: JournalTradeRow) {
   return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
 }
 
-type Props = { tradeId: string };
+type Props = { tradeId: string; linkBase?: string };
 
-export function JournalTradeDetailClient({ tradeId }: Props) {
+export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling" }: Props) {
   const [trade, setTrade] = useState<JournalTradeRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
@@ -111,7 +111,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
     return (
       <div className={jn.page}>
         <p className="text-red-400">Trade not found.</p>
-        <Link href="/app/journaling/trades" className="mt-4 inline-block text-[#ff3c3c] underline text-sm">
+        <Link href={`${linkBase}/trades`} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">
           Back to trades
         </Link>
       </div>
@@ -123,7 +123,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
   return (
     <div className={`${jn.page} space-y-6`}>
       <Link
-        href="/app/journaling/trades"
+        href={`${linkBase}/trades`}
         className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-mono"
       >
         <ChevronLeft className="h-3 w-3" />
@@ -301,7 +301,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
               {rel.map((r) => (
                 <li key={r.id}>
                   <Link
-                    href={`/app/journaling/trade/${r.id}`}
+                    href={`${linkBase}/trade/${r.id}`}
                     className="flex justify-between rounded-lg border border-white/[0.05] bg-black/20 px-3 py-2 text-xs font-mono hover:border-[#ff3c3c]/20"
                   >
                     <span className="text-slate-400">{format(parseISO(r.close_time ?? r.open_time), "MMM d")}</span>

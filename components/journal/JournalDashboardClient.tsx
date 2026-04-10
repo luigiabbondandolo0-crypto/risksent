@@ -50,7 +50,9 @@ function maskNumber(n: string) {
   return `••••${n.slice(-4)}`;
 }
 
-export function JournalDashboardClient() {
+type JournalDashboardClientProps = { linkBase?: string };
+
+export function JournalDashboardClient({ linkBase = "/app/journaling" }: JournalDashboardClientProps) {
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +165,7 @@ export function JournalDashboardClient() {
             <Plus className="h-4 w-4" />
             Add account
           </button>
-          <Link href="/app/journaling/trades" className={`${jn.btnGhost} no-underline`}>
+          <Link href={`${linkBase}/trades`} className={`${jn.btnGhost} no-underline`}>
             All trades
           </Link>
         </div>
