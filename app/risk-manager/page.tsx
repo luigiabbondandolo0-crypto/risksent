@@ -77,8 +77,8 @@ export default function RiskManagerPage() {
             <p className="max-w-lg text-slate-400 leading-relaxed"
               style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
               Real-time risk monitoring on your live account.<br />
-              Hard blocks. Live alerts. Zero excuses.<br />
-              <span className="text-slate-300">RiskSent stops you before the damage is done.</span>
+              Live alerts. Actionable guidance. Zero excuses.<br />
+              <span className="text-slate-300">RiskSent does not block your trading: it warns you while you are making mistakes.</span>
             </p>
             <div className="flex gap-3">
               <Link href="/signup"
@@ -177,6 +177,60 @@ export default function RiskManagerPage() {
         </div>
       </section>
 
+      {/* Rules builder */}
+      <section className="px-6 lg:px-16 py-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="rm-reveal relative overflow-hidden rounded-3xl p-px"
+            style={{ background: "linear-gradient(135deg, rgba(255,60,60,0.35), rgba(255,140,0,0.2), rgba(255,255,255,0.05))" }}>
+            <div className="rounded-3xl p-8 lg:p-10" style={{ background: "#0e0e12" }}>
+              <div className="mb-6">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">Rules Builder</p>
+                <p className="mt-1 text-lg font-bold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>Set your rules and save them</p>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Custom limits</p>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Max daily loss", value: "3.0%" },
+                      { label: "Max risk per trade", value: "1.0%" },
+                      { label: "Max total exposure", value: "6.0%" },
+                      { label: "Consecutive losses alert", value: "3 losses" },
+                    ].map((rule) => (
+                      <div key={rule.label} className="flex items-center justify-between rounded-xl px-3 py-2"
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <span className="text-xs text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{rule.label}</span>
+                        <span className="text-xs font-bold text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{rule.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" className="mt-4 w-full rounded-xl px-4 py-2.5 text-xs font-bold text-black"
+                    style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}>
+                    Save rules
+                  </button>
+                </div>
+
+                <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">How RiskSent helps</p>
+                  <div className="space-y-3 text-xs text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    <p>1) Detects rule breaches in real time while you trade.</p>
+                    <p>2) Sends immediate guidance: what to do now, when to stop, and how to avoid repeating the mistake.</p>
+                    <p>3) Logs violations so you can review patterns and improve execution.</p>
+                  </div>
+                  <div className="mt-4 rounded-xl p-3"
+                    style={{ background: "rgba(255,140,0,0.08)", border: "1px solid rgba(255,140,0,0.25)" }}>
+                    <p className="text-[11px] text-orange-300" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      Note: RiskSent does not execute or block trades on your account. It acts as a real-time risk coach.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="px-6 lg:px-16 py-16">
         <div className="max-w-7xl mx-auto">
@@ -191,12 +245,12 @@ export default function RiskManagerPage() {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { title: "Hard blocks", desc: "When you break a rule, a fullscreen block appears. You must write why you want to override it. Attrito intenzionale.", color: "#ff3c3c" },
-              { title: "Cooldown timer", desc: "After a violation, your session is locked for a configurable time. Set it when you're calm.", color: "#ff8c00" },
-              { title: "Daily loss limit", desc: "Set your max daily drawdown. The moment you hit it, RiskSent locks your session.", color: "#ff3c3c" },
+              { title: "Saved risk rules", desc: "Create your own rules and save presets for each account or challenge phase.", color: "#ff3c3c" },
+              { title: "Action guidance", desc: "When a rule is close to breach, you get a precise suggestion: reduce size, stop, or review.", color: "#ff8c00" },
+              { title: "Daily loss tracking", desc: "Set your max daily drawdown and get alerted before and at the limit.", color: "#ff3c3c" },
               { title: "Exposure control", desc: "Define your max open exposure. RiskSent alerts you before you add too much risk.", color: "#ff8c00" },
-              { title: "Revenge detection", desc: "3 consecutive losses? RiskSent flags it and forces a pause. Stop revenge trading now.", color: "#ff3c3c" },
-              { title: "Violation log", desc: "Every time you override a rule, it's logged with a timestamp. Your history of mistakes — visible.", color: "#ff8c00" },
+              { title: "Revenge detection", desc: "3 consecutive losses? RiskSent flags the behavior and suggests a stop protocol.", color: "#ff3c3c" },
+              { title: "Violation log", desc: "Every violation is tracked with timestamp and context so you can improve from evidence.", color: "#ff8c00" },
             ].map((f, i) => (
               <div key={i} className="rm-reveal group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>

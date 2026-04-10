@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowRight, Check, Zap } from "lucide-react";
@@ -10,7 +10,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function PricingPage() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [annual, setAnnual] = useState(false);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -31,21 +30,33 @@ export default function PricingPage() {
     return () => ctx.revert();
   }, []);
 
-  const monthlyPrice = 19;
-  const annualPrice = 12;
-  const price = annual ? annualPrice : monthlyPrice;
-
-  const features = [
-    "Backtesting lab — unlimited tests",
-    "Trading journal — unlimited trades",
-    "Risk Sentinel — live monitoring",
-    "Live alerts — Telegram integration",
-    "AI Coach — coming soon",
-    "All future features included",
-    "MT4 & MT5 support",
-    "Multiple accounts",
-    "Export reports (CSV / PDF)",
-    "Priority support",
+  const plans = [
+    {
+      name: "New Trader",
+      price: "€25",
+      subtitle: "max 1 account · 3 backtesting sessions",
+      cta: "Start New Trader",
+      highlight: false,
+      features: [
+        "Maximum 1 account",
+        "3 backtesting sessions",
+        "Trading journal access",
+        "Risk Sentinel alerts",
+      ],
+    },
+    {
+      name: "Experienced Trader",
+      price: "€39",
+      subtitle: "unlimited accounts · unlimited everything",
+      cta: "Start Experienced Trader",
+      highlight: true,
+      features: [
+        "Unlimited accounts",
+        "Unlimited backtesting",
+        "Unlimited journal usage",
+        "Unlimited Risk Sentinel + live alerts",
+      ],
+    },
   ];
 
   return (
@@ -85,75 +96,41 @@ export default function PricingPage() {
 
           <p className="pr-fade text-slate-400 max-w-lg mx-auto"
             style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-            No tiers. No feature gating. No BS.<br />
-            One subscription unlocks the entire platform.
+            Choose the profile that matches your level.<br />
+            Simple pricing, monthly.
           </p>
         </div>
       </section>
 
-      {/* Pricing card */}
+      {/* Pricing cards */}
       <section className="px-6 lg:px-16 py-8">
-        <div className="max-w-2xl mx-auto">
-
-          {/* Toggle */}
-          <div className="pr-reveal flex items-center justify-center gap-4 mb-8">
-            <span className={`text-sm font-mono ${!annual ? "text-white" : "text-slate-500"}`}>Monthly</span>
-            <button
-              type="button"
-              onClick={() => setAnnual(!annual)}
-              className="relative h-6 w-12 rounded-full transition-all duration-300"
-              style={{ background: annual ? "linear-gradient(135deg, #ff3c3c, #ff8c00)" : "rgba(255,255,255,0.1)" }}
-            >
-              <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 ${annual ? "left-6" : "left-0.5"}`} />
-            </button>
-            <span className={`text-sm font-mono ${annual ? "text-white" : "text-slate-500"}`}>
-              Annual
-              <span className="ml-2 text-[10px] font-bold text-orange-400">-37%</span>
-            </span>
-          </div>
-
-          {/* Card */}
-          <div className="pr-reveal relative overflow-hidden rounded-3xl p-px"
-            style={{ background: "linear-gradient(135deg, rgba(255,60,60,0.5), rgba(255,140,0,0.3), rgba(255,255,255,0.05))" }}>
-            <div className="relative rounded-3xl p-8 lg:p-10" style={{ background: "#0e0e12" }}>
-              <div className="pointer-events-none absolute inset-0"
-                style={{ background: "radial-gradient(ellipse at 50% -20%, rgba(255,60,60,0.08) 0%, transparent 60%)" }} />
-
-              <div className="relative">
-                {/* Price */}
-                <div className="flex items-end gap-2 mb-2">
-                  <span className="text-[clamp(48px,8vw,80px)] font-black leading-none text-white"
-                    style={{ fontFamily: "'Syne', sans-serif" }}>
-                    €{price}
-                  </span>
-                  <span className="text-slate-500 font-mono mb-3">/ month</span>
-                </div>
-                {annual && (
-                  <p className="text-sm font-mono text-orange-400 mb-1">Billed €{annualPrice * 12}/year — save €{(monthlyPrice - annualPrice) * 12}</p>
+        <div className="max-w-5xl mx-auto grid gap-5 lg:grid-cols-2">
+          {plans.map((plan) => (
+            <div key={plan.name} className="pr-reveal relative overflow-hidden rounded-3xl p-px"
+              style={{ background: plan.highlight ? "linear-gradient(135deg, rgba(255,60,60,0.5), rgba(255,140,0,0.35), rgba(255,255,255,0.08))" : "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.06))" }}>
+              <div className="relative rounded-3xl p-8 lg:p-9" style={{ background: "#0e0e12" }}>
+                {plan.highlight && (
+                  <div className="mb-4 inline-flex rounded-full border px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-widest"
+                    style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.35)", background: "rgba(255,140,0,0.08)" }}>
+                    Most complete
+                  </div>
                 )}
-                <p className="text-slate-500 font-mono text-sm mb-8">
-                  {annual ? "Annual plan · cancel anytime" : "Monthly plan · cancel anytime"}
-                </p>
-
-                {/* CTA */}
+                <p className="text-xl font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.name}</p>
+                <div className="mt-3 flex items-end gap-2">
+                  <span className="text-[56px] leading-none font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.price}</span>
+                  <span className="mb-2 text-slate-500 font-mono">/ mese</span>
+                </div>
+                <p className="mt-2 text-xs text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{plan.subtitle}</p>
                 <Link href="/signup"
-                  className="flex items-center justify-center gap-2 w-full rounded-2xl py-4 text-base font-bold text-black transition-all hover:scale-[1.02] mb-8"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3)" }}>
-                  Start for free
-                  <ArrowRight className="h-5 w-5" />
+                  className="mt-6 flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 text-sm font-bold text-black transition-all hover:scale-[1.02]"
+                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 30px rgba(255,60,60,0.25)" }}>
+                  {plan.cta}
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-
-                <p className="text-center text-[11px] font-mono text-slate-600 mb-8">
-                  No credit card required · 7-day free trial
-                </p>
-
-                {/* Divider */}
-                <div className="h-px mb-8" style={{ background: "rgba(255,255,255,0.06)" }} />
-
-                {/* Features */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {features.map((f, i) => (
-                    <div key={i} className="flex items-start gap-3">
+                <div className="mt-6 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                <div className="mt-6 space-y-2.5">
+                  {plan.features.map((f) => (
+                    <div key={f} className="flex items-start gap-2.5">
                       <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#00e676" }} />
                       <span className="text-sm text-slate-300" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>{f}</span>
                     </div>
@@ -161,7 +138,10 @@ export default function PricingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          ))}
+        </div>
+        <div className="max-w-5xl mx-auto mt-4 text-center">
+          <p className="text-[11px] font-mono text-slate-600">Piani mensili · cancellazione in qualsiasi momento</p>
         </div>
       </section>
 
