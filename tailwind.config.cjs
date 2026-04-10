@@ -26,9 +26,17 @@ module.exports = {
       },
       borderRadius: {
         "4xl": "2rem"
-      }
+      },
+      keyframes: {
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0px rgba(255,60,60,0)" },
+          "50%": { boxShadow: "0 0 24px rgba(255,60,60,0.3)" },
+        },
+      },
+      animation: {
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+      },
     }
   },
   plugins: []
 };
-
