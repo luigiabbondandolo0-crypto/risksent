@@ -5,8 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { BtTimeframe, BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
-
-const CHART_TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
 import { checkSlTpHit, unrealizedPl } from "@/lib/backtesting/replayEngine";
 import { ReplayChart } from "./ReplayChart";
 import { TradeOpenModal } from "./TradeOpenModal";
@@ -26,6 +24,8 @@ type Props = {
   sessionId: string;
   basePath: string;
 };
+
+const CHART_TIMEFRAMES: BtTimeframe[] = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
 
 function lsKeyTf(id: string) {
   return `bt_chart_tf_${id}`;

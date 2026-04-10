@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
 import { ArrowRight, Bell } from "lucide-react";
+import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -43,55 +45,63 @@ export default function LiveAlertsPage() {
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full">
-          <div className="la-fade mb-6">
-            <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono font-bold uppercase tracking-[0.2em]"
-              style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.3)", background: "rgba(255,140,0,0.08)" }}>
-              <Bell className="h-3 w-3" />
-              Live Alerts
-            </span>
-          </div>
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
+            <div className="min-w-0 flex-1">
+              <div className="la-fade mb-6">
+                <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono font-bold uppercase tracking-[0.2em]"
+                  style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.3)", background: "rgba(255,140,0,0.08)" }}>
+                  <Bell className="h-3 w-3" />
+                  Live Alerts
+                </span>
+              </div>
 
-          <h1 className="text-[clamp(48px,8vw,120px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
-            style={{ fontFamily: "'Syne', sans-serif" }}>
-            {["The", "right"].map((w, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
-                <span className="la-hero-word inline-block">{w}</span>
-              </span>
-            ))}
-            <br />
-            {["alert", "at", "the"].map((w, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
-                <span className="la-hero-word inline-block">{w}</span>
-              </span>
-            ))}
-            <br />
-            <span className="inline-block overflow-hidden">
-              <span className="la-hero-word inline-block bg-clip-text text-transparent"
-                style={{ backgroundImage: "linear-gradient(135deg, #ff8c00, #ff3c3c)" }}>
-                right moment.
-              </span>
-            </span>
-          </h1>
+              <h1 className="text-[clamp(48px,8vw,120px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
+                style={{ fontFamily: "'Syne', sans-serif" }}>
+                {["The", "right"].map((w, i) => (
+                  <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+                    <span className="la-hero-word inline-block">{w}</span>
+                  </span>
+                ))}
+                <br />
+                {["alert", "at", "the"].map((w, i) => (
+                  <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+                    <span className="la-hero-word inline-block">{w}</span>
+                  </span>
+                ))}
+                <br />
+                <span className="inline-block overflow-hidden">
+                  <span className="la-hero-word inline-block bg-clip-text text-transparent"
+                    style={{ backgroundImage: "linear-gradient(135deg, #ff8c00, #ff3c3c)" }}>
+                    right moment.
+                  </span>
+                </span>
+              </h1>
 
-          <div className="la-fade flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <p className="max-w-lg text-slate-400 leading-relaxed"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-              Telegram alerts that hit your phone the second<br />
-              your rules are broken. Not after. Not during.<br />
-              <span className="text-slate-300">The exact moment it matters.</span>
-            </p>
-            <div className="flex gap-3">
-              <Link href="/signup"
-                className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-black transition-all hover:scale-[1.03]"
-                style={{ background: "linear-gradient(135deg, #ff8c00, #ff3c3c)", boxShadow: "0 0 30px rgba(255,140,0,0.3)" }}>
-                Set up alerts
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/mock/dashboard"
-                className="inline-flex items-center gap-2 rounded-2xl border px-6 py-3 text-sm font-medium text-slate-300 transition-all hover:text-white"
-                style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-                Live demo
-              </Link>
+              <div className="la-fade flex flex-col gap-6">
+                <p className="max-w-lg text-slate-400 leading-relaxed"
+                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                  Telegram alerts that hit your phone the second<br />
+                  your rules are broken. Not after. Not during.<br />
+                  <span className="text-slate-300">The exact moment it matters.</span>
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/signup"
+                    className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-black transition-all hover:scale-[1.03]"
+                    style={{ background: "linear-gradient(135deg, #ff8c00, #ff3c3c)", boxShadow: "0 0 30px rgba(255,140,0,0.3)" }}>
+                    Set up alerts
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link href="/mock/dashboard"
+                    className="inline-flex items-center gap-2 rounded-2xl border px-6 py-3 text-sm font-medium text-slate-300 transition-all hover:text-white"
+                    style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+                    Live demo
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="la-fade flex shrink-0 justify-center lg:justify-end lg:pt-8">
+              <HomeLiveAlertsPhone />
             </div>
           </div>
         </div>
@@ -100,7 +110,10 @@ export default function LiveAlertsPage() {
       {/* Preview */}
       <section className="px-6 lg:px-16 py-16">
         <div className="max-w-7xl mx-auto">
-          <div className="la-reveal relative overflow-hidden rounded-3xl p-px"
+          <motion.div
+            initial={false}
+            whileHover={{ y: -4, transition: { type: "spring", stiffness: 380, damping: 28 } }}
+            className="la-reveal relative overflow-hidden rounded-3xl p-px shadow-lg shadow-black/25 transition-shadow hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
             style={{ background: "linear-gradient(135deg, rgba(255,140,0,0.4), rgba(255,60,60,0.2), rgba(255,255,255,0.05))" }}>
             <div className="rounded-3xl p-8 lg:p-12" style={{ background: "#0e0e12" }}>
               <div className="mb-6 flex items-center justify-between">
@@ -180,7 +193,7 @@ export default function LiveAlertsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -205,16 +218,26 @@ export default function LiveAlertsPage() {
               { title: "Alert history", desc: "Full log of every alert with timestamp. Review your patterns and improve your discipline.", color: "#ff8c00" },
               { title: "Zero missed alerts", desc: "RiskSent monitors your account 24/7. Even when you're not watching, it is.", color: "#ff3c3c" },
             ].map((f, i) => (
-              <div key={i} className="la-reveal group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
+              <motion.div
+                key={i}
+                initial={false}
+                whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 26 } }}
+                whileTap={{ scale: 0.99 }}
+                className="la-reveal group relative overflow-hidden rounded-2xl p-6 transition-shadow hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ background: `radial-gradient(ellipse at 0% 100%, ${f.color}10 0%, transparent 70%)` }} />
                 <div className="relative">
-                  <div className="h-2 w-2 rounded-full mb-4" style={{ background: f.color, boxShadow: `0 0 8px ${f.color}` }} />
+                  <motion.div
+                    className="h-2 w-2 rounded-full mb-4"
+                    style={{ background: f.color, boxShadow: `0 0 8px ${f.color}` }}
+                    animate={{ scale: [1, 1.15, 1], opacity: [1, 0.85, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+                  />
                   <h3 className="text-base font-black text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>{f.title}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{f.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

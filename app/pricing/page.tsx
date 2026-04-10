@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, Check, Zap } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Check, X, Zap } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -34,30 +35,30 @@ export default function PricingPage() {
     {
       name: "New Trader",
       price: "€25",
-      subtitle: "max 1 account · 3 backtesting sessions",
       cta: "Start New Trader",
       highlight: false,
       features: [
-        "Maximum 1 account",
-        "3 backtesting sessions",
-        "Trading journal access",
-        "Risk Sentinel alerts",
+        { label: "Max 1 account", included: true },
+        { label: "3 Backtesting sessions", included: true },
+        { label: "Trading Journal", included: false },
+        { label: "Risk Sentinel", included: false },
+        { label: "Live alerts", included: false },
       ],
     },
     {
       name: "Experienced Trader",
       price: "€39",
-      subtitle: "unlimited accounts · unlimited everything",
       cta: "Start Experienced Trader",
       highlight: true,
       features: [
-        "Unlimited accounts",
-        "Unlimited backtesting",
-        "Unlimited journal usage",
-        "Unlimited Risk Sentinel + live alerts",
+        { label: "Unlimited Accounts", included: true },
+        { label: "Unlimited backtesting", included: true },
+        { label: "Trading Journal", included: true },
+        { label: "Risk Sentinel", included: true },
+        { label: "Live alerts", included: true },
       ],
     },
-  ];
+  ] as const;
 
   return (
     <div ref={containerRef} className="min-h-full overflow-x-hidden bg-[#080809]">
@@ -106,7 +107,12 @@ export default function PricingPage() {
       <section className="px-6 lg:px-16 py-8">
         <div className="max-w-5xl mx-auto grid gap-5 lg:grid-cols-2">
           {plans.map((plan) => (
-            <div key={plan.name} className="pr-reveal relative overflow-hidden rounded-3xl p-px"
+            <motion.div
+              key={plan.name}
+              initial={false}
+              whileHover={{ y: -8, transition: { type: "spring", stiffness: 400, damping: 26 } }}
+              whileTap={{ scale: 0.995 }}
+              className="pr-reveal relative overflow-hidden rounded-3xl p-px shadow-lg shadow-black/20 transition-shadow hover:shadow-[0_28px_70px_rgba(0,0,0,0.45)]"
               style={{ background: plan.highlight ? "linear-gradient(135deg, rgba(255,60,60,0.5), rgba(255,140,0,0.35), rgba(255,255,255,0.08))" : "linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.06))" }}>
               <div className="relative rounded-3xl p-8 lg:p-9" style={{ background: "#0e0e12" }}>
                 {plan.highlight && (
@@ -120,7 +126,6 @@ export default function PricingPage() {
                   <span className="text-[56px] leading-none font-black text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{plan.price}</span>
                   <span className="mb-2 text-slate-500 font-mono">/ month</span>
                 </div>
-                <p className="mt-2 text-xs text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{plan.subtitle}</p>
                 <Link href="/signup"
                   className="mt-6 flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 text-sm font-bold text-black transition-all hover:scale-[1.02]"
                   style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 30px rgba(255,60,60,0.25)" }}>
@@ -130,14 +135,23 @@ export default function PricingPage() {
                 <div className="mt-6 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
                 <div className="mt-6 space-y-2.5">
                   {plan.features.map((f) => (
-                    <div key={f} className="flex items-start gap-2.5">
-                      <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#00e676" }} />
-                      <span className="text-sm text-slate-300" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>{f}</span>
+                    <div key={f.label} className="flex items-start gap-2.5">
+                      {f.included ? (
+                        <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#00e676" }} />
+                      ) : (
+                        <X className="h-4 w-4 shrink-0 mt-0.5 text-slate-600" aria-hidden />
+                      )}
+                      <span
+                        className={`text-sm ${f.included ? "text-slate-300" : "text-slate-500"}`}
+                        style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}
+                      >
+                        {f.label}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
         <div className="max-w-5xl mx-auto mt-4 text-center">
@@ -162,11 +176,15 @@ export default function PricingPage() {
               { q: "What brokers are supported?", a: "Any broker that uses MT4 or MT5. If your broker supports MetaTrader, RiskSent works." },
               { q: "Is my data safe?", a: "All data is encrypted. We use read-only access to your trading account — we can never place or close trades." },
             ].map((item, i) => (
-              <div key={i} className="pr-reveal rounded-2xl p-5"
+              <motion.div
+                key={i}
+                initial={false}
+                whileHover={{ y: -4, transition: { type: "spring", stiffness: 450, damping: 28 } }}
+                className="pr-reveal rounded-2xl p-5 transition-shadow hover:shadow-lg hover:shadow-black/25"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="text-sm font-bold text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>{item.q}</p>
                 <p className="text-sm text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>{item.a}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

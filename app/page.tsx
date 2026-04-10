@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
+import { HomeBacktestingShowcase } from "@/components/home/HomeBacktestingShowcase";
+import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -278,9 +281,12 @@ export default function HomePage() {
               ],
             },
           ].map((feature, i) => (
-            <div
+            <motion.div
               key={i}
-              className="feature-section group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-all duration-500 hover:scale-[1.005]"
+              initial={false}
+              whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 28 } }}
+              whileTap={{ scale: 0.997 }}
+              className="feature-section group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
               style={{
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.06)",
@@ -290,8 +296,10 @@ export default function HomePage() {
                 className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
                 style={{ background: `radial-gradient(ellipse at 0% 50%, ${feature.accent}0a 0%, transparent 60%)` }}
               />
-              <div className="relative flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-                <div className="lg:w-3/5">
+              <div
+                className={`relative flex flex-col gap-10 ${i === 0 || i === 3 ? "lg:flex-row lg:items-start lg:justify-between" : "lg:flex-row lg:items-center lg:justify-between"}`}
+              >
+                <div className={i === 0 || i === 3 ? "min-w-0 lg:max-w-xl lg:flex-1" : "lg:w-3/5"}>
                   <div className="flex items-center gap-4 mb-6">
                     <span
                       className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
@@ -311,8 +319,57 @@ export default function HomePage() {
                   <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                     {feature.body}
                   </p>
+                  {i !== 0 && i !== 3 && (
+                    <div className="mt-10 flex gap-8 lg:hidden">
+                      {feature.stats.map((s, j) => (
+                        <div key={j} className="stat-item">
+                          <div
+                            className="text-3xl font-black tracking-tight"
+                            style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
+                          >
+                            {s.val}
+                          </div>
+                          <div className="mt-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                            {s.label}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
+
+                {i === 0 && (
+                  <div className="w-full min-w-0 lg:max-w-[min(520px,46vw)] lg:shrink-0">
+                    <HomeBacktestingShowcase />
+                  </div>
+                )}
+                {i === 3 && (
+                  <div className="flex w-full justify-center lg:w-auto lg:shrink-0 lg:pt-4">
+                    <HomeLiveAlertsPhone />
+                  </div>
+                )}
+
+                {(i === 0 || i === 3) && (
+                  <div className="flex flex-wrap gap-8 lg:hidden">
+                    {feature.stats.map((s, j) => (
+                      <div key={j} className="stat-item">
+                        <div
+                          className="text-3xl font-black tracking-tight"
+                          style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
+                        >
+                          {s.val}
+                        </div>
+                        <div className="mt-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                          {s.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div
+                  className={`flex gap-8 lg:flex-col lg:gap-6 ${i === 0 || i === 3 ? "hidden lg:flex lg:w-44 lg:shrink-0" : "lg:w-1/4"}`}
+                >
                   {feature.stats.map((s, j) => (
                     <div key={j} className="stat-item">
                       <div
@@ -328,7 +385,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
@@ -365,34 +422,49 @@ export default function HomePage() {
               { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#ff3c3c" },
               { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#ff8c00" },
             ].map((m, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="module-card group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
+                initial={false}
+                whileHover={{
+                  y: -8,
+                  transition: { type: "spring", stiffness: 420, damping: 24 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="module-card group relative overflow-hidden rounded-2xl p-6 transition-shadow duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+                style={{
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.07)"
+                }}
               >
                 <div
                   className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ background: `radial-gradient(ellipse at 50% 100%, ${m.color}12 0%, transparent 70%)` }}
                 />
-                <div className="relative">
+                <motion.div
+                  className="relative"
+                  whileHover={{ x: 2 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                >
                   <div className="flex items-start justify-between mb-6">
                     <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-600">{m.num}</span>
-                    <div
+                    <motion.div
                       className="h-2 w-2 rounded-full"
                       style={{ background: m.color, boxShadow: `0 0 8px ${m.color}` }}
+                      animate={{ scale: [1, 1.2, 1], opacity: [1, 0.85, 1] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
                     />
                   </div>
                   <h3
-                    className="text-xl font-black tracking-tight text-white mb-2"
+                    className="text-xl font-black tracking-tight text-white mb-2 transition-colors group-hover:text-white"
                     style={{ fontFamily: "'Syne', sans-serif" }}
                   >
                     {m.title}
                   </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <p className="text-xs text-slate-500 leading-relaxed transition-colors group-hover:text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                     {m.desc}
                   </p>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -410,25 +482,29 @@ export default function HomePage() {
               { name: "Sara", role: "Swing Trader", text: "One subscription. Test, journal, control risk. I never switch apps anymore.", avatar: "S", color: "#00e676" },
               { name: "Marco", role: "Prop Firm Coach", text: "The live alerts plus journaling history changed how I coach. Finally one process.", avatar: "M", color: "#ff3c3c" },
             ].map((t, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="rounded-2xl p-6"
+                initial={false}
+                whileHover={{ y: -6, borderColor: "rgba(255,255,255,0.14)", transition: { type: "spring", stiffness: 380, damping: 26 } }}
+                whileTap={{ scale: 0.99 }}
+                className="rounded-2xl p-6 transition-colors"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
               >
                 <p className="text-sm text-slate-300 leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div
+                  <motion.div
                     className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black"
                     style={{ background: t.color }}
+                    whileHover={{ scale: 1.08, rotate: 4 }}
                   >
                     {t.avatar}
-                  </div>
+                  </motion.div>
                   <div>
                     <p className="text-sm font-semibold text-white">{t.name}</p>
                     <p className="text-xs text-slate-500">{t.role}</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

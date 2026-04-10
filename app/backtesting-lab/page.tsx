@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
 import { ArrowRight, BarChart3 } from "lucide-react";
+import { HomeBacktestingShowcase } from "@/components/home/HomeBacktestingShowcase";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -97,65 +99,21 @@ export default function BacktestingLabPage() {
         </div>
       </section>
 
-      {/* Dashboard preview */}
+      {/* Replay + dashboard (same UI as app) */}
       <section className="px-6 lg:px-16 py-16">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="bt-reveal">
+            <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-2">Product preview</p>
+            <h2 className="text-[clamp(28px,4vw,44px)] font-black leading-[0.95] tracking-[-0.03em] text-white max-w-2xl"
+              style={{ fontFamily: "'Syne', sans-serif" }}>
+              Replay, Buy/Sell, session stats<br />
+              <span className="text-slate-500">and the same dashboard layout as the app.</span>
+            </h2>
+          </div>
           <div className="bt-reveal relative overflow-hidden rounded-3xl p-px"
             style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(99,102,241,0.2), rgba(255,255,255,0.05))" }}>
-            <div className="rounded-3xl p-8 lg:p-12" style={{ background: "#0e0e12" }}>
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">Backtesting Dashboard</p>
-                  <p className="text-lg font-bold text-white mt-1" style={{ fontFamily: "'Syne', sans-serif" }}>Strategy Performance Overview</p>
-                </div>
-                <span className="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-widest"
-                  style={{ color: "#22d3ee", background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.2)" }}>
-                  Live data
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6">
-                {[
-                  { label: "Total tests", val: "278", color: "#22d3ee" },
-                  { label: "Win rate", val: "58.2%", color: "#00e676" },
-                  { label: "Avg R:R", val: "1.35", color: "#818cf8" },
-                  { label: "Max DD", val: "-4.8%", color: "#ff3c3c" },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-2xl p-4"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{s.label}</p>
-                    <p className="mt-2 text-2xl font-black" style={{ color: s.color, fontFamily: "'Syne', sans-serif", textShadow: `0 0 20px ${s.color}50` }}>{s.val}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Equity curve — strategy vs benchmark</p>
-                <svg viewBox="0 0 800 160" className="w-full" fill="none">
-                  <defs>
-                    <linearGradient id="btGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0 120 C100 115 200 110 300 105 C400 100 500 95 600 92 C700 89 750 88 800 86" stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 4" fill="none" opacity="0.5" />
-                  <path d="M0 130 C50 125 100 118 150 108 C200 98 250 105 300 95 C350 85 400 75 450 65 C500 55 550 48 600 40 C650 32 720 28 800 22" stroke="#22d3ee" strokeWidth="2.5" fill="none" />
-                  <path d="M0 130 C50 125 100 118 150 108 C200 98 250 105 300 95 C350 85 400 75 450 65 C500 55 550 48 600 40 C650 32 720 28 800 22 L800 160 L0 160 Z" fill="url(#btGrad)" />
-                  {[0, 40, 80, 120, 160].map(y => (
-                    <line key={y} x1="0" y1={y} x2="800" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-                  ))}
-                </svg>
-                <div className="mt-3 flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <div className="h-0.5 w-6 rounded-full" style={{ background: "#22d3ee" }} />
-                    <span className="text-[10px] font-mono text-slate-500">Your strategy</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-0.5 w-6 rounded-full opacity-50" style={{ background: "#6366f1", borderTop: "1px dashed #6366f1" }} />
-                    <span className="text-[10px] font-mono text-slate-500">Benchmark</span>
-                  </div>
-                </div>
-              </div>
+            <div className="rounded-3xl p-6 sm:p-8 lg:p-10" style={{ background: "#0e0e12" }}>
+              <HomeBacktestingShowcase />
             </div>
           </div>
         </div>
@@ -181,16 +139,26 @@ export default function BacktestingLabPage() {
               { title: "Drawdown tracking", desc: "See your max drawdown, consecutive losses and recovery time for every tested period.", color: "#ff8c00" },
               { title: "Export results", desc: "Export full backtest reports as CSV or PDF. Share with mentors or prop firms.", color: "#818cf8" },
             ].map((f, i) => (
-              <div key={i} className="bt-reveal group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]"
+              <motion.div
+                key={i}
+                initial={false}
+                whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 26 } }}
+                whileTap={{ scale: 0.99 }}
+                className="bt-reveal group relative overflow-hidden rounded-2xl p-6 transition-shadow hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
                 style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ background: `radial-gradient(ellipse at 0% 100%, ${f.color}10 0%, transparent 70%)` }} />
                 <div className="relative">
-                  <div className="h-2 w-2 rounded-full mb-4" style={{ background: f.color, boxShadow: `0 0 8px ${f.color}` }} />
+                  <motion.div
+                    className="h-2 w-2 rounded-full mb-4"
+                    style={{ background: f.color, boxShadow: `0 0 8px ${f.color}` }}
+                    animate={{ scale: [1, 1.15, 1], opacity: [1, 0.85, 1] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
+                  />
                   <h3 className="text-base font-black text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>{f.title}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{f.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

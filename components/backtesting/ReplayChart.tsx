@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import {
   CandlestickSeries,
   ColorType,
@@ -22,6 +22,12 @@ type Props = {
   accentTp?: string;
 };
 
+/**
+ * Lightweight Charts init lives here (not in replay/page.tsx — that file only renders SessionReplayView).
+ *
+ * Chart is created in useLayoutEffect so the series exists before the first paint; candle data is applied
+ * in a following useEffect so setData always runs after the chart + series refs are set (avoids empty chart).
+ */
 export function ReplayChart({
   candles,
   entryPrice,
@@ -36,7 +42,7 @@ export function ReplayChart({
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const linesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
@@ -72,7 +78,9 @@ export function ReplayChart({
 
     const ro = new ResizeObserver(() => {
       const { width, height } = el.getBoundingClientRect();
-      chart.applyOptions({ width, height });
+      const nw = Math.max(width, 200);
+      const nh = Math.max(height, 280);
+      chart.applyOptions({ width: nw, height: nh });
     });
     ro.observe(el);
 
@@ -88,15 +96,27 @@ export function ReplayChart({
     const series = seriesRef.current;
     if (!series) return;
 
-    const data: CandlestickData[] = candles.map((c) => ({
-      time: c.time as UTCTimestamp,
-      open: c.open,
-      high: c.high,
-      low: c.low,
-      close: c.close
-    }));
+    const data: CandlestickData[] = candles
+      .filter(
+        (c) =>
+          Number.isFinite(c.time) &&
+          Number.isFinite(c.open) &&
+          Number.isFinite(c.high) &&
+          Number.isFinite(c.low) &&
+          Number.isFinite(c.close)
+      )
+      .map((c) => ({
+        time: c.time as UTCTimestamp,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close
+      }));
+
     series.setData(data);
-    chartRef.current?.timeScale().fitContent();
+    if (data.length > 0) {
+      chartRef.current?.timeScale().fitContent();
+    }
   }, [candles]);
 
   useEffect(() => {
@@ -140,7 +160,7 @@ export function ReplayChart({
         })
       );
     }
-  }, [entryPrice, stopLoss, takeProfit, accentEntry, accentSl, accentTp, candles]);
+  }, [entryPrice, stopLoss, takeProfit, accentEntry, accentSl, accentTp]);
 
   return <div ref={containerRef} className="h-full min-h-[320px] w-full rounded-xl border border-white/[0.06]" />;
 }
