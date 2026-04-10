@@ -69,10 +69,10 @@ export function DashboardAlertsSection({
             <Bell className="h-5 w-5 text-cyan-300" />
           </div>
           <div>
-            <h2 className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-50">
+            <h2 className="text-base font-semibold font-display tracking-tight text-slate-50">
               {title}
             </h2>
-            <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+            <p className="mt-0.5 text-xs font-mono text-slate-500">
               {subtitle}
             </p>
           </div>
@@ -80,7 +80,7 @@ export function DashboardAlertsSection({
         {items.length > 0 && (
           <Link
             href={viewAllHref}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-300/95 transition-colors hover:border-cyan-500/40 hover:bg-slate-800/70"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-mono font-medium text-cyan-300/95 transition-colors hover:border-cyan-500/40 hover:bg-slate-800/70"
           >
             {viewAllLabel}
             <ChevronRight className="h-3.5 w-3.5 opacity-80" />
@@ -104,10 +104,10 @@ export function DashboardAlertsSection({
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/30">
               <Sparkles className="h-6 w-6 text-emerald-400/90" />
             </div>
-            <p className="text-sm font-semibold font-[family-name:var(--font-display)] text-emerald-200/90">
+            <p className="text-sm font-semibold font-display text-emerald-200/90">
               {emptyHeadline}
             </p>
-            <p className="mt-1 max-w-sm text-xs font-[family-name:var(--font-mono)] text-slate-500">
+            <p className="mt-1 max-w-sm text-xs font-mono text-slate-500">
               {emptyDescription}
             </p>
           </motion.div>
@@ -134,7 +134,7 @@ export function DashboardAlertsSection({
                     {/* Badge row */}
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
                         <span className="relative flex h-2 w-2 shrink-0">
                           <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-60 ${isHigh ? "bg-red-400" : "bg-amber-400"}`} />
@@ -143,7 +143,7 @@ export function DashboardAlertsSection({
                         {isHigh ? "High" : "Watch"}
                       </span>
                       <time
-                        className="text-[10px] font-[family-name:var(--font-mono)] text-slate-500"
+                        className="text-[10px] font-mono text-slate-500"
                         dateTime={a.alert_date}
                       >
                         {new Date(a.alert_date).toLocaleString(undefined, {
@@ -154,14 +154,14 @@ export function DashboardAlertsSection({
                     </div>
 
                     {/* Message */}
-                    <p className="mt-2 flex items-start gap-2 text-sm font-medium font-[family-name:var(--font-display)] leading-snug text-slate-100">
+                    <p className="mt-2 flex items-start gap-2 text-sm font-medium font-display leading-snug text-slate-100">
                       <AlertTriangle className={`mt-0.5 h-4 w-4 shrink-0 ${s.icon}`} />
                       {a.message}
                     </p>
 
                     {/* Solution */}
                     {a.solution && (
-                      <p className="mt-2 border-t border-slate-800/80 pt-2 text-xs font-[family-name:var(--font-mono)] leading-relaxed text-slate-400">
+                      <p className="mt-2 border-t border-slate-800/80 pt-2 text-xs font-mono leading-relaxed text-slate-400">
                         <span className="text-slate-500">Next step: </span>
                         {a.solution}
                       </p>

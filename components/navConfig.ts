@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import {
   LayoutDashboard,
-  TrendingUp,
   ShieldAlert,
   FlaskConical,
   Sparkles,
@@ -23,10 +22,7 @@ export const primaryNavItems: readonly NavItem[] = [
     href: "/app/journaling",
     label: "Journal",
     icon: BookOpen,
-    children: [
-      { href: "/app/journaling/trades", label: "Trades" },
-      { href: "/app/journaling/accounts", label: "Accounts" },
-    ],
+    children: [{ href: "/app/journaling/trades", label: "Trades" }],
   },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },

@@ -101,7 +101,7 @@ function AnimatedNumber({
   if (value == null) return <span className={className}>—</span>;
   const shown = forceNegative ? -Math.abs(display) : display;
   return (
-    <span className={`${className} font-[family-name:var(--font-mono)]`}>
+    <span className={`${className} font-mono`}>
       {shown >= 0 ? "+" : ""}
       {shown.toFixed(decimals)}
       {suffix}
@@ -265,12 +265,12 @@ export default function DashboardPage() {
     <div className="space-y-6 lg:space-y-8 animate-fade-in">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="rs-page-title font-[family-name:var(--font-display)]">Dashboard</h1>
-          <p className="rs-page-sub font-[family-name:var(--font-mono)]">
+          <h1 className="rs-page-title font-display">Dashboard</h1>
+          <p className="rs-page-sub font-mono">
             Risk, performance, and activity for the selected account — updated on a short interval while you stay on this page.
           </p>
           {stats?.updatedAt && (
-            <p className="mt-2 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+            <p className="mt-2 text-xs font-mono text-slate-500">
               Last updated{" "}
               {new Date(stats.updatedAt).toLocaleTimeString(undefined, {
                 hour: "2-digit", minute: "2-digit", second: "2-digit",
@@ -303,21 +303,21 @@ export default function DashboardPage() {
           {/* Active risk rules */}
           <section className="rs-card-accent p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h3 className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
+              <h3 className="text-base font-semibold font-display tracking-tight text-slate-100">
                 Active risk rules
               </h3>
               {rulesConfigured && riskRules ? (
                 <button
                   type="button"
                   onClick={() => setRulesPopupOpen(true)}
-                  className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
+                  className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-mono font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
                 >
                   Edit
                 </button>
               ) : (
                 <Link
                   href="/app/risk-manager"
-                  className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
+                  className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-mono font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
                 >
                   Set your risk rules
                 </Link>
@@ -332,13 +332,13 @@ export default function DashboardPage() {
                   { label: "Revenge", value: `${riskRules.revenge_threshold_trades} losses`, status: "safe" as RuleStatus },
                 ].map(({ label, value, status }) => (
                   <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-                    <div className="rs-kpi-label font-[family-name:var(--font-mono)]">{label}</div>
+                    <div className="rs-kpi-label font-mono">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className={`h-2 w-2 rounded-full ${
                         status === "watch" ? "bg-orange-400 animate-pulse" :
                         status === "high" ? "bg-red-400" : "bg-emerald-400"
                       }`} />
-                      <span className={`${ruleStatusPill(status)} rounded-full border px-2 py-0.5 text-xs font-[family-name:var(--font-mono)] font-semibold`}>
+                      <span className={`${ruleStatusPill(status)} rounded-full border px-2 py-0.5 text-xs font-mono font-semibold`}>
                         {value}
                       </span>
                     </div>
@@ -349,10 +349,10 @@ export default function DashboardPage() {
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
                 {["Daily loss", "Risk / trade", "Exposure", "Revenge"].map((label) => (
                   <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-                    <div className="rs-kpi-label font-[family-name:var(--font-mono)]">{label}</div>
+                    <div className="rs-kpi-label font-mono">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-slate-600" />
-                      <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-[family-name:var(--font-mono)] font-semibold text-slate-400">
+                      <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-mono font-semibold text-slate-400">
                         {label === "Revenge" ? "0 losses" : "0% limit"}
                       </span>
                     </div>
@@ -376,28 +376,28 @@ export default function DashboardPage() {
           {/* KPI row 1 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Balance</div>
-              <div className="mt-1 text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+              <div className="rs-kpi-label font-mono">Balance</div>
+              <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.balancePct} suffix="%" />}
               </div>
-              <div className={`mt-1 text-sm font-semibold font-[family-name:var(--font-mono)] ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Equity</div>
-              <div className="mt-1 text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+              <div className="rs-kpi-label font-mono">Equity</div>
+              <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.equityPct} suffix="%" />}
               </div>
-              <div className={`mt-1 text-sm font-semibold font-[family-name:var(--font-mono)] ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
               <div className="flex items-center justify-between">
-                <span className="rs-kpi-label font-[family-name:var(--font-mono)]">Win rate & avg R:R</span>
+                <span className="rs-kpi-label font-mono">Win rate & avg R:R</span>
                 <button
                   type="button"
                   onClick={() => setRrTableOpen(true)}
@@ -411,19 +411,19 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-start justify-between gap-3 mt-1">
                 <div>
-                  <div className="text-2xl font-bold font-[family-name:var(--font-display)] text-white">
+                  <div className="text-2xl font-bold font-display text-white">
                     {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />}
                   </div>
                   {!noKpi && !kpiLoading && winRateTrend != null && (
-                    <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-400">
+                    <p className="mt-0.5 text-xs font-mono text-slate-400">
                       {winRateTrend.diff >= 0
                         ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span>
                         : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
                     </p>
                   )}
                   <div className="mt-2 pt-2 border-t border-slate-700/50">
-                    <span className="text-xs font-[family-name:var(--font-mono)] text-slate-500">Avg R:R </span>
-                    <span className="text-lg font-bold font-[family-name:var(--font-display)] text-white">
+                    <span className="text-xs font-mono text-slate-500">Avg R:R </span>
+                    <span className="text-lg font-bold font-display text-white">
                       {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgRiskReward} />}
                     </span>
                   </div>
@@ -443,33 +443,33 @@ export default function DashboardPage() {
           {/* KPI row 2 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Avg win</div>
-              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
+              <div className="rs-kpi-label font-mono">Avg win</div>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />}
               </div>
-              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+              <div className="mt-1 text-xs font-mono text-slate-500">
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
               </div>
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Avg loss</div>
-              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+              <div className="rs-kpi-label font-mono">Avg loss</div>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />}
               </div>
-              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+              <div className="mt-1 text-xs font-mono text-slate-500">
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
               </div>
             </div>
 
             <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
-              <div className="rs-kpi-label font-[family-name:var(--font-mono)]">Max drawdown</div>
-              <div className={`mt-1 text-2xl font-bold font-[family-name:var(--font-display)] ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+              <div className="rs-kpi-label font-mono">Max drawdown</div>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : (
                   <AnimatedNumber value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null} suffix="%" />
                 )}
               </div>
-              <div className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+              <div className="mt-1 text-xs font-mono text-slate-500">
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.peakDdDate
                   ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
                   : "No data"}
@@ -487,15 +487,15 @@ export default function DashboardPage() {
 
           {/* Equity curve */}
           <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
-            <div className="mb-1 text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
+            <div className="mb-1 text-base font-semibold font-display tracking-tight text-slate-100">
               Equity growth
             </div>
-            <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-slate-500 leading-relaxed">
+            <p className="mb-4 text-xs font-mono text-slate-500 leading-relaxed">
               % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
             </p>
-            {stats?.error && <p className="mb-3 text-sm font-[family-name:var(--font-mono)] text-amber-400/95">{stats.error}</p>}
+            {stats?.error && <p className="mb-3 text-sm font-mono text-amber-400/95">{stats.error}</p>}
             {curve.length === 0 && !stats?.error && (
-              <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm font-[family-name:var(--font-mono)] text-slate-500">
+              <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm font-mono text-slate-500">
                 {noLinkedAccount ? "No data" : kpiLoading ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
               </div>
             )}
@@ -527,8 +527,8 @@ export default function DashboardPage() {
                         const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
                         return (
                           <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
-                            <p className="text-[11px] font-[family-name:var(--font-mono)] text-slate-400">{row.displayDate}</p>
-                            <p className="text-sm font-semibold font-[family-name:var(--font-mono)] text-slate-100">
+                            <p className="text-[11px] font-mono text-slate-400">{row.displayDate}</p>
+                            <p className="text-sm font-semibold font-mono text-slate-100">
                               {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
                             </p>
                           </div>
@@ -550,21 +550,21 @@ export default function DashboardPage() {
           <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <div className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100 capitalize">
+                <div className="text-base font-semibold font-display tracking-tight text-slate-100 capitalize">
                   {monthLabel}
                 </div>
-                <div className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+                <div className="mt-0.5 text-xs font-mono text-slate-500">
                   Days with activity — tap a day to open trades
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition-colors hover:bg-slate-800">←</button>
-                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition-colors hover:bg-slate-800">→</button>
+                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">←</button>
+                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">→</button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="text-[10px] font-[family-name:var(--font-mono)] text-slate-500 font-medium py-1">{d}</div>
+                <div key={d} className="text-[10px] font-mono text-slate-500 font-medium py-1">{d}</div>
               ))}
               {Array.from({ length: startWeekday }, (_, i) => (
                 <div key={`pad-${i}`} className="min-h-[64px]" />
@@ -583,13 +583,13 @@ export default function DashboardPage() {
                 }`;
                 const content = (
                   <>
-                    <span className="text-xs font-[family-name:var(--font-mono)] font-medium text-slate-300">{day}</span>
+                    <span className="text-xs font-mono font-medium text-slate-300">{day}</span>
                     {dayData && (
                       <>
-                        <span className={`text-xs font-semibold font-[family-name:var(--font-mono)] ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`text-xs font-semibold font-mono ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                           {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
                         </span>
-                        <span className="text-[10px] font-[family-name:var(--font-mono)] text-slate-400">
+                        <span className="text-[10px] font-mono text-slate-400">
                           {dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}
                         </span>
                       </>
@@ -612,7 +612,7 @@ export default function DashboardPage() {
           </section>
 
           <section>
-            <h2 className="rs-section-title font-[family-name:var(--font-display)] mb-3 text-slate-400">
+            <h2 className="rs-section-title font-display mb-3 text-slate-400">
               Quick actions
             </h2>
             <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />

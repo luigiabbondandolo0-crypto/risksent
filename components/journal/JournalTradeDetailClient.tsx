@@ -105,7 +105,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
   };
 
   if (loading) {
-    return <p className="text-slate-500 font-[family-name:var(--font-mono)] text-sm">Loading…</p>;
+    return <p className="text-slate-500 font-mono text-sm">Loading…</p>;
   }
   if (!trade) {
     return (
@@ -124,7 +124,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
     <div className={`${jn.page} space-y-6`}>
       <Link
         href="/app/journaling/trades"
-        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]"
+        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-mono"
       >
         <ChevronLeft className="h-3 w-3" />
         Trades
@@ -149,7 +149,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
               </span>
             </div>
 
-            <dl className="mt-6 grid gap-3 sm:grid-cols-2 font-[family-name:var(--font-mono)] text-sm">
+            <dl className="mt-6 grid gap-3 sm:grid-cols-2 font-mono text-sm">
               <div>
                 <dt className={jn.label}>Open</dt>
                 <dd className="text-slate-300">{format(parseISO(trade.open_time), "PPpp")}</dd>
@@ -198,7 +198,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-black/30 px-3 py-1 text-xs text-slate-200 font-[family-name:var(--font-mono)]"
+                  className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-black/30 px-3 py-1 text-xs text-slate-200 font-mono"
                 >
                   {t}
                   <button type="button" aria-label={`Remove ${t}`} onClick={() => removeTag(t)}>
@@ -273,7 +273,7 @@ export function JournalTradeDetailClient({ tradeId }: Props) {
         <div className="space-y-6 lg:col-span-2">
           <div className={jn.card}>
             <p className={jn.label}>Trade stats</p>
-            <ul className="mt-3 space-y-2 font-[family-name:var(--font-mono)] text-sm text-slate-300">
+            <ul className="mt-3 space-y-2 font-mono text-sm text-slate-300">
               <li className="flex justify-between">
                 <span className="text-slate-500">R:R</span>
                 <span>{trade.risk_reward?.toFixed(2) ?? "—"}</span>

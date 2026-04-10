@@ -262,7 +262,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   if (loadErr && !session) {
     return (
       <div className={bt.page}>
-        <p className="text-red-400 font-[family-name:var(--font-mono)] text-sm">{loadErr}</p>
+        <p className="text-red-400 font-mono text-sm">{loadErr}</p>
         <Link href={basePath} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">Back</Link>
       </div>
     );
@@ -270,7 +270,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
   if (!session) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-slate-500 font-[family-name:var(--font-mono)] text-sm">
+      <div className="flex min-h-[40vh] items-center justify-center text-slate-500 font-mono text-sm">
         Loading session…
       </div>
     );
@@ -282,7 +282,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
         <div>
           <Link
             href={basePath}
-            className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]"
+            className="mb-2 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-mono"
           >
             <ChevronLeft className="h-3 w-3" />
             Dashboard
@@ -292,7 +292,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             {session.symbol} · chart {timeframe} · {session.date_from} → {session.date_to}
           </p>
         </div>
-        <div className="text-right font-[family-name:var(--font-mono)] text-xs text-slate-500">
+        <div className="text-right font-mono text-xs text-slate-500">
           Candle{" "}
           <span className="text-[#ff8c00]">
             {candles.length ? currentIndex + 1 : 0} / {candles.length}
@@ -366,7 +366,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             >
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
-            <div className="flex items-center gap-1 pl-2 font-[family-name:var(--font-mono)] text-[11px] text-slate-500">
+            <div className="flex items-center gap-1 pl-2 font-mono text-[11px] text-slate-500">
               Speed
               {([1, 2, 5] as const).map((s) => (
                 <button
@@ -404,17 +404,17 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
         <aside className={`${bt.card} flex max-h-[calc(100vh-140px)] flex-col gap-4 overflow-y-auto`}>
           <div>
             <p className={bt.label}>Balance</p>
-            <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+            <p className="font-display text-2xl font-bold text-white">
               {session.current_balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </p>
             {openTrade && (
-              <p className="mt-1 text-xs text-[#ff8c00] font-[family-name:var(--font-mono)]">
+              <p className="mt-1 text-xs text-[#ff8c00] font-mono">
                 Open P&amp;L (mark) {analytics.unreal >= 0 ? "+" : ""}{analytics.unreal.toFixed(2)}
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm font-[family-name:var(--font-mono)]">
+          <div className="grid grid-cols-2 gap-2 text-sm font-mono">
             <div className="rounded-xl bg-black/30 px-3 py-2">
               <p className="text-[10px] uppercase text-slate-500">Trades</p>
               <p className="text-slate-200">{trades.filter((t) => t.status === "closed").length}</p>
@@ -435,7 +435,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
           <div>
             <p className={bt.label}>Total P&amp;L</p>
-            <p className={`font-[family-name:var(--font-mono)] text-lg ${analytics.totalPl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}`}>
+            <p className={`font-mono text-lg ${analytics.totalPl >= 0 ? "text-[#00e676]" : "text-[#ff3c3c]"}`}>
               {analytics.totalPl >= 0 ? "+" : ""}{analytics.totalPl.toFixed(2)}{" "}
               <span className="text-slate-500">
                 ({analytics.plPct >= 0 ? "+" : ""}{analytics.plPct.toFixed(2)}%)
@@ -449,7 +449,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
               {trades.filter((t) => t.status === "closed").map((t) => (
                 <li
                   key={t.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-[family-name:var(--font-mono)]"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/20 px-2 py-2 text-[11px] font-mono"
                 >
                   <span className={t.direction === "BUY" ? "rounded bg-[#00e676]/15 px-1.5 py-0.5 text-[#00e676]" : "rounded bg-[#ff3c3c]/15 px-1.5 py-0.5 text-[#ff3c3c]"}>
                     {t.direction}
@@ -470,7 +470,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
           <Link
             href={`${basePath}/session/${sessionId}`}
-            className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-[family-name:var(--font-mono)]"
+            className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-mono"
           >
             Session summary →
           </Link>

@@ -67,7 +67,7 @@ export function BacktestingDashboard({ basePath }: Props) {
 
   if (loading) {
     return (
-      <div className="flex min-h-[30vh] items-center justify-center text-sm text-slate-500 font-[family-name:var(--font-mono)]">
+      <div className="flex min-h-[30vh] items-center justify-center text-sm text-slate-500 font-mono">
         Loading…
       </div>
     );
@@ -76,7 +76,7 @@ export function BacktestingDashboard({ basePath }: Props) {
   if (err) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-red-400 font-[family-name:var(--font-mono)]">{err}</p>
+        <p className="text-sm text-red-400 font-mono">{err}</p>
         <Link href="/login" className={bt.btnPrimary}>
           Sign in
         </Link>
@@ -131,15 +131,15 @@ export function BacktestingDashboard({ basePath }: Props) {
                     ) : (
                       <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
                     )}
-                    <h2 className="truncate font-[family-name:var(--font-display)] text-lg font-bold text-white">
+                    <h2 className="truncate font-display text-lg font-bold text-white">
                       {st.name}
                     </h2>
                   </div>
                   {st.description && (
-                    <p className="mt-1 pl-6 text-xs text-slate-500 font-[family-name:var(--font-mono)]">{st.description}</p>
+                    <p className="mt-1 pl-6 text-xs text-slate-500 font-mono">{st.description}</p>
                   )}
                 </div>
-                <div className="grid shrink-0 grid-cols-2 gap-x-4 gap-y-1 text-right text-[11px] font-[family-name:var(--font-mono)] sm:grid-cols-4">
+                <div className="grid shrink-0 grid-cols-2 gap-x-4 gap-y-1 text-right text-[11px] font-mono sm:grid-cols-4">
                   <span className="text-slate-500">Sessions</span>
                   <span className="text-slate-200">{st.session_count}</span>
                   <span className="text-slate-500">Win rate</span>
@@ -161,12 +161,12 @@ export function BacktestingDashboard({ basePath }: Props) {
                   <div className="mb-2 flex justify-end">
                     <Link
                       href={`${basePath}/session/new?strategy_id=${encodeURIComponent(st.id)}`}
-                      className="text-xs font-[family-name:var(--font-mono)] text-[#ff3c3c] underline"
+                      className="text-xs font-mono text-[#ff3c3c] underline"
                     >
                       + Session for this strategy
                     </Link>
                   </div>
-                  {sess.length === 0 && <p className="text-xs text-slate-600 font-[family-name:var(--font-mono)]">No sessions.</p>}
+                  {sess.length === 0 && <p className="text-xs text-slate-600 font-mono">No sessions.</p>}
                   <ul className="space-y-2">
                     {sess.map((se) => (
                       <li
@@ -175,7 +175,7 @@ export function BacktestingDashboard({ basePath }: Props) {
                       >
                         <div>
                           <p className="text-sm font-medium text-slate-200">{se.name}</p>
-                          <p className="text-[11px] text-slate-500 font-[family-name:var(--font-mono)]">
+                          <p className="text-[11px] text-slate-500 font-mono">
                             {se.symbol} · {se.date_from} → {se.date_to} · {se.status}
                           </p>
                         </div>

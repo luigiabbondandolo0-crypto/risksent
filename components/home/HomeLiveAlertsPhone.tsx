@@ -54,12 +54,12 @@ export function HomeLiveAlertsPhone() {
                   <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[#ff3c3c]">
                     Mandatory directive
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-snug text-slate-300 font-[family-name:var(--font-mono)]">
+                  <p className="mt-1.5 text-[11px] leading-snug text-slate-300 font-mono">
                     Second loss logged this session. Effective immediately:{" "}
                     <span className="font-semibold text-white">do not open or add positions</span> until the next
                     session. This is not discretionary.
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-snug text-slate-400 font-[family-name:var(--font-mono)]">
+                  <p className="mt-1.5 text-[11px] leading-snug text-slate-400 font-mono">
                     Ignoring this order compounds drawdown, breach risk (limits / prop rules), and revenge trading.
                     Stand down and acknowledge.
                   </p>

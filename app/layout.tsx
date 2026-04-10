@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Syne } from "next/font/google";
+import { JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 
-const inter = Inter({ subsets: ["latin"] });
 const syne = Syne({ subsets: ["latin"], variable: "--font-display", weight: ["400", "600", "700", "800"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
 
@@ -23,9 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${syne.variable} ${jetbrainsMono.variable}`}>
       <body
-        className={`${inter.className} ${syne.variable} ${jetbrainsMono.variable} min-h-screen bg-background text-slate-100 antialiased`}
+        className={`${syne.className} min-h-screen bg-background text-slate-100 antialiased`}
       >
         <div className="flex min-h-screen flex-col">
           <RootLayoutChrome>{children}</RootLayoutChrome>

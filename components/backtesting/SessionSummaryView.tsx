@@ -96,7 +96,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
   if (err || !session) {
     return (
       <div className="space-y-4">
-        <p className="text-red-400 text-sm font-[family-name:var(--font-mono)]">{err ?? "Loading…"}</p>
+        <p className="text-red-400 text-sm font-mono">{err ?? "Loading…"}</p>
         <Link href={basePath} className="text-[#ff3c3c] underline text-sm">
           Back
         </Link>
@@ -109,12 +109,12 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
       <div>
         <Link
           href={basePath}
-          className="text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]"
+          className="text-xs text-slate-500 hover:text-slate-300 font-mono"
         >
           ← Dashboard
         </Link>
         {strategy && (
-          <p className="mt-2 text-xs text-slate-500 font-[family-name:var(--font-mono)]">
+          <p className="mt-2 text-xs text-slate-500 font-mono">
             Strategy:{" "}
             <Link href={basePath} className="text-[#ff3c3c] underline">
               {strategy.name}
@@ -136,13 +136,13 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
         ].map((x) => (
           <div key={x.label} className={bt.card}>
             <p className={bt.label}>{x.label}</p>
-            <p className={`font-[family-name:var(--font-display)] text-2xl font-bold ${x.color}`}>{x.val}</p>
+            <p className={`font-display text-2xl font-bold ${x.color}`}>{x.val}</p>
           </div>
         ))}
       </div>
 
       <div className={bt.card}>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-bold text-white">Equity curve</h2>
+        <h2 className="mb-4 font-display text-lg font-bold text-white">Equity curve</h2>
         <div className="h-72 w-full">
           {equityData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -166,15 +166,15 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
               </RLineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-slate-600 font-[family-name:var(--font-mono)]">No closed trades yet.</p>
+            <p className="text-sm text-slate-600 font-mono">No closed trades yet.</p>
           )}
         </div>
       </div>
 
       <div className={bt.card}>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-bold text-white">Trades</h2>
+        <h2 className="mb-4 font-display text-lg font-bold text-white">Trades</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[11px] font-[family-name:var(--font-mono)]">
+          <table className="w-full text-left text-[11px] font-mono">
             <thead>
               <tr className="border-b border-white/[0.08] text-slate-500">
                 <th className="pb-2 pr-2">Dir</th>
@@ -205,7 +205,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
 
       <Link
         href={`${basePath}/session/${sessionId}/replay`}
-        className="inline-block text-sm text-[#ff3c3c] underline font-[family-name:var(--font-mono)]"
+        className="inline-block text-sm text-[#ff3c3c] underline font-mono"
       >
         ← Back to replay
       </Link>

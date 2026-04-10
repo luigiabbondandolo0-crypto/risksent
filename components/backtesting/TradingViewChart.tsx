@@ -350,7 +350,7 @@ export const TradingViewChart = forwardRef<TradingViewChartHandle, Props>(functi
   return (
     <div className="w-full">
       {loadError && (
-        <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 font-[family-name:var(--font-mono)]">
+        <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 font-mono">
           {loadError}
         </p>
       )}

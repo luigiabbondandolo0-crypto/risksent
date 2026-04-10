@@ -84,15 +84,15 @@ export function BacktestingSessionNew({ basePath }: Props) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-lg space-y-6">
-      <Link href={basePath} className="text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]">
+      <Link href={basePath} className="text-xs text-slate-500 hover:text-slate-300 font-mono">
         ← Back
       </Link>
       <h1 className={bt.h1}>New session</h1>
-      <p className="text-xs text-slate-500 font-[family-name:var(--font-mono)]">
+      <p className="text-xs text-slate-500 font-mono">
         Timeframe is chosen on the replay chart. Pick symbol and date range here.
       </p>
       <form onSubmit={(e) => void submit(e)} className={`${bt.card} space-y-4`}>
-        {err && <p className="text-sm text-red-400 font-[family-name:var(--font-mono)]">{err}</p>}
+        {err && <p className="text-sm text-red-400 font-mono">{err}</p>}
         <div>
           <label className={bt.label}>Session name</label>
           <input className={bt.input} value={name} onChange={(e) => setName(e.target.value)} required />
@@ -112,7 +112,7 @@ export function BacktestingSessionNew({ basePath }: Props) {
             ))}
           </select>
           {strategies.length === 0 && (
-            <p className="mt-2 text-xs text-amber-400/90 font-[family-name:var(--font-mono)]">
+            <p className="mt-2 text-xs text-amber-400/90 font-mono">
               <Link href={`${basePath}/strategy/new`} className="underline">
                 Create a strategy
               </Link>{" "}

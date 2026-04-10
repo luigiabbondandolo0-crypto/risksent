@@ -91,7 +91,7 @@ export function JournalTradesPageClient() {
       </div>
 
       {useSeed && (
-        <p className="rounded-xl border border-[#ff8c00]/30 bg-[#ff8c00]/10 px-4 py-2 text-xs text-[#ff8c00] font-[family-name:var(--font-mono)]">
+        <p className="rounded-xl border border-[#ff8c00]/30 bg-[#ff8c00]/10 px-4 py-2 text-xs text-[#ff8c00] font-mono">
           Demo: sample trades shown until your API returns data.
         </p>
       )}
@@ -144,7 +144,7 @@ export function JournalTradesPageClient() {
       <div className="overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.02]">
         <table className="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-white/[0.07] text-[11px] uppercase tracking-wider text-slate-500 font-[family-name:var(--font-mono)]">
+            <tr className="border-b border-white/[0.07] text-[11px] uppercase tracking-wider text-slate-500 font-mono">
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Symbol</th>
               <th className="px-4 py-3">Dir</th>
@@ -161,7 +161,7 @@ export function JournalTradesPageClient() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={11} className="px-4 py-8 text-center text-slate-500 font-[family-name:var(--font-mono)]">
+                <td colSpan={11} className="px-4 py-8 text-center text-slate-500 font-mono">
                   Loading…
                 </td>
               </tr>
@@ -184,7 +184,7 @@ export function JournalTradesPageClient() {
                       }
                     }}
                   >
-                    <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">
                       {format(parseISO(t.open_time), "MMM d, HH:mm")}
                     </td>
                     <td className="px-4 py-3 font-semibold text-white">{t.symbol}</td>

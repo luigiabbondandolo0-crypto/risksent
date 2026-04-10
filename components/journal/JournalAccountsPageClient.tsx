@@ -88,7 +88,7 @@ export function JournalAccountsPageClient() {
       </div>
 
       {loading ? (
-        <p className="text-slate-500 font-[family-name:var(--font-mono)] text-sm">Loading…</p>
+        <p className="text-slate-500 font-mono text-sm">Loading…</p>
       ) : accounts.length === 0 ? (
         <div className={jn.card}>
           <p className="text-slate-400">No accounts yet. Connect a broker to import trades.</p>
@@ -99,7 +99,7 @@ export function JournalAccountsPageClient() {
             <li key={a.id} className={jn.card}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
+                  <p className="font-display text-lg font-bold text-white">
                     {a.nickname}
                   </p>
                   <p className={`mt-1 text-sm text-slate-500 ${jn.mono}`}>

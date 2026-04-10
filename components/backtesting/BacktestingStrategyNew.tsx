@@ -36,12 +36,12 @@ export function BacktestingStrategyNew({ basePath }: Props) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-lg space-y-6">
-      <Link href={basePath} className="text-xs text-slate-500 hover:text-slate-300 font-[family-name:var(--font-mono)]">
+      <Link href={basePath} className="text-xs text-slate-500 hover:text-slate-300 font-mono">
         ← Back
       </Link>
       <h1 className={bt.h1}>New strategy</h1>
       <form onSubmit={(e) => void submit(e)} className={`${bt.card} space-y-4`}>
-        {err && <p className="text-sm text-red-400 font-[family-name:var(--font-mono)]">{err}</p>}
+        {err && <p className="text-sm text-red-400 font-mono">{err}</p>}
         <div>
           <label className={bt.label}>Name</label>
           <input className={bt.input} value={name} onChange={(e) => setName(e.target.value)} required />

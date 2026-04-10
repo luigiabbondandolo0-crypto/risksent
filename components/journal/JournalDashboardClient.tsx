@@ -178,14 +178,14 @@ export function JournalDashboardClient() {
       )}
 
       {loading ? (
-        <p className="text-slate-500 font-[family-name:var(--font-mono)] text-sm">Loading…</p>
+        <p className="text-slate-500 font-mono text-sm">Loading…</p>
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className={jn.card}>
               <p className={jn.label}>Total P&amp;L</p>
               <p
-                className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold"
+                className="mt-1 font-display text-2xl font-bold"
                 style={{ color: stats.netPl >= 0 ? jn.green : jn.accentRed }}
               >
                 {stats.netPl >= 0 ? "+" : ""}
@@ -194,19 +194,19 @@ export function JournalDashboardClient() {
             </div>
             <div className={jn.card}>
               <p className={jn.label}>Win rate</p>
-              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+              <p className="mt-1 font-display text-2xl font-bold text-white">
                 {stats.wr.toFixed(1)}%
               </p>
             </div>
             <div className={jn.card}>
               <p className={jn.label}>Avg R:R</p>
-              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-200">
+              <p className="mt-1 font-display text-2xl font-bold text-slate-200">
                 {stats.arr.toFixed(2)}
               </p>
             </div>
             <div className={jn.card}>
               <p className={jn.label}>Closed trades</p>
-              <p className="mt-1 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+              <p className="mt-1 font-display text-2xl font-bold text-white">
                 {stats.n}
               </p>
             </div>
@@ -367,13 +367,13 @@ export function JournalDashboardClient() {
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                   <p className="text-[10px] uppercase text-slate-500">Winners</p>
-                  <p className="mt-1 font-[family-name:var(--font-display)] text-xl text-[#00e676]">
+                  <p className="mt-1 font-display text-xl text-[#00e676]">
                     {hold.winners}h
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                   <p className="text-[10px] uppercase text-slate-500">Losers</p>
-                  <p className="mt-1 font-[family-name:var(--font-display)] text-xl text-[#ff3c3c]">
+                  <p className="mt-1 font-display text-xl text-[#ff3c3c]">
                     {hold.losers}h
                   </p>
                 </div>

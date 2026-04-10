@@ -71,7 +71,7 @@ function SemiGauge({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="flex flex-col items-center gap-1"
     >
-      <span className="text-[10px] font-[family-name:var(--font-mono)] font-medium text-slate-500 uppercase tracking-widest mb-1">
+      <span className="text-[10px] font-mono font-medium text-slate-500 uppercase tracking-widest mb-1">
         {label}
       </span>
 
@@ -111,14 +111,14 @@ function SemiGauge({
           />
         </svg>
         {over > 0 && (
-          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-[family-name:var(--font-mono)] text-red-300">
+          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-mono text-red-300">
             +{(over * 100).toFixed(0)}%
           </span>
         )}
       </div>
 
       <span
-        className="text-xl font-bold font-[family-name:var(--font-mono)]"
+        className="text-xl font-bold font-mono"
         style={{ color: valueColor }}
       >
         {valuePct != null
@@ -126,7 +126,7 @@ function SemiGauge({
           : "—"}
       </span>
 
-      <span className="text-[10px] text-slate-600 font-[family-name:var(--font-mono)]">
+      <span className="text-[10px] text-slate-600 font-mono">
         limit {limitPct}%
       </span>
 
@@ -154,15 +154,15 @@ export function DdExposureCard({
     <section className="rs-card-accent p-5 sm:p-6 shadow-rs-soft">
       <div className="mb-6 flex items-center justify-between gap-2">
         <div>
-          <div className="text-base font-semibold font-[family-name:var(--font-display)] tracking-tight text-slate-100">
+          <div className="text-base font-semibold font-display tracking-tight text-slate-100">
             Daily DD & exposure
           </div>
-          <p className="mt-0.5 text-xs font-[family-name:var(--font-mono)] text-slate-500">
+          <p className="mt-0.5 text-xs font-mono text-slate-500">
             Compared to your rule limits
           </p>
         </div>
         {isMock && (
-          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-[family-name:var(--font-mono)] font-medium text-amber-200">
+          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-mono font-medium text-amber-200">
             Sample data
           </span>
         )}

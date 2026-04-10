@@ -23,7 +23,7 @@ export function HomeBacktestingDashboardPreview() {
     >
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight text-white sm:text-xl">
+          <h3 className="font-display text-lg font-extrabold tracking-tight text-white sm:text-xl">
             Backtesting
           </h3>
           <p className={bt.sub}>Strategies, sessions, and replay analytics.</p>
@@ -45,15 +45,15 @@ export function HomeBacktestingDashboardPreview() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
-              <h4 className="truncate font-[family-name:var(--font-display)] text-base font-bold text-white">
+              <h4 className="truncate font-display text-base font-bold text-white">
                 London breakout v2
               </h4>
             </div>
-            <p className="mt-1 pl-6 text-[11px] text-slate-500 font-[family-name:var(--font-mono)]">
+            <p className="mt-1 pl-6 text-[11px] text-slate-500 font-mono">
               Mean reversion after Asia range.
             </p>
           </div>
-          <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-right text-[10px] font-[family-name:var(--font-mono)] sm:grid-cols-4 sm:gap-x-4">
+          <div className="grid shrink-0 grid-cols-2 gap-x-3 gap-y-1 text-right text-[10px] font-mono sm:grid-cols-4 sm:gap-x-4">
             <span className="text-slate-500">Sessions</span>
             <span className="text-slate-200">8</span>
             <span className="text-slate-500">Win rate</span>
@@ -67,7 +67,7 @@ export function HomeBacktestingDashboardPreview() {
 
         <div className="mt-4 space-y-2 border-t border-white/[0.06] pt-4 pl-1">
           <div className="mb-2 flex justify-end">
-            <span className="text-[11px] font-[family-name:var(--font-mono)] text-[#ff3c3c] underline decoration-[#ff3c3c]/50">
+            <span className="text-[11px] font-mono text-[#ff3c3c] underline decoration-[#ff3c3c]/50">
               + Session for this strategy
             </span>
           </div>
@@ -75,7 +75,7 @@ export function HomeBacktestingDashboardPreview() {
             <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-black/25 px-3 py-2">
               <div>
                 <p className="text-sm font-medium text-slate-200">June momentum sweep</p>
-                <p className="text-[11px] text-slate-500 font-[family-name:var(--font-mono)]">
+                <p className="text-[11px] text-slate-500 font-mono">
                   EURUSD · 2024-06-01 → 2024-06-28 · completed
                 </p>
               </div>
@@ -91,7 +91,7 @@ export function HomeBacktestingDashboardPreview() {
             <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-black/25 px-3 py-2 opacity-70">
               <div>
                 <p className="text-sm font-medium text-slate-200">May range test</p>
-                <p className="text-[11px] text-slate-500 font-[family-name:var(--font-mono)]">
+                <p className="text-[11px] text-slate-500 font-mono">
                   GBPUSD · 2024-05-01 → 2024-05-20 · completed
                 </p>
               </div>
@@ -130,7 +130,7 @@ export function HomeBacktestingShowcase() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Session replay</p>
-            <p className="font-[family-name:var(--font-display)] text-sm font-bold text-white">EURUSD · M15</p>
+            <p className="font-display text-sm font-bold text-white">EURUSD · M15</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -179,7 +179,7 @@ export function HomeBacktestingShowcase() {
             >
               <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">{s.label}</p>
               <p
-                className="mt-0.5 text-sm font-bold text-white font-[family-name:var(--font-display)]"
+                className="mt-0.5 text-sm font-bold text-white font-display"
                 style={s.accent ? { color: s.accent } : undefined}
               >
                 {s.val}

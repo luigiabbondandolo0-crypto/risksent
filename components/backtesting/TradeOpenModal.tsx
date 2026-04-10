@@ -63,10 +63,10 @@ export function TradeOpenModal({ open, direction, symbol, entryPrice, onClose, o
         onSubmit={submit}
         className={`${bt.card} max-w-md border-[#ff3c3c]/20 shadow-[#ff3c3c]/10 w-full`}
       >
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">
+        <h2 className="font-display text-lg font-bold text-white">
           Open {direction} @ {entryPrice.toFixed(5)}
         </h2>
-        <p className="mt-1 text-xs text-slate-500 font-[family-name:var(--font-mono)]">{symbol}</p>
+        <p className="mt-1 text-xs text-slate-500 font-mono">{symbol}</p>
 
         <div className="mt-4 space-y-3">
           <div>
@@ -82,11 +82,11 @@ export function TradeOpenModal({ open, direction, symbol, entryPrice, onClose, o
           </div>
 
           <div className="flex gap-2">
-            <label className="flex items-center gap-2 text-xs text-slate-400 font-[family-name:var(--font-mono)]">
+            <label className="flex items-center gap-2 text-xs text-slate-400 font-mono">
               <input type="radio" checked={slMode === "pips"} onChange={() => setSlMode("pips")} />
               SL pips
             </label>
-            <label className="flex items-center gap-2 text-xs text-slate-400 font-[family-name:var(--font-mono)]">
+            <label className="flex items-center gap-2 text-xs text-slate-400 font-mono">
               <input type="radio" checked={slMode === "price"} onChange={() => setSlMode("price")} />
               SL price
             </label>
@@ -116,11 +116,11 @@ export function TradeOpenModal({ open, direction, symbol, entryPrice, onClose, o
           )}
 
           <div className="flex gap-2 pt-1">
-            <label className="flex items-center gap-2 text-xs text-slate-400 font-[family-name:var(--font-mono)]">
+            <label className="flex items-center gap-2 text-xs text-slate-400 font-mono">
               <input type="radio" checked={tpMode === "pips"} onChange={() => setTpMode("pips")} />
               TP pips
             </label>
-            <label className="flex items-center gap-2 text-xs text-slate-400 font-[family-name:var(--font-mono)]">
+            <label className="flex items-center gap-2 text-xs text-slate-400 font-mono">
               <input type="radio" checked={tpMode === "price"} onChange={() => setTpMode("price")} />
               TP price
             </label>

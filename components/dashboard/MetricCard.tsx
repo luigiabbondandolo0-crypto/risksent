@@ -65,16 +65,16 @@ export function MetricCard({
       style={{ borderLeft: `3px solid ${borderColor}` }}
       className="bg-[#111] border border-[#1e1e1e] rounded-lg p-5 cursor-default transition-shadow hover:shadow-lg"
     >
-      <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#555] tracking-widest uppercase mb-3">
+      <p className="text-[11px] font-mono text-[#555] tracking-widest uppercase mb-3">
         {label}
       </p>
-      <p className="text-2xl font-bold font-[family-name:var(--font-display)] text-white tracking-tight">
+      <p className="text-2xl font-bold font-display text-white tracking-tight">
         {value == null
           ? "—"
           : `${prefix}${display.toLocaleString("it-IT", { minimumFractionDigits: decimals })}${suffix}`}
       </p>
       {note && (
-        <p className="text-xs font-[family-name:var(--font-mono)] text-[#555] mt-1">{note}</p>
+        <p className="text-xs font-mono text-[#555] mt-1">{note}</p>
       )}
     </motion.div>
   );
