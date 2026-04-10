@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { JournalTradeRow } from "@/lib/journal/journalTypes";
@@ -15,6 +16,7 @@ function netPl(t: JournalTradeRow) {
 }
 
 export function JournalTradesPageClient() {
+  const router = useRouter();
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -171,7 +173,16 @@ export function JournalTradesPageClient() {
                 return (
                   <tr
                     key={t.id}
-                    className={`border-b border-white/[0.04] transition hover:bg-white/[0.03] ${rowTint}`}
+                    role="link"
+                    tabIndex={0}
+                    className={`cursor-pointer border-b border-white/[0.04] transition hover:bg-white/[0.05] ${rowTint}`}
+                    onClick={() => router.push(`/app/journaling/trade/${t.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(`/app/journaling/trade/${t.id}`);
+                      }
+                    }}
                   >
                     <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
                       {format(parseISO(t.open_time), "MMM d, HH:mm")}
@@ -207,6 +218,7 @@ export function JournalTradesPageClient() {
                       <Link
                         href={`/app/journaling/trade/${t.id}`}
                         className="text-xs font-mono text-[#ff3c3c] underline hover:text-[#ff6b6b]"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         View
                       </Link>
