@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Send } from "lucide-react";
 
 const APPROACH_S = 3.6;
-const ALERT_HOLD_S = 4.2;
+const ALERT_HOLD_S = 5.6;
 
 export function HomeLiveAlertsPhone() {
   const [cycle, setCycle] = useState(0);
@@ -51,14 +51,20 @@ export function HomeLiveAlertsPhone() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-semibold text-white">RiskSent · Risk desk</p>
-                  <p className="mt-1 text-[11px] leading-snug text-slate-300 font-[family-name:var(--font-mono)]">
-                    <span className="font-semibold text-slate-200">Policy notice:</span> a second losing outcome has
-                    been recorded for the current session. In line with your configured rules,{" "}
-                    <span className="text-slate-200">additional new risk is not recommended</span> until the next
-                    session. Please suspend discretionary entries and review your plan.
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[#ff3c3c]">
+                    Mandatory directive
+                  </p>
+                  <p className="mt-1.5 text-[11px] leading-snug text-slate-300 font-[family-name:var(--font-mono)]">
+                    Second loss logged this session. Effective immediately:{" "}
+                    <span className="font-semibold text-white">do not open or add positions</span> until the next
+                    session. This is not discretionary.
+                  </p>
+                  <p className="mt-1.5 text-[11px] leading-snug text-slate-400 font-[family-name:var(--font-mono)]">
+                    Ignoring this order compounds drawdown, breach risk (limits / prop rules), and revenge trading.
+                    Stand down and acknowledge.
                   </p>
                   <p className="mt-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">
-                    Automated alert · delivered now
+                    Priority alert · execute now
                   </p>
                 </div>
               </div>
