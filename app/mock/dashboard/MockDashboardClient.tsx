@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Area,
@@ -44,6 +44,46 @@ function ruleStatusPill(status: RuleStatus) {
 }
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
+
+function AnimatedNumber({
+  value,
+  decimals = 2,
+  suffix = "",
+}: {
+  value: number | null | undefined;
+  decimals?: number;
+  suffix?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (value == null) return;
+    const duration = 800;
+    const start = performance.now();
+    const from = 0;
+    const to = value;
+    let raf = 0;
+
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(from + (to - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+
+  if (value == null) return <span>—</span>;
+  return (
+    <span>
+      {display >= 0 ? "+" : ""}
+      {display.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
+}
 
 export function MockDashboardClient() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
@@ -198,7 +238,7 @@ export function MockDashboardClient() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {stats.balancePct != null ? `${stats.balancePct >= 0 ? "+" : ""}${stats.balancePct.toFixed(2)}%` : "—"}
+            <AnimatedNumber value={stats.balancePct} suffix="%" />
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
             (stats.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
@@ -209,7 +249,7 @@ export function MockDashboardClient() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {stats.equityPct != null ? `${stats.equityPct >= 0 ? "+" : ""}${stats.equityPct.toFixed(2)}%` : "—"}
+            <AnimatedNumber value={stats.equityPct} suffix="%" />
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
             (stats.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
@@ -238,7 +278,9 @@ export function MockDashboardClient() {
           </div>
           <div className="mt-1 flex items-start justify-between gap-3">
             <div>
-              <div className="text-2xl font-bold text-white">{stats.winRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-white">
+                <AnimatedNumber value={stats.winRate} decimals={1} suffix="%" />
+              </div>
               {winRateTrend != null && (
                 <p className="mt-0.5 text-xs text-slate-400">
                   {winRateTrend.diff >= 0 ? (
@@ -251,7 +293,9 @@ export function MockDashboardClient() {
               )}
               <div className="mt-2 border-t border-slate-700/50 pt-2">
                 <span className="text-xs text-slate-500">Avg R:R </span>
-                <span className="text-lg font-bold text-white">{stats.avgRiskReward.toFixed(2)}</span>
+                <span className="text-lg font-bold text-white">
+                  <AnimatedNumber value={stats.avgRiskReward} />
+                </span>
               </div>
             </div>
             <WinsLossesGauge wins={stats.winsCount} losses={stats.lossesCount} draws={stats.drawsCount} />
@@ -264,7 +308,7 @@ export function MockDashboardClient() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg win</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
-            +{stats.avgWin.toFixed(2)} {currency}
+            <AnimatedNumber value={stats.avgWin} suffix={` ${currency}`} />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats.avgWinPct.toFixed(2)}%
@@ -273,7 +317,7 @@ export function MockDashboardClient() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg loss</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            {stats.avgLoss.toFixed(2)} {currency}
+            <AnimatedNumber value={stats.avgLoss} suffix={` ${currency}`} />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats.avgLossPct.toFixed(2)}%
@@ -282,7 +326,7 @@ export function MockDashboardClient() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            -{Math.abs(stats.highestDdPct ?? 0).toFixed(2)}%
+            <AnimatedNumber value={-(Math.abs(stats.highestDdPct ?? 0))} suffix="%" />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}

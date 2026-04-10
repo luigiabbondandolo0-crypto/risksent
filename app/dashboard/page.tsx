@@ -82,6 +82,48 @@ function ruleStatusPill(status: RuleStatus) {
   return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
 }
 
+function AnimatedNumber({
+  value,
+  decimals = 2,
+  suffix = "",
+  className = "",
+}: {
+  value: number | null | undefined;
+  decimals?: number;
+  suffix?: string;
+  className?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (value == null) return;
+    const duration = 800;
+    const start = performance.now();
+    const from = 0;
+    const to = value;
+    let raf = 0;
+
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(from + (to - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+
+  if (value == null) return <span className={className}>—</span>;
+  return (
+    <span className={className}>
+      {display >= 0 ? "+" : ""}
+      {display.toFixed(decimals)}
+      {suffix}
+    </span>
+  );
+}
+
 
 const POLL_MS = 45_000;
 const CHECK_RISK_THROTTLE_MS = 1 * 60 * 1000; // 1 min — live-ish when dashboard open; cron runs every 2 min for all accounts
@@ -406,7 +448,7 @@ export default function DashboardPage() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Balance</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {stats?.balancePct != null ? `${stats.balancePct >= 0 ? "+" : ""}${stats.balancePct.toFixed(2)}%` : "—"}
+            <AnimatedNumber value={stats?.balancePct} suffix="%" />
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
             (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
@@ -417,7 +459,7 @@ export default function DashboardPage() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Equity</div>
           <div className="mt-1 text-2xl font-bold text-white rs-mono">
-            {stats?.equityPct != null ? `${stats.equityPct >= 0 ? "+" : ""}${stats.equityPct.toFixed(2)}%` : "—"}
+            <AnimatedNumber value={stats?.equityPct} suffix="%" />
           </div>
           <div className={`mt-1 text-sm font-semibold rs-mono ${
             (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
@@ -441,7 +483,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-3 mt-1">
             <div>
               <div className="text-2xl font-bold text-white">
-                {stats == null ? "—" : stats.winRate != null ? `${stats.winRate.toFixed(1)}%` : "—"}
+                <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />
               </div>
               {winRateTrend != null && (
                 <p className="mt-0.5 text-xs text-slate-400">
@@ -450,7 +492,9 @@ export default function DashboardPage() {
               )}
               <div className="mt-2 pt-2 border-t border-slate-700/50">
                 <span className="text-xs text-slate-500">Avg R:R </span>
-                <span className="text-lg font-bold text-white">{stats == null ? "—" : stats.avgRiskReward != null ? stats.avgRiskReward.toFixed(2) : "—"}</span>
+                <span className="text-lg font-bold text-white">
+                  <AnimatedNumber value={stats?.avgRiskReward} />
+                </span>
               </div>
             </div>
             {(stats?.winsCount != null || stats?.lossesCount != null) && (
@@ -469,7 +513,7 @@ export default function DashboardPage() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg win</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
-            {stats?.avgWin != null ? `+${stats.avgWin.toFixed(2)} ${currency}` : "—"}
+            <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
@@ -478,7 +522,7 @@ export default function DashboardPage() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Avg loss</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            {stats?.avgLoss != null ? `${stats.avgLoss.toFixed(2)} ${currency}` : "—"}
+            <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
@@ -488,7 +532,10 @@ export default function DashboardPage() {
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="rs-kpi-label">Max drawdown</div>
           <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
-            {stats?.highestDdPct != null ? `-${Math.abs(stats.highestDdPct).toFixed(2)}%` : "—"}
+            <AnimatedNumber
+              value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
+              suffix="%"
+            />
           </div>
           <div className="mt-1 text-xs text-slate-500 rs-mono">
             {stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
