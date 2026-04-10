@@ -17,7 +17,6 @@ import { RiskRewardTableModal } from "@/app/dashboard/components/RiskRewardTable
 import { WinsLossesGauge } from "@/app/dashboard/components/WinsLossesGauge";
 import { MockQuickActions } from "@/app/mock/components/MockQuickActions";
 import { DashboardAlertsSection } from "@/components/dashboard/DashboardAlertsSection";
-import { MetricCard } from "@/components/dashboard/MetricCard";
 import {
   MOCK_CURRENCY,
   MOCK_DASHBOARD_STATS,
@@ -179,19 +178,45 @@ export function MockDashboardClient() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
-        <MetricCard
-          label="Balance %"
-          value={stats.balancePct}
-          suffix="%"
-          note={`${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-        />
-        <MetricCard
-          label="Equity %"
-          value={stats.equityPct}
-          suffix="%"
-          note={`${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-        />
+      <DashboardAlertsSection
+        title="Risk alerts"
+        subtitle="Mock preview — same layout as the live dashboard"
+        items={MOCK_ALERTS.map((a) => ({
+          id: a.id,
+          message: a.message,
+          severity: a.severity,
+          solution: a.solution,
+          alert_date: a.alert_date,
+          read: a.read,
+        }))}
+        loading={false}
+        viewAllHref="/mock/rules"
+        viewAllLabel="Open rules & alerts (mock)"
+      />
+
+      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Balance</div>
+          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+            {stats.balancePct != null ? `${stats.balancePct >= 0 ? "+" : ""}${stats.balancePct.toFixed(2)}%` : "—"}
+          </div>
+          <div className={`mt-1 text-sm font-semibold rs-mono ${
+            (stats.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+          }`}>
+            {stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+          </div>
+        </div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Equity</div>
+          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+            {stats.equityPct != null ? `${stats.equityPct >= 0 ? "+" : ""}${stats.equityPct.toFixed(2)}%` : "—"}
+          </div>
+          <div className={`mt-1 text-sm font-semibold rs-mono ${
+            (stats.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+          }`}>
+            {stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+          </div>
+        </div>
 
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
@@ -233,30 +258,39 @@ export function MockDashboardClient() {
           </div>
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
+      </section>
 
-        <MetricCard
-          label="Avg Win %"
-          value={stats.avgWinPct}
-          suffix="%"
-          note={`+${stats.avgWin.toFixed(2)} ${currency}`}
-        />
-        <MetricCard
-          label="Avg Loss %"
-          value={stats.avgLossPct}
-          suffix="%"
-          positiveIsGood={false}
-          note={`${stats.avgLoss.toFixed(2)} ${currency}`}
-        />
-
-        <MetricCard
-          label="Max Drawdown %"
-          value={-Math.abs(stats.highestDdPct ?? 0)}
-          suffix="%"
-          positiveIsGood={false}
-          note={new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-        />
-
+      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
         <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Avg win</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
+            +{stats.avgWin.toFixed(2)} {currency}
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {stats.avgWinPct.toFixed(2)}%
+          </div>
+        </div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Avg loss</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+            {stats.avgLoss.toFixed(2)} {currency}
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {stats.avgLossPct.toFixed(2)}%
+          </div>
+        </div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Max drawdown</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+            -{Math.abs(stats.highestDdPct ?? 0).toFixed(2)}%
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          </div>
+        </div>
+      </section>
+      <section className="flex justify-center">
+        <div className="rs-card w-full max-w-sm p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Account health</span>
           </div>
@@ -425,22 +459,6 @@ export function MockDashboardClient() {
           })}
         </div>
       </section>
-
-      <DashboardAlertsSection
-        title="Risk alerts"
-        subtitle="Mock preview — same layout as the live dashboard"
-        items={MOCK_ALERTS.map((a) => ({
-          id: a.id,
-          message: a.message,
-          severity: a.severity,
-          solution: a.solution,
-          alert_date: a.alert_date,
-          read: a.read,
-        }))}
-        loading={false}
-        viewAllHref="/mock/rules"
-        viewAllLabel="Open rules & alerts (mock)"
-      />
 
       <section>
         <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>

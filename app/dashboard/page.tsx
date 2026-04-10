@@ -19,7 +19,6 @@ import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { AccountHealthCard } from "./components/AccountHealthCard";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
-import { MetricCard } from "@/components/dashboard/MetricCard";
 
 type Account = {
   id: string;
@@ -401,21 +400,31 @@ export default function DashboardPage() {
         />
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-5">
-        <MetricCard
-          label="Balance %"
-          value={stats?.balancePct ?? null}
-          suffix="%"
-          note={stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-        />
-        <MetricCard
-          label="Equity %"
-          value={stats?.equityPct ?? null}
-          suffix="%"
-          note={stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
-        />
+      <AlertsOverview />
 
-        {/* Win rate + Avg R:R + wins/losses gauge + info */}
+      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Balance</div>
+          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+            {stats?.balancePct != null ? `${stats.balancePct >= 0 ? "+" : ""}${stats.balancePct.toFixed(2)}%` : "—"}
+          </div>
+          <div className={`mt-1 text-sm font-semibold rs-mono ${
+            (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+          }`}>
+            {stats == null || stats.error ? "No data" : `${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+          </div>
+        </div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Equity</div>
+          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+            {stats?.equityPct != null ? `${stats.equityPct >= 0 ? "+" : ""}${stats.equityPct.toFixed(2)}%` : "—"}
+          </div>
+          <div className={`mt-1 text-sm font-semibold rs-mono ${
+            (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+          }`}>
+            {stats == null || stats.error ? "No data" : `${stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
+          </div>
+        </div>
         <div className="rs-card p-5 shadow-rs-soft">
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Win rate & avg R:R</span>
@@ -454,32 +463,42 @@ export default function DashboardPage() {
           </div>
         </div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
+      </section>
 
-        <MetricCard
-          label="Avg Win %"
-          value={stats?.avgWinPct ?? null}
-          suffix="%"
-          note={stats?.avgWin != null ? `+${stats.avgWin.toFixed(2)} ${currency}` : "No data"}
-        />
-        <MetricCard
-          label="Avg Loss %"
-          value={stats?.avgLossPct ?? null}
-          suffix="%"
-          positiveIsGood={false}
-          note={stats?.avgLoss != null ? `${stats.avgLoss.toFixed(2)} ${currency}` : "No data"}
-        />
+      <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Avg win</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
+            {stats?.avgWin != null ? `+${stats.avgWin.toFixed(2)} ${currency}` : "—"}
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
+          </div>
+        </div>
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Avg loss</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+            {stats?.avgLoss != null ? `${stats.avgLoss.toFixed(2)} ${currency}` : "—"}
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
+          </div>
+        </div>
 
-        {/* Max DD — highest registered, $ + % + date */}
-        <MetricCard
-          label="Max Drawdown %"
-          value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null}
-          suffix="%"
-          positiveIsGood={false}
-          note={stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
-        />
-
-        {/* Account Health */}
-        <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
+        <div className="rs-card p-5 shadow-rs-soft">
+          <div className="rs-kpi-label">Max drawdown</div>
+          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+            {stats?.highestDdPct != null ? `-${Math.abs(stats.highestDdPct).toFixed(2)}%` : "—"}
+          </div>
+          <div className="mt-1 text-xs text-slate-500 rs-mono">
+            {stats?.peakDdDate ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "No data"}
+          </div>
+        </div>
+      </section>
+      <section className="flex justify-center">
+        <div className="w-full max-w-sm">
+          <AccountHealthCard winRate={stats?.winRate ?? null} highestDdPct={stats?.highestDdPct ?? null} />
+        </div>
       </section>
 
       {/* Daily DD & Current Exposure — single card (mock values when no data) */}
@@ -645,8 +664,6 @@ export default function DashboardPage() {
           })}
         </div>
       </section>
-
-      <AlertsOverview />
 
       <section>
         <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>
