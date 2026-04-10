@@ -12,6 +12,9 @@ import {
 function linkActive(pathname: string | null, href: string) {
   if (!pathname) return false;
   if (href === "/mock/dashboard") return pathname === "/mock" || pathname === "/mock/dashboard";
+  if (href === "/mock/journal") {
+    return pathname === "/mock/journal" || pathname.startsWith("/mock/journal/");
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -54,15 +57,33 @@ function NavGroup({
         {title}
       </span>
       <nav className={`flex ${mobile ? "gap-1" : "flex-col gap-0.5"}`}>
-        {items.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon, children }) => {
           const active = linkActive(pathname, href);
           return (
-            <Link key={href} href={href} className={navLinkClass(active, mobile)}>
-              <Icon
-                className={`shrink-0 ${mobile ? "h-3.5 w-3.5" : "h-4 w-4"} ${active ? "text-violet-300" : "text-slate-500"}`}
-              />
-              <span className={mobile ? "" : "truncate"}>{label}</span>
-            </Link>
+            <div key={href}>
+              <Link href={href} className={navLinkClass(active, mobile)}>
+                <Icon
+                  className={`shrink-0 ${mobile ? "h-3.5 w-3.5" : "h-4 w-4"} ${active ? "text-violet-300" : "text-slate-500"}`}
+                />
+                <span className={mobile ? "" : "truncate"}>{label}</span>
+              </Link>
+              {!mobile && children && children.length > 0 && (
+                <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-slate-800/80 pl-3">
+                  {children.map((ch) => {
+                    const subActive =
+                      pathname === ch.href || pathname?.startsWith(`${ch.href}/`);
+                    return (
+                      <Link key={ch.href} href={ch.href} className={navLinkClass(!!subActive, mobile)}>
+                        <span className="truncate pl-1 text-[13px]">{ch.label}</span>
+                        {subActive && (
+                          <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
