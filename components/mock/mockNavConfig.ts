@@ -8,15 +8,13 @@ import {
   List,
 } from "lucide-react";
 
-/** Mirrors live `Sidebar` groups — hrefs prefixed with /mock. */
+/** Mirrors live `Sidebar` — hrefs prefixed with /mock. */
 export const MOCK_PREFIX = "/mock" as const;
 
 export type MockNavItem = {
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  /** Optional nested links (desktop sidebar + mobile bar). */
-  children?: readonly { href: string; label: string }[];
 };
 
 export const mockPrimaryNavItems: readonly MockNavItem[] = [

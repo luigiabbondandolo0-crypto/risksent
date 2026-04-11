@@ -7,19 +7,10 @@ import {
   BookOpen,
 } from "lucide-react";
 
-export type NavChild = {
-  href: string;
-  label: string;
-  /** If set, link is `href#hash` and is active when the URL hash matches. */
-  hash?: string;
-};
-
 export type NavItem = {
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  /** Optional nested links (renders under parent in sidebar). */
-  children?: readonly NavChild[];
 };
 
 export const primaryNavItems: readonly NavItem[] = [
@@ -27,15 +18,7 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
-  {
-    href: "/app/ai-coach",
-    label: "AI Coach",
-    icon: Sparkles,
-    children: [
-      { href: "/app/ai-coach", label: "Report" },
-      { href: "/app/ai-coach?tab=chat", label: "Chat" },
-    ],
-  },
+  { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
