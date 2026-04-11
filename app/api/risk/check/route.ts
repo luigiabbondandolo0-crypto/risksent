@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { fetchRiskLiveSnapshot, resolveTradingAccountForUser, tradingAccountLabel } from "@/lib/risk/resolveTradingAccount";
 import { persistRiskViolations } from "@/lib/risk/persistViolations";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
