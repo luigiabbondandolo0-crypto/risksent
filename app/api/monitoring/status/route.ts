@@ -4,7 +4,7 @@ import { getAccountSummary, accountSelectColumns, type TradingAccountRow } from 
 
 /**
  * GET /api/monitoring/status
- * Returns connection status for mtapi and Supabase (for live-monitoring page).
+ * Returns connection status for the trading data layer and Supabase (for live-monitoring page).
  */
 export async function GET() {
   const supabase = await createSupabaseRouteClient();
@@ -37,7 +37,7 @@ export async function GET() {
     logs.push({ time: t(), source: "Supabase", ok: false, message: "Exception", detail: e instanceof Error ? e.message : String(e) });
   }
 
-  // mtapi: first account then AccountSummary
+  // Trading provider: first linked account then AccountSummary (stub until new provider)
   let tradingOk = false;
   const { data: accounts } = await supabase
     .from("trading_account")
@@ -57,7 +57,7 @@ export async function GET() {
           time: t(),
           source: "TradingAPI",
           ok: true,
-          message: "mtapi AccountSummary OK",
+          message: "Account summary OK",
           detail: `balance=${result.summary.balance}`
         });
       } else {

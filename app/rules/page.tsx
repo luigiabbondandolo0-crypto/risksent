@@ -3,7 +3,7 @@
 /**
  * DATA SOURCES (what is real vs mock):
  * - Rules values: REAL from DB (app_user).
- * - Live status badges (Safe/Warning/Breach): REAL when account linked + mtapi ok; otherwise no live data (badges show "—" or "No data").
+ * - Live status badges (Safe/Warning/Breach): REAL when account linked + trading provider ok; otherwise no live data (badges show "—" or "No data").
  * - Alerts list: REAL from DB (alert table).
  * - Telegram linked: REAL from DB (app_user.telegram_chat_id).
  * - AI "Analyze my rules": MOCK (stub response until AI is wired).
@@ -368,7 +368,7 @@ export default function RulesPage() {
             </p>
             <div className="mb-4 space-y-1.5 rounded-xl border border-slate-700/80 bg-slate-950/40 px-3 py-2.5 text-[11px] font-mono leading-relaxed text-slate-400">
               <p><span className="font-semibold text-slate-300">Test alerts:</span> Use &quot;Send test alert&quot; below to verify Telegram. To trigger real risk alerts with small lots, lower e.g. Daily Loss to 0.5% so even a small loss can breach the limit.</p>
-              <p><span className="font-semibold text-slate-300">Stop loss / take profit:</span> Set them in the MetaTrader terminal or in your broker flow when opening a trade (price levels for protection).</p>
+              <p><span className="font-semibold text-slate-300">Stop loss / take profit:</span> Set them in your trading platform or broker flow when opening a trade (price levels for protection).</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -732,7 +732,7 @@ export default function RulesPage() {
       </section>
 
       <footer className="border-t border-slate-800 pt-4 text-[10px] font-mono text-slate-600">
-        Rules & alerts: DB. Live badges: mtapi when account linked. AI insight: stub.
+        Rules & alerts: DB. Live badges: trading provider when account linked. AI insight: stub.
       </footer>
     </div>
   );

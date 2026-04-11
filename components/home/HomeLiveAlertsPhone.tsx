@@ -89,7 +89,7 @@ export function HomeLiveAlertsPhone() {
 
           <div className="relative mt-6 overflow-hidden rounded-[1.65rem] bg-[#0e0f12] ring-1 ring-white/[0.06]">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-2">
-              <span className="text-[10px] font-mono font-bold text-slate-400">MetaTrader 5</span>
+              <span className="text-[10px] font-mono font-bold text-slate-400">Trading terminal</span>
               <div className="flex gap-1">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
@@ -200,7 +200,7 @@ export function HomeLiveAlertsPhone() {
       </motion.div>
 
       <p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-slate-600">
-        MetaTrader mobile · policy alert via Telegram
+        Mobile terminal · policy alert via Telegram
       </p>
     </div>
   );

@@ -12,7 +12,7 @@ import {
 /**
  * GET /api/rules/status
  * Returns saved rules + live values from linked account for Rules page badges and exposure bar.
- * Live data: from mtapi (dashboard-stats logic). If no account or API error, live values are null.
+ * Live data: from trading provider (dashboard-stats logic). If no account or provider error, live values are null.
  */
 export async function GET() {
   const supabase = await createSupabaseRouteClient();

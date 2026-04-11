@@ -154,7 +154,7 @@ export default function HomePage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-red-400" />
             </span>
             <span className="text-[11px] font-mono font-medium uppercase tracking-[0.25em] text-slate-500">
-              All-in-one trading platform · MT4 / MT5
+              All-in-one trading platform · risk and execution discipline
             </span>
           </div>
 

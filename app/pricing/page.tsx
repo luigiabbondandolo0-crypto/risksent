@@ -181,8 +181,8 @@ export default function PricingPage() {
             {[
               { q: "Is there a free trial?", a: "Yes — 7 days free, no credit card required. Try every feature before you pay." },
               { q: "Can I cancel anytime?", a: "Absolutely. Cancel in one click. No questions, no penalties." },
-              { q: "Does it work with FTMO and other prop firms?", a: "Yes. RiskSent connects to any MT4/MT5 account — FTMO, MyForexFunds, E8 and more." },
-              { q: "What brokers are supported?", a: "Any broker that uses MT4 or MT5. If your broker supports MetaTrader, RiskSent works." },
+              { q: "Does it work with FTMO and other prop firms?", a: "We focus on prop-style risk rules and dashboards. Broker account linking is being rebuilt with a new provider; check the product for current connectivity." },
+              { q: "What brokers are supported?", a: "Supported brokers depend on the live integration. We are not tied to a single legacy MetaTrader API anymore — scope will be announced as the new connection ships." },
               { q: "Is my data safe?", a: "All data is encrypted. We use read-only access to your trading account — we can never place or close trades." },
             ].map((item, i) => (
               <motion.div

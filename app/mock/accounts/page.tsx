@@ -8,7 +8,7 @@ export default function MockAccountsPage() {
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="rs-page-title">Account</h1>
-          <p className="rs-page-sub">Demo table. In production, accounts are connected to MetaAPI.</p>
+          <p className="rs-page-sub">Demo table. In production, accounts are linked via the configured broker integration.</p>
         </div>
         <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-slate-500">
           <PlusCircle className="h-4 w-4" />

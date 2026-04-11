@@ -39,7 +39,7 @@ export default function DemoDashboardPage() {
               Dashboard
             </h1>
             <p className="mt-1 text-sm text-slate-300">
-              Static preview of what you&apos;ll see once your MetaTrader account is connected.
+              Static preview of what you&apos;ll see once your trading account is connected.
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Last update: 14:03 · All metrics below are mock data.
@@ -47,7 +47,7 @@ export default function DemoDashboardPage() {
           </div>
           <div className="flex flex-col items-stretch gap-2 sm:w-72">
             <select className="rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-xs text-slate-200 outline-none focus:border-cyan-500">
-              <option>123456 · Demo MetaTrader Account</option>
+              <option>123456 · Demo trading account</option>
             </select>
             <div className="flex gap-2">
               <button className="flex-1 rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-500 hover:text-cyan-200">
@@ -208,7 +208,7 @@ export default function DemoDashboardPage() {
                 What happens in the real app
               </p>
               <p className="mt-1 text-sm text-slate-300">
-                In production, RiskSent connects to your MetaTrader account, builds an equity curve
+                In production, RiskSent connects to your broker account, builds an equity curve
                 and checks your risk rules every minute. Alerts are stored and shown here and on
                 Telegram.
               </p>

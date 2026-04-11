@@ -1,20 +1,9 @@
 # Scripts
 
-## Rimuovere i vecchi account MT (MetaAPI)
+## Legacy trading accounts (historical)
 
-Dopo aver migrato a **solo mtapi.io**, gli account collegati al vecchio provider (MetaAPI) non funzionano più. Per pulire il database:
+Older migrations and SQL helpers referred to MetaTrader API providers (`metaapi`, `mtapi.io`). The app no longer calls those HTTP APIs from `lib/tradingApi.ts`; broker linking is disabled until a new provider is integrated.
 
-1. Apri **Supabase** → **SQL Editor**.
-2. Apri il file `scripts/delete-old-mt-accounts.sql`.
-3. Esegui lo script (l’istruzione attiva è la **Opzione 1**: elimina dove `provider = 'metaapi'`).
-4. (Opzionale) Se vuoi eliminare anche account senza `broker_host` (vecchio flusso), commenta l’Opzione 1 e decommenta l’Opzione 2, poi riesegui.
+- Optional cleanup: `scripts/delete-old-mt-accounts.sql` (if you still need to purge rows by `provider` in Supabase, use the SQL Editor and adjust the `WHERE` clause for your case).
 
-**Nota:** Gli utenti dovranno ri-aggiungere l’account dalla pagina “Aggiungi account” inserendo **Host** e **Port** del broker (mtapi.io).
-
-### Migrazione default provider
-
-Dopo aver eseguito lo script di cancellazione (o in parallelo), applica la migrazione che imposta il default di `provider` a `mtapi`:
-
-- Migrazione: `supabase/migrations/20250303100000_remove_metaapi_default_mtapi.sql`
-
-Se usi la Supabase CLI: `supabase db push` oppure copia il contenuto della migrazione nel SQL Editor ed eseguilo.
+- Historical migrations under `supabase/migrations/` (e.g. provider defaults) are kept for database history; do not delete applied migration files.

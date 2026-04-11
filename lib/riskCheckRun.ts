@@ -186,7 +186,7 @@ export type RunRiskCheckResult = {
 };
 
 /**
- * Run full risk check for one user/account: fetch Trading API (MetaAPI/mtapi) data, get rules, compute findings, dedupe and create alerts + Telegram.
+ * Run full risk check for one user/account: fetch trading provider data, get rules, compute findings, dedupe and create alerts + Telegram.
  * supabase: use route client for authenticated user, or admin for cron (any user).
  */
 export async function runRiskCheckForAccount(params: {

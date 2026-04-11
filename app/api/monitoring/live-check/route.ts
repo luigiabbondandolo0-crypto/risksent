@@ -26,7 +26,10 @@ export async function GET() {
 
   const uuid = accounts?.[0]?.metaapi_account_id ?? null;
   if (!uuid) {
-    return NextResponse.json({ error: "No linked account", detail: "Add an account (mtapi host + port)." }, { status: 400 });
+    return NextResponse.json(
+      { error: "No linked account", detail: "Add a trading account when broker linking is available again." },
+      { status: 400 }
+    );
   }
 
   const result = await runRiskCheckDryRun({

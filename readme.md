@@ -1,7 +1,7 @@
 RiskSent – trading risk dashboard
 =================================
 
-This repository contains the RiskSent web application, a minimal dark fintech dashboard for MT4/MT5/cTrader/Tradelocker traders.
+This repository contains the RiskSent web application, a minimal dark fintech dashboard for traders (broker connectivity is pluggable).
 
 ## Tech stack
 
@@ -12,7 +12,7 @@ This repository contains the RiskSent web application, a minimal dark fintech da
 
 ## Environment variables
 
-All secrets (API keys, MetaApi credentials, Supabase keys, etc.) must be stored in environment variables and **never** committed to git.
+All secrets (API keys, Supabase keys, etc.) must be stored in environment variables and **never** committed to git.
 
 Create a `.env.local` file (not committed) with values like:
 
@@ -20,7 +20,6 @@ Create a `.env.local` file (not committed) with values like:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
-MTAPI_BASE_URL=...          # optional; mtapi.io base (default https://mt5.mtapi.io)
 ENCRYPTION_KEY=...   # 32+ chars for encrypting stored passwords
 RESEND_API_KEY=...   # API key from Resend for sending welcome emails
 NEXT_PUBLIC_SITE_URL=... # optional; site URL for email links (defaults to https://risksent.com)

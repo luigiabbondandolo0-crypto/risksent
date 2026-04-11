@@ -17,6 +17,9 @@ node_modules/
 .DS_Store
 *.pem
 
+# Cursor / local agent worktrees
+.claude/
+
 # Debug
 npm-debug.log*
 yarn-debug.log*

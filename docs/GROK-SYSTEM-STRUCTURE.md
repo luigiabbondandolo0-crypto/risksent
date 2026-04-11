@@ -6,10 +6,10 @@ Documento di riferimento per integrare un bot Telegram con RiskSent. Descrive st
 
 ## 1. Panoramica
 
-- **Prodotto**: RiskSent – dashboard di risk per trader MT4/MT5.
+- **Prodotto**: RiskSent – dashboard di risk per trader (connettività broker in evoluzione).
 - **URL produzione**: https://risksent.com
 - **Deploy**: Next.js su Vercel; database e auth su Supabase.
-- **Scopo**: Collegare account MetaTrader, visualizzare statistiche, regole di risk, simulatore challenge (FTMO/Simplified), alert e (futuro) feedback AI. Il bot Telegram dovrà interagire con le stesse entità (utenti, account, regole, alert) tramite API o backend dedicato.
+- **Scopo**: Collegare account broker (integrazione dati in evoluzione), visualizzare statistiche, regole di risk, simulatore challenge (FTMO/Simplified), alert e (futuro) feedback AI. Il bot Telegram dovrà interagire con le stesse entità (utenti, account, regole, alert) tramite API o backend dedicato.
 
 ---
 
@@ -25,7 +25,7 @@ Documento di riferimento per integrare un bot Telegram con RiskSent. Descrive st
 | Server Supabase (API) | `createRouteHandlerClient({ cookies })` da `@supabase/auth-helpers-nextjs` |
 | Admin / bypass RLS | `createClient(url, serviceRoleKey)` in `lib/supabaseAdmin.ts` |
 | Cifratura password account | Node `crypto` AES-256-GCM in `lib/encrypt.ts` |
-| Dati trading (ordini/saldo) | mtapi.io (Connect, AccountSummary, OrderHistory, OpenedOrders) |
+| Dati trading (ordini/saldo) | Modulo `lib/tradingApi.ts` (stub fino al nuovo provider) |
 
 ---
 
@@ -42,7 +42,6 @@ Tutte da impostare in Vercel (e in `.env.local` in locale). **Mai** committare v
 | `TELEGRAM_BOT_TOKEN` | Sì (per alert) | Token da BotFather per il bot unico (es. @RiskSentAlertsBot) |
 | `TELEGRAM_BOT_USERNAME` | No | Username del bot per il link (es. RiskSentAlertsBot); default RiskSentAlertsBot |
 | `BOT_INTERNAL_SECRET` | No | Se impostato, POST /api/bot/send-alert richiede header `x-bot-secret` o body `secret` |
-| `MTAPI_BASE_URL` | No | Base URL mtapi.io (default https://mt5.mtapi.io) |
 | `DEBUG_ACCOUNTS` | No | Se `1`, le API accounts loggano in console |
 
 Webhook Telegram: su BotFather impostare `/setwebhook` con URL `https://risksent.com/api/telegram-webhook`.
@@ -80,7 +79,7 @@ Per il bot: o si associa un utente Telegram a un utente RiskSent (es. tramite `t
 - RLS: utente può leggere/aggiornare solo la propria riga (`auth.uid() = id`).
 
 ### 5.3 `public.trading_account`
-- Un conto MT per riga; collegato a mtapi.io tramite token di sessione in `metaapi_account_id`.
+- Un conto trading per riga; id/sessione provider in `metaapi_account_id` quando l’integrazione broker è attiva.
 - Colonne:
   - `id` uuid PK
   - `created_at`, `updated_at` timestamptz
@@ -88,15 +87,15 @@ Per il bot: o si associa un utente Telegram a un utente RiskSent (es. tramite `t
   - `broker_type` text check in ('MT4', 'MT5', 'cTrader', 'Tradelocker')
   - `account_number` text NOT NULL
   - `investor_password_encrypted` text NOT NULL  — password cifrata con `lib/encrypt`
-  - `metaapi_account_id` text  — token di sessione mtapi (da Connect)
-  - `broker_host` text, `broker_port` text  — per Connect
-  - `provider` text default 'mtapi'  — solo mtapi supportato
+  - `metaapi_account_id` text  — id/token sessione dal provider (nome storico colonna)
+  - `broker_host` text, `broker_port` text  — metadati broker (usati dal provider quando integrato)
+  - `provider` text  — identificativo provider (storico: valori tipo `mtapi` / `metaapi` nelle migrazioni)
   - `account_name` text (opzionale)
   - unique (user_id, broker_type, account_number)
 - RLS: utente vede/solo i propri account (`user_id = auth.uid()`).
 
 ### 5.4 `public.trade`
-- Singoli trade (attualmente più usati da logica lato API che da inserimenti diretti; i dati “live” vengono da MetaAPI).
+- Singoli trade (logica lato API e inserimenti; dati live dipendono dal provider in `lib/tradingApi.ts`).
 - Colonne: `id`, `created_at`, `account_id` → trading_account, `trade_date`, `asset`, `direction` ('LONG'|'SHORT'), `entry_price`, `exit_price`, `volume_lots`, `pl`, `sanity_score`, `sanity_explanation`.
 - Indice: `(account_id, trade_date desc)`.
 - RLS: accesso solo ai trade degli account dell’utente.
@@ -126,31 +125,29 @@ Base URL in produzione: `https://risksent.com`. Tutte le API sotto richiedono **
 
 ### 6.1 `GET /api/accounts`
 - **Auth**: sessione utente.
-- **Risposta**: `{ accounts: Array<{ id, broker_type, account_number, account_name, metaapi_account_id, created_at }> }`. Il frontend usa `metaapi_account_id` come valore per selezionare l’account (è il token mtapi).
+- **Risposta**: `{ accounts: Array<{ id, broker_type, account_number, account_name, metaapi_account_id, created_at }> }`. Il frontend usa `metaapi_account_id` come valore per selezionare l’account (id lato provider quando presente).
 - Ordine: `created_at` desc. Usato da dashboard, simulator, add-account (lista account).
 
 ### 6.2 `DELETE /api/accounts/[id]`
 - **Auth**: sessione utente.
 - **Param**: `id` = UUID del `trading_account`.
-- Comportamento: verifica che l’account sia dell’utente; opzionalmente chiama MetaAPI `DeleteAccount?id=...`; elimina la riga da `trading_account`.
+- Comportamento: verifica che l’account sia dell’utente; elimina la riga da `trading_account` (eventuale revoke lato provider va aggiunto con il nuovo integratore).
 - Risposta: `{ ok: true }` o errore 403/404/500.
 
 ### 6.3 `POST /api/add-account`
 - **Auth**: sessione utente.
-- **Body** (JSON): `brokerType` ('MT4'|'MT5'), `server`, `accountNumber`, `investorPassword` (o `password`), `name` (opzionale).
-- Flusso: chiamata a mtapi.io `Connect` (host, port, user, password); poi inserimento in `trading_account` con password cifrata, token in `metaapi_account_id`, `broker_host`, `broker_port`, `provider='mtapi'`. Upsert su `app_user`.
-- Risposta: `{ ok: true, message, accountId }` o `{ ok: false, message, problems }` con status 4xx/5xx.
+- **Stato**: disabilitato (503) finché non è integrato un nuovo provider broker. In passato accettava credenziali e salvava su `trading_account`.
 
 ### 6.4 `GET /api/trades`
 - **Auth**: sessione utente.
 - **Query**: `uuid` (opzionale) = `metaapi_account_id`. Se assente si usa il primo account dell’utente.
-- Chiama MetaAPI: `ClosedOrders?id=...` e `AccountSummary?id=...`. Normalizza gli ordini in una lista di trade con `ticket`, `openTime`, `closeTime`, `type`, `symbol`, `lots`, `openPrice`, `closePrice`, `profit`, `comment`.
+- Usa `lib/tradingApi.ts` per ordini chiusi e riepilogo conto; con lo stub attuale le risposte possono essere vuote o con errore finché il provider non è configurato.
 - Risposta: `{ trades: TradeRow[], currency: string, balance?: number }` o `{ error, trades: [] }`.
 
 ### 6.5 `GET /api/dashboard-stats`
 - **Auth**: sessione utente.
 - **Query**: `uuid` (opzionale) = `metaapi_account_id`.
-- Chiama MetaAPI: `AccountSummary`, `ClosedOrders`. Calcola win rate, max drawdown, curva equity, daily stats, total profit, initial balance, balancePct, equityPct, avgRiskReward.
+- Usa `lib/tradingApi.ts` (AccountSummary, storico ordini) per calcolare metriche; con provider disabilitato i campi live possono mancare.
 - Risposta: `{ balance, equity, currency, winRate, maxDd, highestDdPct, avgRiskReward, balancePct, equityPct, equityCurve, dailyStats, totalProfit, initialBalance, updatedAt }` o `{ error }`.
 
 ### 6.6 `GET /api/rules`
@@ -190,28 +187,12 @@ Base URL in produzione: `https://risksent.com`. Tutte le API sotto richiedono **
 
 ---
 
-## 7. Servizio esterno: mtapi.io
+## 7. Integrazione broker (stato attuale)
 
-- **Base URL**: `MTAPI_BASE_URL` (default `https://mt5.mtapi.io`). **Auth**: token da `Connect`, salvato in `metaapi_account_id`.
-
-Endpoint usati dall’app:
-
-| Metodo | Endpoint | Uso |
-|--------|----------|-----|
-| GET | `/Connect?user=...&password=...&host=...&port=...` | Add-account: ottiene token |
-| GET | `/AccountSummary?id={token}` | Saldo, equity, currency |
-| GET | `/OrderHistory?id=...&from=...&to=...` | Ordini chiusi |
-| GET | `/OpenedOrders?id={token}` | Posizioni aperte (risk, alert) |
-
-L’app non espone queste chiavi al frontend; le chiamate sono solo lato server (Route Handlers). Il bot, se dovrà leggere trade/saldo, dovrà usare le stesse API interne (`/api/trades`, `/api/dashboard-stats`) con un meccanismo di autenticazione server-to-server, oppure riusare la stessa logica in un backend del bot con `METATRADERAPI_API_KEY` e `metaapi_account_id` letti da DB.
-
-### 7b. mtapi.io (alternativa / aggiunta)
-
-- **Base URL**: configurabile con `MTAPI_BASE_URL` (default `https://mt5.mtapi.io`).
-- **Auth**: nessuna API key; si usa il token restituito da `Connect` (user, password, host, port). Il token è salvato in `metaapi_account_id`; `broker_host` e `broker_port` in `trading_account` servono per eventuale refresh.
-- **Endpoint usati**: `Connect`, `AccountSummary`, `OrderHistory`, `OpenedOrders` (posizioni aperte).
-- **Add-account**: se in body sono presenti `brokerHost` e `brokerPort`, l’app chiama mtapi `Connect` e salva `provider='mtapi'`, token, host, port. Altrimenti si usa MetaAPI come sopra.
-- **Log**: `lib/tradingApi.ts` scrive log verbosi (`[TradingAPI]`) per debug in migrazione.
+- L’integrazione HTTP precedente (mtapi.io / MetaTrader API) è stata rimossa dal codice applicativo.
+- `lib/tradingApi.ts` espone le stesse funzioni (`getAccountSummary`, `getClosedOrders`, `getOpenPositions`, `orderSend`) ma **non** effettua chiamate esterne finché non viene implementato un nuovo provider.
+- Le colonne `metaapi_account_id`, `broker_host`, `broker_port`, `provider` su `trading_account` restano per dati storici e per il futuro collegamento.
+- Il bot o altri servizi dovrebbero usare le API interne (`/api/trades`, `/api/dashboard-stats`, ecc.) con autenticazione appropriata, oppure leggere da Supabase con service role, una volta che il provider tornerà operativo.
 
 ---
 
@@ -267,7 +248,7 @@ supabase/
 - **Collegamento utente ↔ Telegram**: in `app_user.telegram_chat_id` si può salvare il chat_id di Telegram. Aggiornamento via `PATCH /api/rules` con body `{ telegram_chat_id: "123456789" }` (o null per scollegare). La pagina Rules espone già la possibilità di impostare questo valore.
 - **Lettura regole**: `GET /api/rules` (con auth utente) restituisce le soglie e `telegram_chat_id`.
 - **Alert**: tabella `alert` e `GET /api/alerts`; il bot può inviare messaggi quando vengono creati nuovi alert (creazione alert oggi è solo da backend/DB, non esposta in questa doc).
-- **Account e trade**: l’utente è identificato da `user.id` (UUID). Per mostrare nel bot “i tuoi account” o “i tuoi ultimi trade” serve un backend che, dato `telegram_chat_id` (o user_id), chiami le stesse logiche di `/api/accounts`, `/api/trades`, `/api/dashboard-stats` con quel utente. Questo richiederà o un endpoint server-to-server protetto da API key che accetti `telegram_chat_id` o `user_id`, oppure un servizio bot che usi direttamente Supabase (con service role) e MetaAPI con le stesse chiavi.
+- **Account e trade**: l’utente è identificato da `user.id` (UUID). Per mostrare nel bot “i tuoi account” o “i tuoi ultimi trade” serve un backend che, dato `telegram_chat_id` (o user_id), chiami le stesse logiche di `/api/accounts`, `/api/trades`, `/api/dashboard-stats` con quel utente. Questo richiederà o un endpoint server-to-server protetto da API key che accetti `telegram_chat_id` o `user_id`, oppure un servizio bot che usi direttamente Supabase (con service role) insieme al provider trading quando sarà di nuovo attivo.
 - **Admin**: attualmente l’admin è identificato per email (`luigiabbondandolo0@gmail.com`). Per un bot admin si potrebbe introdurre un ruolo o un flag in `app_user` o una whitelist di telegram_chat_id admin.
 
 ---
@@ -276,7 +257,7 @@ supabase/
 
 - Le policy RLS assicurano che ogni utente veda solo i propri dati (app_user, trading_account, trade, alert, insight).
 - Le API usano la sessione (cookie) per ottenere `auth.uid()` e non espongono dati di altri utenti.
-- Le password degli account MT sono salvate cifrate; la chiave `ENCRYPTION_KEY` deve restare solo sul server.
+- Le password degli account broker sono salvate cifrate; la chiave `ENCRYPTION_KEY` deve restare solo sul server.
 - Per il bot: non usare mai la chiave anonima Supabase con dati sensibili da fuori; usare un backend che usi service role o sessioni utente in modo controllato (es. link Telegram ↔ user_id una tantum, poi le chiamate sono per quel user_id).
 
 ---
