@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -76,7 +77,24 @@ const MOCK_SESSION: Partial<JournalSession> = {
   notes:
     "CPI data at 8:30am. Expect volatility. Waiting for London session to establish direction before entering.",
   images: [],
+  checklist_done: { c1: true, c2: true, c3: false },
+  rules_followed: { r1: true, r2: true, r3: false },
 };
+
+const MOTIVATIONAL_QUOTES = [
+  "Discipline is the bridge between goals and accomplishment.",
+  "The market rewards patience and punishes impulsiveness.",
+  "Your edge means nothing without the discipline to execute it.",
+  "One good trade beats ten impulsive ones.",
+  "Protect the account first. Profits follow discipline.",
+  "The best traders are not the most aggressive — they are the most disciplined.",
+  "Cut losses fast. Let winners run. Repeat.",
+  "A good trading day starts before the market opens.",
+  "Risk management is not optional. It is the job.",
+  "You don't need to trade every day. You need to trade right.",
+  "Consistency over perfection. Every single day.",
+  "Your stop loss is not a failure — it is your plan working.",
+] as const;
 
 const MOCK_STRATEGIES: JournalStrategy[] = [
   {
@@ -113,6 +131,13 @@ function getTodayStr() {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+function normBoolRecord(r: unknown): Record<string, boolean> {
+  if (!r || typeof r !== "object" || Array.isArray(r)) return {};
+  const out: Record<string, boolean> = {};
+  for (const [k, v] of Object.entries(r)) out[k] = Boolean(v);
+  return out;
+}
+
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
     (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
@@ -131,11 +156,13 @@ function BiasButton({
   active,
   color,
   onClick,
+  compact,
 }: {
   label: JournalBias;
   active: boolean;
   color: string;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <motion.button
@@ -144,7 +171,9 @@ function BiasButton({
       animate={active ? { scale: 1.04 } : { scale: 1 }}
       transition={{ type: "spring", damping: 20, stiffness: 400 }}
       onClick={onClick}
-      className="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all"
+      className={`flex-1 rounded-xl border font-semibold transition-all ${
+        compact ? "py-1.5 text-xs" : "py-2.5 text-sm"
+      }`}
       style={
         active
           ? {
@@ -238,9 +267,24 @@ function TradeCard({
 
 // ─── Today Tab ────────────────────────────────────────────────────────────────
 
+const TODAY_MAX_IMAGES = 6;
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("read failed"));
+    r.readAsDataURL(file);
+  });
+}
+
 function TodayTab({
   session,
   todayTrades,
+  checklist,
+  rules,
+  updateSession,
+  onFlushSessionSave,
   onBiasChange,
   onKeyLevelsChange,
   onWatchlistChange,
@@ -251,9 +295,14 @@ function TodayTab({
   onSync,
   syncing,
   isMock,
+  settingsHref,
 }: {
   session: Partial<JournalSession>;
   todayTrades: JournalTradeRow[];
+  checklist: JournalChecklistItem[];
+  rules: JournalRule[];
+  updateSession: (patch: Partial<JournalSession>) => void;
+  onFlushSessionSave: (override?: Partial<JournalSession>) => void;
   onBiasChange: (b: JournalBias | null) => void;
   onKeyLevelsChange: (v: string) => void;
   onWatchlistChange: (tags: string[]) => void;
@@ -264,8 +313,48 @@ function TodayTab({
   onSync: () => void;
   syncing: boolean;
   isMock: boolean;
+  settingsHref: string;
 }) {
+  const [quote] = useState(
+    () =>
+      MOTIVATIONAL_QUOTES[
+        Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)
+      ]!
+  );
   const [watchInput, setWatchInput] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const sortedChecklist = useMemo(
+    () => [...checklist].sort((a, b) => a.order_index - b.order_index),
+    [checklist]
+  );
+  const sortedRules = useMemo(
+    () => [...rules].sort((a, b) => a.order_index - b.order_index),
+    [rules]
+  );
+
+  const checklistDoneMap = session.checklist_done ?? {};
+  const rulesFollowedMap = session.rules_followed ?? {};
+
+  const checklistTotal = sortedChecklist.length;
+  const checklistCompleted = sortedChecklist.filter(
+    (c) => checklistDoneMap[c.id] === true
+  ).length;
+  const checklistPct =
+    checklistTotal > 0 ? (checklistCompleted / checklistTotal) * 100 : 0;
+  const progressColor =
+    checklistPct >= 100
+      ? "#00e676"
+      : checklistPct > 60
+        ? "#ff8c00"
+        : "#ff3c3c";
+
+  const rulesActive = sortedRules.filter(
+    (r) => rulesFollowedMap[r.id] === true
+  ).length;
+  const rulesTotal = sortedRules.length;
 
   const addSymbol = () => {
     const s = watchInput.trim().toUpperCase();
@@ -281,6 +370,56 @@ function TodayTab({
     onWatchlistChange((session.watchlist ?? []).filter((x) => x !== sym));
   };
 
+  const processImageFiles = async (files: FileList | File[]) => {
+    if (isMock) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    const current = session.images ?? [];
+    const room = TODAY_MAX_IMAGES - current.length;
+    if (room <= 0) return;
+    setUploading(true);
+    try {
+      const next = [...current];
+      for (const file of list.slice(0, room)) {
+        if (next.length >= TODAY_MAX_IMAGES) break;
+        const dataUrl = await readFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) next.push(j.url);
+      }
+      updateSession({ images: next });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (url: string) => {
+    updateSession({
+      images: (session.images ?? []).filter((u) => u !== url),
+    });
+  };
+
+  const settingsLinkProps = isMock
+    ? {
+        href: "#" as const,
+        onClick: (e: MouseEvent<HTMLAnchorElement>) => e.preventDefault(),
+      }
+    : { href: settingsHref };
+
+  const checklistVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+  };
+  const checklistItemVariants = {
+    hidden: { opacity: 0, x: -8 },
+    show: { opacity: 1, x: 0 },
+  };
+
   return (
     <motion.div
       key="today"
@@ -288,24 +427,231 @@ function TodayTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.25 }}
-      className="flex gap-5"
+      className="relative rounded-2xl bg-[#080809] p-4 lg:p-6"
     >
-      {/* LEFT: Session Planner (60%) */}
-      <div className="flex w-3/5 flex-col gap-4">
-        <div className={jn.card}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">
-              Session Planner
-            </h2>
-            <SavedIndicator saving={saving} saved={saved} />
+      <Link
+        {...settingsLinkProps}
+        title="Manage checklist, rules & strategies"
+        className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:right-5 lg:top-5"
+        aria-label="Journal settings"
+      >
+        <Settings2 className="h-4 w-4" />
+      </Link>
+
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,40fr)_minmax(0,35fr)_minmax(0,25fr)] lg:gap-5 lg:pr-10">
+        {/* LEFT — Daily Briefing */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0 }}
+        >
+          <div className="space-y-2">
+            <p className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              {format(new Date(), "EEEE, MMMM d")}
+            </p>
+            <motion.p
+              className="text-sm leading-relaxed text-slate-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              {quote}
+            </motion.p>
           </div>
 
-          {/* Market Bias */}
-          <div className="mb-4">
-            <p className={jn.label}>Market Bias</p>
-            <div className="mt-2 flex gap-2">
+          {/* Pre-trade checklist */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-white">
+                Pre-trade checklist
+              </h3>
+              <Link
+                {...settingsLinkProps}
+                className="text-slate-500 transition hover:text-slate-300"
+                aria-label="Checklist settings"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
+            {checklistTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No checklist yet.{" "}
+                <Link
+                  {...settingsLinkProps}
+                  className="font-mono text-[#ff8c00] hover:underline"
+                >
+                  Add items →
+                </Link>
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <span>
+                      {checklistCompleted}/{checklistTotal} completed
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: progressColor }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${checklistPct}%` }}
+                      transition={{ type: "spring", stiffness: 120, damping: 22 }}
+                    />
+                  </div>
+                </div>
+                <motion.ul
+                  className="space-y-2"
+                  variants={checklistVariants}
+                  initial="hidden"
+                  animate="show"
+                >
+                  {sortedChecklist.map((item) => {
+                    const yes = checklistDoneMap[item.id] === true;
+                    return (
+                      <motion.li key={item.id} variants={checklistItemVariants}>
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 28 }}
+                          onClick={() =>
+                            updateSession({
+                              checklist_done: {
+                                ...checklistDoneMap,
+                                [item.id]: !yes,
+                              },
+                            })
+                          }
+                          className="flex w-full items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                        >
+                          <span
+                            className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 font-mono text-xs"
+                            style={{
+                              borderColor: yes ? "#00e676" : "#ff3c3c",
+                              color: yes ? "#00e676" : "#ff3c3c",
+                              background: yes
+                                ? "rgba(0,230,118,0.1)"
+                                : "rgba(255,60,60,0.08)",
+                            }}
+                          >
+                            {yes ? (
+                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                            ) : (
+                              <X className="h-3.5 w-3.5" strokeWidth={3} />
+                            )}
+                          </span>
+                          <span
+                            className={`text-sm text-slate-200 ${
+                              yes ? "line-through decoration-slate-600" : ""
+                            }`}
+                          >
+                            {item.text}
+                          </span>
+                        </motion.button>
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              </>
+            )}
+          </div>
+
+          {/* Today&apos;s rules */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-white">
+                Today&apos;s rules
+              </h3>
+              <Link
+                {...settingsLinkProps}
+                className="text-slate-500 transition hover:text-slate-300"
+                aria-label="Rules settings"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
+            {rulesTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No rules set.{" "}
+                <Link
+                  {...settingsLinkProps}
+                  className="font-mono text-[#ff8c00] hover:underline"
+                >
+                  Add rules →
+                </Link>
+              </p>
+            ) : (
+              <>
+                <p className="text-[11px] font-mono text-slate-500">
+                  {rulesActive}/{rulesTotal} rules active
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {sortedRules.map((rule) => {
+                    const yes = rulesFollowedMap[rule.id] === true;
+                    return (
+                      <motion.button
+                        key={rule.id}
+                        type="button"
+                        layout
+                        onClick={() =>
+                          updateSession({
+                            rules_followed: {
+                              ...rulesFollowedMap,
+                              [rule.id]: !yes,
+                            },
+                          })
+                        }
+                        className="inline-flex max-w-full items-center gap-2 rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors duration-200"
+                        style={{
+                          borderColor: yes ? "#00e676" : "#ff3c3c",
+                          color: yes ? "#00e676" : "#ff3c3c",
+                          background: yes
+                            ? "rgba(0,230,118,0.08)"
+                            : "rgba(255,60,60,0.06)",
+                        }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {yes ? (
+                          <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                        ) : (
+                          <X className="h-3.5 w-3.5 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{rule.text}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bias + key levels + watchlist */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <p className={jn.label}>Market bias</p>
+            <div className="flex gap-1.5">
               <BiasButton
                 label="Bullish"
+                compact
                 active={session.bias === "Bullish"}
                 color="#00e676"
                 onClick={() =>
@@ -314,6 +660,7 @@ function TodayTab({
               />
               <BiasButton
                 label="Neutral"
+                compact
                 active={session.bias === "Neutral"}
                 color="#64748b"
                 onClick={() =>
@@ -322,6 +669,7 @@ function TodayTab({
               />
               <BiasButton
                 label="Bearish"
+                compact
                 active={session.bias === "Bearish"}
                 color="#ff3c3c"
                 onClick={() =>
@@ -329,119 +677,221 @@ function TodayTab({
                 }
               />
             </div>
+            <div>
+              <p className={jn.label}>Key levels</p>
+              <textarea
+                className={`${jn.input} mt-1 resize-none`}
+                style={{ minHeight: "4.5rem" }}
+                rows={3}
+                placeholder="Major S/R, session highs/lows…"
+                value={session.key_levels ?? ""}
+                onChange={(e) => onKeyLevelsChange(e.target.value)}
+                readOnly={isMock}
+              />
+            </div>
+            <div>
+              <p className={jn.label}>Watchlist</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {(session.watchlist ?? []).map((sym) => (
+                  <span
+                    key={sym}
+                    className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono text-slate-200"
+                  >
+                    {sym}
+                    {!isMock && (
+                      <button
+                        type="button"
+                        className="text-slate-600 hover:text-slate-300"
+                        onClick={() => removeSymbol(sym)}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+              {!isMock && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className={`${jn.input} text-xs`}
+                    placeholder="Symbol + Enter…"
+                    value={watchInput}
+                    onChange={(e) =>
+                      setWatchInput(e.target.value.toUpperCase())
+                    }
+                    onKeyDown={(e) => e.key === "Enter" && addSymbol()}
+                  />
+                  <button
+                    type="button"
+                    className={jn.btnGhost}
+                    onClick={addSymbol}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+        </motion.div>
 
-          {/* Key Levels */}
-          <div className="mb-4">
-            <p className={jn.label}>Key Levels</p>
+        {/* CENTER — Session notes */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+        >
+          <div
+            className={`${jn.card} flex flex-col gap-4`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-white">Session notes</h2>
+              <SavedIndicator saving={saving} saved={saved} />
+            </div>
             <textarea
-              className={`${jn.input} mt-1 min-h-[72px] resize-none`}
-              placeholder="Major S/R levels, session highs/lows…"
-              value={session.key_levels ?? ""}
-              onChange={(e) => onKeyLevelsChange(e.target.value)}
+              className={`${jn.input} min-h-[200px] resize-y`}
+              placeholder="Free-form session notes…"
+              value={session.notes ?? ""}
+              onChange={(e) => onNotesChange(e.target.value)}
+              onBlur={(e) =>
+                onFlushSessionSave({ notes: e.target.value })
+              }
               readOnly={isMock}
             />
-          </div>
-
-          {/* Watchlist */}
-          <div className="mb-4">
-            <p className={jn.label}>Watchlist</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {(session.watchlist ?? []).map((sym) => (
-                <span
-                  key={sym}
-                  className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono text-slate-200"
-                >
-                  {sym}
-                  {!isMock && (
-                    <button
-                      type="button"
-                      className="text-slate-600 hover:text-slate-300"
-                      onClick={() => removeSymbol(sym)}
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  )}
-                </span>
-              ))}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void processImageFiles(e.target.files ?? []);
+                e.target.value = "";
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileRef.current?.click();
+                }
+              }}
+              onDragEnter={() => setDragOver(true)}
+              onDragLeave={() => setDragOver(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                void processImageFiles(e.dataTransfer.files);
+              }}
+              onClick={() => !isMock && fileRef.current?.click()}
+              className={`cursor-pointer rounded-xl border border-dashed px-4 py-6 text-center text-xs font-mono transition-colors ${
+                dragOver
+                  ? "border-[#ff8c00]/50 bg-[#ff8c00]/10 text-slate-300"
+                  : "border-white/[0.12] bg-white/[0.02] text-slate-500"
+              } ${isMock ? "pointer-events-none opacity-50" : ""}`}
+            >
+              {uploading
+                ? "Uploading…"
+                : "Drop screenshots here or click to upload"}
             </div>
-            {!isMock && (
-              <div className="mt-2 flex gap-2">
-                <input
-                  className={`${jn.input} text-xs`}
-                  placeholder="Type symbol + Enter…"
-                  value={watchInput}
-                  onChange={(e) => setWatchInput(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === "Enter" && addSymbol()}
-                />
-                <button
-                  type="button"
-                  className={jn.btnGhost}
-                  onClick={addSymbol}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
+            {(session.images ?? []).length > 0 && (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+                {(session.images ?? []).slice(0, TODAY_MAX_IMAGES).map((url) => (
+                  <div
+                    key={url}
+                    className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                    {!isMock && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(url);
+                        }}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
+        </motion.div>
 
-          {/* Notes */}
-          <div>
-            <p className={jn.label}>Notes</p>
-            <textarea
-              className={`${jn.input} mt-1 min-h-[100px] resize-none`}
-              placeholder="Today's macro context, news events, trading plan…"
-              value={session.notes ?? ""}
-              onChange={(e) => onNotesChange(e.target.value)}
-              readOnly={isMock}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Today's Trades (40%) */}
-      <div className="flex w-2/5 flex-col gap-4">
-        <div className={`${jn.card} flex flex-col`}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">
-              Today&apos;s Trades
-            </h2>
-            <button
-              type="button"
-              className={jn.btnGhost}
-              disabled={syncing}
-              onClick={onSync}
-              style={{ padding: "6px 10px", fontSize: "12px" }}
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
-              />
-              Sync
-            </button>
-          </div>
-
-          {todayTrades.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <Sun className="h-5 w-5 text-slate-600" />
-              </div>
-              <p className="text-sm text-slate-500">No trades today yet</p>
-              <p className="mt-1 text-xs text-slate-700">
-                They&apos;ll appear here after sync
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {todayTrades.map((trade) => (
-                <TradeCard
-                  key={trade.id}
-                  trade={trade}
-                  onClick={() => onTradeClick(trade)}
+        {/* RIGHT — Today&apos;s trades */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
+        >
+          <div
+            className={`${jn.card} flex flex-col`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-white">
+                Today&apos;s Trades
+              </h2>
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={syncing}
+                onClick={onSync}
+                style={{ padding: "6px 10px", fontSize: "12px" }}
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
                 />
-              ))}
+                Sync
+              </button>
             </div>
-          )}
-        </div>
+
+            {todayTrades.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                  <Sun className="h-5 w-5 text-slate-600" />
+                </div>
+                <p className="text-sm text-slate-500">No trades today yet</p>
+                <p className="mt-1 text-xs text-slate-700">
+                  They&apos;ll appear here after sync
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {todayTrades.map((trade) => (
+                  <TradeCard
+                    key={trade.id}
+                    trade={trade}
+                    onClick={() => onTradeClick(trade)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -1322,6 +1772,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // Trades
   const [todayTrades, setTodayTrades] = useState<JournalTradeRow[]>([]);
@@ -1404,7 +1856,15 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
       }
       if (sRes.ok) {
         const j = await sRes.json();
-        if (j.session) setSession(j.session);
+        if (j.session) {
+          const s = j.session as JournalSession;
+          setSession({
+            ...s,
+            checklist_done: normBoolRecord(s.checklist_done),
+            rules_followed: normBoolRecord(s.rules_followed),
+            images: Array.isArray(s.images) ? s.images : [],
+          });
+        }
       }
       if (tTodayRes.ok) {
         const j = await tTodayRes.json();
@@ -1454,6 +1914,33 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
           setSaving(false);
         }
       }, 800);
+    },
+    [isMock]
+  );
+
+  const flushSessionSave = useCallback(
+    async (override?: Partial<JournalSession>) => {
+      if (isMock) return;
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      setSaving(true);
+      try {
+        await fetch("/api/journal/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...sessionRef.current,
+            ...override,
+            session_date: getTodayStr(),
+          }),
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } finally {
+        setSaving(false);
+      }
     },
     [isMock]
   );
@@ -1603,6 +2090,11 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               key="today"
               session={session}
               todayTrades={todayTrades}
+              checklist={checklist}
+              rules={rules}
+              updateSession={updateSession}
+              onFlushSessionSave={flushSessionSave}
+              settingsHref="/app/journaling/settings"
               onBiasChange={(b) => updateSession({ bias: b })}
               onKeyLevelsChange={(v) => updateSession({ key_levels: v })}
               onWatchlistChange={(tags) => updateSession({ watchlist: tags })}

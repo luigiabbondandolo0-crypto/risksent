@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
     watchlist?: string[] | null;
     notes?: string | null;
     images?: string[] | null;
+    checklist_done?: Record<string, boolean> | null;
+    rules_followed?: Record<string, boolean> | null;
   };
   try {
     body = await req.json();
@@ -60,7 +62,20 @@ export async function POST(req: NextRequest) {
   const bias =
     body.bias && validBias.includes(body.bias) ? body.bias : null;
 
-  const row = {
+  const checklistDone =
+    body.checklist_done != null &&
+    typeof body.checklist_done === "object" &&
+    !Array.isArray(body.checklist_done)
+      ? body.checklist_done
+      : undefined;
+  const rulesFollowed =
+    body.rules_followed != null &&
+    typeof body.rules_followed === "object" &&
+    !Array.isArray(body.rules_followed)
+      ? body.rules_followed
+      : undefined;
+
+  const row: Record<string, unknown> = {
     user_id: user.id,
     session_date: sessionDate,
     account_id: body.account_id ?? null,
@@ -71,6 +86,8 @@ export async function POST(req: NextRequest) {
     images: Array.isArray(body.images) ? body.images : null,
     updated_at: new Date().toISOString(),
   };
+  if (checklistDone !== undefined) row.checklist_done = checklistDone;
+  if (rulesFollowed !== undefined) row.rules_followed = rulesFollowed;
 
   const { data, error } = await supabase
     .from("journal_session")
