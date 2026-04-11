@@ -31,7 +31,6 @@ import type {
   CoachError,
   CoachInsight,
   CoachMessage,
-  CoachModel,
   CoachReport,
   CoachReportRow,
   ErrorSeverity,
@@ -40,7 +39,6 @@ import type {
 // ─── Design tokens ─────────────────────────────────────────────────────────
 
 const CLAUDE_COLOR = "#7c3aed";
-const GPT4_COLOR = "#10b981";
 
 const severityConfig: Record<
   ErrorSeverity,
@@ -436,8 +434,6 @@ function ChatBubble({
     return () => clearInterval(interval);
   }, [isNew, isUser, msg.content]);
 
-  const modelColor = msg.model === "gpt4" ? GPT4_COLOR : CLAUDE_COLOR;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -450,12 +446,12 @@ function ChatBubble({
             <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
               style={{
-                background: `${modelColor}20`,
-                color: modelColor,
-                border: `1px solid ${modelColor}40`,
+                background: `${CLAUDE_COLOR}20`,
+                color: CLAUDE_COLOR,
+                border: `1px solid ${CLAUDE_COLOR}40`,
               }}
             >
-              {msg.model === "gpt4" ? "GPT-4" : "Claude"}
+              Claude
             </span>
             <span className="text-[10px] text-slate-700 font-mono">
               {format(parseISO(msg.created_at), "HH:mm")}
@@ -503,8 +499,6 @@ function ReportTab({
   onLoadReport,
   onGenerate,
   generating,
-  model,
-  analysisWindow,
   isMock,
 }: {
   report: CoachReport | null;
@@ -513,8 +507,6 @@ function ReportTab({
   onLoadReport: (r: CoachReportRow) => void;
   onGenerate: () => void;
   generating: boolean;
-  model: CoachModel;
-  analysisWindow: number;
   isMock: boolean;
 }) {
   if (!report) {
@@ -586,14 +578,7 @@ function ReportTab({
             <span className="font-mono text-[10px] text-slate-600">
               {format(parseISO(reportRow.created_at), "MMM d, HH:mm")} ·{" "}
               {reportRow.trades_analyzed} trades ·{" "}
-              <span
-                style={{
-                  color:
-                    reportRow.model === "gpt4" ? GPT4_COLOR : CLAUDE_COLOR,
-                }}
-              >
-                {reportRow.model === "gpt4" ? "GPT-4" : "Claude"}
-              </span>
+              <span style={{ color: CLAUDE_COLOR }}>Claude</span>
             </span>
           )}
         </div>
@@ -907,14 +892,12 @@ function ChatTab({
   messages,
   onSend,
   loading,
-  model,
   reportRow,
   isMock,
 }: {
   messages: CoachMessage[];
   onSend: (msg: string) => void;
   loading: boolean;
-  model: CoachModel;
   reportRow: CoachReportRow | null;
   isMock: boolean;
 }) {
@@ -1093,7 +1076,6 @@ export function AiCoachPageClient({
   mockMessages?: CoachMessage[];
 }) {
   const [tab, setTab] = useState<"report" | "chat">("report");
-  const [model, setModel] = useState<CoachModel>("claude");
   const [analysisWindow, setAnalysisWindow] = useState(9999);
   const [windowOpen, setWindowOpen] = useState(false);
 
@@ -1158,7 +1140,7 @@ export function AiCoachPageClient({
       const res = await authFetch("/api/ai-coach/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, days: analysisWindow }),
+        body: JSON.stringify({ days: analysisWindow }),
       });
       const j = await res.json();
       if (!res.ok) {
@@ -1180,7 +1162,7 @@ export function AiCoachPageClient({
       user_id: "",
       role: "user",
       content: msg,
-      model,
+      model: "claude",
       created_at: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -1193,7 +1175,7 @@ export function AiCoachPageClient({
       const res = await authFetch("/api/ai-coach/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, model, history }),
+        body: JSON.stringify({ message: msg, history }),
       });
       const j = await res.json();
       if (res.ok) {
@@ -1202,7 +1184,7 @@ export function AiCoachPageClient({
           user_id: "",
           role: "assistant",
           content: j.response,
-          model: j.model ?? model,
+          model: "claude",
           created_at: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
@@ -1231,39 +1213,6 @@ export function AiCoachPageClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Model toggle */}
-          <div className="flex rounded-xl border border-white/[0.07] bg-white/[0.02] p-0.5">
-            {(["claude", "gpt4"] as CoachModel[]).map((m) => {
-              const color = m === "gpt4" ? GPT4_COLOR : CLAUDE_COLOR;
-              const label = m === "gpt4" ? "GPT-4" : "Claude";
-              const active = model === m;
-              return (
-                <motion.button
-                  key={m}
-                  type="button"
-                  whileTap={{ scale: 0.95 }}
-                  disabled={isMock}
-                  onClick={() => setModel(m)}
-                  className="relative rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-                  style={{ color: active ? color : "#64748b" }}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="model-pill"
-                      className="absolute inset-0 rounded-lg"
-                      style={{
-                        background: `${color}18`,
-                        border: `1px solid ${color}40`,
-                      }}
-                      transition={{ type: "spring", damping: 28, stiffness: 380 }}
-                    />
-                  )}
-                  <span className="relative z-10">{label}</span>
-                </motion.button>
-              );
-            })}
-          </div>
-
           {/* Analysis window dropdown */}
           <div className="relative">
             <button
@@ -1403,8 +1352,6 @@ export function AiCoachPageClient({
                 onLoadReport={(r) => setReportRow(r)}
                 onGenerate={() => void handleGenerate()}
                 generating={generating}
-                model={model}
-                analysisWindow={analysisWindow}
                 isMock={isMock}
               />
             </motion.div>
@@ -1419,7 +1366,6 @@ export function AiCoachPageClient({
                 messages={messages}
                 onSend={(msg) => void handleChatSend(msg)}
                 loading={chatLoading}
-                model={model}
                 reportRow={reportRow}
                 isMock={isMock}
               />

@@ -38,7 +38,6 @@ type HealthPayload = {
   checkedAt: string;
   supabase: { ok: boolean; label: string };
   telegram: { ok: boolean; label: string };
-  openai: { ok: boolean; label: string };
   anthropic: { ok: boolean; label: string };
 };
 
@@ -293,7 +292,6 @@ export default function AdminPage() {
             {[
               { k: "Supabase", h: health.supabase },
               { k: "Telegram bot", h: health.telegram },
-              { k: "OpenAI API", h: health.openai },
               { k: "Anthropic API", h: health.anthropic }
             ].map(({ k, h: row }) => (
               <li

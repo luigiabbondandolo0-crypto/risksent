@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
-import type { CoachModel } from "@/lib/ai-coach/coachTypes";
+
+const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -20,7 +21,6 @@ export async function POST(req: NextRequest) {
 
   let body: {
     message?: string;
-    model?: CoachModel;
     history?: ChatMessage[];
   };
   try {
@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
-  const model: CoachModel = body.model === "gpt4" ? "gpt4" : "claude";
   const history: ChatMessage[] = Array.isArray(body.history)
     ? body.history.slice(-20)
     : [];
@@ -60,73 +59,36 @@ export async function POST(req: NextRequest) {
   ];
 
   // ── Call AI ───────────────────────────────────────────────────────────────
-  let response: string;
-
-  if (model === "gpt4") {
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      return NextResponse.json(
-        { error: "OPENAI_API_KEY not configured" },
-        { status: 500 }
-      );
-    }
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        max_tokens: 800,
-        temperature: 0.4,
-        messages: [
-          { role: "system", content: systemWithContext },
-          ...messages,
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json(
-        { error: `OpenAI error: ${err}` },
-        { status: 502 }
-      );
-    }
-    const j = await res.json();
-    response = j.choices?.[0]?.message?.content ?? "";
-  } else {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (!anthropicKey) {
-      return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
-        { status: 500 }
-      );
-    }
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 800,
-        system: systemWithContext,
-        messages,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json(
-        { error: `Anthropic error: ${err}` },
-        { status: 502 }
-      );
-    }
-    const j = await res.json();
-    response = j.content?.[0]?.text ?? "";
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY not configured" },
+      { status: 500 }
+    );
   }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: CLAUDE_COACH_MODEL,
+      max_tokens: 800,
+      system: systemWithContext,
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    return NextResponse.json(
+      { error: `Anthropic error: ${err}` },
+      { status: 502 }
+    );
+  }
+  const j = await res.json();
+  const response: string = j.content?.[0]?.text ?? "";
 
   if (!response) {
     return NextResponse.json(
@@ -137,9 +99,9 @@ export async function POST(req: NextRequest) {
 
   // ── Persist both messages ─────────────────────────────────────────────────
   await supabase.from("ai_coach_message").insert([
-    { user_id: user.id, role: "user", content: message, model },
-    { user_id: user.id, role: "assistant", content: response, model },
+    { user_id: user.id, role: "user", content: message, model: "claude" },
+    { user_id: user.id, role: "assistant", content: response, model: "claude" },
   ]);
 
-  return NextResponse.json({ response, model });
+  return NextResponse.json({ response });
 }

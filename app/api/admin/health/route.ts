@@ -25,10 +25,6 @@ export async function GET() {
       ok: Boolean(process.env.TELEGRAM_BOT_TOKEN),
       label: process.env.TELEGRAM_BOT_TOKEN ? "Configured" : "Not set"
     },
-    openai: {
-      ok: Boolean(process.env.OPENAI_API_KEY),
-      label: process.env.OPENAI_API_KEY ? "Configured" : "Not set"
-    },
     anthropic: {
       ok: Boolean(process.env.ANTHROPIC_API_KEY),
       label: process.env.ANTHROPIC_API_KEY ? "Configured" : "Not set"

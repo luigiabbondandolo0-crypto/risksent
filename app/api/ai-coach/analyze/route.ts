@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { COACH_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
-import type { CoachModel, CoachReport } from "@/lib/ai-coach/coachTypes";
+import type { CoachReport } from "@/lib/ai-coach/coachTypes";
+
+const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -13,14 +15,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { model?: CoachModel; days?: number };
+  let body: { days?: number };
   try {
     body = await req.json();
   } catch {
     body = {};
   }
 
-  const model: CoachModel = body.model === "gpt4" ? "gpt4" : "claude";
   const days = Number(body.days ?? 9999);
 
   // All time: no date filter
@@ -161,74 +162,36 @@ export async function POST(req: NextRequest) {
     JSON.stringify(context);
 
   // ── Call AI ───────────────────────────────────────────────────────────────
-  let rawContent: string;
-
-  if (model === "gpt4") {
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      return NextResponse.json(
-        { error: "OPENAI_API_KEY not configured" },
-        { status: 500 }
-      );
-    }
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        max_tokens: 4000,
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: COACH_SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json(
-        { error: `OpenAI error: ${err}` },
-        { status: 502 }
-      );
-    }
-    const j = await res.json();
-    rawContent = j.choices?.[0]?.message?.content ?? "";
-  } else {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (!anthropicKey) {
-      return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
-        { status: 500 }
-      );
-    }
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 4000,
-        system: COACH_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json(
-        { error: `Anthropic error: ${err}` },
-        { status: 502 }
-      );
-    }
-    const j = await res.json();
-    rawContent = j.content?.[0]?.text ?? "";
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY not configured" },
+      { status: 500 }
+    );
   }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": anthropicKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: CLAUDE_COACH_MODEL,
+      max_tokens: 4000,
+      system: COACH_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    return NextResponse.json(
+      { error: `Anthropic error: ${err}` },
+      { status: 502 }
+    );
+  }
+  const j = await res.json();
+  const rawContent: string = j.content?.[0]?.text ?? "";
 
   // ── Parse JSON ────────────────────────────────────────────────────────────
   let report: CoachReport;
@@ -255,7 +218,7 @@ export async function POST(req: NextRequest) {
     .from("ai_coach_report")
     .insert({
       user_id: user.id,
-      model,
+      model: "claude",
       period_from: fromDate,
       period_to: toDate,
       trades_analyzed: trades.length,

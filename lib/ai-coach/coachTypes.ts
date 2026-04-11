@@ -1,4 +1,4 @@
-export type CoachModel = "claude" | "gpt4";
+export type CoachModel = "claude";
 
 export type ErrorType =
   | "revenge_trading"
