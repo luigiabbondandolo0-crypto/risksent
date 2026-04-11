@@ -233,12 +233,16 @@ export async function POST(req: NextRequest) {
   // ── Parse JSON ────────────────────────────────────────────────────────────
   let report: CoachReport;
   try {
-    const cleaned = rawContent
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
-    report = JSON.parse(cleaned) as CoachReport;
+    // First { … last } so we parse JSON even if the model adds surrounding text
+    const firstBrace = rawContent.indexOf("{");
+    const lastBrace = rawContent.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      throw new Error("No JSON object found in response");
+    }
+
+    const jsonStr = rawContent.slice(firstBrace, lastBrace + 1);
+    report = JSON.parse(jsonStr) as CoachReport;
   } catch {
     return NextResponse.json(
       { error: "AI returned invalid JSON. Try again." },
