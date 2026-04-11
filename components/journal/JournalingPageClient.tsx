@@ -20,6 +20,8 @@ import {
   Check,
   TrendingUp,
   TrendingDown,
+  BarChart2,
+  Search,
 } from "lucide-react";
 import {
   format,
@@ -33,6 +35,7 @@ import {
   isToday,
 } from "date-fns";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
@@ -798,6 +801,458 @@ function HistoryTab({
   );
 }
 
+// ─── Trades Tab ───────────────────────────────────────────────────────────────
+
+const TRADES_PAGE_SIZE = 50;
+
+function tradeNetPl(t: JournalTradeRow): number {
+  return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+}
+
+function fmtTradePrice(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(Number(n))) return "—";
+  const v = Number(n);
+  return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(5);
+}
+
+type DirFilter = "ALL" | "BUY" | "SELL";
+type StatusFilter = "ALL" | JournalTradeRow["status"];
+
+function TradesTab({
+  allTrades,
+  isMock,
+  basePath,
+}: {
+  allTrades: JournalTradeRow[];
+  isMock: boolean;
+  basePath: string;
+}) {
+  const router = useRouter();
+  const [symbolQ, setSymbolQ] = useState("");
+  const [dir, setDir] = useState<DirFilter>("ALL");
+  const [status, setStatus] = useState<StatusFilter>("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(0);
+
+  const filtersActive =
+    symbolQ.trim() !== "" ||
+    dir !== "ALL" ||
+    status !== "ALL" ||
+    fromDate !== "" ||
+    toDate !== "";
+
+  const filtered = useMemo(() => {
+    let list = [...allTrades];
+    const q = symbolQ.trim().toLowerCase();
+    if (q) list = list.filter((t) => t.symbol.toLowerCase().includes(q));
+    if (dir !== "ALL") list = list.filter((t) => t.direction === dir);
+    if (status !== "ALL") list = list.filter((t) => t.status === status);
+    if (fromDate || toDate) {
+      list = list.filter((t) => {
+        const anchor = (t.close_time ?? t.open_time).slice(0, 10);
+        if (fromDate && anchor < fromDate) return false;
+        if (toDate && anchor > toDate) return false;
+        return true;
+      });
+    }
+    list.sort((a, b) => {
+      const ta = new Date(a.close_time ?? a.open_time).getTime();
+      const tb = new Date(b.close_time ?? b.open_time).getTime();
+      return tb - ta;
+    });
+    return list;
+  }, [allTrades, symbolQ, dir, status, fromDate, toDate]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [symbolQ, dir, status, fromDate, toDate, allTrades]);
+
+  const stats = useMemo(() => {
+    const closed = filtered.filter((t) => t.status === "closed");
+    const nets = closed.map(tradeNetPl);
+    const wins = nets.filter((n) => n > 0).length;
+    const wr = closed.length > 0 ? (wins / closed.length) * 100 : 0;
+    const totalPl = filtered.reduce((s, t) => s + tradeNetPl(t), 0);
+    const rrVals = filtered
+      .map((t) => t.risk_reward)
+      .filter((x): x is number => x != null && Number.isFinite(Number(x)));
+    const avgRr =
+      rrVals.length > 0
+        ? rrVals.reduce((a, b) => a + Number(b), 0) / rrVals.length
+        : null;
+    return {
+      count: filtered.length,
+      closedCount: closed.length,
+      winRate: wr,
+      totalPl,
+      avgRr,
+    };
+  }, [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / TRADES_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageStart = safePage * TRADES_PAGE_SIZE;
+  const pageRows = filtered.slice(pageStart, pageStart + TRADES_PAGE_SIZE);
+
+  const openTrade = (id: string) => {
+    if (isMock) return;
+    router.push(`${basePath}/trade/${id}`);
+  };
+
+  const pillBtn = (on: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      on
+        ? "border border-[#ff8c00]/40 bg-[#ff8c00]/15 text-white"
+        : "border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+    }`;
+
+  const statCard =
+    "rounded-xl border border-white/[0.07] p-3 shadow-xl backdrop-blur-sm";
+  const statCardBg = { background: "rgba(255,255,255,0.02)" } as const;
+
+  return (
+    <motion.div
+      key="trades"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-5"
+    >
+      <div className={jn.card}>
+        <h2 className="font-display mb-4 text-base font-bold text-white">
+          All trades
+        </h2>
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              placeholder="Symbol…"
+              value={symbolQ}
+              onChange={(e) => setSymbolQ(e.target.value)}
+              className={`${jn.input} pl-10`}
+              aria-label="Filter by symbol"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Direction
+            </span>
+            {(["ALL", "BUY", "SELL"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={pillBtn(dir === d)}
+                onClick={() => setDir(d)}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Status
+            </span>
+            {(["ALL", "open", "closed"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={pillBtn(status === s)}
+                onClick={() => setStatus(s)}
+              >
+                {s === "ALL" ? "ALL" : s.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className={jn.label}>From</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className={jn.input}
+              />
+            </div>
+            <div>
+              <label className={jn.label}>To</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className={jn.input}
+              />
+            </div>
+            {filtersActive && (
+              <button
+                type="button"
+                className={`${jn.btnGhost} text-xs`}
+                onClick={() => {
+                  setSymbolQ("");
+                  setDir("ALL");
+                  setStatus("ALL");
+                  setFromDate("");
+                  setToDate("");
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Total trades
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.count}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Win rate
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.closedCount === 0 ? "—" : `${stats.winRate.toFixed(0)}%`}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Total P&amp;L
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold"
+            style={{
+              color: stats.totalPl >= 0 ? "#00e676" : "#ff3c3c",
+            }}
+          >
+            {stats.count === 0 && stats.totalPl === 0
+              ? "—"
+              : `${stats.totalPl >= 0 ? "+" : ""}${stats.totalPl.toFixed(2)}`}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Avg R:R
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.avgRr == null ? "—" : stats.avgRr.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={`${jn.card} overflow-hidden p-0`}
+        style={{ background: "rgba(255,255,255,0.02)" }}
+      >
+        {allTrades.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500">
+            No trades yet — sync your account to see trades here
+          </p>
+        ) : filtered.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500">
+            No trades match your filters
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[960px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.07] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Symbol</th>
+                  <th className="px-4 py-3 font-medium">Dir</th>
+                  <th className="px-4 py-3 font-medium">Lots</th>
+                  <th className="px-4 py-3 font-medium">Open</th>
+                  <th className="px-4 py-3 font-medium">Close</th>
+                  <th className="px-4 py-3 font-medium">Pips</th>
+                  <th className="px-4 py-3 font-medium">P&amp;L</th>
+                  <th className="px-4 py-3 font-medium">R:R</th>
+                  <th className="px-4 py-3 font-medium">Tags</th>
+                  <th className="px-4 py-3 font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((t, i) => {
+                  const net = tradeNetPl(t);
+                  const win = net > 0;
+                  const loss = net < 0;
+                  const tags = t.setup_tags ?? [];
+                  const rest = Math.max(0, tags.length - 2);
+                  return (
+                    <motion.tr
+                      key={t.id}
+                      role="button"
+                      tabIndex={isMock ? -1 : 0}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.02, duration: 0.2 }}
+                      onClick={() => openTrade(t.id)}
+                      onKeyDown={(e) => {
+                        if (!isMock && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          openTrade(t.id);
+                        }
+                      }}
+                      className={`cursor-pointer border-b border-white/[0.04] transition-colors hover:bg-white/[0.04] ${
+                        win
+                          ? "border-l-2 border-l-[#00e676]/40"
+                          : loss
+                            ? "border-l-2 border-l-[#ff3c3c]/40"
+                            : ""
+                      }`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-300">
+                        {format(
+                          parseISO(t.close_time ?? t.open_time),
+                          "MMM d, HH:mm"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-white">
+                        {t.symbol}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="rounded-md px-2 py-0.5 text-[10px] font-bold"
+                          style={
+                            t.direction === "BUY"
+                              ? {
+                                  background: "rgba(0,230,118,0.15)",
+                                  color: "#00e676",
+                                }
+                              : {
+                                  background: "rgba(255,60,60,0.15)",
+                                  color: "#ff3c3c",
+                                }
+                          }
+                        >
+                          {t.direction}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
+                        {t.lot_size}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-500">
+                        {fmtTradePrice(t.open_price)}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-500">
+                        {fmtTradePrice(t.close_price)}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs font-medium"
+                        style={{
+                          color:
+                            t.pips == null
+                              ? "#64748b"
+                              : t.pips > 0
+                                ? "#00e676"
+                                : t.pips < 0
+                                  ? "#ff3c3c"
+                                  : "#94a3b8",
+                        }}
+                      >
+                        {t.pips == null
+                          ? "—"
+                          : `${t.pips > 0 ? "+" : ""}${t.pips}`}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-[family-name:var(--font-mono)] text-sm font-bold"
+                        style={{
+                          color: net >= 0 ? "#00e676" : "#ff3c3c",
+                        }}
+                      >
+                        {net >= 0 ? "+" : ""}
+                        {net.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
+                        {t.risk_reward == null
+                          ? "—"
+                          : Number(t.risk_reward).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {tags.slice(0, 2).map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-slate-400"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {rest > 0 && (
+                            <span className="text-[10px] text-slate-600">
+                              +{rest}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {isMock ? (
+                          <span className="inline-flex cursor-not-allowed rounded-lg border border-white/[0.08] px-3 py-1 text-xs text-slate-600 opacity-60">
+                            Review
+                          </span>
+                        ) : (
+                          <Link
+                            href={`${basePath}/trade/${t.id}`}
+                            className={`${jn.btnGhost} inline-flex py-1.5 text-xs`}
+                          >
+                            Review
+                          </Link>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {allTrades.length > 0 && filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-3">
+            <p className="text-xs font-mono text-slate-500">
+              Showing {pageStart + 1}–{Math.min(pageStart + TRADES_PAGE_SIZE, filtered.length)} of{" "}
+              {filtered.length} trades
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={safePage <= 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                style={{ padding: "6px 12px" }}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={safePage >= totalPages - 1}
+                onClick={() =>
+                  setPage((p) => Math.min(totalPages - 1, p + 1))
+                }
+                style={{ padding: "6px 12px" }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState({ onConnected }: { onConnected: () => void }) {
@@ -848,12 +1303,15 @@ function EmptyState({ onConnected }: { onConnected: () => void }) {
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | "all">(
     "all"
   );
   const [addAccountOpen, setAddAccountOpen] = useState(false);
-  const [tab, setTab] = useState<"today" | "history">("today");
+  const [tab, setTab] = useState<"today" | "history" | "trades">("today");
   const [loading, setLoading] = useState(!isMock);
   const [syncing, setSyncing] = useState(false);
 
@@ -881,13 +1339,23 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   );
   const [rules, setRules] = useState<JournalRule[]>(isMock ? MOCK_RULES : []);
 
-  // Read tab from URL ?tab=history on first load
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "history") setTab("history");
+    const t = searchParams.get("tab");
+    if (t === "history") setTab("history");
+    else if (t === "trades") setTab("trades");
+    else setTab("today");
+  }, [searchParams]);
+
+  const goTab = (next: "today" | "history" | "trades") => {
+    setTab(next);
+    if (next === "today") {
+      router.replace(pathname, { scroll: false });
+    } else {
+      router.replace(`${pathname}?tab=${next}`, { scroll: false });
     }
-  }, []);
+  };
+
+  const journalTradeBase = isMock ? "/mock/journal" : "/app/journaling";
 
   const load = useCallback(async () => {
     if (isMock) {
@@ -1097,27 +1565,29 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
       {/* Tab switcher */}
       {!loading && (
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
-          {(["today", "history"] as const).map((t) => (
+          {(
+            [
+              { id: "today" as const, label: "Today", Icon: Sun },
+              { id: "history" as const, label: "History", Icon: CalendarDays },
+              { id: "trades" as const, label: "Trades", Icon: BarChart2 },
+            ] as const
+          ).map(({ id: tid, label, Icon }) => (
             <button
-              key={t}
+              key={tid}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => goTab(tid)}
               className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={{ color: tab === t ? "#fff" : "#64748b" }}
+              style={{ color: tab === tid ? "#fff" : "#64748b" }}
             >
-              {tab === t && (
+              {tab === tid && (
                 <motion.span
                   layoutId="journal-tab-pill"
                   className="absolute inset-0 rounded-lg bg-white/[0.06]"
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
-              {t === "today" ? (
-                <Sun className="relative z-10 h-3.5 w-3.5" />
-              ) : (
-                <CalendarDays className="relative z-10 h-3.5 w-3.5" />
-              )}
-              <span className="relative z-10 capitalize">{t}</span>
+              <Icon className="relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">{label}</span>
             </button>
           ))}
         </div>
@@ -1144,8 +1614,15 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               syncing={syncing}
               isMock={isMock}
             />
-          ) : (
+          ) : tab === "history" ? (
             <HistoryTab key="history" allTrades={allTrades} isMock={isMock} />
+          ) : (
+            <TradesTab
+              key="trades"
+              allTrades={allTrades}
+              isMock={isMock}
+              basePath={journalTradeBase}
+            />
           )}
         </AnimatePresence>
       )}

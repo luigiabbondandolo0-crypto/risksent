@@ -1,19 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Bell, Sparkles } from "lucide-react";
 import type { MockNavItem } from "@/components/mock/mockNavConfig";
 import {
   mockPrimaryNavItems,
   mockMobileNavItems,
 } from "@/components/mock/mockNavConfig";
+import { isJournalChildNavActive } from "@/components/navConfig";
 
-function linkActive(pathname: string | null, href: string) {
+function mockNavLinkActive(
+  pathname: string | null,
+  searchParams: { get: (key: string) => string | null } | null,
+  href: string
+): boolean {
+  let pathOnly: string;
+  let queryTab: string | null = null;
+  try {
+    const u = new URL(href, "https://risksent.local");
+    pathOnly = u.pathname;
+    queryTab = u.searchParams.get("tab");
+  } catch {
+    pathOnly = href;
+  }
+
   if (!pathname) return false;
-  if (href === "/mock/dashboard") return pathname === "/mock" || pathname === "/mock/dashboard";
-  if (href === "/mock/journal") {
-    return pathname === "/mock/journal" || pathname.startsWith("/mock/journal/");
+  if (pathOnly === "/mock/dashboard") {
+    return pathname === "/mock" || pathname === "/mock/dashboard";
+  }
+  if (pathOnly === "/mock/journaling" || pathOnly === "/mock/journal") {
+    const base =
+      pathname === "/mock/journal" ||
+      pathname === "/mock/journaling" ||
+      pathname.startsWith("/mock/journal/") ||
+      pathname.startsWith("/mock/journaling/");
+    if (!base) return false;
+    if (queryTab == null) {
+      return pathname === "/mock/journal" || pathname === "/mock/journaling";
+    }
+    if (!searchParams) return false;
+    return isJournalChildNavActive(pathname, searchParams, href);
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -36,7 +64,7 @@ function navLinkClass(active: boolean, mobile: boolean) {
   }`;
 }
 
-function NavGroup({
+function NavGroupInner({
   title,
   items,
   pathname,
@@ -47,6 +75,8 @@ function NavGroup({
   pathname: string | null;
   mobile: boolean;
 }) {
+  const searchParams = useSearchParams();
+
   return (
     <div>
       <span
@@ -57,8 +87,8 @@ function NavGroup({
         {title}
       </span>
       <nav className={`flex ${mobile ? "gap-1" : "flex-col gap-0.5"}`}>
-        {items.map(({ href, label, icon: Icon }) => {
-          const active = linkActive(pathname, href);
+        {items.map(({ href, label, icon: Icon, children }) => {
+          const active = mockNavLinkActive(pathname, searchParams, href);
           return (
             <div key={href}>
               <Link href={href} className={navLinkClass(active, mobile)}>
@@ -67,10 +97,71 @@ function NavGroup({
                 />
                 <span className={mobile ? "" : "truncate"}>{label}</span>
               </Link>
+              {!mobile && children && children.length > 0 && (
+                <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-slate-800/80 pl-3">
+                  {children.map((ch) => {
+                    const ChIcon = ch.icon;
+                    const subActive = isJournalChildNavActive(
+                      pathname,
+                      searchParams,
+                      ch.href
+                    );
+                    return (
+                      <Link
+                        key={ch.href}
+                        href={ch.href}
+                        className={navLinkClass(subActive, false)}
+                      >
+                        <ChIcon
+                          className={`h-3.5 w-3.5 flex-shrink-0 ${subActive ? "text-violet-300" : "text-slate-500"}`}
+                        />
+                        <span className="truncate pl-0.5 text-[13px]">
+                          {ch.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
       </nav>
+    </div>
+  );
+}
+
+function NavGroupFallback({ title, mobile }: { title: string; mobile: boolean }) {
+  return (
+    <div>
+      <span
+        className={`mb-2 block font-semibold uppercase tracking-[0.18em] text-slate-600 ${
+          mobile ? "px-1 text-[9px]" : "px-1 text-[10px]"
+        }`}
+      >
+        {title}
+      </span>
+      <div
+        className={`animate-pulse rounded-xl bg-slate-900/40 ${mobile ? "h-10" : "h-40"}`}
+      />
+    </div>
+  );
+}
+
+function MockMobileNavStrip() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return (
+    <div className="scrollbar-none flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-3 py-2.5 lg:hidden">
+      {mockMobileNavItems.map(({ href, label, icon: Icon }) => {
+        const active = mockNavLinkActive(pathname, searchParams, href);
+        return (
+          <Link key={href} href={href} className={navLinkClass(active, true)}>
+            <Icon className={`h-3.5 w-3.5 ${active ? "text-violet-300" : "text-slate-500"}`} />
+            {label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -136,22 +227,21 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex flex-col gap-8">
-            <NavGroup title="Platform" items={mockPrimaryNavItems} pathname={pathname} mobile={false} />
+            <Suspense fallback={<NavGroupFallback title="Platform" mobile={false} />}>
+              <NavGroupInner
+                title="Platform"
+                items={mockPrimaryNavItems}
+                pathname={pathname}
+                mobile={false}
+              />
+            </Suspense>
           </div>
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="scrollbar-none flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-3 py-2.5 lg:hidden">
-            {mockMobileNavItems.map(({ href, label, icon: Icon }) => {
-              const active = linkActive(pathname, href);
-              return (
-                <Link key={href} href={href} className={navLinkClass(active, true)}>
-                  <Icon className={`h-3.5 w-3.5 ${active ? "text-violet-300" : "text-slate-500"}`} />
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
+          <Suspense fallback={<NavGroupFallback title="" mobile />}>
+            <MockMobileNavStrip />
+          </Suspense>
 
           <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
