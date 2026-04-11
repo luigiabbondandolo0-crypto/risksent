@@ -16,6 +16,7 @@ import type {
 import { relatedTrades } from "@/lib/journal/analytics";
 import { jn } from "@/lib/journal/jnClasses";
 import { getSeedTradeById, SEED_TRADES } from "@/lib/journal/seedTrades";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 const emotionColor: Record<JournalEmotion, string> = {
@@ -50,6 +51,9 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewSaved, setReviewSaved] = useState(false);
   const reviewSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [shotUploading, setShotUploading] = useState(false);
+  const [shotDragOver, setShotDragOver] = useState(false);
+  const shotFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,7 +90,15 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
       }
       if (revRes.ok) {
         const rj = await revRes.json();
-        if (rj.review) setReview(rj.review);
+        if (rj.review) {
+          const r = rj.review as JournalTradeReview;
+          setReview({
+            ...r,
+            images: Array.isArray(r.images) ? r.images : [],
+            checklist_results: r.checklist_results ?? {},
+            rules_followed: r.rules_followed ?? {},
+          });
+        }
       }
       if (strRes.ok) setStrategies((await strRes.json()).strategies ?? []);
       if (clRes.ok) setChecklist((await clRes.json()).items ?? []);
@@ -139,16 +151,62 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
     [isSeed, tradeId]
   );
 
+  type ReviewPatch =
+    | Partial<JournalTradeReview>
+    | ((prev: Partial<JournalTradeReview>) => Partial<JournalTradeReview>);
+
   const updateReview = useCallback(
-    (patch: Partial<JournalTradeReview>) => {
+    (patch: ReviewPatch) => {
       setReview((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleReviewSave(next);
         return next;
       });
     },
     [scheduleReviewSave]
   );
+
+  const processReviewImages = async (files: FileList | File[]) => {
+    if (isSeed) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setShotUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of list) {
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) newUrls.push(j.url);
+      }
+      if (newUrls.length > 0) {
+        updateReview((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
+    } finally {
+      setShotUploading(false);
+    }
+  };
+
+  const removeReviewImage = (url: string) => {
+    updateReview((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
+  };
 
   const rel = useMemo(() => {
     if (!trade) return [];
@@ -329,10 +387,81 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
           </div>
 
           <div className={jn.card}>
-            <p className={jn.label}>Screenshot</p>
-            <div className="mt-3 flex min-h-[140px] items-center justify-center rounded-xl border border-dashed border-white/[0.1] bg-black/20 text-sm text-slate-600">
-              Upload coming soon (Supabase Storage)
+            <p className={jn.label}>Screenshots</p>
+            <input
+              ref={shotFileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void processReviewImages(e.target.files ?? []);
+                e.target.value = "";
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (!isSeed) shotFileRef.current?.click();
+                }
+              }}
+              onDragEnter={() => setShotDragOver(true)}
+              onDragLeave={() => setShotDragOver(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setShotDragOver(false);
+                void processReviewImages(e.dataTransfer.files);
+              }}
+              onClick={() => !isSeed && shotFileRef.current?.click()}
+              className={`mt-3 cursor-pointer rounded-xl border border-dashed px-4 py-6 text-center text-xs font-mono transition-colors ${
+                shotDragOver
+                  ? "border-[#ff8c00]/50 bg-[#ff8c00]/10 text-slate-300"
+                  : "border-white/[0.12] bg-black/20 text-slate-500"
+              } ${isSeed ? "pointer-events-none opacity-50" : ""}`}
+            >
+              {shotUploading
+                ? "Uploading…"
+                : "Drop screenshots here or click to upload"}
             </div>
+            {(review.images ?? []).length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {(review.images ?? []).slice(0, JOURNAL_IMAGE_MAX).map((url) => (
+                  <div
+                    key={url}
+                    className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                    {!isSeed && (
+                      <button
+                        type="button"
+                        onClick={() => removeReviewImage(url)}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {isSeed && (
+              <p className="mt-2 text-[10px] text-[#ff8c00] font-mono">
+                Demo — screenshots not saved.
+              </p>
+            )}
           </div>
         </div>
 

@@ -71,35 +71,53 @@ export async function POST(
   }
 
   const validEmotions = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
-  const emotion =
-    body.emotion && validEmotions.includes(body.emotion) ? body.emotion : null;
 
-  const rating =
-    body.rating != null &&
-    Number.isInteger(body.rating) &&
-    body.rating >= 1 &&
-    body.rating <= 5
-      ? body.rating
-      : null;
-
-  const row = {
+  const row: Record<string, unknown> = {
     user_id: user.id,
     trade_id: id,
-    strategy_id: body.strategy_id ?? null,
-    checklist_results:
-      body.checklist_results && typeof body.checklist_results === "object"
-        ? body.checklist_results
-        : {},
-    rules_followed:
-      body.rules_followed && typeof body.rules_followed === "object"
-        ? body.rules_followed
-        : {},
-    emotion,
-    rating,
-    notes: body.notes ?? null,
-    images: Array.isArray(body.images) ? body.images : null,
     updated_at: new Date().toISOString(),
   };
+
+  if (body.strategy_id !== undefined) {
+    row.strategy_id = body.strategy_id;
+  }
+  if (body.checklist_results !== undefined) {
+    row.checklist_results =
+      body.checklist_results &&
+      typeof body.checklist_results === "object" &&
+      !Array.isArray(body.checklist_results)
+        ? body.checklist_results
+        : {};
+  }
+  if (body.rules_followed !== undefined) {
+    row.rules_followed =
+      body.rules_followed &&
+      typeof body.rules_followed === "object" &&
+      !Array.isArray(body.rules_followed)
+        ? body.rules_followed
+        : {};
+  }
+  if (body.emotion !== undefined) {
+    row.emotion =
+      body.emotion && validEmotions.includes(body.emotion)
+        ? body.emotion
+        : null;
+  }
+  if (body.rating !== undefined) {
+    row.rating =
+      body.rating != null &&
+      Number.isInteger(body.rating) &&
+      body.rating >= 1 &&
+      body.rating <= 5
+        ? body.rating
+        : null;
+  }
+  if (body.notes !== undefined) {
+    row.notes = body.notes;
+  }
+  if (body.images !== undefined) {
+    row.images = Array.isArray(body.images) ? body.images : null;
+  }
 
   const { data, error } = await supabase
     .from("journal_trade_review")

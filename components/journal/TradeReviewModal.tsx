@@ -13,6 +13,7 @@ import type {
   JournalTradeReview,
   JournalTradeRow,
 } from "@/lib/journal/journalTypes";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 
@@ -70,6 +71,9 @@ export function TradeReviewModal({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [shotUploading, setShotUploading] = useState(false);
+  const [shotDragOver, setShotDragOver] = useState(false);
+  const shotFileRef = useRef<HTMLInputElement>(null);
 
   // New strategy / checklist / rule inputs
   const [newStrategy, setNewStrategy] = useState("");
@@ -88,7 +92,15 @@ export function TradeReviewModal({
       const res = await fetch(`/api/journal/trades/${trade.id}/review`);
       if (res.ok) {
         const j = await res.json();
-        if (j.review) setReview(j.review);
+        if (j.review) {
+          const r = j.review as JournalTradeReview;
+          setReview({
+            ...r,
+            images: Array.isArray(r.images) ? r.images : [],
+            checklist_results: r.checklist_results ?? {},
+            rules_followed: r.rules_followed ?? {},
+          });
+        }
       }
       setLoading(false);
     })();
@@ -116,16 +128,62 @@ export function TradeReviewModal({
     [trade.id, isMock]
   );
 
+  type ReviewPatch =
+    | Partial<JournalTradeReview>
+    | ((prev: Partial<JournalTradeReview>) => Partial<JournalTradeReview>);
+
   const update = useCallback(
-    (patch: Partial<JournalTradeReview>) => {
+    (patch: ReviewPatch) => {
       setReview((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleAutoSave(next);
         return next;
       });
     },
     [scheduleAutoSave]
   );
+
+  const processReviewImages = async (files: FileList | File[]) => {
+    if (isMock) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setShotUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of list) {
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) newUrls.push(j.url);
+      }
+      if (newUrls.length > 0) {
+        update((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
+    } finally {
+      setShotUploading(false);
+    }
+  };
+
+  const removeReviewImage = (url: string) => {
+    update((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
+  };
 
   const toggleChecklist = (itemId: string) => {
     const current = review.checklist_results ?? {};
@@ -430,6 +488,81 @@ export function TradeReviewModal({
                     value={review.notes ?? ""}
                     onChange={(e) => update({ notes: e.target.value })}
                   />
+                </div>
+
+                <div>
+                  <label className={jn.label}>Screenshots</label>
+                  <input
+                    ref={shotFileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void processReviewImages(e.target.files ?? []);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!isMock) shotFileRef.current?.click();
+                      }
+                    }}
+                    onDragEnter={() => setShotDragOver(true)}
+                    onDragLeave={() => setShotDragOver(false)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setShotDragOver(false);
+                      void processReviewImages(e.dataTransfer.files);
+                    }}
+                    onClick={() => !isMock && shotFileRef.current?.click()}
+                    className={`mt-1 cursor-pointer rounded-xl border border-dashed px-3 py-5 text-center text-[11px] font-mono transition-colors ${
+                      shotDragOver
+                        ? "border-[#ff8c00]/50 bg-[#ff8c00]/10 text-slate-300"
+                        : "border-white/[0.12] bg-white/[0.02] text-slate-500"
+                    } ${isMock ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    {shotUploading
+                      ? "Uploading…"
+                      : "Drop screenshots or click to upload"}
+                  </div>
+                  {(review.images ?? []).length > 0 && (
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      {(review.images ?? [])
+                        .slice(0, JOURNAL_IMAGE_MAX)
+                        .map((url) => (
+                          <div
+                            key={url}
+                            className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                            {!isMock && (
+                              <button
+                                type="button"
+                                onClick={() => removeReviewImage(url)}
+                                className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                                aria-label="Remove image"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

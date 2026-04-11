@@ -51,6 +51,7 @@ import type {
   JournalTradeRow,
 } from "@/lib/journal/journalTypes";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -154,9 +155,6 @@ function normSessionImages(v: unknown): string[] {
   }
   return [];
 }
-
-/** Max screenshots per day on Today tab (session.images) */
-const JOURNAL_SESSION_MAX_IMAGES = 6;
 
 type JournalSessionPatch =
   | Partial<JournalSession>
@@ -291,15 +289,6 @@ function TradeCard({
 
 // ─── Today Tab ────────────────────────────────────────────────────────────────
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(new Error("read failed"));
-    r.readAsDataURL(file);
-  });
-}
-
 function TodayTab({
   session,
   todayTrades,
@@ -397,14 +386,14 @@ function TodayTab({
     const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (list.length === 0) return;
     const current = session.images ?? [];
-    const room = JOURNAL_SESSION_MAX_IMAGES - current.length;
+    const room = JOURNAL_IMAGE_MAX - current.length;
     if (room <= 0) return;
     setUploading(true);
     try {
       const newUrls: string[] = [];
       for (const file of list.slice(0, room)) {
-        if (newUrls.length >= JOURNAL_SESSION_MAX_IMAGES) break;
-        const dataUrl = await readFileAsDataUrl(file);
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
         const res = await fetch("/api/journal/images/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -419,7 +408,7 @@ function TodayTab({
           const cur = prev.images ?? [];
           const merged = [...cur];
           for (const u of newUrls) {
-            if (merged.length >= JOURNAL_SESSION_MAX_IMAGES) break;
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
             if (!merged.includes(u)) merged.push(u);
           }
           return { images: merged };
@@ -839,7 +828,7 @@ function TodayTab({
             {(session.images ?? []).length > 0 && (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
                 {(session.images ?? [])
-                  .slice(0, JOURNAL_SESSION_MAX_IMAGES)
+                  .slice(0, JOURNAL_IMAGE_MAX)
                   .map((url) => (
                   <div
                     key={url}
@@ -1895,15 +1884,12 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
           setSession((prev) => {
             const serverImages = normSessionImages(s.images).slice(
               0,
-              JOURNAL_SESSION_MAX_IMAGES
+              JOURNAL_IMAGE_MAX
             );
-            const prevImages = (prev.images ?? []).slice(
-              0,
-              JOURNAL_SESSION_MAX_IMAGES
-            );
+            const prevImages = (prev.images ?? []).slice(0, JOURNAL_IMAGE_MAX);
             const merged: string[] = [...serverImages];
             for (const u of prevImages) {
-              if (merged.length >= JOURNAL_SESSION_MAX_IMAGES) break;
+              if (merged.length >= JOURNAL_IMAGE_MAX) break;
               if (u && !merged.includes(u)) merged.push(u);
             }
             return {
