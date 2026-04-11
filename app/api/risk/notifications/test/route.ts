@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseRouteClient();
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireRouteUser(request);
+    if (auth instanceof NextResponse) return auth;
+    const { supabase, user } = auth;
 
     const { data } = await supabase
       .from("risk_notifications")

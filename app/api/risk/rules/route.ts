@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function GET() {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(request: Request) {
+  const auth = await requireRouteUser(request);
+  if (auth instanceof NextResponse) return auth;
+  const { user } = auth;
 
   const admin = createSupabaseAdmin();
   const { data: row, error } = await admin
@@ -54,14 +49,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 async function upsertRules(req: NextRequest) {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireRouteUser(req);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
   let body: Record<string, unknown>;
   try {

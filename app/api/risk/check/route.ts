@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { fetchRiskLiveSnapshot, resolveTradingAccountForUser, tradingAccountLabel } from "@/lib/risk/resolveTradingAccount";
 import { persistRiskViolations } from "@/lib/risk/persistViolations";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
 
-export async function POST() {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function POST(request: Request) {
+  const auth = await requireRouteUser(request);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
   const account = await resolveTradingAccountForUser(supabase, user.id, null);
   if (!account) {

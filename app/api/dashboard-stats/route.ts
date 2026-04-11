@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { buildRealStats, parseOrders, type ClosedOrder } from "@/lib/dashboard/buildRealStats";
 import {
   computeCurrentExposurePct,
@@ -24,15 +24,9 @@ function accountLabelFromRow(a: TradingAccountRow): string {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireRouteUser(req);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");

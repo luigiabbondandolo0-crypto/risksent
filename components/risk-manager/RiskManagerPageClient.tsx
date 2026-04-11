@@ -14,6 +14,7 @@ import { LiveGauge } from "./LiveGauge";
 import { RuleCard } from "./RuleCard";
 import { TelegramSetup, type TelegramSettings } from "./TelegramSetup";
 import { ViolationTimeline, type ViolationItem } from "./ViolationTimeline";
+import { authFetch } from "@/lib/api/authFetch";
 import type { RiskGaugeStatus } from "@/lib/risk/riskTypes";
 import {
   dailyDdRatio,
@@ -110,7 +111,7 @@ export function RiskManagerPageClient({
 
   const loadViolations = useCallback(async () => {
     if (isMock) return;
-    const res = await fetch("/api/risk/violations?limit=30");
+    const res = await authFetch("/api/risk/violations?limit=30");
     if (!res.ok) return;
     const j = (await res.json()) as { violations: ViolationItem[] };
     setViolations(j.violations ?? []);
@@ -186,9 +187,9 @@ export function RiskManagerPageClient({
       setLoading(true);
       try {
         const [rRes, nRes, vRes] = await Promise.all([
-          fetch("/api/risk/rules"),
-          fetch("/api/risk/notifications"),
-          fetch("/api/risk/violations?limit=30")
+          authFetch("/api/risk/rules"),
+          authFetch("/api/risk/notifications"),
+          authFetch("/api/risk/violations?limit=30")
         ]);
         if (rRes.ok) {
           const r = (await rRes.json()) as Rules;
@@ -232,7 +233,7 @@ export function RiskManagerPageClient({
 
   const refreshDashboard = useCallback(async () => {
     if (isMock) return;
-    const res = await fetch("/api/dashboard-stats");
+    const res = await authFetch("/api/dashboard-stats");
     if (!res.ok) return;
     const j = await res.json();
     setLive({
@@ -266,7 +267,7 @@ export function RiskManagerPageClient({
         parseNum(draft.revenge_threshold_trades, rules.revenge_threshold_trades)
       )
     };
-    const res = await fetch("/api/risk/rules", {
+    const res = await authFetch("/api/risk/rules", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -292,7 +293,7 @@ export function RiskManagerPageClient({
       setTg((prev) => ({ ...prev, ...patch }));
       return;
     }
-    const res = await fetch("/api/risk/notifications", {
+    const res = await authFetch("/api/risk/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch)
@@ -318,7 +319,7 @@ export function RiskManagerPageClient({
       showToast("Test message sent (demo)", true);
       return;
     }
-    const res = await fetch("/api/risk/notifications/test", { method: "POST" });
+    const res = await authFetch("/api/risk/notifications/test", { method: "POST" });
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
       showToast(j.error ?? "Test failed", false);

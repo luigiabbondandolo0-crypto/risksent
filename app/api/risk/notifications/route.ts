@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 
 const DEFAULTS = {
   telegram_chat_id: null as string | null,
@@ -10,15 +10,10 @@ const DEFAULTS = {
   notify_risk_per_trade: true
 };
 
-export async function GET() {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(request: Request) {
+  const auth = await requireRouteUser(request);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
   const { data } = await supabase.from("risk_notifications").select("*").eq("user_id", user.id).maybeSingle();
 
@@ -37,14 +32,9 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const supabase = await createSupabaseRouteClient();
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireRouteUser(req);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
 
   let body: Record<string, unknown>;
   try {
