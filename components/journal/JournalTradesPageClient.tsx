@@ -15,9 +15,12 @@ function netPl(t: JournalTradeRow) {
   return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
 }
 
-type JournalTradesPageClientProps = { linkBase?: string };
+type JournalTradesPageClientProps = { linkBase?: string; embedded?: boolean };
 
-export function JournalTradesPageClient({ linkBase = "/app/journaling" }: JournalTradesPageClientProps) {
+export function JournalTradesPageClient({
+  linkBase = "/app/journaling",
+  embedded = false
+}: JournalTradesPageClientProps) {
   const router = useRouter();
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -85,10 +88,16 @@ export function JournalTradesPageClient({ linkBase = "/app/journaling" }: Journa
 
   const totalPages = Math.max(1, Math.ceil(displayTotal / pageSize));
 
+  const shellClass = embedded ? "scroll-mt-28 space-y-6 border-t border-white/[0.06] pt-8" : `${jn.page} space-y-6`;
+
   return (
-    <div className={`${jn.page} space-y-6`}>
+    <div className={shellClass} id={embedded ? "journal-trades" : undefined}>
       <div>
-        <h1 className={jn.h1}>Trades</h1>
+        {embedded ? (
+          <h2 className={jn.h1}>Trades</h2>
+        ) : (
+          <h1 className={jn.h1}>Trades</h1>
+        )}
         <p className={jn.sub}>Filter, review, and drill into every execution.</p>
       </div>
 

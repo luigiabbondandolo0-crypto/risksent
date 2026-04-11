@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { format, max, parseISO } from "date-fns";
 import {
   Bar,
@@ -17,7 +16,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Plus, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import type { JournalAccountPublic, JournalTradeRow } from "@/lib/journal/journalTypes";
 import {
   avgRiskReward,
@@ -35,7 +34,7 @@ import {
 } from "@/lib/journal/analytics";
 import { jn } from "@/lib/journal/jnClasses";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
-import { AddAccountModal } from "./AddAccountModal";
+import { JournalTradesPageClient } from "./JournalTradesPageClient";
 
 const tipStyle = {
   backgroundColor: "#0c0c0e",
@@ -56,7 +55,6 @@ export function JournalDashboardClient({ linkBase = "/app/journaling" }: Journal
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [useSeed, setUseSeed] = useState(false);
 
@@ -161,13 +159,6 @@ export function JournalDashboardClient({ linkBase = "/app/journaling" }: Journal
               Sync
             </button>
           )}
-          <button type="button" className={jn.btnPrimary} onClick={() => setModal(true)}>
-            <Plus className="h-4 w-4" />
-            Add account
-          </button>
-          <Link href={`${linkBase}/trades`} className={`${jn.btnGhost} no-underline`}>
-            All trades
-          </Link>
         </div>
       </div>
 
@@ -466,7 +457,7 @@ export function JournalDashboardClient({ linkBase = "/app/journaling" }: Journal
         </>
       )}
 
-      <AddAccountModal open={modal} onClose={() => setModal(false)} onCreated={() => void load()} />
+      <JournalTradesPageClient linkBase={linkBase} embedded />
     </div>
   );
 }
