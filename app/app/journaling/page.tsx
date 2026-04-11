@@ -1,5 +1,5 @@
-import { JournalDashboardClient } from "@/components/journal/JournalDashboardClient";
+import { JournalingPageClient } from "@/components/journal/JournalingPageClient";
 
-export default function JournalingDashboardPage() {
-  return <JournalDashboardClient />;
+export default function JournalingPage() {
+  return <JournalingPageClient />;
 }

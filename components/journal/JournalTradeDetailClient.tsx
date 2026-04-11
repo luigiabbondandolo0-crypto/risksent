@@ -1,13 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { ChevronLeft, X } from "lucide-react";
-import type { JournalTradeRow } from "@/lib/journal/journalTypes";
+import { ChevronLeft, X, Star, RefreshCw, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import type {
+  JournalChecklistItem,
+  JournalEmotion,
+  JournalRule,
+  JournalStrategy,
+  JournalTradeReview,
+  JournalTradeRow,
+} from "@/lib/journal/journalTypes";
 import { relatedTrades } from "@/lib/journal/analytics";
 import { jn } from "@/lib/journal/jnClasses";
 import { getSeedTradeById, SEED_TRADES } from "@/lib/journal/seedTrades";
+
+const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
+const emotionColor: Record<JournalEmotion, string> = {
+  Calm: "#00e676", Confident: "#22d3ee", Anxious: "#ff8c00", FOMO: "#a855f7", Revenge: "#ff3c3c",
+};
 
 const TAG_PRESETS = ["FOMO", "HTF Trend", "Revenge", "A+ Setup", "London", "NY", "Asia", "Breakout", "Liquidity sweep"];
 
@@ -26,6 +39,17 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
   const [saving, setSaving] = useState(false);
   const [related, setRelated] = useState<JournalTradeRow[]>([]);
   const isSeed = tradeId.startsWith("seed-");
+
+  // Review state
+  const [review, setReview] = useState<Partial<JournalTradeReview>>({
+    checklist_results: {}, rules_followed: {}, emotion: null, rating: null, notes: "", images: [],
+  });
+  const [strategies, setStrategies] = useState<JournalStrategy[]>([]);
+  const [checklist, setChecklist] = useState<JournalChecklistItem[]>([]);
+  const [rules, setRules] = useState<JournalRule[]>([]);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewSaved, setReviewSaved] = useState(false);
+  const reviewSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,16 +72,25 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
       setTrade(t);
       setNotes(t.notes ?? "");
       setTags(t.setup_tags ?? []);
-      const rRes = await fetch(
-        `/api/journal/trades?symbol=${encodeURIComponent(t.symbol)}&status=closed&pageSize=8&page=1`
-      );
-      const rJson = await rRes.json();
+      const [rRes, revRes, strRes, clRes, rulesRes] = await Promise.all([
+        fetch(`/api/journal/trades?symbol=${encodeURIComponent(t.symbol)}&status=closed&pageSize=8&page=1`),
+        fetch(`/api/journal/trades/${tradeId}/review`),
+        fetch("/api/journal/strategies"),
+        fetch("/api/journal/checklist"),
+        fetch("/api/journal/rules"),
+      ]);
       if (rRes.ok) {
+        const rJson = await rRes.json();
         const list = (rJson.trades ?? []) as JournalTradeRow[];
         setRelated(list.filter((x) => x.id !== t.id).slice(0, 5));
-      } else {
-        setRelated([]);
       }
+      if (revRes.ok) {
+        const rj = await revRes.json();
+        if (rj.review) setReview(rj.review);
+      }
+      if (strRes.ok) setStrategies((await strRes.json()).strategies ?? []);
+      if (clRes.ok) setChecklist((await clRes.json()).items ?? []);
+      if (rulesRes.ok) setRules((await rulesRes.json()).rules ?? []);
     } finally {
       setLoading(false);
     }
@@ -82,6 +115,39 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
       }
     },
     [isSeed, trade, tradeId]
+  );
+
+  const scheduleReviewSave = useCallback(
+    (patch: Partial<JournalTradeReview>) => {
+      if (isSeed) return;
+      if (reviewSaveTimer.current) clearTimeout(reviewSaveTimer.current);
+      reviewSaveTimer.current = setTimeout(async () => {
+        setReviewSaving(true);
+        try {
+          await fetch(`/api/journal/trades/${tradeId}/review`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patch),
+          });
+          setReviewSaved(true);
+          setTimeout(() => setReviewSaved(false), 2000);
+        } finally {
+          setReviewSaving(false);
+        }
+      }, 800);
+    },
+    [isSeed, tradeId]
+  );
+
+  const updateReview = useCallback(
+    (patch: Partial<JournalTradeReview>) => {
+      setReview((prev) => {
+        const next = { ...prev, ...patch };
+        scheduleReviewSave(next);
+        return next;
+      });
+    },
+    [scheduleReviewSave]
   );
 
   const rel = useMemo(() => {
@@ -271,6 +337,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
         </div>
 
         <div className="space-y-6 lg:col-span-2">
+          {/* Trade stats */}
           <div className={jn.card}>
             <p className={jn.label}>Trade stats</p>
             <ul className="mt-3 space-y-2 font-mono text-sm text-slate-300">
@@ -292,6 +359,163 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
             </ul>
           </div>
 
+          {/* Trade Review Panel */}
+          <div className={jn.card}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className={jn.label}>Trade Review</p>
+              <AnimatePresence>
+                {(reviewSaving || reviewSaved) && (
+                  <motion.span
+                    className="flex items-center gap-1 text-[10px] font-mono text-slate-500"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  >
+                    {reviewSaving ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 text-[#00e676]" />}
+                    {reviewSaving ? "Saving…" : "Saved ✓"}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Strategy */}
+            <div className="mb-4">
+              <label className={jn.label}>Strategy</label>
+              <select
+                className={jn.input}
+                value={review.strategy_id ?? ""}
+                onChange={(e) => updateReview({ strategy_id: e.target.value || null })}
+                disabled={isSeed}
+              >
+                <option value="">— Select strategy —</option>
+                {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+
+            {/* Emotion */}
+            <div className="mb-4">
+              <label className={jn.label}>Emotion</label>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {EMOTIONS.map((e) => (
+                  <motion.button
+                    key={e} type="button" whileTap={{ scale: 0.93 }}
+                    disabled={isSeed}
+                    onClick={() => updateReview({ emotion: review.emotion === e ? null : e })}
+                    className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all"
+                    style={review.emotion === e
+                      ? { borderColor: emotionColor[e], background: `${emotionColor[e]}20`, color: emotionColor[e] }
+                      : { borderColor: "rgba(255,255,255,0.08)", color: "#64748b" }}
+                  >
+                    {e}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Rating */}
+            <div className="mb-4">
+              <label className={jn.label}>Rating</label>
+              <div className="flex gap-1 mt-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <motion.button
+                    key={star} type="button" whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                    disabled={isSeed}
+                    onClick={() => updateReview({ rating: review.rating === star ? null : star })}
+                  >
+                    <Star
+                      className="h-5 w-5"
+                      fill={(review.rating ?? 0) >= star ? "#ff8c00" : "transparent"}
+                      stroke={(review.rating ?? 0) >= star ? "#ff8c00" : "#475569"}
+                    />
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Checklist */}
+            {checklist.length > 0 && (
+              <div className="mb-4">
+                <label className={jn.label}>Pre-trade checklist</label>
+                <div className="mt-1 space-y-1.5">
+                  {checklist.map((item) => {
+                    const yes = !!review.checklist_results?.[item.id];
+                    return (
+                      <div key={item.id} className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
+                        <span className="text-xs text-slate-300">{item.text}</span>
+                        <div className="flex gap-1">
+                          {["YES", "NO"].map((v) => (
+                            <button
+                              key={v} type="button" disabled={isSeed}
+                              onClick={() => {
+                                const cur = review.checklist_results ?? {};
+                                updateReview({ checklist_results: { ...cur, [item.id]: v === "YES" } });
+                              }}
+                              className="rounded px-2 py-0.5 text-[10px] font-bold transition-all"
+                              style={
+                                (v === "YES" ? yes : !yes && review.checklist_results?.[item.id] != null)
+                                  ? { background: v === "YES" ? "rgba(0,230,118,0.2)" : "rgba(255,60,60,0.2)", color: v === "YES" ? "#00e676" : "#ff3c3c" }
+                                  : { background: "rgba(255,255,255,0.04)", color: "#475569" }
+                              }
+                            >{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Rules */}
+            {rules.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between">
+                  <label className={jn.label}>Rules followed?</label>
+                  <span className="text-[10px] font-mono" style={{ color: rules.filter(r => review.rules_followed?.[r.id]).length === rules.length ? "#00e676" : "#ff8c00" }}>
+                    {rules.filter(r => review.rules_followed?.[r.id]).length}/{rules.length}
+                  </span>
+                </div>
+                <div className="mt-1 space-y-1.5">
+                  {rules.map((rule) => {
+                    const followed = !!review.rules_followed?.[rule.id];
+                    return (
+                      <div key={rule.id} className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
+                        <span className="text-xs text-slate-300">{rule.text}</span>
+                        <div className="flex gap-1">
+                          {["YES", "NO"].map((v) => (
+                            <button
+                              key={v} type="button" disabled={isSeed}
+                              onClick={() => {
+                                const cur = review.rules_followed ?? {};
+                                updateReview({ rules_followed: { ...cur, [rule.id]: v === "YES" } });
+                              }}
+                              className="rounded px-2 py-0.5 text-[10px] font-bold transition-all"
+                              style={
+                                (v === "YES" ? followed : !followed && review.rules_followed?.[rule.id] != null)
+                                  ? { background: v === "YES" ? "rgba(0,230,118,0.2)" : "rgba(255,60,60,0.2)", color: v === "YES" ? "#00e676" : "#ff3c3c" }
+                                  : { background: "rgba(255,255,255,0.04)", color: "#475569" }
+                              }
+                            >{v}</button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {(checklist.length === 0 && rules.length === 0) && (
+              <p className="text-xs text-slate-600 font-mono mb-4">
+                Add checklist items and rules in{" "}
+                <Link href="/app/journaling/settings" className="text-[#ff3c3c] hover:underline">Journal Settings</Link>.
+              </p>
+            )}
+
+            {isSeed && (
+              <p className="text-[10px] text-[#ff8c00] font-mono">Demo trade — review not saved.</p>
+            )}
+          </div>
+
+          {/* Related */}
           <div className={jn.card}>
             <p className={jn.label}>Related ({trade.symbol})</p>
             <ul className="mt-3 space-y-2">
