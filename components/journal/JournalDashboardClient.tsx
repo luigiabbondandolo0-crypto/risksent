@@ -49,9 +49,16 @@ function maskNumber(n: string) {
   return `••••${n.slice(-4)}`;
 }
 
-type JournalDashboardClientProps = { linkBase?: string };
+type JournalDashboardClientProps = {
+  linkBase?: string;
+  /** When set, only load trades for this journal account (omit for all). */
+  tradeAccountId?: string | null;
+};
 
-export function JournalDashboardClient({ linkBase = "/app/journaling" }: JournalDashboardClientProps) {
+export function JournalDashboardClient({
+  linkBase = "/app/journaling",
+  tradeAccountId = null
+}: JournalDashboardClientProps) {
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,20 +68,23 @@ export function JournalDashboardClient({ linkBase = "/app/journaling" }: Journal
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      const tradeQs = new URLSearchParams({ pageSize: "500", page: "1" });
+      if (tradeAccountId) tradeQs.set("account_id", tradeAccountId);
       const [tRes, aRes] = await Promise.all([
-        fetch("/api/journal/trades?pageSize=500&page=1"),
+        fetch(`/api/journal/trades?${tradeQs.toString()}`),
         fetch("/api/journal/accounts")
       ]);
       const tJson = await tRes.json();
       const aJson = await aRes.json();
       const list = (tJson.trades ?? []) as JournalTradeRow[];
       setTrades(list);
-      setUseSeed(!tRes.ok || list.length === 0);
+      const allowSeed = !tradeAccountId;
+      setUseSeed(allowSeed && (!tRes.ok || list.length === 0));
       if (aRes.ok) setAccounts(aJson.accounts ?? []);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tradeAccountId]);
 
   useEffect(() => {
     void load();

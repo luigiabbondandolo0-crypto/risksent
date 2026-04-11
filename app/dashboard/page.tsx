@@ -19,6 +19,9 @@ import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
+import { NoAccountState } from "@/components/shared/NoAccountState";
+import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
 type Stats = {
   balance: number;
@@ -123,6 +126,8 @@ export default function DashboardPage() {
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [syncing] = useState(false);
+  const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
 
   const pageReady = accountsResolved && rulesResolved;
   const noLinkedAccount = accountsResolved && !linkedMetaId;
@@ -159,9 +164,30 @@ export default function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
+        const res = await fetch("/api/journal/accounts");
+        const data = await res.json();
+        if (!cancelled) {
+          setJournalAccounts(res.ok ? ((data.accounts ?? []) as JournalAccountPublic[]) : []);
+        }
+      } catch {
+        if (!cancelled) setJournalAccounts([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
         const res = await fetch("/api/accounts");
         if (!res.ok) {
-          if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
+          if (!cancelled) {
+            setLinkedMetaId(null);
+            setAccountsResolved(true);
+          }
           return;
         }
         const data = await res.json();
@@ -172,10 +198,15 @@ export default function DashboardPage() {
           setAccountsResolved(true);
         }
       } catch {
-        if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
+        if (!cancelled) {
+          setLinkedMetaId(null);
+          setAccountsResolved(true);
+        }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -262,6 +293,38 @@ export default function DashboardPage() {
   const goPrevMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
+  const showBrokerSyncBanner = accountsResolved && linkedMetaId === null;
+
+  if (journalAccounts === null) {
+    return (
+      <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+        <div className="rs-card overflow-hidden p-6" aria-hidden>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-48 max-w-full rounded bg-slate-800/80 animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-slate-800/60 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (journalAccounts.length === 0) {
+    return (
+      <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+        <NoAccountState
+          title="Connect your trading account"
+          description="Add your MT4 or MT5 account to see your live balance, equity curve, drawdown and risk metrics in real time."
+          ctaLabel="Connect your first account"
+          onCta={() => setAddAccountOpen(true)}
+        />
+        <AddAccountModal open={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -301,6 +364,14 @@ export default function DashboardPage() {
 
       {pageReady && (
         <>
+          {showBrokerSyncBanner && (
+            <div
+              className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm leading-relaxed text-amber-100/95 font-[family-name:var(--font-mono)]"
+              role="status"
+            >
+              Account connected — sync pending. Data will appear once your broker connection is active.
+            </div>
+          )}
           {/* Active risk rules */}
           <section className="rs-card-accent p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
