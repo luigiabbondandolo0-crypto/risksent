@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 
 export async function GET(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();

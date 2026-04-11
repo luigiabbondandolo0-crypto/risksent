@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { sendTelegramRiskMessage } from "@/lib/risk/telegramRisk";
 
 export async function POST() {
