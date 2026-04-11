@@ -1,5 +1,5 @@
-import { JournalDashboardClient } from "@/components/journal/JournalDashboardClient";
+import { JournalingPageClient } from "@/components/journal/JournalingPageClient";
 
 export default function MockJournalPage() {
-  return <JournalDashboardClient linkBase="/mock/journal" />;
+  return <JournalingPageClient isMock />;
 }
