@@ -14,6 +14,7 @@ import type {
   JournalTradeRow,
 } from "@/lib/journal/journalTypes";
 import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import { JournalScreenshotTile } from "@/components/journal/JournalScreenshotTile";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 
@@ -491,7 +492,12 @@ export function TradeReviewModal({
                 </div>
 
                 <div>
-                  <label className={jn.label}>Screenshots</label>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+                    Screenshots
+                  </label>
+                  <p className="mb-2 text-[10px] text-slate-500 font-mono">
+                    Click preview to enlarge
+                  </p>
                   <input
                     ref={shotFileRef}
                     type="file"
@@ -524,42 +530,34 @@ export function TradeReviewModal({
                       void processReviewImages(e.dataTransfer.files);
                     }}
                     onClick={() => !isMock && shotFileRef.current?.click()}
-                    className={`mt-1 cursor-pointer rounded-xl border border-dashed px-3 py-5 text-center text-[11px] font-mono transition-colors ${
+                    className={`mt-1 flex min-h-[88px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-3 py-6 text-center font-mono transition-colors ${
                       shotDragOver
-                        ? "border-[#ff8c00]/50 bg-[#ff8c00]/10 text-slate-300"
-                        : "border-white/[0.12] bg-white/[0.02] text-slate-500"
+                        ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
+                        : "border-white/25 bg-white/[0.06] text-slate-200"
                     } ${isMock ? "pointer-events-none opacity-50" : ""}`}
                   >
-                    {shotUploading
-                      ? "Uploading…"
-                      : "Drop screenshots or click to upload"}
+                    <span className="text-xs font-medium">
+                      {shotUploading
+                        ? "Uploading…"
+                        : "Drop screenshots or click to upload"}
+                    </span>
                   </div>
                   {(review.images ?? []).length > 0 && (
-                    <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="mt-4 flex flex-col gap-5">
                       {(review.images ?? [])
                         .slice(0, JOURNAL_IMAGE_MAX)
                         .map((url) => (
-                          <div
+                          <JournalScreenshotTile
                             key={url}
-                            className="group relative flex min-h-[180px] items-center justify-center overflow-hidden rounded-xl border-2 border-white/25 bg-[#12121a] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)] ring-1 ring-cyan-400/20"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={url}
-                              alt=""
-                              className="max-h-[min(45vh,320px)] w-full object-contain"
-                            />
-                            {!isMock && (
-                              <button
-                                type="button"
-                                onClick={() => removeReviewImage(url)}
-                                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/80 text-white shadow-md transition hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100"
-                                aria-label="Remove image"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
+                            url={url}
+                            variant="compact"
+                            removeDisabled={isMock}
+                            onRemove={
+                              isMock
+                                ? undefined
+                                : () => removeReviewImage(url)
+                            }
+                          />
                         ))}
                     </div>
                   )}

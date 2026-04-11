@@ -17,6 +17,7 @@ import { relatedTrades } from "@/lib/journal/analytics";
 import { jn } from "@/lib/journal/jnClasses";
 import { getSeedTradeById, SEED_TRADES } from "@/lib/journal/seedTrades";
 import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import { JournalScreenshotTile } from "@/components/journal/JournalScreenshotTile";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 const emotionColor: Record<JournalEmotion, string> = {
@@ -387,7 +388,12 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
           </div>
 
           <div className={jn.card}>
-            <p className={jn.label}>Screenshots</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+              Screenshots
+            </p>
+            <p className="mb-3 text-[11px] text-slate-500 font-mono">
+              Click a preview to open full size
+            </p>
             <input
               ref={shotFileRef}
               type="file"
@@ -420,40 +426,32 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                 void processReviewImages(e.dataTransfer.files);
               }}
               onClick={() => !isSeed && shotFileRef.current?.click()}
-              className={`mt-3 cursor-pointer rounded-xl border border-dashed px-4 py-6 text-center text-xs font-mono transition-colors ${
+              className={`mt-1 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
                 shotDragOver
-                  ? "border-[#ff8c00]/50 bg-[#ff8c00]/10 text-slate-300"
-                  : "border-white/[0.12] bg-black/20 text-slate-500"
+                  ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
+                  : "border-white/25 bg-white/[0.06] text-slate-200"
               } ${isSeed ? "pointer-events-none opacity-50" : ""}`}
             >
-              {shotUploading
-                ? "Uploading…"
-                : "Drop screenshots here or click to upload"}
+              <span className="text-sm font-medium">
+                {shotUploading
+                  ? "Uploading…"
+                  : "Drop screenshots here or click to upload"}
+              </span>
+              <span className="mt-1 text-[11px] text-slate-400">
+                Max {JOURNAL_IMAGE_MAX} images
+              </span>
             </div>
             {(review.images ?? []).length > 0 && (
-              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="mt-5 flex flex-col gap-6">
                 {(review.images ?? []).slice(0, JOURNAL_IMAGE_MAX).map((url) => (
-                  <div
+                  <JournalScreenshotTile
                     key={url}
-                    className="group relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-xl border-2 border-white/25 bg-[#12121a] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)] ring-1 ring-cyan-400/20"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt=""
-                      className="max-h-[min(52vh,380px)] w-full object-contain"
-                    />
-                    {!isSeed && (
-                      <button
-                        type="button"
-                        onClick={() => removeReviewImage(url)}
-                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/80 text-white shadow-md transition hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100"
-                        aria-label="Remove image"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
+                    url={url}
+                    removeDisabled={isSeed}
+                    onRemove={
+                      isSeed ? undefined : () => removeReviewImage(url)
+                    }
+                  />
                 ))}
               </div>
             )}
