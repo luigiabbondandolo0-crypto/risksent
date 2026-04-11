@@ -13,7 +13,6 @@ import {
   CalendarDays,
   RefreshCw,
   Settings2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -35,6 +34,7 @@ import {
 } from "date-fns";
 import Link from "next/link";
 import { jn } from "@/lib/journal/jnClasses";
+import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { TradeReviewModal } from "@/components/journal/TradeReviewModal";
 import type {
@@ -852,7 +852,6 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   const [selectedAccountId, setSelectedAccountId] = useState<string | "all">(
     "all"
   );
-  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [tab, setTab] = useState<"today" | "history">("today");
   const [loading, setLoading] = useState(!isMock);
@@ -923,7 +922,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
         setAccounts(accs);
         const stored =
           typeof window !== "undefined"
-            ? localStorage.getItem("rs_journal_account")
+            ? localStorage.getItem("rs_selected_account") ??
+              localStorage.getItem("rs_journal_account")
             : null;
         if (
           stored &&
@@ -1004,9 +1004,11 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   const handleSync = async () => {
     if (isMock || syncing) return;
     const target =
-      accounts.length === 1
+      selectedAccountId === "all"
         ? accounts[0]
-        : accounts.find((a) => a.id === selectedAccountId);
+        : accounts.length === 1
+          ? accounts[0]
+          : accounts.find((a) => a.id === selectedAccountId);
     if (!target) return;
     setSyncing(true);
     try {
@@ -1021,13 +1023,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
 
   const selectAccount = (id: string | "all") => {
     setSelectedAccountId(id);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("rs_journal_account", id);
-    }
-    setAccountDropdownOpen(false);
   };
-
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
   // ── Empty state ──
   if (!loading && accounts.length === 0 && !isMock) {
@@ -1048,71 +1044,18 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
 
         {/* Account selector — center */}
         <div className="flex flex-1 justify-center">
-          {accounts.length === 1 || isMock ? (
-            <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-1.5">
-              <span className="text-sm font-medium text-slate-200">
-                {isMock ? MOCK_ACCOUNT.nickname : accounts[0]?.nickname}
-              </span>
-              <span className="rounded-full bg-[#00e676]/15 px-2 py-0.5 text-[10px] font-mono text-[#00e676]">
-                {isMock ? "demo" : accounts[0]?.status}
-              </span>
-            </div>
-          ) : accounts.length > 1 ? (
-            <div className="relative">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-1.5 text-sm text-slate-200 hover:bg-white/[0.04] transition-colors"
-                onClick={() => setAccountDropdownOpen((o) => !o)}
-              >
-                {selectedAccount?.nickname ?? "All accounts"}
-                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
-              </button>
-              <AnimatePresence>
-                {accountDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                    className="absolute left-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl"
-                  >
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2.5 text-left text-sm text-slate-300 hover:bg-white/[0.04] transition-colors"
-                      onClick={() => selectAccount("all")}
-                    >
-                      All accounts
-                    </button>
-                    {accounts.map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-slate-300 hover:bg-white/[0.04] transition-colors"
-                        onClick={() => selectAccount(a.id)}
-                      >
-                        <span>{a.nickname}</span>
-                        <span
-                          className="rounded-full px-1.5 py-0.5 text-[9px] font-mono uppercase"
-                          style={
-                            a.status === "active"
-                              ? {
-                                  background: "rgba(0,230,118,0.15)",
-                                  color: "#00e676",
-                                }
-                              : {
-                                  background: "rgba(255,255,255,0.06)",
-                                  color: "#64748b",
-                                }
-                          }
-                        >
-                          {a.status}
-                        </span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : null}
+          <GlobalAccountSelector
+            accounts={accounts.map((a) => ({
+              id: a.id,
+              nickname: a.nickname,
+              status: a.status,
+              platform: a.platform,
+            }))}
+            selectedId={selectedAccountId}
+            onChange={(id) => selectAccount(id)}
+            onAddAccount={() => setAddAccountOpen(true)}
+            isMock={isMock}
+          />
         </div>
 
         {/* Right actions */}
@@ -1155,15 +1098,12 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
       {!loading && (
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
           {(["today", "history"] as const).map((t) => (
-            <motion.button
+            <button
               key={t}
               type="button"
-              layoutId="journal-tab-bg"
               onClick={() => setTab(t)}
               className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={{
-                color: tab === t ? "#fff" : "#64748b",
-              }}
+              style={{ color: tab === t ? "#fff" : "#64748b" }}
             >
               {tab === t && (
                 <motion.span
@@ -1178,7 +1118,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
                 <CalendarDays className="relative z-10 h-3.5 w-3.5" />
               )}
               <span className="relative z-10 capitalize">{t}</span>
-            </motion.button>
+            </button>
           ))}
         </div>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
@@ -15,6 +15,10 @@ import { RuleCard } from "./RuleCard";
 import { TelegramSetup, type TelegramSettings } from "./TelegramSetup";
 import { ViolationTimeline, type ViolationItem } from "./ViolationTimeline";
 import { authFetch } from "@/lib/api/authFetch";
+import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
+import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
+import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 import type { RiskGaugeStatus } from "@/lib/risk/riskTypes";
 import {
   dailyDdRatio,
@@ -91,6 +95,14 @@ export function RiskManagerPageClient({
 
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [loading, setLoading] = useState(!isMock);
+
+  const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[]>([]);
+  const [tradingAccounts, setTradingAccounts] = useState<
+    { account_number: string; metaapi_account_id: string | null }[]
+  >([]);
+  const [selectedGlobalId, setSelectedGlobalId] = useState<"all" | string>("all");
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const accInit = useRef(false);
 
   const showToast = useCallback((text: string, ok: boolean) => {
     setToast({ text, ok });
@@ -231,25 +243,112 @@ export function RiskManagerPageClient({
     };
   }, [isMock]);
 
-  const refreshDashboard = useCallback(async () => {
+  useEffect(() => {
     if (isMock) return;
-    const res = await authFetch("/api/dashboard-stats");
-    if (!res.ok) return;
-    const j = await res.json();
-    setLive({
-      dailyDdPct: typeof j.dailyDdPct === "number" ? j.dailyDdPct : null,
-      currentExposurePct: typeof j.currentExposurePct === "number" ? j.currentExposurePct : null,
-      maxOpenRiskPct: typeof j.maxOpenRiskPct === "number" ? j.maxOpenRiskPct : null,
-      consecutiveLossesAtEnd: typeof j.consecutiveLossesAtEnd === "number" ? j.consecutiveLossesAtEnd : 0
-    });
+    let cancelled = false;
+    (async () => {
+      try {
+        const [jRes, tRes] = await Promise.all([
+          fetch("/api/journal/accounts"),
+          authFetch("/api/accounts"),
+        ]);
+        const jData = jRes.ok ? await jRes.json().catch(() => ({})) : {};
+        const journals = (jData.accounts ?? []) as JournalAccountPublic[];
+        let tradings: { account_number: string; metaapi_account_id: string | null }[] = [];
+        if (tRes.ok) {
+          const tData = (await tRes.json()) as {
+            accounts?: { account_number?: string; metaapi_account_id?: string | null }[];
+          };
+          tradings = (tData.accounts ?? []).map((a) => ({
+            account_number: String(a.account_number ?? ""),
+            metaapi_account_id: a.metaapi_account_id ?? null,
+          }));
+        }
+        if (!cancelled) {
+          setJournalAccounts(journals);
+          setTradingAccounts(tradings);
+        }
+      } catch {
+        if (!cancelled) {
+          setJournalAccounts([]);
+          setTradingAccounts([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isMock]);
 
   useEffect(() => {
+    if (isMock || journalAccounts.length === 0 || accInit.current) return;
+    accInit.current = true;
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("rs_selected_account") ??
+          localStorage.getItem("rs_journal_account")
+        : null;
+    if (stored === "all" || (stored && journalAccounts.some((a) => a.id === stored))) {
+      setSelectedGlobalId(stored === "all" ? "all" : stored);
+    } else if (journalAccounts.length === 1) {
+      setSelectedGlobalId(journalAccounts[0]!.id);
+    } else {
+      setSelectedGlobalId("all");
+    }
+  }, [isMock, journalAccounts]);
+
+  const hasAnyBrokerMeta = useMemo(
+    () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
+    [tradingAccounts]
+  );
+
+  const resolvedDashUuid = useMemo(
+    () =>
+      journalAccounts.length > 0
+        ? resolveMetaapiUuidForJournalSelection(
+            selectedGlobalId,
+            journalAccounts,
+            tradingAccounts
+          )
+        : undefined,
+    [selectedGlobalId, journalAccounts, tradingAccounts]
+  );
+
+  const refreshDashboard = useCallback(
+    async (uuid?: string) => {
+      if (isMock) return;
+      if (!hasAnyBrokerMeta) {
+        setLive({
+          dailyDdPct: null,
+          currentExposurePct: null,
+          maxOpenRiskPct: null,
+          consecutiveLossesAtEnd: 0,
+        });
+        return;
+      }
+      const url =
+        uuid !== undefined && uuid !== ""
+          ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}`
+          : "/api/dashboard-stats";
+      const res = await authFetch(url);
+      if (!res.ok) return;
+      const j = await res.json();
+      setLive({
+        dailyDdPct: typeof j.dailyDdPct === "number" ? j.dailyDdPct : null,
+        currentExposurePct: typeof j.currentExposurePct === "number" ? j.currentExposurePct : null,
+        maxOpenRiskPct: typeof j.maxOpenRiskPct === "number" ? j.maxOpenRiskPct : null,
+        consecutiveLossesAtEnd: typeof j.consecutiveLossesAtEnd === "number" ? j.consecutiveLossesAtEnd : 0,
+      });
+    },
+    [isMock, hasAnyBrokerMeta]
+  );
+
+  useEffect(() => {
     if (isMock) return;
-    void refreshDashboard();
-    const t = window.setInterval(() => void refreshDashboard(), 30_000);
+    void refreshDashboard(resolvedDashUuid);
+    const t = window.setInterval(() => void refreshDashboard(resolvedDashUuid), 30_000);
     return () => window.clearInterval(t);
-  }, [isMock, refreshDashboard]);
+  }, [isMock, resolvedDashUuid, refreshDashboard]);
 
   useEffect(() => {
     if (isMock) return;
@@ -380,26 +479,41 @@ export function RiskManagerPageClient({
           <h1 className="rs-page-title font-[family-name:var(--font-display)]">Risk Manager</h1>
           <p className="rs-page-sub">Set your rules. Monitor your limits. Stay protected.</p>
         </div>
-        <AnimatePresence>
-          {dirty && (
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 24 }}
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            >
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => void saveRules()}
-                className="rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/20"
-              >
-                Save rules
-              </motion.button>
-            </motion.div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {!isMock && journalAccounts.length > 0 && (
+            <GlobalAccountSelector
+              accounts={journalAccounts.map((a) => ({
+                id: a.id,
+                nickname: a.nickname,
+                status: a.status,
+                platform: a.platform,
+              }))}
+              selectedId={selectedGlobalId}
+              onChange={setSelectedGlobalId}
+              onAddAccount={() => setAddAccountOpen(true)}
+            />
           )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {dirty && (
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 24 }}
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              >
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => void saveRules()}
+                  className="rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/20"
+                >
+                  Save rules
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {loading && <p className="text-sm font-[family-name:var(--font-mono)] text-slate-500">Loading…</p>}
@@ -549,6 +663,10 @@ export function RiskManagerPageClient({
           }
         />
       </motion.section>
+
+      {!isMock && (
+        <AddAccountModal open={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
+      )}
     </div>
   );
 }

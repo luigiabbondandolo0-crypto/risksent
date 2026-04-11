@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   XAxis,
@@ -21,6 +21,8 @@ import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
 import { NoAccountState } from "@/components/shared/NoAccountState";
 import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
+import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
 type Stats = {
@@ -116,7 +118,11 @@ function AnimatedNumber({
 const POLL_MS = 45_000;
 
 export default function DashboardPage() {
-  const [linkedMetaId, setLinkedMetaId] = useState<string | null>(null);
+  const [tradingAccounts, setTradingAccounts] = useState<
+    { account_number: string; metaapi_account_id: string | null }[]
+  >([]);
+  const [selectedGlobalId, setSelectedGlobalId] = useState<"all" | string>("all");
+  const selInit = useRef(false);
   const [accountsResolved, setAccountsResolved] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
@@ -129,17 +135,39 @@ export default function DashboardPage() {
   const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
 
+  const hasAnyBrokerMeta = useMemo(
+    () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
+    [tradingAccounts]
+  );
+
+  const resolvedStatsUuid = useMemo(
+    () =>
+      journalAccounts != null && journalAccounts.length > 0
+        ? resolveMetaapiUuidForJournalSelection(
+            selectedGlobalId,
+            journalAccounts,
+            tradingAccounts
+          )
+        : undefined,
+    [selectedGlobalId, journalAccounts, tradingAccounts]
+  );
+
+  const linkMetaUuid =
+    resolvedStatsUuid ??
+    tradingAccounts.find((t) => t.metaapi_account_id)?.metaapi_account_id ??
+    null;
+
   const pageReady = accountsResolved && rulesResolved;
-  const noLinkedAccount = accountsResolved && !linkedMetaId;
-  const kpiLoading = Boolean(linkedMetaId && stats === null);
+  const noLinkedAccount = accountsResolved && !hasAnyBrokerMeta;
+  const kpiLoading = Boolean(hasAnyBrokerMeta && stats === null);
   const noKpi = noLinkedAccount || Boolean(stats?.error);
 
-  const fetchStats = useCallback(async (uuid: string | null) => {
-    if (uuid === null) return;
-    const u = uuid || undefined;
-    const res = await fetch(
-      `/api/dashboard-stats${u ? `?uuid=${encodeURIComponent(u)}` : ""}`
-    );
+  const fetchStats = useCallback(async (uuid?: string) => {
+    const url =
+      uuid !== undefined && uuid !== ""
+        ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}`
+        : "/api/dashboard-stats";
+    const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) {
       setStats({
@@ -179,27 +207,51 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (journalAccounts === null || journalAccounts.length === 0 || selInit.current) return;
+    selInit.current = true;
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("rs_selected_account") ??
+          localStorage.getItem("rs_journal_account")
+        : null;
+    if (stored === "all" || (stored && journalAccounts.some((a) => a.id === stored))) {
+      setSelectedGlobalId(stored === "all" ? "all" : stored);
+    } else if (journalAccounts.length === 1) {
+      setSelectedGlobalId(journalAccounts[0]!.id);
+    } else {
+      setSelectedGlobalId("all");
+    }
+  }, [journalAccounts]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/accounts");
         if (!res.ok) {
           if (!cancelled) {
-            setLinkedMetaId(null);
+            setTradingAccounts([]);
             setAccountsResolved(true);
           }
           return;
         }
         const data = await res.json();
-        const accounts = (data.accounts ?? []) as { metaapi_account_id?: string | null }[];
-        const linked = accounts.find((a) => Boolean(a.metaapi_account_id));
+        const list = (data.accounts ?? []) as {
+          account_number?: string;
+          metaapi_account_id?: string | null;
+        }[];
         if (!cancelled) {
-          setLinkedMetaId(linked?.metaapi_account_id ?? null);
+          setTradingAccounts(
+            list.map((a) => ({
+              account_number: String(a.account_number ?? ""),
+              metaapi_account_id: a.metaapi_account_id ?? null,
+            }))
+          );
           setAccountsResolved(true);
         }
       } catch {
         if (!cancelled) {
-          setLinkedMetaId(null);
+          setTradingAccounts([]);
           setAccountsResolved(true);
         }
       }
@@ -241,12 +293,23 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (linkedMetaId == null) { setStats(null); return; }
+    if (!accountsResolved) return;
+    if (journalAccounts === null || journalAccounts.length === 0) return;
+    if (!hasAnyBrokerMeta) {
+      setStats(null);
+      return;
+    }
     setStats(null);
-    fetchStats(linkedMetaId);
-    const t = setInterval(() => fetchStats(linkedMetaId), POLL_MS);
+    void fetchStats(resolvedStatsUuid);
+    const t = setInterval(() => void fetchStats(resolvedStatsUuid), POLL_MS);
     return () => clearInterval(t);
-  }, [linkedMetaId, fetchStats]);
+  }, [
+    resolvedStatsUuid,
+    accountsResolved,
+    journalAccounts,
+    hasAnyBrokerMeta,
+    fetchStats,
+  ]);
 
   const currency = stats?.currency ?? "EUR";
   const curve = stats?.equityCurve ?? [];
@@ -293,7 +356,7 @@ export default function DashboardPage() {
   const goPrevMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
-  const showBrokerSyncBanner = accountsResolved && linkedMetaId === null;
+  const showBrokerSyncBanner = accountsResolved && !hasAnyBrokerMeta;
 
   if (journalAccounts === null) {
     return (
@@ -342,7 +405,19 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-        <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0" />
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+          <GlobalAccountSelector
+            accounts={journalAccounts.map((a) => ({
+              id: a.id,
+              nickname: a.nickname,
+              status: a.status,
+              platform: a.platform,
+            }))}
+            selectedId={selectedGlobalId}
+            onChange={setSelectedGlobalId}
+            onAddAccount={() => setAddAccountOpen(true)}
+          />
+        </div>
       </header>
 
       {!pageReady && (
@@ -671,7 +746,7 @@ export default function DashboardPage() {
                 return dayData ? (
                   <Link
                     key={dateStr}
-                    href={`/trades?date=${dateStr}${linkedMetaId ? `&uuid=${encodeURIComponent(linkedMetaId)}` : ""}`}
+                    href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
                     className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
                   >
                     {content}
