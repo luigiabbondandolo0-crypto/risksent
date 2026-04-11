@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -20,6 +21,11 @@ export function JournalScreenshotTile({
   variant = "default",
 }: Props) {
   const [lightbox, setLightbox] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -85,37 +91,43 @@ export function JournalScreenshotTile({
         )}
       </div>
 
-      <AnimatePresence>
-        {lightbox && (
-          <motion.div
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/93 p-3 backdrop-blur-md"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setLightbox(false)}
-          >
-            <button
-              type="button"
-              aria-label="Close"
-              className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
-              onClick={() => setLightbox(false)}
-            >
-              <X className="h-5 w-5" />
-            </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <motion.img
-              initial={{ scale: 0.97, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.97, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              src={url}
-              alt=""
-              className="max-h-[96vh] max-w-[96vw] object-contain shadow-2xl ring-1 ring-white/20"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </motion.div>
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {lightbox ? (
+              <motion.div
+                key="journal-screenshot-lightbox"
+                className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-black/93 p-3 backdrop-blur-md"
+                style={{ isolation: "isolate" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setLightbox(false)}
+              >
+                <button
+                  type="button"
+                  aria-label="Close"
+                  className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+                  onClick={() => setLightbox(false)}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <motion.img
+                  initial={{ scale: 0.97, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.97, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  src={url}
+                  alt=""
+                  className="relative z-[1] max-h-[96vh] max-w-[96vw] object-contain shadow-2xl ring-1 ring-white/20"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </>
   );
 }
