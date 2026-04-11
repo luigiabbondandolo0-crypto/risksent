@@ -151,7 +151,7 @@ export function AppHeaderBar({
               </ul>
               <div className="border-t border-white/[0.06] px-2 pt-2">
                 <Link
-                  href="/rules#alerts"
+                  href="/app/risk-manager"
                   className="block rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-cyan-400 hover:bg-white/[0.04]"
                   onClick={() => setBellOpen(false)}
                 >
