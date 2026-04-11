@@ -1,4 +1,6 @@
 export type JournalAccountStatus = "active" | "disconnected";
+export type JournalBias = "Bullish" | "Bearish" | "Neutral";
+export type JournalEmotion = "Calm" | "Confident" | "Anxious" | "FOMO" | "Revenge";
 export type JournalPlatform = "MT4" | "MT5";
 export type JournalTradeDirection = "BUY" | "SELL";
 export type JournalTradeStatus = "open" | "closed";
@@ -21,6 +23,59 @@ export type JournalAccountRow = {
 
 /** Safe shape returned from APIs (no password). */
 export type JournalAccountPublic = Omit<JournalAccountRow, "account_password">;
+
+export type JournalSession = {
+  id: string;
+  user_id: string;
+  account_id: string | null;
+  session_date: string;
+  bias: JournalBias | null;
+  key_levels: string | null;
+  watchlist: string[] | null;
+  notes: string | null;
+  images: string[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type JournalStrategy = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  created_at: string | null;
+};
+
+export type JournalChecklistItem = {
+  id: string;
+  user_id: string;
+  text: string;
+  order_index: number;
+  created_at: string | null;
+};
+
+export type JournalRule = {
+  id: string;
+  user_id: string;
+  text: string;
+  order_index: number;
+  created_at: string | null;
+};
+
+export type JournalTradeReview = {
+  id: string;
+  user_id: string;
+  trade_id: string;
+  strategy_id: string | null;
+  checklist_results: Record<string, boolean>;
+  rules_followed: Record<string, boolean>;
+  emotion: JournalEmotion | null;
+  rating: number | null;
+  notes: string | null;
+  images: string[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
 
 export type JournalTradeRow = {
   id: string;
