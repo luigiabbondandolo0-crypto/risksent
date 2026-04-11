@@ -27,7 +27,15 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
-  { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
+  {
+    href: "/app/ai-coach",
+    label: "AI Coach",
+    icon: Sparkles,
+    children: [
+      { href: "/app/ai-coach", label: "Report" },
+      { href: "/app/ai-coach?tab=chat", label: "Chat" },
+    ],
+  },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
