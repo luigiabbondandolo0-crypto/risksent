@@ -448,11 +448,25 @@ function TodayTab({
 
 function HistoryTab({
   allTrades,
+  isMock = false,
 }: {
   allTrades: JournalTradeRow[];
+  isMock?: boolean;
 }) {
   const [month, setMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const mockMonthInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isMock || allTrades.length === 0 || mockMonthInitialized.current) return;
+    const fc = allTrades.find((t) => t.close_time)?.close_time;
+    if (fc) {
+      setMonth(startOfMonth(parseISO(fc.slice(0, 10))));
+      mockMonthInitialized.current = true;
+    }
+  }, [isMock, allTrades]);
+
+  const tradeLinkBase = isMock ? "/mock/journal/trade" : "/app/journaling/trade";
 
   const start = startOfMonth(month);
   const end = endOfMonth(month);
@@ -547,6 +561,73 @@ function HistoryTab({
           </button>
         </div>
 
+        {/* Month KPIs (same style as below — grouped with calendar) */}
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: "Total Trades",
+              value: monthTrades.length.toString(),
+              color: "#94a3b8",
+            },
+            {
+              label: "Win Rate",
+              value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
+              color: "#22d3ee",
+            },
+            {
+              label: "Total P&L",
+              value:
+                monthTrades.length > 0
+                  ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
+                  : "—",
+              color: monthPl >= 0 ? "#00e676" : "#ff3c3c",
+            },
+            {
+              label: "Best Day",
+              value: (() => {
+                const dayPls = Object.values(
+                  Object.fromEntries(
+                    Object.entries(
+                      allTrades
+                        .filter(
+                          (t) =>
+                            t.close_time?.slice(0, 7) === monthStr &&
+                            t.status === "closed"
+                        )
+                        .reduce(
+                          (acc, t) => {
+                            const d = t.close_time!.slice(0, 10);
+                            acc[d] =
+                              (acc[d] ?? 0) +
+                              (t.pl ?? 0) +
+                              (t.commission ?? 0) +
+                              (t.swap ?? 0);
+                            return acc;
+                          },
+                          {} as Record<string, number>
+                        )
+                    )
+                  )
+                );
+                if (dayPls.length === 0) return "—";
+                const best = Math.max(...dayPls);
+                return `+${best.toFixed(0)}`;
+              })(),
+              color: "#00e676",
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className={jn.cardSm}>
+              <p className={jn.label}>{label}</p>
+              <p
+                className="mt-1 font-display text-xl font-bold"
+                style={{ color }}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+
         {/* Day headers */}
         <div className="mb-1 grid grid-cols-7 gap-1">
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
@@ -609,13 +690,18 @@ function HistoryTab({
                   {format(day, "d")}
                 </span>
                 {stats && (
-                  <span
-                    className="mt-0.5 text-[9px] font-mono"
-                    style={{ color: stats.pl >= 0 ? "#00e676" : "#ff3c3c" }}
-                  >
-                    {stats.pl >= 0 ? "+" : ""}
-                    {stats.pl.toFixed(0)}
-                  </span>
+                  <div className="mt-0.5 flex flex-col items-center gap-0">
+                    <span
+                      className="text-[9px] font-mono leading-tight"
+                      style={{ color: stats.pl >= 0 ? "#00e676" : "#ff3c3c" }}
+                    >
+                      {stats.pl >= 0 ? "+" : ""}
+                      {stats.pl.toFixed(0)}
+                    </span>
+                    <span className="text-[8px] font-mono leading-tight text-slate-500">
+                      {stats.count} {stats.count === 1 ? "trade" : "trades"}
+                    </span>
+                  </div>
                 )}
               </motion.button>
             );
@@ -659,7 +745,7 @@ function HistoryTab({
                       return (
                         <Link
                           key={t.id}
-                          href={`/app/journaling/trade/${t.id}`}
+                          href={`${tradeLinkBase}/${t.id}`}
                           className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
                         >
                           <div className="flex items-center gap-2">
@@ -707,73 +793,6 @@ function HistoryTab({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Monthly stats strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          {
-            label: "Total Trades",
-            value: monthTrades.length.toString(),
-            color: "#94a3b8",
-          },
-          {
-            label: "Win Rate",
-            value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
-            color: "#22d3ee",
-          },
-          {
-            label: "Total P&L",
-            value:
-              monthTrades.length > 0
-                ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
-                : "—",
-            color: monthPl >= 0 ? "#00e676" : "#ff3c3c",
-          },
-          {
-            label: "Best Day",
-            value: (() => {
-              const dayPls = Object.values(
-                Object.fromEntries(
-                  Object.entries(
-                    allTrades
-                      .filter(
-                        (t) =>
-                          t.close_time?.slice(0, 7) === monthStr &&
-                          t.status === "closed"
-                      )
-                      .reduce(
-                        (acc, t) => {
-                          const d = t.close_time!.slice(0, 10);
-                          acc[d] =
-                            (acc[d] ?? 0) +
-                            (t.pl ?? 0) +
-                            (t.commission ?? 0) +
-                            (t.swap ?? 0);
-                          return acc;
-                        },
-                        {} as Record<string, number>
-                      )
-                  )
-                )
-              );
-              if (dayPls.length === 0) return "—";
-              const best = Math.max(...dayPls);
-              return `+${best.toFixed(0)}`;
-            })(),
-            color: "#00e676",
-          },
-        ].map(({ label, value, color }) => (
-          <div key={label} className={jn.cardSm}>
-            <p className={jn.label}>{label}</p>
-            <p
-              className="mt-1 font-display text-xl font-bold"
-              style={{ color }}
-            >
-              {value}
-            </p>
-          </div>
-        ))}
       </div>
     </motion.div>
   );
@@ -1186,7 +1205,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               isMock={isMock}
             />
           ) : (
-            <HistoryTab key="history" allTrades={allTrades} />
+            <HistoryTab key="history" allTrades={allTrades} isMock={isMock} />
           )}
         </AnimatePresence>
       )}
