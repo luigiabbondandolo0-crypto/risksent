@@ -21,22 +21,32 @@ export async function POST(req: NextRequest) {
   }
 
   const model: CoachModel = body.model === "gpt4" ? "gpt4" : "claude";
-  const days = Number(body.days ?? 90);
-  const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const days = Number(body.days ?? 9999);
+
+  // All time: no date filter
+  const fromDate =
+    days >= 9999
+      ? null
+      : new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
   const toDate = new Date().toISOString().slice(0, 10);
 
   // ── Collect trading data ──────────────────────────────────────────────────
+  let tradesQuery = supabase
+    .from("journal_trade")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("status", "closed")
+    .order("open_time", { ascending: true })
+    .limit(500);
+
+  if (fromDate) {
+    tradesQuery = tradesQuery.gte("open_time", fromDate);
+  }
+
   const [tradesRes, reviewsRes, rulesRes, accountsRes] = await Promise.all([
-    supabase
-      .from("journal_trade")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("status", "closed")
-      .gte("open_time", fromDate)
-      .order("open_time", { ascending: true })
-      .limit(500),
+    tradesQuery,
     supabase
       .from("journal_trade_review")
       .select("*, journal_strategy(name)")
@@ -139,7 +149,11 @@ export async function POST(req: NextRequest) {
           nickname: firstAccount.nickname,
         }
       : null,
-    period: { from: fromDate, to: toDate, days },
+    period: {
+      from: fromDate ?? "all_time",
+      to: toDate,
+      days: days >= 9999 ? "all" : days,
+    },
   };
 
   const userMessage =

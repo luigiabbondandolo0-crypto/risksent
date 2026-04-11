@@ -100,6 +100,7 @@ const ANALYSIS_WINDOWS = [
   { value: 90, label: "90 days" },
   { value: 180, label: "180 days" },
   { value: 365, label: "1 year" },
+  { value: 9999, label: "All time" },
 ];
 
 // ─── Circular Score SVG ────────────────────────────────────────────────────
@@ -1093,7 +1094,7 @@ export function AiCoachPageClient({
 }) {
   const [tab, setTab] = useState<"report" | "chat">("report");
   const [model, setModel] = useState<CoachModel>("claude");
-  const [analysisWindow, setAnalysisWindow] = useState(90);
+  const [analysisWindow, setAnalysisWindow] = useState(9999);
   const [windowOpen, setWindowOpen] = useState(false);
 
   const [reportRow, setReportRow] = useState<CoachReportRow | null>(
