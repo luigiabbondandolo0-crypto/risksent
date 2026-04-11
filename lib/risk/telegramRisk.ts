@@ -5,19 +5,21 @@ export async function sendTelegramRiskMessage(chatId: string, text: string): Pro
   if (!token) {
     return { ok: false, error: "TELEGRAM_BOT_TOKEN not set" };
   }
-  const id = typeof chatId === "string" && /^-?\d+$/.test(chatId.trim()) ? Number(chatId.trim()) : chatId.trim();
   const res = await fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      chat_id: id,
+      chat_id: chatId.trim(),
       text,
       parse_mode: "HTML"
     })
   });
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { description?: string };
-    return { ok: false, error: err.description ?? res.statusText };
+  const payload = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    description?: string;
+  };
+  if (payload.ok !== true) {
+    return { ok: false, error: payload.description ?? res.statusText };
   }
   return { ok: true };
 }
