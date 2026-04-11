@@ -22,10 +22,7 @@ function navLinkClass(active: boolean) {
 
 function childLinkActive(pathname: string | null, routeHash: string, ch: { href: string; hash?: string }): boolean {
   if (!pathname || pathname !== ch.href) return false;
-  if (ch.href === "/app/risk-manager") {
-    if (ch.hash) return routeHash === `#${ch.hash}`;
-    return routeHash !== "#violations";
-  }
+  if (ch.hash) return routeHash === `#${ch.hash}`;
   return true;
 }
 
