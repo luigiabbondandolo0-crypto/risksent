@@ -76,7 +76,14 @@ export function TelegramSetup({
           <li>Open Telegram</li>
           <li>
             Search for{" "}
-            <span className="font-[family-name:var(--font-mono)] text-cyan-300">@RiskSentConnectBot</span>
+            <a
+              href="https://t.me/RiskSentConnectBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-[family-name:var(--font-mono)] text-cyan-300 underline decoration-cyan-300/40 underline-offset-2 hover:text-cyan-200"
+            >
+              @RiskSentConnectBot
+            </a>
           </li>
           <li>
             Press <span className="font-[family-name:var(--font-mono)] text-slate-200">Start</span>
