@@ -58,9 +58,7 @@ export async function POST(req: NextRequest) {
   const sessionDate =
     body.session_date ?? new Date().toISOString().slice(0, 10);
 
-  const validBias = ["Bullish", "Bearish", "Neutral"];
-  const bias =
-    body.bias && validBias.includes(body.bias) ? body.bias : null;
+  const validBias = ["Bullish", "Bearish", "Neutral"] as const;
 
   const checklistDone =
     body.checklist_done != null &&
@@ -75,17 +73,35 @@ export async function POST(req: NextRequest) {
       ? body.rules_followed
       : undefined;
 
+  // Only set fields present in the JSON body. Omitted keys must not overwrite DB
+  // columns with null (JSON.stringify drops undefined; partial saves are common).
   const row: Record<string, unknown> = {
     user_id: user.id,
     session_date: sessionDate,
-    account_id: body.account_id ?? null,
-    bias,
-    key_levels: body.key_levels ?? null,
-    watchlist: Array.isArray(body.watchlist) ? body.watchlist : null,
-    notes: body.notes ?? null,
-    images: Array.isArray(body.images) ? body.images : null,
     updated_at: new Date().toISOString(),
   };
+
+  if (body.account_id !== undefined) {
+    row.account_id = body.account_id;
+  }
+  if (body.bias !== undefined) {
+    row.bias =
+      body.bias && validBias.includes(body.bias as (typeof validBias)[number])
+        ? body.bias
+        : null;
+  }
+  if (body.key_levels !== undefined) {
+    row.key_levels = body.key_levels;
+  }
+  if (body.watchlist !== undefined) {
+    row.watchlist = Array.isArray(body.watchlist) ? body.watchlist : null;
+  }
+  if (body.notes !== undefined) {
+    row.notes = body.notes;
+  }
+  if (body.images !== undefined) {
+    row.images = Array.isArray(body.images) ? body.images : null;
+  }
   if (checklistDone !== undefined) row.checklist_done = checklistDone;
   if (rulesFollowed !== undefined) row.rules_followed = rulesFollowed;
 

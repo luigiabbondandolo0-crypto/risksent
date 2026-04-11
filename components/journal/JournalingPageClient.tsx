@@ -138,6 +138,30 @@ function normBoolRecord(r: unknown): Record<string, boolean> {
   return out;
 }
 
+function normSessionImages(v: unknown): string[] {
+  if (Array.isArray(v)) {
+    return v.filter((x): x is string => typeof x === "string");
+  }
+  if (typeof v === "string") {
+    try {
+      const p = JSON.parse(v) as unknown;
+      return Array.isArray(p)
+        ? p.filter((x): x is string => typeof x === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/** Max screenshots per day on Today tab (session.images) */
+const JOURNAL_SESSION_MAX_IMAGES = 6;
+
+type JournalSessionPatch =
+  | Partial<JournalSession>
+  | ((prev: Partial<JournalSession>) => Partial<JournalSession>);
+
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
     (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
@@ -267,8 +291,6 @@ function TradeCard({
 
 // ─── Today Tab ────────────────────────────────────────────────────────────────
 
-const TODAY_MAX_IMAGES = 6;
-
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -301,7 +323,7 @@ function TodayTab({
   todayTrades: JournalTradeRow[];
   checklist: JournalChecklistItem[];
   rules: JournalRule[];
-  updateSession: (patch: Partial<JournalSession>) => void;
+  updateSession: (patch: JournalSessionPatch) => void;
   onFlushSessionSave: (override?: Partial<JournalSession>) => void;
   onBiasChange: (b: JournalBias | null) => void;
   onKeyLevelsChange: (v: string) => void;
@@ -375,13 +397,13 @@ function TodayTab({
     const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (list.length === 0) return;
     const current = session.images ?? [];
-    const room = TODAY_MAX_IMAGES - current.length;
+    const room = JOURNAL_SESSION_MAX_IMAGES - current.length;
     if (room <= 0) return;
     setUploading(true);
     try {
-      const next = [...current];
+      const newUrls: string[] = [];
       for (const file of list.slice(0, room)) {
-        if (next.length >= TODAY_MAX_IMAGES) break;
+        if (newUrls.length >= JOURNAL_SESSION_MAX_IMAGES) break;
         const dataUrl = await readFileAsDataUrl(file);
         const res = await fetch("/api/journal/images/upload", {
           method: "POST",
@@ -390,18 +412,28 @@ function TodayTab({
         });
         if (!res.ok) continue;
         const j: { url?: string } = await res.json();
-        if (j.url) next.push(j.url);
+        if (j.url) newUrls.push(j.url);
       }
-      updateSession({ images: next });
+      if (newUrls.length > 0) {
+        updateSession((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_SESSION_MAX_IMAGES) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
     } finally {
       setUploading(false);
     }
   };
 
   const removeImage = (url: string) => {
-    updateSession({
-      images: (session.images ?? []).filter((u) => u !== url),
-    });
+    updateSession((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
   };
 
   const settingsLinkProps = isMock
@@ -806,7 +838,9 @@ function TodayTab({
             </div>
             {(session.images ?? []).length > 0 && (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
-                {(session.images ?? []).slice(0, TODAY_MAX_IMAGES).map((url) => (
+                {(session.images ?? [])
+                  .slice(0, JOURNAL_SESSION_MAX_IMAGES)
+                  .map((url) => (
                   <div
                     key={url}
                     className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
@@ -1858,11 +1892,26 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
         const j = await sRes.json();
         if (j.session) {
           const s = j.session as JournalSession;
-          setSession({
-            ...s,
-            checklist_done: normBoolRecord(s.checklist_done),
-            rules_followed: normBoolRecord(s.rules_followed),
-            images: Array.isArray(s.images) ? s.images : [],
+          setSession((prev) => {
+            const serverImages = normSessionImages(s.images).slice(
+              0,
+              JOURNAL_SESSION_MAX_IMAGES
+            );
+            const prevImages = (prev.images ?? []).slice(
+              0,
+              JOURNAL_SESSION_MAX_IMAGES
+            );
+            const merged: string[] = [...serverImages];
+            for (const u of prevImages) {
+              if (merged.length >= JOURNAL_SESSION_MAX_IMAGES) break;
+              if (u && !merged.includes(u)) merged.push(u);
+            }
+            return {
+              ...s,
+              checklist_done: normBoolRecord(s.checklist_done),
+              rules_followed: normBoolRecord(s.rules_followed),
+              images: merged,
+            };
           });
         }
       }
@@ -1946,9 +1995,10 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   );
 
   const updateSession = useCallback(
-    (patch: Partial<JournalSession>) => {
+    (patch: JournalSessionPatch) => {
       setSession((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleSessionSave(next);
         return next;
       });
