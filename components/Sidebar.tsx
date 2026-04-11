@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { NavItem } from "@/components/navConfig";
 import {
   primaryNavItems,
@@ -19,6 +20,15 @@ function navLinkClass(active: boolean) {
   ].join(" ");
 }
 
+function childLinkActive(pathname: string | null, routeHash: string, ch: { href: string; hash?: string }): boolean {
+  if (!pathname || pathname !== ch.href) return false;
+  if (ch.href === "/app/risk-manager") {
+    if (ch.hash) return routeHash === `#${ch.hash}`;
+    return routeHash !== "#violations";
+  }
+  return true;
+}
+
 function NavGroup({
   title,
   items,
@@ -28,6 +38,15 @@ function NavGroup({
   items: readonly NavItem[];
   pathname: string | null;
 }) {
+  const [routeHash, setRouteHash] = useState("");
+
+  useEffect(() => {
+    setRouteHash(typeof window !== "undefined" ? window.location.hash : "");
+    const onHash = () => setRouteHash(window.location.hash);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [pathname]);
+
   return (
     <div>
       <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
@@ -57,13 +76,13 @@ function NavGroup({
               {children && children.length > 0 && (
                 <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-slate-800/80 pl-3">
                   {children.map((ch) => {
-                    const subActive =
-                      pathname === ch.href || pathname?.startsWith(`${ch.href}/`);
+                    const subActive = childLinkActive(pathname, routeHash, ch);
+                    const childHref = ch.hash ? `${ch.href}#${ch.hash}` : ch.href;
                     return (
                       <Link
-                        key={ch.href}
-                        href={ch.href}
-                        className={navLinkClass(!!subActive)}
+                        key={`${ch.href}-${ch.hash ?? "default"}`}
+                        href={childHref}
+                        className={navLinkClass(subActive)}
                       >
                         <span className="truncate pl-1 text-[13px]">{ch.label}</span>
                         {subActive && (

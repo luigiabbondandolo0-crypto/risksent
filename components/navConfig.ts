@@ -7,19 +7,34 @@ import {
   BookOpen,
 } from "lucide-react";
 
+export type NavChild = {
+  href: string;
+  label: string;
+  /** If set, link is `href#hash` and is active when the URL hash matches. */
+  hash?: string;
+};
+
 export type NavItem = {
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
   /** Optional nested links (renders under parent in sidebar). */
-  children?: readonly { href: string; label: string }[];
+  children?: readonly NavChild[];
 };
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
-  { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
+  {
+    href: "/app/risk-manager",
+    label: "Risk Manager",
+    icon: ShieldAlert,
+    children: [
+      { href: "/app/risk-manager", label: "Overview" },
+      { href: "/app/risk-manager", label: "Violations", hash: "violations" }
+    ]
+  },
   { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
 
@@ -59,6 +74,9 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
   }
   if (href === "/app/ai-coach") {
     return pathname === "/app/ai-coach" || pathname.startsWith("/app/ai-coach/");
+  }
+  if (href === "/app/risk-manager") {
+    return pathname === "/app/risk-manager";
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
