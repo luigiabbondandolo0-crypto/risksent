@@ -193,6 +193,15 @@ export default function ProfilePage() {
         const data = await res.json();
         setError(data.error || "Failed to save preferences");
       } else {
+        const data = (await res.json()) as {
+          preferenceTimezone?: string;
+          preferenceCurrency?: string;
+        };
+        setProfile((p) => ({
+          ...p,
+          preferenceTimezone: data.preferenceTimezone ?? p.preferenceTimezone,
+          preferenceCurrency: data.preferenceCurrency ?? p.preferenceCurrency
+        }));
         setInfo("Preferences saved.");
       }
     } catch {

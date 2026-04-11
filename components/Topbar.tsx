@@ -7,6 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems } from "@/components/navConfig";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
+import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
@@ -47,12 +48,6 @@ export function Topbar() {
     };
     loadUserData();
   }, []);
-
-  const handleLogout = async () => {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
 
   const logoHref = inApp ? "/app/dashboard" : "/";
 
@@ -114,21 +109,7 @@ export function Topbar() {
                 isAdminArea={isAdminArea}
               />
             ) : (
-              <>
-                <Link
-                  href="/profile"
-                  className="flex max-w-[160px] items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800/60"
-                >
-                  <span className="truncate">{fullName || email}</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-xl border border-slate-700/50 bg-slate-900/50 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70"
-                >
-                  Log out
-                </button>
-              </>
+              <MarketingUserMenu email={email} fullName={fullName} isAdmin={isAdmin} />
             )
           ) : !isLoginPage ? (
             <>
