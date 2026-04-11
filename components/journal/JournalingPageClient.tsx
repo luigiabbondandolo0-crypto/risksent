@@ -897,9 +897,9 @@ function TodayTab({
   );
 }
 
-// ─── History Tab ──────────────────────────────────────────────────────────────
+// ─── Calendar Tab ─────────────────────────────────────────────────────────────
 
-function HistoryTab({
+function CalendarTab({
   allTrades,
   isMock = false,
 }: {
@@ -977,7 +977,7 @@ function HistoryTab({
 
   return (
     <motion.div
-      key="history"
+      key="calendar"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
@@ -1761,7 +1761,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
     "all"
   );
   const [addAccountOpen, setAddAccountOpen] = useState(false);
-  const [tab, setTab] = useState<"today" | "history" | "trades">("today");
+  const [tab, setTab] = useState<"today" | "calendar" | "trades">("today");
   const [loading, setLoading] = useState(!isMock);
   const [syncing, setSyncing] = useState(false);
 
@@ -1793,12 +1793,12 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
 
   useEffect(() => {
     const t = searchParams.get("tab");
-    if (t === "history") setTab("history");
+    if (t === "calendar" || t === "history") setTab("calendar");
     else if (t === "trades") setTab("trades");
     else setTab("today");
   }, [searchParams]);
 
-  const goTab = (next: "today" | "history" | "trades") => {
+  const goTab = (next: "today" | "calendar" | "trades") => {
     setTab(next);
     if (next === "today") {
       router.replace(pathname, { scroll: false });
@@ -2055,7 +2055,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
           {(
             [
               { id: "today" as const, label: "Today", Icon: Sun },
-              { id: "history" as const, label: "History", Icon: CalendarDays },
+              { id: "calendar" as const, label: "Calendar", Icon: CalendarDays },
               { id: "trades" as const, label: "Trades", Icon: BarChart2 },
             ] as const
           ).map(({ id: tid, label, Icon }) => (
@@ -2106,8 +2106,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               syncing={syncing}
               isMock={isMock}
             />
-          ) : tab === "history" ? (
-            <HistoryTab key="history" allTrades={allTrades} isMock={isMock} />
+          ) : tab === "calendar" ? (
+            <CalendarTab key="calendar" allTrades={allTrades} isMock={isMock} />
           ) : (
             <TradesTab
               key="trades"

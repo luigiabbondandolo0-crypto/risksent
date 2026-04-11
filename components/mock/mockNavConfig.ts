@@ -35,7 +35,7 @@ export const mockPrimaryNavItems: readonly MockNavItem[] = [
     icon: TrendingUp,
     children: [
       { href: "/mock/journaling", label: "Today", icon: Sun },
-      { href: "/mock/journaling?tab=history", label: "History", icon: CalendarDays },
+      { href: "/mock/journaling?tab=calendar", label: "Calendar", icon: CalendarDays },
       { href: "/mock/journaling?tab=trades", label: "Trades", icon: BarChart2 },
     ],
   },

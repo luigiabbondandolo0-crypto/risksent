@@ -32,7 +32,7 @@ export const primaryNavItems: readonly NavItem[] = [
     icon: BookOpen,
     children: [
       { href: "/app/journaling", label: "Today", icon: Sun },
-      { href: "/app/journaling?tab=history", label: "History", icon: CalendarDays },
+      { href: "/app/journaling?tab=calendar", label: "Calendar", icon: CalendarDays },
       { href: "/app/journaling?tab=trades", label: "Trades", icon: BarChart2 },
     ],
   },
@@ -100,11 +100,12 @@ export function journalListNormalizedPath(pathname: string | null): string | nul
   return null;
 }
 
-export function journalSubTabFromHref(href: string): "today" | "history" | "trades" {
+export function journalSubTabFromHref(href: string): "today" | "calendar" | "trades" {
   try {
     const u = new URL(href, "https://risksent.local");
     const t = u.searchParams.get("tab");
-    if (t === "history" || t === "trades") return t;
+    if (t === "trades") return "trades";
+    if (t === "calendar" || t === "history") return "calendar";
     return "today";
   } catch {
     return "today";
@@ -135,6 +136,11 @@ export function isJournalChildNavActive(
   if (childPath !== listNorm) return false;
   const expected = journalSubTabFromHref(childHref);
   const raw = searchParams.get("tab");
-  const cur = raw === "history" || raw === "trades" ? raw : "today";
+  const cur =
+    raw === "trades"
+      ? "trades"
+      : raw === "calendar" || raw === "history"
+        ? "calendar"
+        : "today";
   return cur === expected;
 }
