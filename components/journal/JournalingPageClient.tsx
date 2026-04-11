@@ -347,7 +347,7 @@ function TodayTab({
   const progressColor =
     checklistPct >= 100
       ? "#00e676"
-      : checklistPct > 60
+      : checklistPct >= 60
         ? "#ff8c00"
         : "#ff3c3c";
 
