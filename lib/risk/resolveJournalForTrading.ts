@@ -6,6 +6,7 @@ export type JournalAccountBrief = {
   nickname: string;
   broker_server: string | null;
   account_number: string;
+  currency: string;
 };
 
 /**
@@ -21,7 +22,7 @@ export async function resolveJournalAccountForTradingRow(
 
   const { data } = await supabase
     .from("journal_account")
-    .select("id, nickname, broker_server, account_number")
+    .select("id, nickname, broker_server, account_number, currency")
     .eq("user_id", userId)
     .eq("account_number", num)
     .maybeSingle();
@@ -33,5 +34,6 @@ export async function resolveJournalAccountForTradingRow(
     nickname: String(data.nickname ?? "Account"),
     broker_server: data.broker_server != null ? String(data.broker_server) : null,
     account_number: String(data.account_number ?? num),
+    currency: String(data.currency ?? "USD"),
   };
 }

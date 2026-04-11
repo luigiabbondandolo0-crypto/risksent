@@ -6,9 +6,47 @@ import {
   formatValueForTelegram,
   notifyFlagForRule
 } from "./violationEngine";
-import { formatViolationTelegramMessage, ruleTypeToLabel, sendTelegramRiskMessage } from "./telegramRisk";
+import { ruleTypeToLabel, sendSmartTelegramAlert } from "./telegramRisk";
 
 const DEDUPE_MINUTES = 30;
+
+export type TelegramAlertContext = {
+  todayTrades: number;
+  todayPl: number;
+  currency: string;
+};
+
+async function loadTelegramAlertContext(
+  supabase: SupabaseClient,
+  userId: string,
+  journalAccountId: string
+): Promise<TelegramAlertContext> {
+  const dayStart = new Date();
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const iso = dayStart.toISOString();
+
+  const [accRes, tradesRes] = await Promise.all([
+    supabase
+      .from("journal_account")
+      .select("currency")
+      .eq("id", journalAccountId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase
+      .from("journal_trade")
+      .select("pl")
+      .eq("user_id", userId)
+      .eq("account_id", journalAccountId)
+      .eq("status", "closed")
+      .gte("close_time", iso)
+  ]);
+
+  const currency = String(accRes.data?.currency ?? "USD");
+  const rows = tradesRes.data ?? [];
+  const todayTrades = rows.length;
+  const todayPl = rows.reduce((s, r) => s + Number(r.pl ?? 0), 0);
+  return { todayTrades, todayPl, currency };
+}
 
 async function shouldSkipDedupe(
   supabase: SupabaseClient,
@@ -45,15 +83,36 @@ export async function persistRiskViolations(params: {
   journalAccountId: string | null;
   accountNickname: string;
   brokerServer: string | null;
+  /** Optional; when omitted and journalAccountId is set, loaded from journal + today's trades */
+  telegramAlertContext?: TelegramAlertContext;
 }): Promise<{ inserted: number; candidates: RiskViolationCandidate[] }> {
-  const { userId, supabase, rules, live, journalAccountId, accountNickname, brokerServer } = params;
+  const {
+    userId,
+    supabase,
+    rules,
+    live,
+    journalAccountId,
+    accountNickname,
+    brokerServer,
+    telegramAlertContext: contextOverride
+  } = params;
   const candidates = buildViolationCandidates(rules, live);
   if (candidates.length === 0) {
     return { inserted: 0, candidates: [] };
   }
 
   const notif = await loadNotificationsDefaults(supabase, userId);
-  const timeUtc = new Date().toISOString().slice(11, 16) + " UTC";
+
+  let enrich: TelegramAlertContext = {
+    todayTrades: 0,
+    todayPl: 0,
+    currency: "USD"
+  };
+  if (contextOverride) {
+    enrich = contextOverride;
+  } else if (journalAccountId) {
+    enrich = await loadTelegramAlertContext(supabase, userId, journalAccountId);
+  }
 
   let inserted = 0;
   for (const c of candidates) {
@@ -66,15 +125,19 @@ export async function persistRiskViolations(params: {
       notif.telegram_chat_id &&
       notifyFlagForRule(c.rule_type, notif)
     ) {
-      const text = formatViolationTelegramMessage({
+      const send = await sendSmartTelegramAlert({
+        chatId: notif.telegram_chat_id,
+        ruleType: c.rule_type,
         ruleLabel: ruleTypeToLabel(c.rule_type),
         current: formatValueForTelegram(c.rule_type, c.value_at_violation),
         limit: formatLimitForTelegram(c.rule_type, c.limit_value),
         accountNickname,
-        brokerServer,
-        timeUtc
+        brokerServer: brokerServer?.trim() ?? "",
+        currency: enrich.currency,
+        todayTrades: enrich.todayTrades,
+        todayPl: enrich.todayPl,
+        consecutiveLosses: live.consecutiveLossesAtEnd
       });
-      const send = await sendTelegramRiskMessage(notif.telegram_chat_id, text);
       notified = send.ok;
     }
 
@@ -103,6 +166,7 @@ export async function runDashboardRiskViolationSideEffect(params: {
   journalAccountId: string | null;
   accountNickname: string;
   brokerServer: string | null;
+  telegramAlertContext?: TelegramAlertContext;
 }): Promise<void> {
   try {
     await persistRiskViolations(params);

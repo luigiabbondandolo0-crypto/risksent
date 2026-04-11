@@ -5,7 +5,10 @@ import {
   resolveTradingAccountForUser,
   tradingAccountLabel
 } from "@/lib/risk/resolveTradingAccount";
-import { persistRiskViolations } from "@/lib/risk/persistViolations";
+import {
+  persistRiskViolations,
+  type TelegramAlertContext
+} from "@/lib/risk/persistViolations";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
   if (accountIdBody) {
     const { data: j } = await supabase
       .from("journal_account")
-      .select("id, nickname, broker_server, account_number")
+      .select("id, nickname, broker_server, account_number, currency")
       .eq("id", accountIdBody)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -63,6 +66,7 @@ export async function POST(request: Request) {
           nickname: String(j.nickname ?? "Account"),
           broker_server: j.broker_server != null ? String(j.broker_server) : null,
           account_number: String(j.account_number),
+          currency: String(j.currency ?? "USD")
         };
       }
     }
@@ -97,6 +101,25 @@ export async function POST(request: Request) {
     consecutiveLossesAtEnd: snap.consecutiveLossesAtEnd
   };
 
+  let telegramAlertContext: TelegramAlertContext | undefined;
+  if (journalCtx?.id) {
+    const dayStart = new Date();
+    dayStart.setUTCHours(0, 0, 0, 0);
+    const { data: todayRows } = await supabase
+      .from("journal_trade")
+      .select("pl")
+      .eq("user_id", user.id)
+      .eq("account_id", journalCtx.id)
+      .eq("status", "closed")
+      .gte("close_time", dayStart.toISOString());
+    const list = todayRows ?? [];
+    telegramAlertContext = {
+      todayTrades: list.length,
+      todayPl: list.reduce((s, r) => s + Number(r.pl ?? 0), 0),
+      currency: journalCtx.currency
+    };
+  }
+
   const { candidates } = await persistRiskViolations({
     userId: user.id,
     supabase,
@@ -104,7 +127,8 @@ export async function POST(request: Request) {
     live,
     journalAccountId: journalCtx?.id ?? null,
     accountNickname: journalCtx?.nickname ?? tradingAccountLabel(snap.account),
-    brokerServer: journalCtx?.broker_server ?? null
+    brokerServer: journalCtx?.broker_server ?? null,
+    telegramAlertContext
   });
 
   const violations = candidates.map((v) => ({
