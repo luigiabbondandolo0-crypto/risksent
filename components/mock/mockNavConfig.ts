@@ -5,8 +5,6 @@ import {
   ShieldAlert,
   FlaskConical,
   Sparkles,
-  Sun,
-  CalendarDays,
   BarChart2,
 } from "lucide-react";
 
@@ -29,16 +27,7 @@ export type MockNavItem = {
 export const mockPrimaryNavItems: readonly MockNavItem[] = [
   { href: "/mock/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/mock/backtesting", label: "Backtesting", icon: FlaskConical },
-  {
-    href: "/mock/journaling",
-    label: "Journal",
-    icon: TrendingUp,
-    children: [
-      { href: "/mock/journaling", label: "Today", icon: Sun },
-      { href: "/mock/journaling?tab=calendar", label: "Calendar", icon: CalendarDays },
-      { href: "/mock/journaling?tab=trades", label: "Trades", icon: BarChart2 },
-    ],
-  },
+  { href: "/mock/journaling", label: "Journal", icon: TrendingUp },
   { href: "/mock/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/mock/ai-coach", label: "AI Coach", icon: Sparkles },
 ];
