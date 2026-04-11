@@ -72,11 +72,18 @@ export function TelegramSetup({
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-white/[0.06] bg-black/25 p-4">
-        <p className="text-sm leading-relaxed text-slate-300">
-          Open Telegram → search <span className="font-[family-name:var(--font-mono)] text-cyan-300">@RiskSentBot</span>{" "}
-          → send <span className="font-[family-name:var(--font-mono)] text-slate-200">/start</span> → paste your Chat ID
-          below.
-        </p>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+          <li>Open Telegram</li>
+          <li>
+            Search for{" "}
+            <span className="font-[family-name:var(--font-mono)] text-cyan-300">@RiskSentConnectBot</span>
+          </li>
+          <li>
+            Press <span className="font-[family-name:var(--font-mono)] text-slate-200">Start</span>
+          </li>
+          <li>Copy the Chat ID it sends you</li>
+          <li>Paste it below</li>
+        </ol>
       </div>
 
       <div>
