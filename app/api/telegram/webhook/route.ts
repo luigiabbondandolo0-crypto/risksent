@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
       if (!token) return NextResponse.json({ ok: true });
 
       const replyText =
-        `👋 Ciao <b>${firstName}</b>!\n\n` +
-        `Il tuo <b>Chat ID</b> è:\n\n` +
+        `👋 Hey <b>${firstName}</b>!\n\n` +
+        `Your <b>Chat ID</b> is:\n\n` +
         `<code>${chatId}</code>\n\n` +
-        `📋 Copialo e incollalo nella sezione <b>Telegram Alerts</b> su RiskSent.\n\n` +
-        `Una volta salvato riceverai notifiche in tempo reale quando una regola di rischio viene violata.`;
+        `📋 Copy it and paste it in the <b>Telegram Alerts</b> section on RiskSent.\n\n` +
+        `Once saved, you'll receive real-time notifications whenever a risk rule is violated.`;
 
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
