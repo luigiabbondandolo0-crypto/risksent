@@ -28,17 +28,35 @@ export function formatViolationTelegramMessage(params: {
   ruleLabel: string;
   current: string;
   limit: string;
-  account: string;
+  /** Display name e.g. journal nickname */
+  accountNickname: string;
+  brokerServer: string | null;
   timeUtc: string;
 }): string {
-  const { ruleLabel, current, limit, account, timeUtc } = params;
+  const { ruleLabel, current, limit, accountNickname, brokerServer, timeUtc } = params;
+  const serverLine = brokerServer?.trim()
+    ? `🔢 Server: <code>${escapeHtml(brokerServer.trim())}</code>\n`
+    : "";
   return (
     `🚨 <b>RiskSent Alert</b>\n` +
-    `Rule violated: ${ruleLabel}\n` +
-    `Current: ${current} | Limit: ${limit}\n` +
-    `Account: ${account}\n` +
-    `Time: ${timeUtc}`
+    `━━━━━━━━━━━━━━━\n` +
+    `📊 Account: <b>${escapeHtml(accountNickname)}</b>\n` +
+    serverLine +
+    `\n` +
+    `⚠️ Rule violated: ${escapeHtml(ruleLabel)}\n` +
+    `📉 Current: ${escapeHtml(current)} | Limit: ${escapeHtml(limit)}\n` +
+    `\n` +
+    `🕐 Time: ${escapeHtml(timeUtc)} UTC\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `Open RiskSent to review → risksent.com/app/risk-manager`
   );
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 export function ruleTypeToLabel(ruleType: string): string {

@@ -8,6 +8,8 @@ import {
   parseOpenPositions
 } from "@/lib/risk/dashboardMetrics";
 import { runDashboardRiskViolationSideEffect } from "@/lib/risk/persistViolations";
+import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
+import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
 import {
   getAccountSummary,
@@ -126,18 +128,12 @@ export async function GET(req: NextRequest) {
     const equityPct =
       initialBalance > 0 ? ((equity - initialBalance) / initialBalance) * 100 : null;
 
-    const { data: appUser } = await supabase
-      .from("app_user")
-      .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const rules: RiskRulesDTO = {
-      daily_loss_pct: Number(appUser?.daily_loss_pct) ?? 5,
-      max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
-      max_exposure_pct: Number(appUser?.max_exposure_pct) ?? 6,
-      revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 3
-    };
+    const journalCtx = await resolveJournalAccountForTradingRow(supabase, user.id, account);
+    const rules: RiskRulesDTO = await loadMergedRiskRules(
+      supabase,
+      user.id,
+      journalCtx?.id ?? null
+    );
 
     void runDashboardRiskViolationSideEffect({
       userId: user.id,
@@ -149,7 +145,9 @@ export async function GET(req: NextRequest) {
         maxOpenRiskPct,
         consecutiveLossesAtEnd
       },
-      accountLabel: accountLabelFromRow(account)
+      journalAccountId: journalCtx?.id ?? null,
+      accountNickname: journalCtx?.nickname ?? accountLabelFromRow(account),
+      brokerServer: journalCtx?.broker_server ?? null
     });
 
     return NextResponse.json({

@@ -10,6 +10,8 @@ export type ViolationItem = {
   limit_value: number;
   message: string;
   created_at: string;
+  account_nickname?: string | null;
+  broker_server?: string | null;
 };
 
 function badge(ruleType: string): string {
@@ -75,6 +77,11 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
+              {v.account_nickname ? (
+                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-cyan-200/95">
+                  {v.account_nickname}
+                </span>
+              ) : null}
               <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-300">
                 {badge(v.rule_type)}
               </span>

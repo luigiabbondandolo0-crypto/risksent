@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Bell, Sparkles } from "lucide-react";
 import type { MockNavItem } from "@/components/mock/mockNavConfig";
 import {
   mockPrimaryNavItems,
@@ -111,6 +111,34 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           >
             ← Torna al sito reale
           </Link>
+        </div>
+      </div>
+
+      <div
+        className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4 backdrop-blur-[20px] sm:px-6"
+        style={{ background: "rgba(8,8,9,0.85)" }}
+      >
+        <Link href="/mock/dashboard" className="flex items-center gap-2">
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
+            style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+          >
+            RS
+          </span>
+          <span className="text-sm font-bold text-slate-100 font-[family-name:var(--font-display)]">
+            RiskSent
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-slate-500">
+            <Bell className="h-4 w-4" />
+          </span>
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold text-white"
+            style={{ background: "linear-gradient(135deg, #ff3c3c, #cc1111)" }}
+          >
+            DM
+          </span>
         </div>
       </div>
 

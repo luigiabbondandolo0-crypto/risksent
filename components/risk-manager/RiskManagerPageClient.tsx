@@ -162,7 +162,8 @@ export function RiskManagerPageClient({
           value_at_violation: 5.2,
           limit_value: 6,
           message: "Open exposure approaching limit: 5.20% (limit 6%).",
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          account_nickname: "IC Markets Demo"
         },
         {
           id: "m2",
@@ -198,24 +199,10 @@ export function RiskManagerPageClient({
     (async () => {
       setLoading(true);
       try {
-        const [rRes, nRes, vRes] = await Promise.all([
-          authFetch("/api/risk/rules"),
+        const [nRes, vRes] = await Promise.all([
           authFetch("/api/risk/notifications"),
           authFetch("/api/risk/violations?limit=30")
         ]);
-        if (rRes.ok) {
-          const r = (await rRes.json()) as Rules;
-          if (!cancelled) {
-            setRules(r);
-            setSavedRules(r);
-            setDraft({
-              daily_loss_pct: String(r.daily_loss_pct),
-              max_risk_per_trade_pct: String(r.max_risk_per_trade_pct),
-              max_exposure_pct: String(r.max_exposure_pct),
-              revenge_threshold_trades: String(r.revenge_threshold_trades)
-            });
-          }
-        }
         if (nRes.ok) {
           const n = (await nRes.json()) as TelegramSettings;
           if (!cancelled) {
@@ -242,6 +229,47 @@ export function RiskManagerPageClient({
       cancelled = true;
     };
   }, [isMock]);
+
+  useEffect(() => {
+    if (isMock) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (selectedGlobalId === "all") {
+          const rRes = await authFetch("/api/risk/rules");
+          if (!rRes.ok || cancelled) return;
+          const r = (await rRes.json()) as Rules;
+          setRules(r);
+          setSavedRules(r);
+          setDraft({
+            daily_loss_pct: String(r.daily_loss_pct),
+            max_risk_per_trade_pct: String(r.max_risk_per_trade_pct),
+            max_exposure_pct: String(r.max_exposure_pct),
+            revenge_threshold_trades: String(r.revenge_threshold_trades)
+          });
+          return;
+        }
+        const rRes = await authFetch(
+          `/api/risk/account-rules?account_id=${encodeURIComponent(selectedGlobalId)}`
+        );
+        if (!rRes.ok || cancelled) return;
+        const r = (await rRes.json()) as Rules;
+        setRules(r);
+        setSavedRules(r);
+        setDraft({
+          daily_loss_pct: String(r.daily_loss_pct),
+          max_risk_per_trade_pct: String(r.max_risk_per_trade_pct),
+          max_exposure_pct: String(r.max_exposure_pct),
+          revenge_threshold_trades: String(r.revenge_threshold_trades)
+        });
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMock, selectedGlobalId]);
 
   useEffect(() => {
     if (isMock) return;
@@ -393,11 +421,18 @@ export function RiskManagerPageClient({
         parseNum(draft.revenge_threshold_trades, rules.revenge_threshold_trades)
       )
     };
-    const res = await authFetch("/api/risk/rules", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    const res =
+      selectedGlobalId === "all"
+        ? await authFetch("/api/risk/rules", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          })
+        : await authFetch("/api/risk/account-rules", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ account_id: selectedGlobalId, ...body })
+          });
     if (!res.ok) {
       showToast("Could not save rules", false);
       return;
@@ -467,6 +502,15 @@ export function RiskManagerPageClient({
   const revRatio = revengeRatio(live.consecutiveLossesAtEnd, ruleNums.revenge_threshold_trades);
 
   const cardStatus = (r: number): RiskGaugeStatus => gaugeStatusFromRatio(r);
+
+  const rulesScopeLabel = useMemo(() => {
+    if (isMock) return "";
+    if (selectedGlobalId === "all") {
+      return "Editing defaults for all accounts (per-account overrides use the dropdown).";
+    }
+    const a = journalAccounts.find((x) => x.id === selectedGlobalId);
+    return a ? `Rules for: ${a.nickname}` : "Rules for selected account";
+  }, [isMock, selectedGlobalId, journalAccounts]);
 
   const dailyDisplay =
     live.dailyDdPct != null ? `${live.dailyDdPct >= 0 ? "+" : ""}${live.dailyDdPct.toFixed(2)}%` : "—";
@@ -554,7 +598,14 @@ export function RiskManagerPageClient({
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)" }}
       >
         <div className="relative z-10">
-          <p className="rs-kpi-label mb-4">Your rules</p>
+          <p className="rs-kpi-label mb-1">Your rules</p>
+          {!isMock && rulesScopeLabel ? (
+            <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-cyan-300/90">
+              {rulesScopeLabel}
+            </p>
+          ) : (
+            <div className="mb-4" />
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <RuleCard
               icon={TrendingDown}

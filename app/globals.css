@@ -262,3 +262,16 @@ aside.lg\:flex {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+@keyframes rs-candle-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.rs-candle-scroll {
+  animation: rs-candle-scroll 32s linear infinite;
+}

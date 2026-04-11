@@ -11,6 +11,7 @@ export type DashboardAlertItem = {
   solution: string | null;
   alert_date: string;
   read?: boolean | null;
+  account_nickname?: string | null;
 };
 
 type Props = {
@@ -132,7 +133,16 @@ export function DashboardAlertsSection({
 
                   <div className="pl-3">
                     {/* Badge row */}
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {a.account_nickname ? (
+                        <span className="rounded-full border border-white/[0.1] bg-white/[0.06] px-2 py-0.5 text-[10px] font-mono font-medium text-slate-200">
+                          {a.account_nickname}
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-mono text-slate-500">
+                          All accounts
+                        </span>
+                      )}
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wide ring-1 ${s.badge}`}
                       >
@@ -143,7 +153,7 @@ export function DashboardAlertsSection({
                         {isHigh ? "High" : "Watch"}
                       </span>
                       <time
-                        className="text-[10px] font-mono text-slate-500"
+                        className="ml-auto text-[10px] font-mono text-slate-500"
                         dateTime={a.alert_date}
                       >
                         {new Date(a.alert_date).toLocaleString(undefined, {

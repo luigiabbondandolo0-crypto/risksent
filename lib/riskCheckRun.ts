@@ -6,6 +6,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRiskFindings, type OpenPositionForRisk, type RiskFinding, type RiskRules, type StatsForRisk } from "./riskCheck";
 import { sendAlertToTelegram } from "./telegramAlert";
+import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
+import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import {
   getAccountSummary,
   getClosedOrders,
@@ -243,17 +245,14 @@ export async function runRiskCheckForAccount(params: {
     };
   }
 
-  const { data: appUser } = await supabase
-    .from("app_user")
-    .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
-    .eq("id", userId)
-    .single();
+  const journalCtx = await resolveJournalAccountForTradingRow(supabase, userId, accountRow);
+  const merged = await loadMergedRiskRules(supabase, userId, journalCtx?.id ?? null);
 
   const rules: RiskRules = {
-    daily_loss_pct: Number(appUser?.daily_loss_pct) ?? 5,
-    max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
-    max_exposure_pct: Number(appUser?.max_exposure_pct) ?? 6,
-    revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 3
+    daily_loss_pct: merged.daily_loss_pct,
+    max_risk_per_trade_pct: merged.max_risk_per_trade_pct,
+    max_exposure_pct: merged.max_exposure_pct,
+    revenge_threshold_trades: merged.revenge_threshold_trades
   };
 
   const stats = buildStatsForRisk(balance, orders);
@@ -271,13 +270,15 @@ export async function runRiskCheckForAccount(params: {
   const dedupeSince = new Date(Date.now() - DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
 
   for (const f of findings) {
-    const { data: recent } = await supabase
+    let recentQ = supabase
       .from("alert")
       .select("id")
       .eq("user_id", userId)
       .eq("rule_type", f.type)
       .gte("alert_date", dedupeSince)
       .limit(1);
+    recentQ = journalCtx?.id ? recentQ.eq("account_id", journalCtx.id) : recentQ.is("account_id", null);
+    const { data: recent } = await recentQ;
     if (recent && recent.length > 0) continue;
 
     const { data: alertRow } = await supabase
@@ -287,7 +288,9 @@ export async function runRiskCheckForAccount(params: {
         message: f.message,
         severity: f.severity,
         solution: f.advice,
-        rule_type: f.type
+        rule_type: f.type,
+        account_id: journalCtx?.id ?? null,
+        account_nickname: journalCtx?.nickname ?? null
       })
       .select("id")
       .single();
@@ -454,17 +457,14 @@ export async function runRiskCheckDryRun(params: {
     };
   }
 
-  const { data: appUser } = await supabase
-    .from("app_user")
-    .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
-    .eq("id", userId)
-    .single();
+  const journalCtxDry = await resolveJournalAccountForTradingRow(supabase, userId, accountRow);
+  const mergedDry = await loadMergedRiskRules(supabase, userId, journalCtxDry?.id ?? null);
 
   const rules: RiskRules = {
-    daily_loss_pct: Number(appUser?.daily_loss_pct) ?? 5,
-    max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
-    max_exposure_pct: Number(appUser?.max_exposure_pct) ?? 6,
-    revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 3
+    daily_loss_pct: mergedDry.daily_loss_pct,
+    max_risk_per_trade_pct: mergedDry.max_risk_per_trade_pct,
+    max_exposure_pct: mergedDry.max_exposure_pct,
+    revenge_threshold_trades: mergedDry.revenge_threshold_trades
   };
 
   const stats = buildStatsForRisk(balance, orders);

@@ -11,6 +11,7 @@ type AlertRow = {
   alert_date: string;
   read: boolean | null;
   rule_type?: string | null;
+  account_nickname?: string | null;
 };
 
 type AlertsOverviewProps = {
