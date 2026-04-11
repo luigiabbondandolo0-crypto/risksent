@@ -1053,7 +1053,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
             }))}
             selectedId={selectedAccountId}
             onChange={(id) => selectAccount(id)}
-            onAddAccount={() => setAddAccountOpen(true)}
+            onAddAccount={isMock ? undefined : () => setAddAccountOpen(true)}
             isMock={isMock}
           />
         </div>

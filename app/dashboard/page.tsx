@@ -20,7 +20,7 @@ import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
 import { NoAccountState } from "@/components/shared/NoAccountState";
-import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
@@ -186,6 +186,38 @@ export default function DashboardPage() {
       return;
     }
     setStats(data);
+  }, []);
+
+  const reloadAccountData = useCallback(async () => {
+    try {
+      const [jRes, tRes] = await Promise.all([
+        fetch("/api/journal/accounts"),
+        fetch("/api/accounts"),
+      ]);
+      if (jRes.ok) {
+        const data = await jRes.json();
+        setJournalAccounts((data.accounts ?? []) as JournalAccountPublic[]);
+      }
+      if (tRes.ok) {
+        const data = await tRes.json();
+        const list = (data.accounts ?? []) as {
+          account_number?: string;
+          metaapi_account_id?: string | null;
+        }[];
+        setTradingAccounts(
+          list.map((a) => ({
+            account_number: String(a.account_number ?? ""),
+            metaapi_account_id: a.metaapi_account_id ?? null,
+          }))
+        );
+        setAccountsResolved(true);
+      } else {
+        setTradingAccounts([]);
+        setAccountsResolved(true);
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -383,7 +415,14 @@ export default function DashboardPage() {
           ctaLabel="Connect your first account"
           onCta={() => setAddAccountOpen(true)}
         />
-        <AddAccountModal open={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
+        <AddAccountModal
+          open={addAccountOpen}
+          onClose={() => setAddAccountOpen(false)}
+          onCreated={() => {
+            setAddAccountOpen(false);
+            void reloadAccountData();
+          }}
+        />
       </div>
     );
   }
@@ -766,6 +805,15 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      <AddAccountModal
+        open={addAccountOpen}
+        onClose={() => setAddAccountOpen(false)}
+        onCreated={() => {
+          setAddAccountOpen(false);
+          void reloadAccountData();
+        }}
+      />
     </div>
   );
 }

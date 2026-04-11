@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Plus } from "lucide-react";
@@ -35,6 +36,31 @@ function persist(id: string | "all") {
   }
 }
 
+function AddAccountToolbarButton({ onClick }: { onClick: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      title="Add account"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-slate-400 transition-all hover:border-white/[0.15] hover:bg-white/[0.05] hover:text-white"
+    >
+      <Plus className="h-3.5 w-3.5" />
+    </motion.button>
+  );
+}
+
+function withAddToolbar(inner: ReactNode, onAddAccount?: () => void) {
+  if (!onAddAccount) return inner;
+  return (
+    <div className="flex items-center gap-2">
+      {inner}
+      <AddAccountToolbarButton onClick={onAddAccount} />
+    </div>
+  );
+}
+
 export function GlobalAccountSelector({
   accounts,
   selectedId,
@@ -54,13 +80,14 @@ export function GlobalAccountSelector({
   }, []);
 
   if (isMock) {
-    return (
+    return withAddToolbar(
       <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2">
         <span className={`h-2 w-2 shrink-0 rounded-full ${statusDotClass("active")}`} />
         <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-100">
           Demo Account (IC Markets)
         </span>
-      </div>
+      </div>,
+      onAddAccount
     );
   }
 
@@ -76,13 +103,14 @@ export function GlobalAccountSelector({
 
   if (accounts.length === 1) {
     const a = accounts[0];
-    return (
+    return withAddToolbar(
       <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2">
         <span className={`h-2 w-2 shrink-0 rounded-full ${statusDotClass(a.status)}`} />
         <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-100">
           {a.nickname}
         </span>
-      </div>
+      </div>,
+      onAddAccount
     );
   }
 
@@ -94,7 +122,7 @@ export function GlobalAccountSelector({
   const label =
     selectedId === "all" || !selected ? "All accounts" : selected.nickname;
 
-  return (
+  return withAddToolbar(
     <div ref={rootRef} className="relative z-40">
       <button
         type="button"
@@ -156,25 +184,10 @@ export function GlobalAccountSelector({
                 </div>
               </button>
             ))}
-            {onAddAccount && (
-              <>
-                <div className="mx-2 my-1 h-px bg-white/[0.06]" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    onAddAccount();
-                  }}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-[family-name:var(--font-mono)] text-cyan-300 transition-colors hover:bg-white/[0.05]"
-                >
-                  <Plus className="h-4 w-4" />
-                  + Add account
-                </button>
-              </>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div>,
+    onAddAccount
   );
 }

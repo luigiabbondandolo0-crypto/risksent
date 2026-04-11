@@ -16,7 +16,7 @@ import { TelegramSetup, type TelegramSettings } from "./TelegramSetup";
 import { ViolationTimeline, type ViolationItem } from "./ViolationTimeline";
 import { authFetch } from "@/lib/api/authFetch";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
-import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 import type { RiskGaugeStatus } from "@/lib/risk/riskTypes";
@@ -278,6 +278,33 @@ export function RiskManagerPageClient({
     return () => {
       cancelled = true;
     };
+  }, [isMock]);
+
+  const reloadJournalAndTrading = useCallback(async () => {
+    if (isMock) return;
+    try {
+      const [jRes, tRes] = await Promise.all([
+        fetch("/api/journal/accounts"),
+        authFetch("/api/accounts"),
+      ]);
+      const jData = jRes.ok ? await jRes.json().catch(() => ({})) : {};
+      const journals = (jData.accounts ?? []) as JournalAccountPublic[];
+      let tradings: { account_number: string; metaapi_account_id: string | null }[] = [];
+      if (tRes.ok) {
+        const tData = (await tRes.json()) as {
+          accounts?: { account_number?: string; metaapi_account_id?: string | null }[];
+        };
+        tradings = (tData.accounts ?? []).map((a) => ({
+          account_number: String(a.account_number ?? ""),
+          metaapi_account_id: a.metaapi_account_id ?? null,
+        }));
+      }
+      setJournalAccounts(journals);
+      setTradingAccounts(tradings);
+    } catch {
+      setJournalAccounts([]);
+      setTradingAccounts([]);
+    }
   }, [isMock]);
 
   useEffect(() => {
@@ -665,7 +692,14 @@ export function RiskManagerPageClient({
       </motion.section>
 
       {!isMock && (
-        <AddAccountModal open={addAccountOpen} onClose={() => setAddAccountOpen(false)} />
+        <AddAccountModal
+          open={addAccountOpen}
+          onClose={() => setAddAccountOpen(false)}
+          onCreated={() => {
+            setAddAccountOpen(false);
+            void reloadJournalAndTrading();
+          }}
+        />
       )}
     </div>
   );
