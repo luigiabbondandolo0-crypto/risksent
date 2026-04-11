@@ -535,28 +535,28 @@ export function TradeReviewModal({
                       : "Drop screenshots or click to upload"}
                   </div>
                   {(review.images ?? []).length > 0 && (
-                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                    <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {(review.images ?? [])
                         .slice(0, JOURNAL_IMAGE_MAX)
                         .map((url) => (
                           <div
                             key={url}
-                            className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                            className="group relative flex min-h-[180px] items-center justify-center overflow-hidden rounded-xl border-2 border-white/25 bg-[#12121a] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)] ring-1 ring-cyan-400/20"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={url}
                               alt=""
-                              className="h-full w-full object-cover"
+                              className="max-h-[min(45vh,320px)] w-full object-contain"
                             />
                             {!isMock && (
                               <button
                                 type="button"
                                 onClick={() => removeReviewImage(url)}
-                                className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/80 text-white shadow-md transition hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100"
                                 aria-label="Remove image"
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-4 w-4" />
                               </button>
                             )}
                           </div>

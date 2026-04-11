@@ -826,19 +826,19 @@ function TodayTab({
                 : "Drop screenshots here or click to upload"}
             </div>
             {(session.images ?? []).length > 0 && (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {(session.images ?? [])
                   .slice(0, JOURNAL_IMAGE_MAX)
                   .map((url) => (
                   <div
                     key={url}
-                    className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                    className="group relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-xl border-2 border-white/25 bg-[#12121a] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)] ring-1 ring-cyan-400/20"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={url}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="max-h-[min(52vh,360px)] w-full object-contain"
                     />
                     {!isMock && (
                       <button
@@ -847,10 +847,10 @@ function TodayTab({
                           e.stopPropagation();
                           removeImage(url);
                         }}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/80 text-white shadow-md transition hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100"
                         aria-label="Remove image"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>

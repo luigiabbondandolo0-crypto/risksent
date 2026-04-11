@@ -431,26 +431,26 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                 : "Drop screenshots here or click to upload"}
             </div>
             {(review.images ?? []).length > 0 && (
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {(review.images ?? []).slice(0, JOURNAL_IMAGE_MAX).map((url) => (
                   <div
                     key={url}
-                    className="group relative aspect-video overflow-hidden rounded-lg border border-white/[0.08] bg-black/40"
+                    className="group relative flex min-h-[200px] items-center justify-center overflow-hidden rounded-xl border-2 border-white/25 bg-[#12121a] p-2 shadow-[0_12px_40px_rgba(0,0,0,0.65)] ring-1 ring-cyan-400/20"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={url}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="max-h-[min(52vh,380px)] w-full object-contain"
                     />
                     {!isSeed && (
                       <button
                         type="button"
                         onClick={() => removeReviewImage(url)}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/80 text-white shadow-md transition hover:bg-black/90 sm:opacity-0 sm:group-hover:opacity-100"
                         aria-label="Remove image"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>
