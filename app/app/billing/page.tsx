@@ -2,36 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  CreditCard,
-  ArrowRight,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
+import { CreditCard, Clock, AlertCircle, CheckCircle, ArrowRight, Zap } from "lucide-react";
+import Link from "next/link";
 import type { SubscriptionRow } from "@/app/api/stripe/subscription/route";
 
 const PLAN_LABELS: Record<string, string> = {
-  free: "Free",
+  user: "Demo",
+  trial: "Free Trial",
   new_trader: "New Trader",
   experienced: "Experienced",
 };
 
 const PLAN_PRICES: Record<string, number> = {
-  free: 0,
+  user: 0,
+  trial: 0,
   new_trader: 25,
   experienced: 39,
 };
 
 const PLAN_COLOR: Record<string, string> = {
-  free: "text-slate-400 bg-slate-500/15 border-slate-500/30",
+  user: "text-slate-400 bg-slate-500/15 border-slate-500/30",
+  trial: "text-amber-300 bg-amber-500/15 border-amber-500/30",
   new_trader: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
-  experienced: "text-amber-300 bg-amber-500/15 border-amber-500/30",
+  experienced: "text-[#ff3c3c] bg-[#ff3c3c]/10 border-[#ff3c3c]/30",
 };
 
 const STATUS_COLOR: Record<string, string> = {
   active: "text-emerald-300 bg-emerald-500/15",
-  trialing: "text-cyan-300 bg-cyan-500/15",
+  trialing: "text-amber-300 bg-amber-500/15",
   past_due: "text-orange-300 bg-orange-500/15",
   canceled: "text-red-300 bg-red-500/15",
   incomplete: "text-slate-300 bg-slate-500/15",
@@ -41,6 +39,7 @@ export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [trialLoading, setTrialLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,6 +66,21 @@ export default function BillingPage() {
     }
   };
 
+  const startTrial = async () => {
+    setTrialLoading(true);
+    try {
+      const res = await fetch("/api/stripe/start-trial", { method: "POST" });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        const d = (await res.json()) as { error?: string };
+        alert(d.error ?? "Could not start trial");
+      }
+    } finally {
+      setTrialLoading(false);
+    }
+  };
+
   const startCheckout = async (plan: string) => {
     setUpgradeLoading(plan);
     try {
@@ -86,8 +100,13 @@ export default function BillingPage() {
     }
   };
 
-  const plan = sub?.plan ?? "free";
-  const price = PLAN_PRICES[plan] ?? 0;
+  const plan = sub?.plan ?? "user";
+
+  // Trial days remaining
+  const trialDaysLeft =
+    sub?.current_period_end && (plan === "trial" || sub.status === "trialing")
+      ? Math.max(0, Math.ceil((new Date(sub.current_period_end).getTime() - Date.now()) / 86_400_000))
+      : null;
 
   if (loading) {
     return (
@@ -135,11 +154,13 @@ export default function BillingPage() {
               )}
             </div>
             <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-              €{price}
+              €{PLAN_PRICES[plan] ?? 0}
               <span className="text-base font-normal text-slate-500">/mo</span>
             </p>
           </div>
-          {plan !== "free" && sub?.stripe_customer_id && (
+
+          {/* Manage button for paid plans */}
+          {(plan === "new_trader" || plan === "experienced") && sub?.stripe_customer_id && (
             <button
               onClick={() => void openPortal()}
               disabled={portalLoading}
@@ -150,7 +171,22 @@ export default function BillingPage() {
           )}
         </div>
 
-        {sub?.current_period_end && (
+        {/* Trial countdown */}
+        {trialDaysLeft !== null && (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <Zap className="h-4 w-4 shrink-0 text-amber-400" />
+            <span>
+              Free trial active —{" "}
+              <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} remaining</strong>
+              {sub?.current_period_end && (
+                <> · Ends {new Date(sub.current_period_end).toLocaleDateString()}</>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* Renewal / cancellation notice */}
+        {sub?.current_period_end && plan !== "trial" && sub.status !== "trialing" && (
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
             <Clock className="h-4 w-4 shrink-0 text-slate-500" />
             {sub.cancel_at_period_end
@@ -167,8 +203,78 @@ export default function BillingPage() {
         )}
       </motion.div>
 
-      {/* Upgrade section (only on free or new_trader) */}
-      {plan !== "experienced" && (
+      {/* Demo — start trial CTA */}
+      {plan === "user" && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-6"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="h-5 w-5 text-amber-400" />
+            <p className="font-semibold text-amber-200">You&rsquo;re in demo mode</p>
+          </div>
+          <p className="text-sm text-slate-400 font-mono mb-4">
+            Start your 7-day free trial to access all features with your real trading data.
+            No credit card required.
+          </p>
+          <button
+            onClick={() => void startTrial()}
+            disabled={trialLoading}
+            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, #ff8c00, #ff3c3c)", boxShadow: "0 0 20px rgba(255,140,0,0.2)" }}
+          >
+            {trialLoading ? "Starting…" : "Start free trial"}
+            {!trialLoading && <ArrowRight className="h-4 w-4" />}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Trial — choose a plan */}
+      {(plan === "trial" || sub?.status === "trialing") && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6"
+        >
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-1">
+            Choose a plan before your trial ends
+          </h2>
+          <p className="font-mono text-xs text-slate-500 mb-4">
+            After your trial, pick the plan that fits you.
+          </p>
+          <div className="space-y-3">
+            <UpgradeCard
+              name="New Trader"
+              price={25}
+              features={["1 broker account", "2 backtesting sessions", "Full journal", "Basic alerts"]}
+              plan="new_trader"
+              onCheckout={startCheckout}
+              loading={upgradeLoading === "new_trader"}
+              highlight={false}
+            />
+            <UpgradeCard
+              name="Experienced"
+              price={39}
+              features={["Everything unlimited", "AI Coach", "Risk Manager", "Priority support"]}
+              plan="experienced"
+              onCheckout={startCheckout}
+              loading={upgradeLoading === "experienced"}
+              highlight
+            />
+          </div>
+          <p className="mt-3 text-center text-xs font-mono text-slate-600">
+            <Link href="/pricing" className="underline underline-offset-2 hover:text-slate-400 transition-colors">
+              Full plan comparison →
+            </Link>
+          </p>
+        </motion.div>
+      )}
+
+      {/* new_trader — upgrade to experienced */}
+      {plan === "new_trader" && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -176,62 +282,36 @@ export default function BillingPage() {
           className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6"
         >
           <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-4">
-            Upgrade your plan
+            Upgrade to Experienced
           </h2>
-          <div className="space-y-3">
-            {plan === "free" && (
-              <UpgradeCard
-                name="New Trader"
-                price={25}
-                features={[
-                  "Unlimited backtesting",
-                  "Full journal",
-                  "10 risk rules",
-                  "AI Coach (50 reports/mo)",
-                  "Telegram alerts",
-                ]}
-                plan="new_trader"
-                onCheckout={startCheckout}
-                loading={upgradeLoading === "new_trader"}
-                highlight={false}
-              />
-            )}
-            <UpgradeCard
-              name="Experienced"
-              price={39}
-              features={[
-                "Unlimited AI Coach",
-                "Priority support",
-                "Advanced analytics",
-                "Custom risk rules",
-                "API access",
-              ]}
-              plan="experienced"
-              onCheckout={startCheckout}
-              loading={upgradeLoading === "experienced"}
-              highlight
-            />
-          </div>
+          <UpgradeCard
+            name="Experienced"
+            price={39}
+            features={["Unlimited AI Coach", "Risk Manager", "Priority support", "Unlimited backtesting"]}
+            plan="experienced"
+            onCheckout={startCheckout}
+            loading={upgradeLoading === "experienced"}
+            highlight
+          />
         </motion.div>
       )}
 
-      {/* Features list for current plan */}
+      {/* experienced — you have everything */}
       {plan === "experienced" && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-6"
+          className="rounded-2xl border border-[#ff3c3c]/20 bg-[#ff3c3c]/[0.04] p-6"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle className="h-5 w-5 text-amber-400" />
-            <p className="font-semibold text-amber-200">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="h-5 w-5 text-[#ff3c3c]" />
+            <p className="font-semibold text-slate-200">
               You have the full RiskSent experience
             </p>
           </div>
           <p className="text-sm text-slate-400 font-mono">
-            Unlimited AI Coach, priority support, advanced analytics, API
-            access, and everything else.
+            Unlimited AI Coach, Risk Manager, priority support, advanced analytics, and everything else.
           </p>
         </motion.div>
       )}
@@ -278,15 +358,10 @@ function UpgradeCard({
               </span>
             )}
           </div>
-          <p className="mt-1 font-mono text-sm text-slate-400">
-            €{price}/month
-          </p>
+          <p className="mt-1 font-mono text-sm text-slate-400">€{price}/month</p>
           <ul className="mt-2 space-y-1">
             {features.map((f) => (
-              <li
-                key={f}
-                className="flex items-center gap-1.5 text-xs text-slate-400 font-mono"
-              >
+              <li key={f} className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
                 <CheckCircle className="h-3 w-3 shrink-0 text-emerald-400" />
                 {f}
               </li>
@@ -302,8 +377,8 @@ function UpgradeCard({
             boxShadow: highlight ? "0 0 20px rgba(255,60,60,0.2)" : "none",
           }}
         >
-          {loading ? "Loading…" : `Start ${name}`}
-          <ArrowRight className="h-4 w-4" />
+          {loading ? "Loading…" : `Upgrade to ${name}`}
+          {!loading && <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
     </div>

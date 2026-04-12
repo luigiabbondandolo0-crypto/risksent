@@ -47,6 +47,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Demo mode guard — plan 'user' cannot create real data
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan")
+    .eq("user_id", user.id)
+    .single();
+  if (!subRow || subRow.plan === "user") {
+    return NextResponse.json(
+      { error: "demo_mode", message: "Start your trial to use this feature" },
+      { status: 403 }
+    );
+  }
+
+  // new_trader limit: max 2 backtesting sessions
+  if (subRow.plan === "new_trader") {
+    const { count } = await supabase
+      .from("bt_session")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= 2) {
+      return NextResponse.json(
+        { error: "limit_reached", message: "New Trader plan allows 2 backtesting sessions. Upgrade to Experienced for unlimited." },
+        { status: 403 }
+      );
+    }
+  }
+
   let body: {
     strategy_id?: string;
     name?: string;

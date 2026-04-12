@@ -7,7 +7,7 @@ export type SubscriptionRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
-  plan: "free" | "new_trader" | "experienced";
+  plan: "user" | "trial" | "new_trader" | "experienced";
   status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
   current_period_start: string | null;
   current_period_end: string | null;
@@ -33,14 +33,14 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Return default free plan if no subscription row exists
+  // Return default demo (user) plan if no subscription row exists
   const sub: SubscriptionRow = (data as SubscriptionRow | null) ?? {
     id: "",
     user_id: user.id,
     stripe_customer_id: null,
     stripe_subscription_id: null,
     stripe_price_id: null,
-    plan: "free",
+    plan: "user",
     status: "active",
     current_period_start: null,
     current_period_end: null,

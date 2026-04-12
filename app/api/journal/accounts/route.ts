@@ -37,6 +37,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Demo mode guard — plan 'user' cannot create real data
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan")
+    .eq("user_id", user.id)
+    .single();
+  if (!subRow || subRow.plan === "user") {
+    return NextResponse.json(
+      { error: "demo_mode", message: "Start your trial to use this feature" },
+      { status: 403 }
+    );
+  }
+
+  // new_trader limit: max 1 broker account
+  if (subRow.plan === "new_trader") {
+    const { count } = await supabase
+      .from("journal_account")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= 1) {
+      return NextResponse.json(
+        { error: "limit_reached", message: "New Trader plan allows 1 broker account. Upgrade to Experienced for unlimited." },
+        { status: 403 }
+      );
+    }
+  }
+
   let body: {
     nickname?: string;
     broker_server?: string;
