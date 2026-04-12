@@ -15,18 +15,24 @@ function netPl(t: JournalTradeRow) {
   return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
 }
 
-type JournalTradesPageClientProps = { linkBase?: string; embedded?: boolean };
+type JournalTradesPageClientProps = {
+  linkBase?: string;
+  embedded?: boolean;
+  /** Subscription demo: show same list UI with seed trades without calling the API. */
+  forceDemoSeed?: boolean;
+};
 
 export function JournalTradesPageClient({
   linkBase = "/app/journaling",
-  embedded = false
+  embedded = false,
+  forceDemoSeed = false,
 }: JournalTradesPageClientProps) {
   const router = useRouter();
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [useSeed, setUseSeed] = useState(false);
+  const [loading, setLoading] = useState(!forceDemoSeed);
+  const [useSeed, setUseSeed] = useState(forceDemoSeed);
 
   const [symbol, setSymbol] = useState("ALL");
   const [direction, setDirection] = useState<"ALL" | "BUY" | "SELL">("ALL");
@@ -37,6 +43,14 @@ export function JournalTradesPageClient({
   const pageSize = 50;
 
   const load = useCallback(async () => {
+    if (forceDemoSeed) {
+      setLoading(true);
+      setUseSeed(true);
+      setTrades([]);
+      setTotal(SEED_TRADES.length);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const q = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
@@ -61,7 +75,7 @@ export function JournalTradesPageClient({
     } finally {
       setLoading(false);
     }
-  }, [page, symbol, direction, status, from, to]);
+  }, [page, symbol, direction, status, from, to, forceDemoSeed]);
 
   useEffect(() => {
     void load();

@@ -3,6 +3,18 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
+  useRefreshSubscription,
+  useSubscription,
+} from "@/lib/subscription/SubscriptionContext";
+import {
+  buildDemoAlertRows,
+  buildDemoDashboardStats,
+} from "@/lib/demo/demoDashboardSeed";
+import {
+  DEMO_JOURNAL_ACCOUNT_PUBLIC,
+  DEMO_METAAPI_ACCOUNT_ID,
+} from "@/lib/demo/demoJournalAccount";
+import {
   XAxis,
   YAxis,
   Tooltip,
@@ -184,6 +196,23 @@ function UpgradeBanner() {
 }
 
 export default function DashboardPage() {
+  const sub = useSubscription();
+  const refreshSubscription = useRefreshSubscription();
+  const isSubDemo = Boolean(sub?.isDemoMode);
+
+  const demoAlertRows = useMemo(
+    () => (isSubDemo ? buildDemoAlertRows() : null),
+    [isSubDemo]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const upgraded = new URLSearchParams(window.location.search).get("upgraded");
+    if (upgraded === "true") {
+      void refreshSubscription();
+    }
+  }, [refreshSubscription]);
+
   const [tradingAccounts, setTradingAccounts] = useState<
     { account_number: string; metaapi_account_id: string | null }[]
   >([]);
@@ -204,13 +233,37 @@ export default function DashboardPage() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
+    if (!isSubDemo) return;
+    setJournalAccounts([DEMO_JOURNAL_ACCOUNT_PUBLIC]);
+    setTradingAccounts([
+      {
+        account_number: DEMO_JOURNAL_ACCOUNT_PUBLIC.account_number,
+        metaapi_account_id: DEMO_METAAPI_ACCOUNT_ID,
+      },
+    ]);
+    setAccountsResolved(true);
+    setStats(buildDemoDashboardStats() as Stats);
+    setRiskRules({
+      daily_loss_pct: 2,
+      max_risk_per_trade_pct: 1,
+      max_exposure_pct: 6,
+      revenge_threshold_trades: 3,
+    });
+    setRulesConfigured(true);
+    setRulesResolved(true);
+    setSelectedGlobalId("demo-account");
+    selInit.current = true;
+  }, [isSubDemo]);
+
+  useEffect(() => {
+    if (isSubDemo) return;
     fetch("/api/onboarding/profile")
       .then((r) => r.json())
       .then((d) => {
         if (d?.profile) setOnboardingDone(d.profile.onboarding_completed === true);
       })
       .catch(() => {});
-  }, []);
+  }, [isSubDemo]);
 
   const hasAnyBrokerMeta = useMemo(
     () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
@@ -266,6 +319,7 @@ export default function DashboardPage() {
   }, []);
 
   const reloadAccountData = useCallback(async () => {
+    if (isSubDemo) return;
     try {
       const [jRes, tRes] = await Promise.all([
         fetch("/api/journal/accounts"),
@@ -295,9 +349,10 @@ export default function DashboardPage() {
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [isSubDemo]);
 
   useEffect(() => {
+    if (isSubDemo) return;
     let cancelled = false;
     (async () => {
       try {
@@ -313,7 +368,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isSubDemo]);
 
   useEffect(() => {
     if (journalAccounts === null || journalAccounts.length === 0 || selInit.current) return;
@@ -333,6 +388,7 @@ export default function DashboardPage() {
   }, [journalAccounts]);
 
   useEffect(() => {
+    if (isSubDemo) return;
     let cancelled = false;
     (async () => {
       try {
@@ -368,9 +424,10 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isSubDemo]);
 
   useEffect(() => {
+    if (isSubDemo) return;
     (async () => {
       try {
         const res = await fetch("/api/rules");
@@ -399,9 +456,10 @@ export default function DashboardPage() {
         setRulesResolved(true);
       }
     })();
-  }, []);
+  }, [isSubDemo]);
 
   useEffect(() => {
+    if (isSubDemo) return;
     if (!accountsResolved) return;
     if (journalAccounts === null || journalAccounts.length === 0) return;
     if (!hasAnyBrokerMeta) {
@@ -418,6 +476,7 @@ export default function DashboardPage() {
     journalAccounts,
     hasAnyBrokerMeta,
     fetchStats,
+    isSubDemo,
   ]);
 
   const currency = stats?.currency ?? "EUR";
@@ -667,10 +726,14 @@ export default function DashboardPage() {
               onClose={() => setRulesPopupOpen(false)}
               initialRules={riskRules}
               onSaved={(r) => { setRiskRules(r); setRulesPopupOpen(false); }}
+              dryRun={isSubDemo}
             />
           )}
 
-          <AlertsOverview hasLinkedAccount={!noLinkedAccount} />
+          <AlertsOverview
+            hasLinkedAccount={!noLinkedAccount}
+            demoItems={demoAlertRows}
+          />
 
           {/* KPI row 1 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">

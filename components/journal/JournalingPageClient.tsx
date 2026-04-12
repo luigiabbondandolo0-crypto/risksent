@@ -53,6 +53,8 @@ import type {
 } from "@/lib/journal/journalTypes";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
 import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import { useDemoAction } from "@/hooks/useDemoAction";
+import { DemoActionModal } from "@/components/demo/DemoActionModal";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -918,9 +920,11 @@ function TodayTab({
 function CalendarTab({
   allTrades,
   isMock = false,
+  mockUseAppRoutes = false,
 }: {
   allTrades: JournalTradeRow[];
   isMock?: boolean;
+  mockUseAppRoutes?: boolean;
 }) {
   const [month, setMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -935,7 +939,8 @@ function CalendarTab({
     }
   }, [isMock, allTrades]);
 
-  const tradeLinkBase = isMock ? "/mock/journal/trade" : "/app/journaling/trade";
+  const blockRealLinks = isMock && !mockUseAppRoutes;
+  const tradeLinkBase = blockRealLinks ? "/mock/journal/trade" : "/app/journaling/trade";
 
   const start = startOfMonth(month);
   const end = endOfMonth(month);
@@ -1287,10 +1292,12 @@ type StatusFilter = "ALL" | JournalTradeRow["status"];
 function TradesTab({
   allTrades,
   isMock,
+  mockUseAppRoutes = false,
   basePath,
 }: {
   allTrades: JournalTradeRow[];
   isMock: boolean;
+  mockUseAppRoutes?: boolean;
   basePath: string;
 }) {
   const router = useRouter();
@@ -1361,8 +1368,10 @@ function TradesTab({
   const pageStart = safePage * TRADES_PAGE_SIZE;
   const pageRows = filtered.slice(pageStart, pageStart + TRADES_PAGE_SIZE);
 
+  const blockRealLinks = isMock && !mockUseAppRoutes;
+
   const openTrade = (id: string) => {
-    if (isMock) return;
+    if (blockRealLinks) return;
     router.push(`${basePath}/trade/${id}`);
   };
 
@@ -1559,13 +1568,13 @@ function TradesTab({
                     <motion.tr
                       key={t.id}
                       role="button"
-                      tabIndex={isMock ? -1 : 0}
+                      tabIndex={blockRealLinks ? -1 : 0}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.02, duration: 0.2 }}
                       onClick={() => openTrade(t.id)}
                       onKeyDown={(e) => {
-                        if (!isMock && (e.key === "Enter" || e.key === " ")) {
+                        if (!blockRealLinks && (e.key === "Enter" || e.key === " ")) {
                           e.preventDefault();
                           openTrade(t.id);
                         }
@@ -1663,7 +1672,7 @@ function TradesTab({
                         </div>
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        {isMock ? (
+                        {blockRealLinks ? (
                           <span className="inline-flex cursor-not-allowed rounded-lg border border-white/[0.08] px-3 py-1 text-xs text-slate-600 opacity-60">
                             Review
                           </span>
@@ -1768,10 +1777,17 @@ function EmptyState({ onConnected }: { onConnected: () => void }) {
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
+export function JournalingPageClient({
+  isMock = false,
+  mockUseAppRoutes = false,
+}: {
+  isMock?: boolean;
+  mockUseAppRoutes?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { interceptAction, modalOpen, actionLabel, closeModal } = useDemoAction();
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | "all">(
     "all"
@@ -1807,6 +1823,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   );
   const [rules, setRules] = useState<JournalRule[]>(isMock ? MOCK_RULES : []);
 
+  const blockRealLinks = isMock && !mockUseAppRoutes;
+
   useEffect(() => {
     const t = searchParams.get("tab");
     if (t === "calendar" || t === "history") setTab("calendar");
@@ -1823,7 +1841,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
     }
   };
 
-  const journalTradeBase = isMock ? "/mock/journal" : "/app/journaling";
+  const journalTradeBase = blockRealLinks ? "/mock/journal" : "/app/journaling";
 
   const load = useCallback(async () => {
     if (isMock) {
@@ -2037,15 +2055,25 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
             }))}
             selectedId={selectedAccountId}
             onChange={(id) => selectAccount(id)}
-            onAddAccount={isMock ? undefined : () => setAddAccountOpen(true)}
-            isMock={isMock}
+            onAddAccount={
+              blockRealLinks
+                ? undefined
+                : isMock && mockUseAppRoutes
+                  ? () =>
+                      interceptAction(
+                        () => setAddAccountOpen(true),
+                        "add a trading account"
+                      )
+                  : () => setAddAccountOpen(true)
+            }
+            isMock={blockRealLinks}
           />
         </div>
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
           <Link
-            href={isMock ? "#" : "/app/journaling/settings"}
+            href={blockRealLinks ? "#" : "/app/journaling/settings"}
             className={jn.btnGhost}
             style={{ padding: "6px 10px" }}
           >
@@ -2066,8 +2094,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
         </div>
       </motion.div>
 
-      {/* Mock banner */}
-      {isMock && (
+      {/* Mock banner (only on /mock preview — app subscription demo uses global DemoBanner) */}
+      {isMock && !mockUseAppRoutes && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -2136,12 +2164,18 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               isMock={isMock}
             />
           ) : tab === "calendar" ? (
-            <CalendarTab key="calendar" allTrades={allTrades} isMock={isMock} />
+            <CalendarTab
+              key="calendar"
+              allTrades={allTrades}
+              isMock={isMock}
+              mockUseAppRoutes={mockUseAppRoutes}
+            />
           ) : (
             <TradesTab
               key="trades"
               allTrades={allTrades}
               isMock={isMock}
+              mockUseAppRoutes={mockUseAppRoutes}
               basePath={journalTradeBase}
             />
           )}
@@ -2169,6 +2203,14 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
         onClose={() => setAddAccountOpen(false)}
         onCreated={() => void load()}
       />
+
+      {isMock && mockUseAppRoutes && (
+        <DemoActionModal
+          open={modalOpen}
+          action={actionLabel}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 }

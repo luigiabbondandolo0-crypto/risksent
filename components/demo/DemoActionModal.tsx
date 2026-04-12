@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Zap, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 type Props = {
   open: boolean;
@@ -12,23 +11,6 @@ type Props = {
 };
 
 export function DemoActionModal({ open, action, onClose }: Props) {
-  const [trialLoading, setTrialLoading] = useState(false);
-
-  const startTrial = async () => {
-    setTrialLoading(true);
-    try {
-      const res = await fetch("/api/stripe/start-trial", { method: "POST" });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const d = (await res.json()) as { error?: string };
-        alert(d.error ?? "Could not start trial");
-      }
-    } finally {
-      setTrialLoading(false);
-    }
-  };
-
   return (
     <AnimatePresence>
       {open && (
@@ -80,29 +62,29 @@ export function DemoActionModal({ open, action, onClose }: Props) {
                 This is just a demo
               </h2>
               <p className="mt-2 text-sm font-mono text-slate-400 leading-relaxed">
-                Start your 7-day free trial to{" "}
-                <span className="text-slate-200">{action ?? "do this"}</span> for real.
-                Full Experienced access, no credit card required.
+                Buy a plan to{" "}
+                <span className="text-slate-200">{action ?? "do this"}</span> with your real account.
+                Choose a plan on the pricing page to unlock live data and full actions.
               </p>
 
               <div className="mt-6 flex flex-col gap-2.5">
-                <button
-                  onClick={() => void startTrial()}
-                  disabled={trialLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 24px rgba(255,60,60,0.3)" }}
-                >
-                  {trialLoading ? "Starting…" : "Start free trial"}
-                  {!trialLoading && <ArrowRight className="h-4 w-4" />}
-                </button>
                 <Link
                   href="/pricing"
+                  onClick={onClose}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black transition-all hover:scale-[1.02]"
+                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 24px rgba(255,60,60,0.3)" }}
+                >
+                  Buy a plan
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <button
+                  type="button"
                   onClick={onClose}
                   className="flex w-full items-center justify-center rounded-xl border py-3 text-sm font-medium text-slate-300 transition-all hover:text-white"
                   style={{ borderColor: "rgba(255,255,255,0.09)", background: "rgba(255,255,255,0.03)" }}
                 >
-                  View plans
-                </Link>
+                  Keep exploring
+                </button>
               </div>
             </div>
           </motion.div>

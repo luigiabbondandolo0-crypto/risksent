@@ -18,13 +18,24 @@ type AlertsOverviewProps = {
   onRefresh?: () => void;
   /** When false, empty state shows “No alerts” (no linked trading account). */
   hasLinkedAccount?: boolean;
+  /** When set, skip fetch and show these rows (subscription demo). */
+  demoItems?: AlertRow[] | null;
 };
 
-export function AlertsOverview({ onRefresh, hasLinkedAccount = true }: AlertsOverviewProps) {
+export function AlertsOverview({
+  onRefresh,
+  hasLinkedAccount = true,
+  demoItems = null,
+}: AlertsOverviewProps) {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (demoItems != null) {
+      setAlerts(demoItems);
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await fetch("/api/alerts", { cache: "no-store" });
@@ -36,7 +47,7 @@ export function AlertsOverview({ onRefresh, hasLinkedAccount = true }: AlertsOve
         setLoading(false);
       }
     })();
-  }, [onRefresh]);
+  }, [onRefresh, demoItems]);
 
   return (
     <DashboardAlertsSection

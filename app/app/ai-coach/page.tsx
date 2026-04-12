@@ -1,14 +1,23 @@
 "use client";
 
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
-import { DemoAiCoach } from "@/components/demo/DemoAiCoach";
 import { AiCoachPageClient } from "@/components/ai-coach/AiCoachPageClient";
+import {
+  buildDemoCoachMessages,
+  buildDemoCoachReportRow,
+} from "@/lib/demo/demoCoachSeed";
 
 export default function AiCoachPage() {
   const sub = useSubscription();
 
   if (sub?.isDemoMode) {
-    return <DemoAiCoach />;
+    return (
+      <AiCoachPageClient
+        isMock
+        mockReport={buildDemoCoachReportRow()}
+        mockMessages={buildDemoCoachMessages()}
+      />
+    );
   }
 
   return <AiCoachPageClient />;

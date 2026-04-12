@@ -27,6 +27,12 @@ import {
   revengeRatio,
   riskPerTradeRatio
 } from "@/lib/risk/violationEngine";
+import { useDemoAction } from "@/hooks/useDemoAction";
+import { DemoActionModal } from "@/components/demo/DemoActionModal";
+import {
+  DEMO_JOURNAL_ACCOUNT_PUBLIC,
+  DEMO_METAAPI_ACCOUNT_ID,
+} from "@/lib/demo/demoJournalAccount";
 
 type Rules = {
   daily_loss_pct: number;
@@ -57,10 +63,15 @@ function parseNum(s: string, fallback: number): number {
 }
 
 export function RiskManagerPageClient({
-  isMock = false
+  isMock = false,
+  subscriptionDemo = false,
 }: {
   isMock?: boolean;
+  subscriptionDemo?: boolean;
 }) {
+  const demoData = isMock || subscriptionDemo;
+  const previewChrome = isMock && !subscriptionDemo;
+  const { interceptAction, modalOpen, actionLabel, closeModal } = useDemoAction();
   const [rules, setRules] = useState<Rules>({
     daily_loss_pct: 5,
     max_risk_per_trade_pct: 1,
@@ -94,7 +105,7 @@ export function RiskManagerPageClient({
   const [chatDraft, setChatDraft] = useState("");
 
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
-  const [loading, setLoading] = useState(!isMock);
+  const [loading, setLoading] = useState(!demoData);
 
   const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[]>([]);
   const [tradingAccounts, setTradingAccounts] = useState<
@@ -110,7 +121,7 @@ export function RiskManagerPageClient({
   }, []);
 
   const dirty = useMemo(() => {
-    if (!savedRules || isMock) return false;
+    if (!savedRules || previewChrome) return false;
     return (
       parseNum(draft.daily_loss_pct, savedRules.daily_loss_pct) !== savedRules.daily_loss_pct ||
       parseNum(draft.max_risk_per_trade_pct, savedRules.max_risk_per_trade_pct) !==
@@ -119,18 +130,18 @@ export function RiskManagerPageClient({
       parseNum(draft.revenge_threshold_trades, savedRules.revenge_threshold_trades) !==
         savedRules.revenge_threshold_trades
     );
-  }, [draft, savedRules, isMock]);
+  }, [draft, savedRules, previewChrome]);
 
   const loadViolations = useCallback(async () => {
-    if (isMock) return;
+    if (demoData) return;
     const res = await authFetch("/api/risk/violations?limit=30");
     if (!res.ok) return;
     const j = (await res.json()) as { violations: ViolationItem[] };
     setViolations(j.violations ?? []);
-  }, [isMock]);
+  }, [demoData]);
 
   useEffect(() => {
-    if (isMock) {
+    if (demoData) {
       setRules({
         daily_loss_pct: 5,
         max_risk_per_trade_pct: 1,
@@ -191,6 +202,17 @@ export function RiskManagerPageClient({
         notify_risk_per_trade: true
       });
       setChatDraft("****1234");
+      if (subscriptionDemo) {
+        setJournalAccounts([DEMO_JOURNAL_ACCOUNT_PUBLIC]);
+        setTradingAccounts([
+          {
+            account_number: DEMO_JOURNAL_ACCOUNT_PUBLIC.account_number,
+            metaapi_account_id: DEMO_METAAPI_ACCOUNT_ID,
+          },
+        ]);
+        setSelectedGlobalId(DEMO_JOURNAL_ACCOUNT_PUBLIC.id);
+        accInit.current = true;
+      }
       setLoading(false);
       return;
     }
@@ -228,10 +250,10 @@ export function RiskManagerPageClient({
     return () => {
       cancelled = true;
     };
-  }, [isMock]);
+  }, [demoData, subscriptionDemo]);
 
   useEffect(() => {
-    if (isMock) return;
+    if (demoData) return;
     let cancelled = false;
     (async () => {
       try {
@@ -269,10 +291,10 @@ export function RiskManagerPageClient({
     return () => {
       cancelled = true;
     };
-  }, [isMock, selectedGlobalId]);
+  }, [demoData, selectedGlobalId]);
 
   useEffect(() => {
-    if (isMock) return;
+    if (demoData) return;
     let cancelled = false;
     (async () => {
       try {
@@ -306,10 +328,10 @@ export function RiskManagerPageClient({
     return () => {
       cancelled = true;
     };
-  }, [isMock]);
+  }, [demoData]);
 
   const reloadJournalAndTrading = useCallback(async () => {
-    if (isMock) return;
+    if (demoData) return;
     try {
       const [jRes, tRes] = await Promise.all([
         fetch("/api/journal/accounts"),
@@ -333,10 +355,10 @@ export function RiskManagerPageClient({
       setJournalAccounts([]);
       setTradingAccounts([]);
     }
-  }, [isMock]);
+  }, [demoData]);
 
   useEffect(() => {
-    if (isMock || journalAccounts.length === 0 || accInit.current) return;
+    if (demoData || journalAccounts.length === 0 || accInit.current) return;
     accInit.current = true;
     const stored =
       typeof window !== "undefined"
@@ -350,7 +372,7 @@ export function RiskManagerPageClient({
     } else {
       setSelectedGlobalId("all");
     }
-  }, [isMock, journalAccounts]);
+  }, [demoData, journalAccounts]);
 
   const hasAnyBrokerMeta = useMemo(
     () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
@@ -371,7 +393,7 @@ export function RiskManagerPageClient({
 
   const refreshDashboard = useCallback(
     async (uuid?: string) => {
-      if (isMock) return;
+      if (demoData) return;
       if (!hasAnyBrokerMeta) {
         setLive({
           dailyDdPct: null,
@@ -395,24 +417,28 @@ export function RiskManagerPageClient({
         consecutiveLossesAtEnd: typeof j.consecutiveLossesAtEnd === "number" ? j.consecutiveLossesAtEnd : 0,
       });
     },
-    [isMock, hasAnyBrokerMeta]
+    [demoData, hasAnyBrokerMeta]
   );
 
   useEffect(() => {
-    if (isMock) return;
+    if (demoData) return;
     void refreshDashboard(resolvedDashUuid);
     const t = window.setInterval(() => void refreshDashboard(resolvedDashUuid), 30_000);
     return () => window.clearInterval(t);
-  }, [isMock, resolvedDashUuid, refreshDashboard]);
+  }, [demoData, resolvedDashUuid, refreshDashboard]);
 
   useEffect(() => {
-    if (isMock) return;
+    if (demoData) return;
     const t = window.setInterval(() => void loadViolations(), 60_000);
     return () => window.clearInterval(t);
-  }, [isMock, loadViolations]);
+  }, [demoData, loadViolations]);
 
   const saveRules = async () => {
-    if (isMock) return;
+    if (previewChrome) return;
+    if (subscriptionDemo) {
+      interceptAction(() => {}, "save your risk rules");
+      return;
+    }
     const body = {
       daily_loss_pct: parseNum(draft.daily_loss_pct, rules.daily_loss_pct),
       max_risk_per_trade_pct: parseNum(draft.max_risk_per_trade_pct, rules.max_risk_per_trade_pct),
@@ -450,8 +476,11 @@ export function RiskManagerPageClient({
   };
 
   const saveTg = async (patch: Partial<TelegramSettings>) => {
-    if (isMock) {
+    if (demoData) {
       setTg((prev) => ({ ...prev, ...patch }));
+      if (patch.telegram_chat_id !== undefined) {
+        setChatDraft(patch.telegram_chat_id ?? "");
+      }
       return;
     }
     const res = await authFetch("/api/risk/notifications", {
@@ -476,7 +505,7 @@ export function RiskManagerPageClient({
   };
 
   const testTelegram = async () => {
-    if (isMock) {
+    if (demoData) {
       showToast("Test message sent (demo)", true);
       return;
     }
@@ -504,13 +533,13 @@ export function RiskManagerPageClient({
   const cardStatus = (r: number): RiskGaugeStatus => gaugeStatusFromRatio(r);
 
   const rulesScopeLabel = useMemo(() => {
-    if (isMock) return "";
+    if (previewChrome) return "";
     if (selectedGlobalId === "all") {
       return "Editing defaults for all accounts (per-account overrides use the dropdown).";
     }
     const a = journalAccounts.find((x) => x.id === selectedGlobalId);
     return a ? `Rules for: ${a.nickname}` : "Rules for selected account";
-  }, [isMock, selectedGlobalId, journalAccounts]);
+  }, [previewChrome, selectedGlobalId, journalAccounts]);
 
   const dailyDisplay =
     live.dailyDdPct != null ? `${live.dailyDdPct >= 0 ? "+" : ""}${live.dailyDdPct.toFixed(2)}%` : "—";
@@ -539,7 +568,7 @@ export function RiskManagerPageClient({
         )}
       </AnimatePresence>
 
-      {isMock && (
+      {previewChrome && (
         <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-2 text-center text-sm font-[family-name:var(--font-mono)] text-amber-200">
           Demo mode — sample data, no account changes.
         </div>
@@ -551,7 +580,7 @@ export function RiskManagerPageClient({
           <p className="rs-page-sub">Set your rules. Monitor your limits. Stay protected.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
-          {!isMock && journalAccounts.length > 0 && (
+          {!previewChrome && journalAccounts.length > 0 && (
             <GlobalAccountSelector
               accounts={journalAccounts.map((a) => ({
                 id: a.id,
@@ -561,7 +590,15 @@ export function RiskManagerPageClient({
               }))}
               selectedId={selectedGlobalId}
               onChange={setSelectedGlobalId}
-              onAddAccount={() => setAddAccountOpen(true)}
+              onAddAccount={
+                subscriptionDemo
+                  ? () =>
+                      interceptAction(
+                        () => setAddAccountOpen(true),
+                        "add a trading account"
+                      )
+                  : () => setAddAccountOpen(true)
+              }
             />
           )}
           <AnimatePresence>
@@ -599,7 +636,7 @@ export function RiskManagerPageClient({
       >
         <div className="relative z-10">
           <p className="rs-kpi-label mb-1">Your rules</p>
-          {!isMock && rulesScopeLabel ? (
+          {!previewChrome && rulesScopeLabel ? (
             <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-cyan-300/90">
               {rulesScopeLabel}
             </p>
@@ -641,7 +678,7 @@ export function RiskManagerPageClient({
               suffix="losses"
             />
           </div>
-          {isMock && (
+          {previewChrome && (
             <p className="mt-4 text-center text-xs font-[family-name:var(--font-mono)] text-slate-500">
               <span title="Not available in demo">Save rules disabled in demo.</span>
             </p>
@@ -735,14 +772,14 @@ export function RiskManagerPageClient({
           onChatIdChange={setChatDraft}
           onSaveField={(patch) => void saveTg(patch)}
           onTest={() => void testTelegram()}
-          isMock={isMock}
+          isMock={previewChrome}
           testDisabledReason={
-            isMock ? undefined : !chatDraft.trim() ? "Enter a chat ID first" : undefined
+            previewChrome ? undefined : !chatDraft.trim() ? "Enter a chat ID first" : undefined
           }
         />
       </motion.section>
 
-      {!isMock && (
+      {!demoData && (
         <AddAccountModal
           open={addAccountOpen}
           onClose={() => setAddAccountOpen(false)}
@@ -751,6 +788,10 @@ export function RiskManagerPageClient({
             void reloadJournalAndTrading();
           }}
         />
+      )}
+
+      {subscriptionDemo && (
+        <DemoActionModal open={modalOpen} action={actionLabel} onClose={closeModal} />
       )}
     </div>
   );

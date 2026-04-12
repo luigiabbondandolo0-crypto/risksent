@@ -6,25 +6,9 @@ import { Zap, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 
 export function DemoBanner() {
-  const [trialLoading, setTrialLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
-
-  const startTrial = async () => {
-    setTrialLoading(true);
-    try {
-      const res = await fetch("/api/stripe/start-trial", { method: "POST" });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const d = (await res.json()) as { error?: string };
-        alert(d.error ?? "Could not start trial");
-      }
-    } finally {
-      setTrialLoading(false);
-    }
-  };
 
   return (
     <motion.div
@@ -45,7 +29,7 @@ export function DemoBanner() {
           </span>
         </div>
         <span className="text-slate-400 ml-6 sm:ml-0">
-          Start your free trial to connect your real trading data.{" "}
+          Buy a plan to connect your real trading data.{" "}
           <Link
             href="/pricing"
             className="text-slate-400 underline underline-offset-2 hover:text-slate-200 transition-colors"
@@ -56,15 +40,14 @@ export function DemoBanner() {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => void startTrial()}
-          disabled={trialLoading}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-black transition-all hover:scale-[1.03] disabled:opacity-60"
+        <Link
+          href="/pricing"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-black transition-all hover:scale-[1.03]"
           style={{ background: "linear-gradient(135deg, #ff8c00, #ff3c3c)" }}
         >
-          {trialLoading ? "Starting…" : "Start free trial"}
-          {!trialLoading && <ArrowRight className="h-3 w-3" />}
-        </button>
+          Buy a plan
+          <ArrowRight className="h-3 w-3" />
+        </Link>
         <button
           onClick={() => setDismissed(true)}
           aria-label="Dismiss"

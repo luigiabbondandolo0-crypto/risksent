@@ -1,17 +1,58 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, ChevronRight, LineChart, Plus } from "lucide-react";
 import type { BtSessionRow, StrategyWithStats } from "@/lib/backtesting/btTypes";
+import { buildDemoBacktestingSeed } from "@/lib/demo/demoBacktestingSeed";
+import { useDemoAction } from "@/hooks/useDemoAction";
+import { DemoActionModal } from "@/components/demo/DemoActionModal";
 import { bt } from "./btClasses";
 
 type Props = {
   basePath: string;
+  /** Subscription without plan: same UI, static sessions; navigation opens upgrade modal. */
+  subscriptionDemo?: boolean;
 };
 
-export function BacktestingDashboard({ basePath }: Props) {
+function NavControl({
+  href,
+  className,
+  children,
+  subscriptionDemo,
+  interceptAction,
+  actionLabel,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+  subscriptionDemo: boolean;
+  interceptAction: (cb: () => void, label?: string) => void;
+  actionLabel: string;
+}) {
+  const router = useRouter();
+  if (subscriptionDemo) {
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={() => interceptAction(() => router.push(href), actionLabel)}
+      >
+        {children}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
+export function BacktestingDashboard({ basePath, subscriptionDemo = false }: Props) {
+  const { interceptAction, modalOpen, actionLabel, closeModal } = useDemoAction();
   const [strategies, setStrategies] = useState<StrategyWithStats[]>([]);
   const [sessions, setSessions] = useState<BtSessionRow[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -19,6 +60,14 @@ export function BacktestingDashboard({ basePath }: Props) {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (subscriptionDemo) {
+      const seed = buildDemoBacktestingSeed();
+      setStrategies(seed.strategies);
+      setSessions(seed.sessions);
+      setErr(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setErr(null);
     try {
@@ -37,7 +86,7 @@ export function BacktestingDashboard({ basePath }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [subscriptionDemo]);
 
   useEffect(() => {
     void load();
@@ -92,14 +141,26 @@ export function BacktestingDashboard({ basePath }: Props) {
           <p className={bt.sub}>Strategies, sessions, and replay analytics.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href={`${basePath}/strategy/new`} className={bt.btnPrimary}>
+          <NavControl
+            href={`${basePath}/strategy/new`}
+            className={bt.btnPrimary}
+            subscriptionDemo={subscriptionDemo}
+            interceptAction={interceptAction}
+            actionLabel="create a new strategy"
+          >
             <Plus className="h-4 w-4" />
             New strategy
-          </Link>
-          <Link href={`${basePath}/session/new`} className={bt.btnGhost}>
+          </NavControl>
+          <NavControl
+            href={`${basePath}/session/new`}
+            className={bt.btnGhost}
+            subscriptionDemo={subscriptionDemo}
+            interceptAction={interceptAction}
+            actionLabel="start a new backtesting session"
+          >
             <LineChart className="h-4 w-4" />
             New session
-          </Link>
+          </NavControl>
         </div>
       </header>
 
@@ -107,9 +168,15 @@ export function BacktestingDashboard({ basePath }: Props) {
         {strategies.length === 0 && (
           <div className={`${bt.card} text-sm text-slate-500`}>
             No strategies yet.{" "}
-            <Link href={`${basePath}/strategy/new`} className="text-[#ff3c3c] underline">
+            <NavControl
+              href={`${basePath}/strategy/new`}
+              className="text-[#ff3c3c] underline"
+              subscriptionDemo={subscriptionDemo}
+              interceptAction={interceptAction}
+              actionLabel="create a strategy"
+            >
               Create one
-            </Link>
+            </NavControl>
             .
           </div>
         )}
@@ -159,12 +226,15 @@ export function BacktestingDashboard({ basePath }: Props) {
               {isOpen && (
                 <div className="mt-4 space-y-2 border-t border-white/[0.06] pt-4 pl-2">
                   <div className="mb-2 flex justify-end">
-                    <Link
+                    <NavControl
                       href={`${basePath}/session/new?strategy_id=${encodeURIComponent(st.id)}`}
                       className="text-xs font-mono text-[#ff3c3c] underline"
+                      subscriptionDemo={subscriptionDemo}
+                      interceptAction={interceptAction}
+                      actionLabel="add a session for this strategy"
                     >
                       + Session for this strategy
-                    </Link>
+                    </NavControl>
                   </div>
                   {sess.length === 0 && <p className="text-xs text-slate-600 font-mono">No sessions.</p>}
                   <ul className="space-y-2">
@@ -180,18 +250,24 @@ export function BacktestingDashboard({ basePath }: Props) {
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Link
+                          <NavControl
                             href={`${basePath}/session/${se.id}/replay`}
                             className="rounded-lg border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-3 py-1.5 text-[11px] font-medium text-[#ff3c3c]"
+                            subscriptionDemo={subscriptionDemo}
+                            interceptAction={interceptAction}
+                            actionLabel="open session replay"
                           >
                             Replay
-                          </Link>
-                          <Link
+                          </NavControl>
+                          <NavControl
                             href={`${basePath}/session/${se.id}`}
                             className="rounded-lg border border-white/10 px-3 py-1.5 text-[11px] text-slate-400"
+                            subscriptionDemo={subscriptionDemo}
+                            interceptAction={interceptAction}
+                            actionLabel="open session summary"
                           >
                             Summary
-                          </Link>
+                          </NavControl>
                         </div>
                       </li>
                     ))}
@@ -202,6 +278,10 @@ export function BacktestingDashboard({ basePath }: Props) {
           );
         })}
       </div>
+
+      {subscriptionDemo && (
+        <DemoActionModal open={modalOpen} action={actionLabel} onClose={closeModal} />
+      )}
     </motion.div>
   );
 }

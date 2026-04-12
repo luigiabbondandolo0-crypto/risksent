@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
-import { DemoRiskManager } from "@/components/demo/DemoRiskManager";
 import { RiskManagerPageClient } from "@/components/risk-manager/RiskManagerPageClient";
 import { NoAccountState } from "@/components/shared/NoAccountState";
 import { AddAccountModal } from "@/components/shared/AddAccountModal";
@@ -34,7 +33,7 @@ export default function RiskManagerPage() {
   }, [sub?.isDemoMode]);
 
   if (sub?.isDemoMode) {
-    return <DemoRiskManager />;
+    return <RiskManagerPageClient subscriptionDemo />;
   }
 
   if (accounts === null) {

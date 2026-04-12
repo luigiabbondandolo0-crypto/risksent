@@ -15,13 +15,16 @@ type RulesEditPopupProps = {
   onClose: () => void;
   initialRules: RiskRules | null;
   onSaved: (rules: RiskRules) => void;
+  /** Skip API — same UI, local save only (subscription demo). */
+  dryRun?: boolean;
 };
 
 export function RulesEditPopup({
   open,
   onClose,
   initialRules,
-  onSaved
+  onSaved,
+  dryRun = false,
 }: RulesEditPopupProps) {
   const [rules, setRules] = useState<RiskRules>({
     daily_loss_pct: 5,
@@ -47,6 +50,12 @@ export function RulesEditPopup({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (dryRun) {
+      onSaved(rules);
+      setMessage({ type: "success", text: "Rules updated." });
+      setTimeout(() => onClose(), 600);
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
