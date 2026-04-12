@@ -16,14 +16,12 @@ const PROTECTED_PATHS = [
   "/live-monitoring",
   "/admin",
   "/change-password",
-  "/profile"
+  "/profile",
 ];
 
-const ADMIN_PATHS = [
-  "/admin"
-];
+const ADMIN_PATHS = ["/admin"];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   // PKCE: exchange must run on the server so request cookies include the code verifier.
   if (req.nextUrl.pathname === "/reset-password" && req.nextUrl.searchParams.has("code")) {
     const dest = req.nextUrl.clone();
@@ -36,9 +34,9 @@ export async function middleware(req: NextRequest) {
 
   // Log all admin path requests in development
   if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
-    console.log("[middleware] 🔍 Admin path requested:", req.nextUrl.pathname);
+    console.log("[proxy] 🔍 Admin path requested:", req.nextUrl.pathname);
   }
-  
+
   let res = NextResponse.next({
     request: {
       headers: req.headers,
@@ -49,7 +47,7 @@ export async function middleware(req: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[middleware] Missing Supabase environment variables");
+    console.error("[proxy] Missing Supabase environment variables");
     return res;
   }
 
@@ -68,20 +66,18 @@ export async function middleware(req: NextRequest) {
   });
 
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
-  
+
   if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
-    console.log("[middleware] Session check:", {
+    console.log("[proxy] Session check:", {
       hasSession: !!user,
       email: user?.email || null,
-      userId: user?.id || null
+      userId: user?.id || null,
     });
   }
 
-  const isProtected = PROTECTED_PATHS.some((path) =>
-    req.nextUrl.pathname.startsWith(path)
-  );
+  const isProtected = PROTECTED_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
 
   if (isProtected && !user) {
     const url = req.nextUrl.clone();
@@ -91,40 +87,34 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check admin access for admin paths
-  const isAdminPath = ADMIN_PATHS.some((path) =>
-    req.nextUrl.pathname.startsWith(path)
-  );
+  const isAdminPath = ADMIN_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
 
   if (isAdminPath && user) {
-    // Always log in development to see what's happening
-    console.log("[middleware] Checking admin access for:", user.email, "path:", req.nextUrl.pathname);
-    
+    console.log("[proxy] Checking admin access for:", user.email, "path:", req.nextUrl.pathname);
+
     try {
       const admin = createSupabaseAdmin();
       const userId = user.id;
-      
-      // Use .maybeSingle() instead of .single() to handle missing records gracefully
+
       const { data: appUser, error: roleError } = await admin
         .from("app_user")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
 
-      // Log for debugging
       if (process.env.NODE_ENV === "development") {
-        console.log("[middleware] Admin check:", {
+        console.log("[proxy] Admin check:", {
           userId,
           email: user.email,
           hasAppUser: !!appUser,
           role: appUser?.role,
           error: roleError?.message || null,
-          errorCode: roleError?.code || null
+          errorCode: roleError?.code || null,
         });
       }
 
-      // If there's a database error (not just "not found"), log it
-      if (roleError && roleError.code !== "PGRST116") { // PGRST116 = no rows returned
-        console.error("[middleware] ❌ Admin check database error:");
+      if (roleError && roleError.code !== "PGRST116") {
+        console.error("[proxy] ❌ Admin check database error:");
         console.error("  Message:", roleError.message);
         console.error("  Code:", roleError.code);
         console.error("  Details:", roleError.details);
@@ -134,41 +124,36 @@ export async function middleware(req: NextRequest) {
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
-      
-      // Log anche se c'è un errore PGRST116 (record non trovato)
+
       if (roleError && roleError.code === "PGRST116") {
-        console.warn("[middleware] ⚠️  No app_user record found (PGRST116) for user:", userId);
+        console.warn("[proxy] ⚠️  No app_user record found (PGRST116) for user:", userId);
       }
 
-      // If no user found or role is not admin, redirect
       if (!appUser) {
-        console.warn("[middleware] No app_user record found for user:", userId);
+        console.warn("[proxy] No app_user record found for user:", userId);
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
       if (appUser.role !== "admin") {
-        console.log("[middleware] User is not admin, role:", appUser.role);
+        console.log("[proxy] User is not admin, role:", appUser.role);
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
-      // Admin user - allow access
       if (process.env.NODE_ENV === "development") {
-        console.log("[middleware] ✅ Admin access granted for:", user.email);
+        console.log("[proxy] ✅ Admin access granted for:", user.email);
       }
     } catch (err) {
-      // If check fails, redirect to dashboard
-      console.error("[middleware] Admin check exception:", err);
+      console.error("[proxy] Admin check exception:", err);
       const url = req.nextUrl.clone();
       url.pathname = "/app/dashboard";
       return NextResponse.redirect(url);
     }
   }
 
-  // Don't auto-redirect admin users from login - let them choose area
   if (req.nextUrl.pathname === "/login" && user) {
     try {
       const admin = createSupabaseAdmin();
@@ -178,15 +163,13 @@ export async function middleware(req: NextRequest) {
         .eq("id", user.id)
         .maybeSingle();
 
-      // If admin, don't redirect - let them choose area
       if (appUser && appUser.role === "admin") {
         return res;
       }
     } catch {
       // If check fails, proceed with normal redirect
     }
-    
-    // Non-admin users - redirect to dashboard
+
     const url = req.nextUrl.clone();
     url.pathname = "/app/dashboard";
     return NextResponse.redirect(url);
@@ -196,6 +179,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-
