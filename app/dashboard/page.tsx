@@ -13,7 +13,9 @@ import {
   Brush
 } from "recharts";
 import { bt } from "@/components/backtesting/btClasses";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { DdExposureCard } from "./components/DdExposureCard";
 import { AlertsOverview } from "./components/AlertsOverview";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
@@ -116,6 +118,61 @@ function AnimatedNumber({
 }
 
 const POLL_MS = 45_000;
+
+function UpgradeBannerInner() {
+  const searchParams = useSearchParams();
+  const [upgradeBanner, setUpgradeBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("upgraded") !== "true") return;
+    fetch("/api/stripe/subscription")
+      .then((r) => r.json())
+      .then((d) => {
+        const label =
+          d?.plan === "experienced"
+            ? "Experienced"
+            : d?.plan === "new_trader"
+            ? "New Trader"
+            : d?.plan ?? "Pro";
+        setUpgradeBanner(label);
+        const t = setTimeout(() => setUpgradeBanner(null), 5000);
+        return () => clearTimeout(t);
+      })
+      .catch(() => {});
+  }, [searchParams]);
+
+  return (
+    <AnimatePresence>
+      {upgradeBanner && (
+        <motion.div
+          initial={{ opacity: 0, y: -12, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -12, scale: 0.97 }}
+          className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm"
+        >
+          <span className="text-emerald-300 font-medium">
+            🎉 You&apos;re now on <strong>{upgradeBanner}</strong> — welcome to the full RiskSent experience!
+          </span>
+          <button
+            onClick={() => setUpgradeBanner(null)}
+            className="text-slate-500 hover:text-slate-300 transition-colors"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function UpgradeBanner() {
+  return (
+    <Suspense fallback={null}>
+      <UpgradeBannerInner />
+    </Suspense>
+  );
+}
 
 export default function DashboardPage() {
   const [tradingAccounts, setTradingAccounts] = useState<
@@ -462,6 +519,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      <UpgradeBanner />
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className={bt.h1}>Dashboard</h1>

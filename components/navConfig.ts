@@ -5,6 +5,13 @@ import {
   FlaskConical,
   Sparkles,
   BookOpen,
+  CreditCard,
+  BarChart3,
+  DollarSign,
+  Activity,
+  Bell,
+  ArrowLeft,
+  Users,
 } from "lucide-react";
 
 export type NavChild = {
@@ -26,6 +33,7 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
+  { href: "/app/billing", label: "Billing", icon: CreditCard },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
@@ -36,8 +44,12 @@ export const adminNavItems: readonly NavItem[] = [];
 
 /** Admin-only sidebar (under /admin layout). */
 export const adminOnlySidebarItems: readonly NavItem[] = [
-  { href: "/admin", label: "Admin", icon: LayoutDashboard },
-  { href: "/admin/live-monitoring", label: "Live monitoring", icon: ShieldAlert },
+  { href: "/admin", label: "Overview", icon: BarChart3 },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
+  { href: "/admin/system", label: "System", icon: Activity },
+  { href: "/admin/announcements", label: "Announcements", icon: Bell },
+  { href: "/app/dashboard", label: "Back to app", icon: ArrowLeft },
 ] as const;
 
 /** Horizontal scroll nav on small screens (full app map). */
