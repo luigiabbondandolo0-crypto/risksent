@@ -46,12 +46,115 @@ function TrialActiveNotice() {
   );
 }
 
+const DIRECT_PLANS = [
+  {
+    id: "new_trader" as const,
+    name: "NEW TRADER",
+    price: 25,
+    features: ["1 broker account", "2 backtesting sessions", "Full journal"],
+    highlight: false,
+  },
+  {
+    id: "experienced" as const,
+    name: "EXPERIENCED",
+    price: 39,
+    features: ["Unlimited everything", "AI Coach", "Risk Manager"],
+    highlight: true,
+  },
+];
+
+const planGridContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+};
+
+const planGridItem = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+  },
+};
+
+function PlanChoiceGrid({
+  upgradeLoading,
+  onCheckout,
+  buttonLabel,
+}: {
+  upgradeLoading: string | null;
+  onCheckout: (plan: string) => Promise<void>;
+  buttonLabel: string;
+}) {
+  return (
+    <motion.div
+      className="grid gap-4 md:grid-cols-2"
+      variants={planGridContainer}
+      initial="hidden"
+      animate="visible"
+    >
+      {DIRECT_PLANS.map((p) => {
+        const loading = upgradeLoading === p.id;
+        return (
+          <motion.div
+            key={p.id}
+            variants={planGridItem}
+            whileHover={{ y: -4, transition: { type: "spring", stiffness: 420, damping: 26 } }}
+            className={`flex flex-col rounded-2xl border p-5 backdrop-blur-sm ${
+              p.highlight
+                ? "border-[#ff3c3c]/30 bg-[#ff3c3c]/[0.06]"
+                : "border-white/[0.08] bg-white/[0.03]"
+            }`}
+          >
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white">
+                {p.name}
+              </p>
+              {p.highlight && (
+                <span className="rounded-full border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-[#ff3c3c]">
+                  Most popular
+                </span>
+              )}
+            </div>
+            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
+              €{p.price}
+              <span className="text-sm font-normal text-slate-500">/mo</span>
+            </p>
+            <ul className="mt-3 flex-1 space-y-2">
+              {p.features.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-xs font-mono text-slate-400">
+                  <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => void onCheckout(p.id)}
+              disabled={upgradeLoading !== null}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
+              style={{
+                background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
+                boxShadow: p.highlight ? "0 0 22px rgba(255,60,60,0.25)" : "0 0 16px rgba(255,60,60,0.12)",
+              }}
+            >
+              {loading ? "Loading…" : buttonLabel}
+              {!loading && <ArrowRight className="h-4 w-4" />}
+            </button>
+          </motion.div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
 export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [trialLoading, setTrialLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/stripe/subscription")
@@ -93,6 +196,7 @@ export default function BillingPage() {
   };
 
   const startCheckout = async (plan: string) => {
+    setCheckoutError(null);
     setUpgradeLoading(plan);
     try {
       const res = await fetch("/api/stripe/create-checkout", {
@@ -104,8 +208,10 @@ export default function BillingPage() {
       if (d.url) {
         window.location.href = d.url;
       } else {
-        alert(d.error ?? "Could not start checkout");
+        setCheckoutError(d.error ?? "Could not start checkout.");
       }
+    } catch {
+      setCheckoutError("Could not start checkout. Check your connection and try again.");
     } finally {
       setUpgradeLoading(null);
     }
@@ -218,13 +324,13 @@ export default function BillingPage() {
         )}
       </motion.div>
 
-      {/* Demo — start trial CTA */}
+      {/* Demo — start trial CTA + direct subscribe */}
       {plan === "user" && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-6"
+          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-6 backdrop-blur-sm"
         >
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-5 w-5 text-amber-400" />
@@ -235,6 +341,7 @@ export default function BillingPage() {
             No credit card required.
           </p>
           <button
+            type="button"
             onClick={() => void startTrial()}
             disabled={trialLoading}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
@@ -243,48 +350,81 @@ export default function BillingPage() {
             {trialLoading ? "Starting…" : "Start free trial"}
             {!trialLoading && <ArrowRight className="h-4 w-4" />}
           </button>
+
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/[0.08]" />
+            <span className="shrink-0 text-[11px] font-mono uppercase tracking-widest text-slate-500">
+              or choose a plan directly
+            </span>
+            <div className="h-px flex-1 bg-white/[0.08]" />
+          </div>
+
+          {checkoutError && (
+            <p className="mb-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-mono text-red-200" role="alert">
+              {checkoutError}
+            </p>
+          )}
+
+          <PlanChoiceGrid
+            upgradeLoading={upgradeLoading}
+            onCheckout={startCheckout}
+            buttonLabel="Subscribe now"
+          />
+
+          <p className="mt-4 text-center text-xs font-mono text-slate-600">
+            <Link href="/pricing" className="underline underline-offset-2 hover:text-slate-400 transition-colors">
+              Full plan comparison →
+            </Link>
+          </p>
         </motion.div>
       )}
 
-      {/* Trial — choose a plan */}
+      {/* Trial — upgrade grid */}
       {(plan === "trial" || sub?.status === "trialing") && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6"
+          className="space-y-4"
         >
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-1">
-            Choose a plan before your trial ends
-          </h2>
-          <p className="font-mono text-xs text-slate-500 mb-4">
-            After your trial, pick the plan that fits you.
-          </p>
-          <div className="space-y-3">
-            <UpgradeCard
-              name="New Trader"
-              price={25}
-              features={["1 broker account", "2 backtesting sessions", "Full journal", "Basic alerts"]}
-              plan="new_trader"
+          {trialDaysLeft !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm font-mono text-amber-100 backdrop-blur-sm"
+            >
+              {trialDaysLeft === 0
+                ? "Your trial ends today."
+                : `Your trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"}.`}
+            </motion.div>
+          )}
+
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 backdrop-blur-sm">
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-1">
+              Choose a plan
+            </h2>
+            <p className="font-mono text-xs text-slate-500 mb-4">
+              Upgrade before your trial ends to keep full access.
+            </p>
+
+            {checkoutError && (
+              <p className="mb-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-mono text-red-200" role="alert">
+                {checkoutError}
+              </p>
+            )}
+
+            <PlanChoiceGrid
+              upgradeLoading={upgradeLoading}
               onCheckout={startCheckout}
-              loading={upgradeLoading === "new_trader"}
-              highlight={false}
+              buttonLabel="Upgrade to this plan"
             />
-            <UpgradeCard
-              name="Experienced"
-              price={39}
-              features={["Everything unlimited", "AI Coach", "Risk Manager", "Priority support"]}
-              plan="experienced"
-              onCheckout={startCheckout}
-              loading={upgradeLoading === "experienced"}
-              highlight
-            />
+
+            <p className="mt-4 text-center text-xs font-mono text-slate-600">
+              <Link href="/pricing" className="underline underline-offset-2 hover:text-slate-400 transition-colors">
+                Full plan comparison →
+              </Link>
+            </p>
           </div>
-          <p className="mt-3 text-center text-xs font-mono text-slate-600">
-            <Link href="/pricing" className="underline underline-offset-2 hover:text-slate-400 transition-colors">
-              Full plan comparison →
-            </Link>
-          </p>
         </motion.div>
       )}
 
