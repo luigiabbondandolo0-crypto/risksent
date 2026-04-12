@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-03-31.basil" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
 
 function priceIdFromPlan(plan: string): string {
   if (plan === "new_trader") return process.env.STRIPE_NEW_TRADER_PRICE_ID ?? "";
