@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { checkAdminRole } from "@/lib/adminAuth";
 
 function serviceClient() {
   return createClient(
@@ -10,15 +10,10 @@ function serviceClient() {
   );
 }
 
-async function requireAdmin() {
-  const supabase = await createSupabaseRouteClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase.from("app_user").select("role").eq("id", user.id).limit(1).maybeSingle();
-  return profile?.role === "admin" ? user : null;
-}
-
 export async function GET() {
+  const { isAdmin } = await checkAdminRole();
+  if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const admin = serviceClient();
   const { data, error } = await admin
     .from("announcements")
@@ -29,8 +24,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const user = await requireAdmin();
-  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { isAdmin } = await checkAdminRole();
+  if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json() as {
     title: string;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, AlertCircle, Plus, Trash2, ToggleLeft, ToggleRight, Eye } from "lucide-react";
+import { Bell, AlertCircle, Plus, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 
 type Announcement = {
   id: string;
@@ -60,7 +60,7 @@ export default function AnnouncementsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
-  const [preview, setPreview] = useState<Announcement | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/check-role")
@@ -75,8 +75,12 @@ export default function AnnouncementsPage() {
   async function fetchAnnouncements() {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/announcements");
-      const d = await res.json() as { announcements: Announcement[] };
+      const res = await fetch("/api/admin/announcements", { credentials: "same-origin" });
+      const d = (await res.json()) as { announcements?: Announcement[]; error?: string };
+      if (!res.ok) {
+        setAnnouncements([]);
+        return;
+      }
       setAnnouncements(d.announcements ?? []);
     } finally {
       setLoading(false);
@@ -84,40 +88,62 @@ export default function AnnouncementsPage() {
   }
 
   async function handleCreate() {
-    if (!form.title || !form.message) return;
+    const title = form.title.trim();
+    const message = form.message.trim();
+    if (!title || !message) {
+      setFormError("Title and message are required.");
+      return;
+    }
+    setFormError(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/announcements", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          expires_at: form.expires_at || undefined,
+          title,
+          message,
+          expires_at: form.expires_at.trim() || undefined,
         }),
       });
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
       if (res.ok) {
         setForm(emptyForm);
         setShowForm(false);
         await fetchAnnouncements();
+      } else {
+        setFormError(d.error ?? `Could not create (${res.status}).`);
       }
+    } catch {
+      setFormError("Network error. Try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
   async function toggleActive(id: string, active: boolean) {
-    await fetch(`/api/admin/announcements/${id}`, {
+    const res = await fetch(`/api/admin/announcements/${id}`, {
       method: "PATCH",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active }),
     });
-    setAnnouncements((prev) => prev.map((a) => (a.id === id ? { ...a, active } : a)));
+    if (res.ok) {
+      setAnnouncements((prev) => prev.map((a) => (a.id === id ? { ...a, active } : a)));
+    }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this announcement?")) return;
-    await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    const res = await fetch(`/api/admin/announcements/${id}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+    if (res.ok) {
+      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    }
   }
 
   if (isAdmin === null) {
@@ -153,7 +179,11 @@ export default function AnnouncementsPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowForm((v) => !v)}
+          type="button"
+          onClick={() => {
+            setShowForm((v) => !v);
+            setFormError(null);
+          }}
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02]"
           style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
         >
@@ -233,29 +263,44 @@ export default function AnnouncementsPage() {
               </div>
 
               {/* Preview */}
-              {form.title && form.message && (
+              {form.title.trim() && form.message.trim() && (
                 <div>
                   <p className="mb-2 text-xs font-mono text-slate-500">Preview:</p>
                   <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${TYPE_BANNER[form.type] ?? ""}`}>
                     <Bell className="h-4 w-4 shrink-0" />
                     <span>
-                      <strong>{form.title}</strong> — {form.message}
+                      <strong>{form.title.trim()}</strong> — {form.message.trim()}
                     </span>
                   </div>
                 </div>
               )}
 
+              {formError && (
+                <p
+                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-mono text-red-200"
+                  role="alert"
+                >
+                  {formError}
+                </p>
+              )}
+
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => void handleCreate()}
-                  disabled={submitting || !form.title || !form.message}
+                  disabled={submitting || !form.title.trim() || !form.message.trim()}
                   className="rounded-xl px-5 py-2.5 text-sm font-bold text-black disabled:opacity-40"
                   style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
                 >
                   {submitting ? "Creating…" : "Create"}
                 </button>
                 <button
-                  onClick={() => { setShowForm(false); setForm(emptyForm); }}
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setForm(emptyForm);
+                    setFormError(null);
+                  }}
                   className="rounded-xl border border-white/[0.1] px-5 py-2.5 text-sm text-slate-400 hover:text-slate-200"
                 >
                   Cancel
@@ -308,6 +353,7 @@ export default function AnnouncementsPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => void toggleActive(ann.id, !ann.active)}
                     className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-slate-400 transition-all hover:border-white/20 hover:text-slate-200"
                   >
@@ -315,7 +361,8 @@ export default function AnnouncementsPage() {
                     {ann.active ? "Active" : "Inactive"}
                   </button>
                   <button
-                    onClick={() => handleDelete(ann.id)}
+                    type="button"
+                    onClick={() => void handleDelete(ann.id)}
                     className="rounded-lg border border-red-500/20 p-1.5 text-red-400 transition-all hover:border-red-500/40 hover:bg-red-500/10"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
