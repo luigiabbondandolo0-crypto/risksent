@@ -61,19 +61,21 @@ function ResetPasswordForm() {
       return () => subscription.unsubscribe();
     }
 
-    const code = searchParams.get("code");
-    if (code) {
-      void (async () => {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          setError(exchangeError.message);
-          setStep("request");
-        } else {
-          setStep("reset");
-        }
-        window.history.replaceState(null, "", window.location.pathname);
-      })();
+    const serverErrDesc = searchParams.get("error_description");
+    if (serverErrDesc && !searchParams.get("code")) {
+      try {
+        setError(decodeURIComponent(serverErrDesc.replace(/\+/g, " ")));
+      } catch {
+        setError(serverErrDesc.replace(/\+/g, " "));
+      }
+      setStep("request");
+      window.history.replaceState(null, "", window.location.pathname);
       return () => subscription.unsubscribe();
+    }
+
+    if (searchParams.get("recovery") === "1") {
+      setStep("reset");
+      window.history.replaceState(null, "", window.location.pathname);
     }
 
     const tokenHash = searchParams.get("token_hash");
@@ -130,7 +132,9 @@ function ResetPasswordForm() {
       const supabase = createSupabaseBrowserClient();
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: `${window.location.origin}/reset-password` }
+        {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`
+        }
       );
       if (resetError) {
         setError(resetError.message);

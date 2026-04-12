@@ -24,6 +24,16 @@ const ADMIN_PATHS = [
 ];
 
 export async function middleware(req: NextRequest) {
+  // PKCE: exchange must run on the server so request cookies include the code verifier.
+  if (req.nextUrl.pathname === "/reset-password" && req.nextUrl.searchParams.has("code")) {
+    const dest = req.nextUrl.clone();
+    dest.pathname = "/auth/callback";
+    if (!dest.searchParams.has("next")) {
+      dest.searchParams.set("next", "/reset-password");
+    }
+    return NextResponse.redirect(dest);
+  }
+
   // Log all admin path requests in development
   if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
     console.log("[middleware] 🔍 Admin path requested:", req.nextUrl.pathname);
