@@ -47,13 +47,13 @@ function ResetPasswordForm() {
 
     setStep("request");
 
-    // Controlla manualmente l'hash nell'URL
+    // Controlla subito l'hash nell'URL
     const hash = window.location.hash;
     if (hash && hash.includes("type=recovery")) {
       setStep("reset");
-      return;
     }
 
+    // Ascolta sempre l'evento PASSWORD_RECOVERY come fallback
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setStep("reset");
