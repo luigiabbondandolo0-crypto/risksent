@@ -1,27 +1,47 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getSubscriptionClient } from "./getSubscriptionClient";
 import type { SubscriptionInfo } from "./getSubscription";
 
-const SubscriptionContext = createContext<SubscriptionInfo | null>(null);
+type SubscriptionContextValue = {
+  subscription: SubscriptionInfo | null;
+  refreshSubscription: () => Promise<void>;
+};
+
+const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
-  const [sub, setSub] = useState<SubscriptionInfo | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
 
-  useEffect(() => {
-    getSubscriptionClient()
-      .then(setSub)
-      .catch(() => {});
+  const refreshSubscription = useCallback(async () => {
+    try {
+      const next = await getSubscriptionClient();
+      setSubscription(next);
+    } catch {
+      /* keep previous subscription on failure */
+    }
   }, []);
 
-  return (
-    <SubscriptionContext.Provider value={sub}>
-      {children}
-    </SubscriptionContext.Provider>
+  useEffect(() => {
+    void refreshSubscription();
+  }, [refreshSubscription]);
+
+  const value = useMemo(
+    () => ({ subscription, refreshSubscription }),
+    [subscription, refreshSubscription]
   );
+
+  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }
 
 export function useSubscription(): SubscriptionInfo | null {
-  return useContext(SubscriptionContext);
+  const ctx = useContext(SubscriptionContext);
+  return ctx?.subscription ?? null;
+}
+
+/** Refetch subscription from the API (e.g. after start-trial) so UI updates without a full reload. */
+export function useRefreshSubscription(): () => Promise<void> {
+  const ctx = useContext(SubscriptionContext);
+  return ctx?.refreshSubscription ?? (async () => {});
 }

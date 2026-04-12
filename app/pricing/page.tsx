@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, Zap } from "lucide-react";
-import { useSubscription } from "@/lib/subscription/SubscriptionContext";
+import { useRefreshSubscription, useSubscription } from "@/lib/subscription/SubscriptionContext";
 
 const containerVariants = {
   hidden: {},
@@ -72,6 +72,7 @@ const plans = [
 export default function PricingPage() {
   const router = useRouter();
   const subscription = useSubscription();
+  const refreshSubscription = useRefreshSubscription();
   const [annual, setAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [loadingDirectPlan, setLoadingDirectPlan] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export default function PricingPage() {
         const trialRes = await fetch("/api/stripe/start-trial", { method: "POST" });
         const data = (await trialRes.json().catch(() => ({}))) as { error?: string };
         if (trialRes.ok) {
+          await refreshSubscription();
           router.push("/app/dashboard");
           return;
         }
