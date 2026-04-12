@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ArrowRight } from "lucide-react";
+import {
+  X,
+  ArrowRight,
+  Bell,
+  Info,
+  AlertTriangle,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Sidebar";
 import { isAppShellPath } from "@/components/navConfig";
@@ -17,12 +25,127 @@ type AnnouncementRow = {
   type: string;
 };
 
-const BANNER_STYLE: Record<string, string> = {
-  info: "border-blue-500/20 bg-blue-500/10 text-blue-200",
-  warning: "border-amber-500/20 bg-amber-500/10 text-amber-200",
-  success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
-  error: "border-red-500/20 bg-red-500/10 text-red-200",
+type AnnType = "info" | "warning" | "success" | "error";
+
+const ANNOUNCEMENT_VARIANT: Record<
+  AnnType,
+  {
+    Icon: typeof Info;
+    stripe: string;
+    border: string;
+    glow: string;
+    iconBox: string;
+    iconColor: string;
+  }
+> = {
+  info: {
+    Icon: Info,
+    stripe: "from-cyan-400 via-sky-500 to-blue-600",
+    border: "border-cyan-500/35",
+    glow: "shadow-[0_0_40px_-8px_rgba(34,211,238,0.35)]",
+    iconBox: "border-cyan-500/40 bg-cyan-500/10",
+    iconColor: "text-cyan-300",
+  },
+  warning: {
+    Icon: AlertTriangle,
+    stripe: "from-amber-400 via-orange-500 to-[#ff3c3c]",
+    border: "border-amber-500/40",
+    glow: "shadow-[0_0_48px_-10px_rgba(251,191,36,0.4)]",
+    iconBox: "border-amber-500/45 bg-amber-500/15",
+    iconColor: "text-amber-300",
+  },
+  success: {
+    Icon: CheckCircle,
+    stripe: "from-emerald-400 to-teal-500",
+    border: "border-emerald-500/40",
+    glow: "shadow-[0_0_40px_-8px_rgba(52,211,153,0.35)]",
+    iconBox: "border-emerald-500/45 bg-emerald-500/12",
+    iconColor: "text-emerald-300",
+  },
+  error: {
+    Icon: AlertCircle,
+    stripe: "from-[#ff3c3c] to-rose-600",
+    border: "border-red-500/45",
+    glow: "shadow-[0_0_48px_-8px_rgba(255,60,60,0.35)]",
+    iconBox: "border-red-500/45 bg-red-500/12",
+    iconColor: "text-red-300",
+  },
 };
+
+function normalizeAnnType(t: string): AnnType {
+  if (t === "warning" || t === "success" || t === "error") return t;
+  return "info";
+}
+
+function ActiveAnnouncementCard({
+  ann,
+  onDismiss,
+}: {
+  ann: AnnouncementRow;
+  onDismiss: () => void;
+}) {
+  const kind = normalizeAnnType(ann.type);
+  const v = ANNOUNCEMENT_VARIANT[kind];
+  const Icon = v.Icon;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 380, damping: 28 }}
+      className={`relative mb-4 overflow-hidden rounded-2xl border bg-[#0a0a0c]/90 backdrop-blur-xl ${v.border} ${v.glow}`}
+    >
+      <div
+        className={`absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b ${v.stripe}`}
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-16 -top-24 h-48 w-48 rounded-full opacity-[0.12] blur-3xl"
+        style={{
+          background:
+            kind === "warning"
+              ? "linear-gradient(135deg, #ff8c00, #ff3c3c)"
+              : kind === "error"
+                ? "linear-gradient(135deg, #ff3c3c, #991b1b)"
+                : kind === "success"
+                  ? "linear-gradient(135deg, #34d399, #0d9488)"
+                  : "linear-gradient(135deg, #22d3ee, #3b82f6)",
+        }}
+      />
+      <div className="relative flex items-start gap-4 pl-5 pr-3 py-4 sm:pl-6 sm:pr-4 sm:py-5">
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${v.iconBox}`}
+        >
+          <Icon className={`h-5 w-5 ${v.iconColor}`} strokeWidth={2.25} />
+        </div>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-[0.14em] text-slate-400">
+              <Bell className="h-3 w-3 text-amber-400/90" />
+              Announcement
+            </span>
+          </div>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
+            {ann.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 font-mono sm:text-[15px]">
+            {ann.message}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss announcement"
+          className="shrink-0 rounded-xl border border-white/[0.1] bg-white/[0.04] p-2.5 text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
 
 function TrialBanner() {
   const sub = useSubscription();
@@ -115,26 +238,15 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
 
         {/* Announcement banners */}
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {visible.map((ann) => (
-            <motion.div
+            <ActiveAnnouncementCard
               key={ann.id}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className={`mb-4 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${BANNER_STYLE[ann.type] ?? BANNER_STYLE.info}`}
-            >
-              <span>
-                <strong>{ann.title}</strong> — {ann.message}
-              </span>
-              <button
-                onClick={() => setDismissed((prev) => new Set([...prev, ann.id]))}
-                aria-label="Dismiss"
-                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </motion.div>
+              ann={ann}
+              onDismiss={() =>
+                setDismissed((prev) => new Set([...prev, ann.id]))
+              }
+            />
           ))}
         </AnimatePresence>
 
