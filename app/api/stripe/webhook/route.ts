@@ -128,8 +128,8 @@ export async function POST(req: Request) {
     }
 
     case "invoice.payment_failed": {
-      const invoice = event.data.object as Stripe.Invoice;
-      const subId = invoice.subscription as string | null;
+      const invoice = event.data.object as unknown as { subscription?: string | null };
+      const subId = invoice.subscription ?? null;
       if (!subId) break;
 
       await supabase
