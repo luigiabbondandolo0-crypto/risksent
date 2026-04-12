@@ -281,7 +281,10 @@ export default function BillingPage() {
               <span className={`rounded-full border px-3 py-0.5 text-sm font-semibold ${planChipClass}`}>
                 {planChipLabel}
               </span>
-              {!isAdmin && sub?.status && sub.status !== "trialing" && (
+              {!isAdmin &&
+                plan !== "user" &&
+                sub?.status &&
+                sub.status !== "trialing" && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-mono ${STATUS_COLOR[sub.status] ?? ""}`}
                 >
