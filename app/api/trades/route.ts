@@ -145,7 +145,8 @@ export async function GET(req: NextRequest) {
       .from("app_user")
       .select("max_risk_per_trade_pct, revenge_threshold_trades, max_exposure_pct")
       .eq("id", user.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
     const rules = {
       max_risk_per_trade_pct: Number(appUser?.max_risk_per_trade_pct) ?? 1,
       revenge_threshold_trades: Number(appUser?.revenge_threshold_trades) ?? 2,

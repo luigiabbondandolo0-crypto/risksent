@@ -19,7 +19,8 @@ export async function GET() {
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades, telegram_chat_id")
     .eq("id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   console.log("[Rules GET] [verbose]", {
     userId: user.id.slice(0, 8) + "...",
@@ -91,7 +92,8 @@ export async function PATCH(req: NextRequest) {
     .update(updates)
     .eq("id", user.id)
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades, telegram_chat_id")
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (updateError || !updated) {
     const insertPayload = {
@@ -108,7 +110,8 @@ export async function PATCH(req: NextRequest) {
       .from("app_user")
       .upsert(insertPayload, { onConflict: "id" })
       .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades, telegram_chat_id")
-      .single();
+      .limit(1)
+      .maybeSingle();
     if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
     return NextResponse.json({
       daily_loss_pct: Number(inserted?.daily_loss_pct) ?? 2,

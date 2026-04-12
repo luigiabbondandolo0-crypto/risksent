@@ -41,7 +41,8 @@ export async function sendAlertToTelegram(params: SendAlertParams): Promise<{ ok
     .from("app_user")
     .select("telegram_chat_id")
     .eq("id", user_id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   const userLinked = !!user?.telegram_chat_id;
   const chatIdLen = user?.telegram_chat_id ? String(user.telegram_chat_id).length : 0;

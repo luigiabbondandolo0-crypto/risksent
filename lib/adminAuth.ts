@@ -22,7 +22,8 @@ export async function checkAdminRole(): Promise<{ isAdmin: boolean; userId: stri
       .from("app_user")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
       console.error("[checkAdminRole] Database error:", error.message);

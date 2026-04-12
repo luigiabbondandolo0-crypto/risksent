@@ -100,6 +100,7 @@ export async function proxy(req: NextRequest) {
         .from("app_user")
         .select("role")
         .eq("id", userId)
+        .limit(1)
         .maybeSingle();
 
       if (process.env.NODE_ENV === "development") {
@@ -161,6 +162,7 @@ export async function proxy(req: NextRequest) {
         .from("app_user")
         .select("role")
         .eq("id", user.id)
+        .limit(1)
         .maybeSingle();
 
       if (appUser && appUser.role === "admin") {

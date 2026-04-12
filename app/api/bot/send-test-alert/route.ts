@@ -22,7 +22,8 @@ export async function POST() {
     .from("app_user")
     .select("telegram_chat_id")
     .eq("id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   const chatId = row?.telegram_chat_id;
   if (chatId == null || chatId === "") {

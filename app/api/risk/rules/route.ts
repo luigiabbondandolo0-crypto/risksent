@@ -12,7 +12,8 @@ export async function GET(request: Request) {
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
     .eq("id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error || !row) {
     return NextResponse.json({
@@ -78,7 +79,8 @@ async function upsertRules(req: NextRequest) {
     .update(updates)
     .eq("id", user.id)
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (!updateError && updated) {
     return NextResponse.json({
@@ -102,7 +104,8 @@ async function upsertRules(req: NextRequest) {
     .from("app_user")
     .upsert(insertPayload, { onConflict: "id" })
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (insertError || !inserted) {
     return NextResponse.json({ error: insertError?.message ?? "Save failed" }, { status: 500 });

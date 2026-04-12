@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { sendAlertToTelegram } from "@/lib/telegramAlert";
+import type { PostgrestError } from "@supabase/supabase-js";
+
+const ALERT_SELECT_FULL =
+  "id, message, severity, solution, alert_date, read, rule_type, dismissed, acknowledged_at, acknowledged_note, account_id, account_nickname";
+
+const ALERT_SELECT_LEGACY =
+  "id, message, severity, solution, alert_date, read, rule_type, dismissed, acknowledged_at, acknowledged_note";
+
+function isMissingAlertScopeColumns(err: PostgrestError | null): boolean {
+  if (!err?.message) return false;
+  const m = err.message.toLowerCase();
+  return m.includes("account_id") || m.includes("account_nickname");
+}
 
 export async function GET() {
   const supabase = await createSupabaseRouteClient();
@@ -13,20 +26,37 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: alerts, error } = await supabase
+  const full = await supabase
     .from("alert")
-    .select(
-      "id, message, severity, solution, alert_date, read, rule_type, dismissed, acknowledged_at, acknowledged_note, account_id, account_nickname"
-    )
+    .select(ALERT_SELECT_FULL)
     .eq("user_id", user.id)
     .order("alert_date", { ascending: false })
     .limit(50);
 
-  if (error) {
-    return NextResponse.json({ error: error.message, alerts: [] }, { status: 500 });
+  if (full.error && isMissingAlertScopeColumns(full.error)) {
+    const legacy = await supabase
+      .from("alert")
+      .select(ALERT_SELECT_LEGACY)
+      .eq("user_id", user.id)
+      .order("alert_date", { ascending: false })
+      .limit(50);
+    if (legacy.error) {
+      return NextResponse.json(
+        { error: legacy.error.message, alerts: [] },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ alerts: legacy.data ?? [] });
   }
 
-  return NextResponse.json({ alerts: alerts ?? [] });
+  if (full.error) {
+    return NextResponse.json(
+      { error: full.error.message, alerts: [] },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ alerts: full.data ?? [] });
 }
 
 /**

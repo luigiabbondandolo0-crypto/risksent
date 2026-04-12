@@ -30,7 +30,8 @@ export async function GET() {
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
     .eq("id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   const rules = {
     daily_loss_pct: Number(row?.daily_loss_pct) ?? 2,

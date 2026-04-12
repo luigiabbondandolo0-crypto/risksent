@@ -63,7 +63,8 @@ export async function GET() {
     .from("app_user")
     .select("id, telegram_chat_id")
     .eq("id", userId)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   console.log(LOG_PREFIX, "[verbose] app_user lookup", {
     userId: userId.slice(0, 8) + "...",
@@ -72,21 +73,21 @@ export async function GET() {
     telegram_chat_id: appUser?.telegram_chat_id ? "set" : "null"
   });
 
-  if (userError && (userError as { code?: string }).code === "PGRST116") {
-    checks.push({
-      id: "db_app_user",
-      name: "Riga app_user",
-      status: "fail",
-      message: "Nessuna riga app_user per questo utente",
-      detail: "Salva le regole una volta o collega Telegram (il webhook crea la riga)"
-    });
-  } else if (userError) {
+  if (userError) {
     checks.push({
       id: "db_app_user",
       name: "Riga app_user",
       status: "fail",
       message: "Errore lettura app_user",
       detail: userError.message
+    });
+  } else if (!appUser) {
+    checks.push({
+      id: "db_app_user",
+      name: "Riga app_user",
+      status: "fail",
+      message: "Nessuna riga app_user per questo utente",
+      detail: "Salva le regole una volta o collega Telegram (il webhook crea la riga)"
     });
   } else {
     checks.push({ id: "db_app_user", name: "Riga app_user", status: "ok", message: "Riga app_user presente" });

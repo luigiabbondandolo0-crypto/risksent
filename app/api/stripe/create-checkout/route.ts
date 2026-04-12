@@ -53,7 +53,8 @@ export async function POST(req: Request) {
         .from("app_user")
         .select("full_name")
         .eq("id", user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       const customer = await stripe.customers.create({
         email: user.email,

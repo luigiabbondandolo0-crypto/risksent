@@ -43,6 +43,7 @@ export async function GET() {
       .from("app_user")
       .select(PREFS_SELECT)
       .eq("id", user.id)
+      .limit(1)
       .maybeSingle();
 
     let appUser: AppUserRow | null = appUserRaw as AppUserRow | null;
@@ -53,6 +54,7 @@ export async function GET() {
         .from("app_user")
         .select(BASE_SELECT)
         .eq("id", user.id)
+        .limit(1)
         .maybeSingle();
       appUser = retry.data as AppUserRow | null;
       appError = retry.error;
@@ -177,6 +179,7 @@ export async function PATCH(req: NextRequest) {
       .from("app_user")
       .select(PREFS_SELECT)
       .eq("id", user.id)
+      .limit(1)
       .maybeSingle();
 
     if (readErr && isMissingPreferenceColumns(readErr)) {
@@ -184,6 +187,7 @@ export async function PATCH(req: NextRequest) {
         .from("app_user")
         .select(BASE_SELECT)
         .eq("id", user.id)
+        .limit(1)
         .maybeSingle();
       return NextResponse.json({
         success: true,

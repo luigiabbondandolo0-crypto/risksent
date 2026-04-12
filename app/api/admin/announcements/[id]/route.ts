@@ -14,7 +14,7 @@ async function requireAdmin() {
   const supabase = await createSupabaseRouteClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: p } = await supabase.from("app_user").select("role").eq("id", user.id).single();
+  const { data: p } = await supabase.from("app_user").select("role").eq("id", user.id).limit(1).maybeSingle();
   return p?.role === "admin" ? user : null;
 }
 

@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         "daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades"
       )
       .eq("id", user.id)
+      .limit(1)
       .maybeSingle(),
     supabase
       .from("journal_account")
