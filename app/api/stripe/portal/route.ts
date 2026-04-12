@@ -15,6 +15,23 @@ function extractStripeCustomerId(
   return null;
 }
 
+/** User DB has e.g. test-mode customer id but server uses sk_live_ (or reverse). */
+function stripeTestLiveMismatchMessage(stripeMessage: string): string | null {
+  const m = stripeMessage.toLowerCase();
+  if (
+    m.includes("similar object exists in test mode") ||
+    m.includes("similar object exists in live mode") ||
+    (m.includes("test mode") && m.includes("live mode"))
+  ) {
+    return (
+      "Stripe test/live mismatch: the saved customer was created in TEST mode but this server uses LIVE keys (or the opposite). " +
+      "Use the same mode everywhere: set STRIPE_SECRET_KEY (and webhook secret) to test or live to match where you paid, " +
+      "or fix the row in your database and complete checkout again."
+    );
+  }
+  return null;
+}
+
 export async function POST() {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret?.trim()) {
@@ -51,13 +68,21 @@ export async function POST() {
       const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id);
       customerId = extractStripeCustomerId(sub.customer);
     } catch (e) {
+      const raw = e instanceof Stripe.errors.StripeError ? e.message : String(e);
+      const mismatch = stripeTestLiveMismatchMessage(raw);
+      if (mismatch) {
+        return NextResponse.json({ error: mismatch }, { status: 409 });
+      }
       console.error("[stripe/portal] subscriptions.retrieve", e);
     }
   }
 
   if (!customerId) {
     return NextResponse.json(
-      { error: "No Stripe customer found for this account." },
+      {
+        error:
+          "No Stripe customer found for this account. If you subscribed in another environment, complete checkout again or align your Stripe keys with the mode (test vs live) used when paying.",
+      },
       { status: 404 }
     );
   }
@@ -77,8 +102,12 @@ export async function POST() {
     }
     return NextResponse.json({ url: session.url });
   } catch (e) {
-    const message = e instanceof Stripe.errors.StripeError ? e.message : "Could not open billing portal.";
+    const raw = e instanceof Stripe.errors.StripeError ? e.message : "Could not open billing portal.";
+    const mismatch = stripeTestLiveMismatchMessage(raw);
     console.error("[stripe/portal]", e);
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: mismatch ?? raw },
+      { status: mismatch ? 409 : 502 }
+    );
   }
 }
