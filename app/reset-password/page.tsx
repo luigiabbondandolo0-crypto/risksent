@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, Suspense, useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -30,6 +30,7 @@ const inputClass =
 
 function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,30 +39,76 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [step, setStep] = useState<"request" | "reset" | "done">("request");
+  const [step, setStep] = useState<"checking" | "request" | "reset" | "done">("checking");
 
   const strength = passwordStrength(newPassword);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
-    setStep("request");
-
-    // Controlla subito l'hash nell'URL
-    const hash = window.location.hash;
-    if (hash && hash.includes("type=recovery")) {
-      setStep("reset");
-    }
-
-    // Ascolta sempre l'evento PASSWORD_RECOVERY come fallback
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setStep("reset");
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    const oauthErr = searchParams.get("error");
+    const oauthErrDesc = searchParams.get("error_description");
+    if (oauthErr) {
+      setError(oauthErrDesc?.replace(/\+/g, " ") || oauthErr);
+      setStep("request");
+      window.history.replaceState(null, "", window.location.pathname);
+      return () => subscription.unsubscribe();
+    }
+
+    const code = searchParams.get("code");
+    if (code) {
+      void (async () => {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          setError(exchangeError.message);
+          setStep("request");
+        } else {
+          setStep("reset");
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+      })();
+      return () => subscription.unsubscribe();
+    }
+
+    const tokenHash = searchParams.get("token_hash");
+    const otpType = searchParams.get("type");
+    if (tokenHash && otpType === "recovery") {
+      void (async () => {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash: tokenHash
+        });
+        if (otpError) {
+          setError(otpError.message);
+          setStep("request");
+        } else {
+          setStep("reset");
+        }
+        window.history.replaceState(null, "", window.location.pathname);
+      })();
+      return () => subscription.unsubscribe();
+    }
+
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (hash.includes("type=recovery")) {
+      setStep("reset");
+    }
+
+    const t = window.setTimeout(() => {
+      setStep((s) => (s === "checking" ? "request" : s));
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(t);
+      subscription.unsubscribe();
+    };
+  }, [searchParams]);
 
   const handleRequestReset = useCallback(async (e: FormEvent) => {
     e.preventDefault();
@@ -151,6 +198,13 @@ function ResetPasswordForm() {
         </div>
 
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 backdrop-blur-xl">
+
+          {step === "checking" && (
+            <div className="flex flex-col items-center justify-center gap-3 py-10">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#ff3c3c]" />
+              <p className="font-[family-name:var(--font-mono)] text-sm text-slate-500">Verifying reset link…</p>
+            </div>
+          )}
 
           {/* STEP: done */}
           {step === "done" && (
