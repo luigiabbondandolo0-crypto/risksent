@@ -1,13 +1,27 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { isAppShellPath } from "@/components/navConfig";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isApp = isAppShellPath(pathname);
   const isAdminArea = pathname?.startsWith("/admin") ?? false;
+
+  useEffect(() => {
+    if (!isApp || pathname === "/onboarding") return;
+    fetch("/api/onboarding/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.profile && d.profile.onboarding_completed === false) {
+          router.push("/onboarding");
+        }
+      })
+      .catch(() => {});
+  }, [isApp, pathname, router]);
 
   if (!isApp) {
     return <>{children}</>;

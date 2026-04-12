@@ -134,6 +134,17 @@ export default function DashboardPage() {
   const [syncing] = useState(false);
   const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(true);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/onboarding/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.profile) setOnboardingDone(d.profile.onboarding_completed === true);
+      })
+      .catch(() => {});
+  }, []);
 
   const hasAnyBrokerMeta = useMemo(
     () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
@@ -429,6 +440,28 @@ export default function DashboardPage() {
 
   return (
     <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+      {!onboardingDone && !bannerDismissed && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3 text-sm">
+          <span className="text-slate-300">
+            Complete your profile setup to get the most out of RiskSent.
+          </span>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/onboarding"
+              className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Continue setup →
+            </Link>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="text-slate-500 hover:text-slate-300 transition-colors"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className={bt.h1}>Dashboard</h1>

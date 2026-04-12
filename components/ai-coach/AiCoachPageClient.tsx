@@ -951,7 +951,7 @@ function ChatTab({
   }, [messages.length]);
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col">
+    <div className="flex h-[calc(100dvh-140px)] min-h-[400px] flex-col sm:h-[calc(100vh-220px)] sm:min-h-[500px]">
       {/* Context banner */}
       {reportRow && (
         <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs text-slate-500">
@@ -981,7 +981,7 @@ function ChatTab({
             </p>
 
             {/* Suggested questions */}
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <div className="mt-6 flex gap-2 overflow-x-auto pb-1 hide-scrollbar sm:flex-wrap sm:justify-center">
               {SUGGESTED_QUESTIONS.map((q) => (
                 <button
                   key={q}
