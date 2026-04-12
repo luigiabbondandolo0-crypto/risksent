@@ -35,10 +35,22 @@ function normalizeSubPlan(raw: string | undefined): SubscriptionPlan {
 }
 
 function planBadgeClasses(u: UserRow): { label: string; className: string } {
+  if (u.role === "admin") {
+    return {
+      label: "Admin",
+      className: "text-violet-200 bg-violet-500/15 border-violet-500/35",
+    };
+  }
   if (u.subStatus === "trialing" || u.plan === "trial") {
     return {
       label: "Trial",
       className: "text-amber-200 bg-amber-500/15 border-amber-500/35",
+    };
+  }
+  if (u.role === "trader" && u.plan === "user") {
+    return {
+      label: "Trader",
+      className: "text-cyan-200 bg-cyan-500/15 border-cyan-500/30",
     };
   }
   if (u.plan === "user") {
@@ -190,11 +202,14 @@ export default function AdminUsersPage() {
         badge.label.toLowerCase().includes(q) ||
         u.plan.toLowerCase().includes(q);
       if (planFilter === "all") return matchQ;
+      if (planFilter === "admin") {
+        return matchQ && u.role === "admin";
+      }
       if (planFilter === "trial") {
         return matchQ && (u.subStatus === "trialing" || u.plan === "trial");
       }
       if (planFilter === "user") {
-        return matchQ && u.plan === "user" && u.subStatus !== "trialing";
+        return matchQ && u.plan === "user" && u.subStatus !== "trialing" && u.role !== "admin";
       }
       return matchQ && u.plan === planFilter;
     });
@@ -284,6 +299,7 @@ export default function AdminUsersPage() {
           className="rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none"
         >
           <option value="all">All plans</option>
+          <option value="admin">Admin</option>
           <option value="user">Demo</option>
           <option value="trial">Trial</option>
           <option value="new_trader">New Trader</option>

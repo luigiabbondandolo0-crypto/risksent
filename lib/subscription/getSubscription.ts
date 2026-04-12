@@ -1,6 +1,6 @@
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
-export type Plan = "user" | "trial" | "new_trader" | "experienced";
+export type Plan = "user" | "trial" | "new_trader" | "experienced" | "admin";
 export type SubStatus = "active" | "trialing" | "past_due" | "canceled" | "incomplete";
 
 export type SubscriptionInfo = {
@@ -19,7 +19,7 @@ export type SubscriptionInfo = {
   authenticated?: boolean;
   /** Client fetch failed (network or non-OK response). */
   subscriptionFetchFailed?: boolean;
-  /** Admin users get full app UX (no demo/trial banners); plan/status stay real for billing. */
+  /** Admin users get full app UX; client sets plan to "admin" for UI (billing still uses Stripe API). */
   isAdmin?: boolean;
 };
 
@@ -46,6 +46,23 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
       maxBrokerAccounts: 0,
       maxBacktestingSessions: 0,
       trialEndsAt: null,
+    };
+  }
+
+  if (plan === "admin") {
+    return {
+      plan: "admin",
+      status: "active",
+      isDemoMode: false,
+      isTrialing: false,
+      trialDaysLeft: null,
+      canAccessBacktesting: true,
+      canAccessAICoach: true,
+      canAccessRiskManager: true,
+      maxBrokerAccounts: null,
+      maxBacktestingSessions: null,
+      trialEndsAt: null,
+      isAdmin: true,
     };
   }
 

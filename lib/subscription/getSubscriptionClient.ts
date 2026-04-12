@@ -25,6 +25,23 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
     };
   }
 
+  if (plan === "admin") {
+    return {
+      plan: "admin",
+      status: "active",
+      isDemoMode: false,
+      isTrialing: false,
+      trialDaysLeft: null,
+      canAccessBacktesting: true,
+      canAccessAICoach: true,
+      canAccessRiskManager: true,
+      maxBrokerAccounts: null,
+      maxBacktestingSessions: null,
+      trialEndsAt: null,
+      isAdmin: true,
+    };
+  }
+
   if (isTrialing) {
     return {
       plan,
@@ -73,18 +90,22 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
   };
 }
 
-/** Full product access + no demo/trial shell UX; keeps plan/status/trial metadata for billing. */
+/** Full product access; subscription row may still say trial — UI uses plan "admin". */
 function applyAdminSubscriptionOverrides(info: SubscriptionInfo): SubscriptionInfo {
   return {
     ...info,
+    plan: "admin",
+    status: "active",
     isAdmin: true,
     isDemoMode: false,
     isTrialing: false,
+    trialDaysLeft: null,
     canAccessBacktesting: true,
     canAccessAICoach: true,
     canAccessRiskManager: true,
     maxBrokerAccounts: null,
     maxBacktestingSessions: null,
+    trialEndsAt: null,
   };
 }
 

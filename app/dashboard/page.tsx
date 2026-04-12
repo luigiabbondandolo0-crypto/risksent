@@ -125,20 +125,29 @@ function UpgradeBannerInner() {
 
   useEffect(() => {
     if (searchParams.get("upgraded") !== "true") return;
-    fetch("/api/stripe/subscription")
-      .then((r) => r.json())
-      .then((d) => {
+    let cancelled = false;
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    void Promise.all([fetch("/api/stripe/subscription"), fetch("/api/admin/check-role")])
+      .then(async ([subRes, roleRes]) => {
+        const role = (await roleRes.json().catch(() => ({}))) as { isAdmin?: boolean };
+        if (cancelled || role.isAdmin === true) return;
+        const d = (await subRes.json().catch(() => ({}))) as { plan?: string };
         const label =
           d?.plan === "experienced"
             ? "Experienced"
             : d?.plan === "new_trader"
-            ? "New Trader"
-            : d?.plan ?? "Pro";
+              ? "New Trader"
+              : d?.plan ?? "Pro";
         setUpgradeBanner(label);
-        const t = setTimeout(() => setUpgradeBanner(null), 5000);
-        return () => clearTimeout(t);
+        hideTimer = setTimeout(() => {
+          if (!cancelled) setUpgradeBanner(null);
+        }, 5000);
       })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (hideTimer !== undefined) clearTimeout(hideTimer);
+    };
   }, [searchParams]);
 
   return (

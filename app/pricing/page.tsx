@@ -93,6 +93,8 @@ export default function PricingPage() {
     }
 
     const isActive =
+      subscription.isAdmin === true ||
+      subscription.plan === "admin" ||
       subscription.status === "trialing" ||
       subscription.plan === "trial" ||
       subscription.isTrialing ||
@@ -291,7 +293,9 @@ export default function PricingPage() {
 
             const isSubscribedOrTrialing =
               subscription != null &&
-              (subscription.status === "trialing" ||
+              (subscription.isAdmin === true ||
+                subscription.plan === "admin" ||
+                subscription.status === "trialing" ||
                 subscription.plan === "trial" ||
                 subscription.isTrialing ||
                 subscription.plan === "new_trader" ||
