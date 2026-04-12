@@ -220,9 +220,6 @@ export function AppHeaderBar({
                   >
                     <Shield className="h-4 w-4" />
                     Admin
-                    <span className="ml-auto rounded border border-amber-500/40 px-1.5 py-0 text-[9px] uppercase text-amber-400">
-                      role
-                    </span>
                   </Link>
                 </>
               )}

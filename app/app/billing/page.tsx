@@ -28,14 +28,6 @@ const PLAN_COLOR: Record<string, string> = {
   experienced: "text-[#ff3c3c] bg-[#ff3c3c]/10 border-[#ff3c3c]/30",
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  active: "text-emerald-300 bg-emerald-500/15",
-  trialing: "text-amber-300 bg-amber-500/15",
-  past_due: "text-orange-300 bg-orange-500/15",
-  canceled: "text-red-300 bg-red-500/15",
-  incomplete: "text-slate-300 bg-slate-500/15",
-};
-
 function TrialActiveNotice() {
   const searchParams = useSearchParams();
   if (searchParams.get("notice") !== "trial-active") return null;
@@ -281,16 +273,6 @@ export default function BillingPage() {
               <span className={`rounded-full border px-3 py-0.5 text-sm font-semibold ${planChipClass}`}>
                 {planChipLabel}
               </span>
-              {!isAdmin &&
-                plan !== "user" &&
-                sub?.status &&
-                sub.status !== "trialing" && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-mono ${STATUS_COLOR[sub.status] ?? ""}`}
-                >
-                  {sub.status}
-                </span>
-              )}
             </div>
             {isAdmin ? (
               <p className="mt-3 text-sm font-mono leading-relaxed text-slate-400">
