@@ -73,24 +73,49 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
   };
 }
 
+/** Full product access + no demo/trial shell UX; keeps plan/status/trial metadata for billing. */
+function applyAdminSubscriptionOverrides(info: SubscriptionInfo): SubscriptionInfo {
+  return {
+    ...info,
+    isAdmin: true,
+    isDemoMode: false,
+    isTrialing: false,
+    canAccessBacktesting: true,
+    canAccessAICoach: true,
+    canAccessRiskManager: true,
+    maxBrokerAccounts: null,
+    maxBacktestingSessions: null,
+  };
+}
+
 export async function getSubscriptionClient(): Promise<SubscriptionInfo> {
   try {
-    const res = await fetch("/api/stripe/subscription");
-    if (res.status === 401) {
+    const [subRes, roleRes] = await Promise.all([
+      fetch("/api/stripe/subscription"),
+      fetch("/api/admin/check-role"),
+    ]);
+
+    const roleJson = (await roleRes.json().catch(() => ({}))) as { isAdmin?: boolean };
+    const isAdmin = roleJson.isAdmin === true;
+
+    if (subRes.status === 401) {
       return { ...capsForPlan("user", "active", null), authenticated: false };
     }
-    if (!res.ok) {
+    if (!subRes.ok) {
       return { ...capsForPlan("user", "active", null), subscriptionFetchFailed: true };
     }
-    const d = (await res.json()) as {
+    const d = (await subRes.json()) as {
       subscription?: { plan: Plan; status: SubStatus; current_period_end: string | null };
     };
     const sub = d.subscription;
-    if (!sub) return { ...capsForPlan("user", "active", null), authenticated: true };
-    return {
-      ...capsForPlan(sub.plan, sub.status, sub.current_period_end ?? null),
-      authenticated: true
-    };
+    const base = !sub
+      ? { ...capsForPlan("user", "active", null), authenticated: true as const }
+      : {
+          ...capsForPlan(sub.plan, sub.status, sub.current_period_end ?? null),
+          authenticated: true as const,
+        };
+
+    return isAdmin ? applyAdminSubscriptionOverrides(base) : base;
   } catch {
     return { ...capsForPlan("user", "active", null), subscriptionFetchFailed: true };
   }

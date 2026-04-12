@@ -19,6 +19,8 @@ export type SubscriptionInfo = {
   authenticated?: boolean;
   /** Client fetch failed (network or non-OK response). */
   subscriptionFetchFailed?: boolean;
+  /** Admin users get full app UX (no demo/trial banners); plan/status stay real for billing. */
+  isAdmin?: boolean;
 };
 
 // Keep legacy alias for any existing imports

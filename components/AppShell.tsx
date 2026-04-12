@@ -28,7 +28,7 @@ function TrialBanner() {
   const sub = useSubscription();
   const [dismissed, setDismissed] = useState(false);
 
-  if (!sub || !sub.isTrialing || dismissed) return null;
+  if (!sub || sub.isAdmin || !sub.isTrialing || dismissed) return null;
 
   const days = sub.trialDaysLeft ?? 0;
 
@@ -107,11 +107,11 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <Sidebar variant={isAdminArea ? "admin" : "default"} />
       <main className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {/* Demo banner (not dismissible at shell level — handled inside component) */}
-        {sub?.isDemoMode && <DemoBanner />}
+        {sub?.isDemoMode && !sub?.isAdmin && <DemoBanner />}
 
         {/* Trial countdown banner */}
         <AnimatePresence>
-          {sub?.isTrialing && <TrialBanner />}
+          {sub?.isTrialing && !sub?.isAdmin && <TrialBanner />}
         </AnimatePresence>
 
         {/* Announcement banners */}
