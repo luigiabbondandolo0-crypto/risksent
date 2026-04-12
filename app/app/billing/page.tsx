@@ -172,13 +172,24 @@ export default function BillingPage() {
   const openPortal = async () => {
     setPortalLoading(true);
     try {
-      const res = await fetch("/api/stripe/portal", { method: "POST" });
-      const d = (await res.json()) as { url?: string; error?: string };
-      if (d.url) {
-        window.location.href = d.url;
-      } else {
-        alert(d.error ?? "Could not open portal");
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      });
+      const d = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok) {
+        alert(d.error ?? `Could not open portal (${res.status})`);
+        return;
       }
+      if (d.url) {
+        window.location.assign(d.url);
+        return;
+      }
+      alert(d.error ?? "Could not open portal: missing URL");
+    } catch (e) {
+      console.error("[billing] openPortal", e);
+      alert("Could not open portal. Check your connection and try again.");
     } finally {
       setPortalLoading(false);
     }
@@ -286,8 +297,9 @@ export default function BillingPage() {
             )}
           </div>
 
-          {/* Manage button for paid plans */}
-          {(plan === "new_trader" || plan === "experienced") && sub?.stripe_customer_id && (
+          {/* Manage: show if we have a Stripe customer and/or subscription id (portal can resolve customer) */}
+          {(plan === "new_trader" || plan === "experienced") &&
+            (sub?.stripe_customer_id || sub?.stripe_subscription_id) && (
             <button
               onClick={() => void openPortal()}
               disabled={portalLoading}

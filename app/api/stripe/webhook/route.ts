@@ -39,6 +39,19 @@ function stripePeriodSecondsToIso(seconds: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+function stripeCustomerId(
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined
+): string | null {
+  if (customer == null) return null;
+  if (typeof customer === "string" && customer.length > 0) return customer;
+  if (typeof customer === "object" && "deleted" in customer && customer.deleted) return null;
+  if (typeof customer === "object" && customer !== null && "id" in customer) {
+    const id = (customer as { id?: string }).id;
+    return typeof id === "string" && id.length > 0 ? id : null;
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
 
@@ -67,6 +80,10 @@ export async function POST(req: Request) {
         : null;
       const sub = rawSub ? toSubShape(rawSub) : null;
 
+      const customerId =
+        stripeCustomerId(session.customer) ??
+        (rawSub ? stripeCustomerId(rawSub.customer) : null);
+
       const periodStart = sub
         ? stripePeriodSecondsToIso(sub.current_period_start)
         : null;
@@ -77,7 +94,7 @@ export async function POST(req: Request) {
       await supabase.from("subscriptions").upsert(
         {
           user_id: userId,
-          stripe_customer_id: session.customer as string,
+          ...(customerId ? { stripe_customer_id: customerId } : {}),
           stripe_subscription_id: sub?.id ?? null,
           stripe_price_id: sub?.items.data[0]?.price.id ?? null,
           plan,
@@ -93,16 +110,19 @@ export async function POST(req: Request) {
     }
 
     case "customer.subscription.updated": {
-      const sub = toSubShape(event.data.object);
+      const stripeSub = event.data.object as Stripe.Subscription;
+      const sub = toSubShape(stripeSub);
       const userId = sub.metadata?.user_id;
       if (!userId) break;
 
       const priceId = sub.items.data[0]?.price.id ?? "";
       const plan = planFromPriceId(priceId);
+      const customerId = stripeCustomerId(stripeSub.customer);
 
       await supabase.from("subscriptions").upsert(
         {
           user_id: userId,
+          ...(customerId ? { stripe_customer_id: customerId } : {}),
           stripe_subscription_id: sub.id,
           stripe_price_id: priceId,
           plan,
