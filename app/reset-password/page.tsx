@@ -45,9 +45,14 @@ function ResetPasswordForm() {
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
-    // Parti sempre da "request" — vai in "reset" solo se Supabase
-    // triggera esplicitamente PASSWORD_RECOVERY dal link email
     setStep("request");
+
+    // Controlla manualmente l'hash nell'URL
+    const hash = window.location.hash;
+    if (hash && hash.includes("type=recovery")) {
+      setStep("reset");
+      return;
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
