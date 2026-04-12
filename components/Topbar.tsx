@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
-import { isAppShellPath, isNavActive, mobileNavItems } from "@/components/navConfig";
+import { isAppShellPath, isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 
@@ -23,6 +24,7 @@ export function Topbar() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const isLoginPage = pathname === "/login";
   const isAdminArea = pathname?.startsWith("/admin");
   const isHome = pathname === "/";
@@ -52,6 +54,7 @@ export function Topbar() {
   const logoHref = inApp ? "/app/dashboard" : "/";
 
   return (
+    <>
     <header
       className="sticky top-0 z-50 h-14 border-b backdrop-blur-[20px]"
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
@@ -59,16 +62,24 @@ export function Topbar() {
 
       <div className="mx-auto flex h-full w-full max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
 
-        {/* Logo */}
-        <Link href={logoHref} className="flex items-center gap-2.5 shrink-0">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-            style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+        {/* Hamburger (app, mobile only) */}
+        {inApp && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white"
+            aria-label="Open menu"
           >
-            RS
-          </div>
-          <span className="text-sm font-bold tracking-tight text-slate-100"
-            style={{ fontFamily: "'Syne', sans-serif" }}>
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Logo */}
+        <Link href={logoHref} className="shrink-0">
+          <span
+            className="text-base font-extrabold tracking-tight text-white"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
             RiskSent
           </span>
         </Link>
@@ -179,5 +190,72 @@ export function Topbar() {
         </nav>
       )}
     </header>
+
+      {/* Mobile sidebar drawer (app only) */}
+      <AnimatePresence>
+        {inApp && sidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed inset-y-0 left-0 z-[70] flex w-[260px] flex-col border-r border-white/[0.07] bg-[#080809] px-4 py-6 lg:hidden"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <span
+                  className="text-base font-extrabold tracking-tight text-white"
+                  style={{ fontFamily: "'Syne', sans-serif" }}
+                >
+                  RiskSent
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-slate-400 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+                Platform
+              </p>
+              <nav className="flex flex-col gap-0.5">
+                {primaryNavItems.map(({ href, label, icon: Icon }) => {
+                  const active = isNavActive(pathname, href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={[
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                        active
+                          ? "border border-cyan-500/30 bg-cyan-500/12 text-cyan-100"
+                          : "border border-transparent text-slate-500 hover:bg-slate-800/60 hover:text-slate-100",
+                      ].join(" ")}
+                    >
+                      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-cyan-400" : "text-slate-500"}`} />
+                      <span>{label}</span>
+                      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

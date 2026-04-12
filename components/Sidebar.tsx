@@ -142,11 +142,11 @@ export function Sidebar({
 
   return (
     <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
-      <Link href="/app/dashboard" className="mb-8 flex items-center gap-2.5 px-1 group">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 text-xs font-bold text-cyan-300 ring-1 ring-cyan-500/20 group-hover:ring-cyan-500/40 transition-all">
-          RS
-        </span>
-        <span className="text-sm font-semibold tracking-tight text-slate-100">
+      <Link href="/app/dashboard" className="mb-8 flex items-center px-1">
+        <span
+          className="text-base font-extrabold tracking-tight text-white transition-opacity hover:opacity-80"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
           RiskSent
         </span>
       </Link>

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.ts$\")"
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(grep -n 'animate={{ opacity: 1, y: 0' components/ai-coach/AiCoachPageClient.tsx)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

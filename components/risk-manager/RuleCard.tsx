@@ -62,16 +62,28 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
             />
             <span className="text-sm font-[family-name:var(--font-mono)] text-slate-500">{suffix}</span>
           </motion.div>
-          <p className="rs-kpi-label mt-3">
-            Status:{" "}
-            <span
+          <div className="mt-3 flex items-center gap-2">
+            <motion.span
+              className="h-2 w-2 rounded-full"
               style={{
-                color: status === "safe" ? "#00e676" : status === "watch" ? "#ff8c00" : "#ff3c3c"
+                background: status === "safe" ? "#00e676" : status === "watch" ? "#ff8c00" : "#ff3c3c"
               }}
-            >
-              {status === "safe" ? "Safe" : status === "watch" ? "Watch" : "High risk"}
-            </span>
-          </p>
+              animate={status !== "safe" ? {
+                opacity: [1, 0.3, 1],
+                scale: [1, 1.3, 1],
+              } : {}}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <p className="rs-kpi-label">
+              <span
+                style={{
+                  color: status === "safe" ? "#00e676" : status === "watch" ? "#ff8c00" : "#ff3c3c"
+                }}
+              >
+                {status === "safe" ? "Safe" : status === "watch" ? "Watch" : "High risk"}
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>

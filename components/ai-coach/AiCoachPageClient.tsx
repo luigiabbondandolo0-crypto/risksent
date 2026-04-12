@@ -242,31 +242,38 @@ function InsightCard({
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
       transition={{ delay: index * 0.07, duration: 0.3 }}
-      className="rs-card p-5"
+      className="relative overflow-hidden rs-card p-5"
     >
-      <div className="mb-2 flex items-center gap-2">
-        <span className="rounded-full border border-[#22d3ee]/30 bg-[#22d3ee]/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#22d3ee]">
-          {insight.category}
-        </span>
-      </div>
-      <h3 className="mb-1.5 text-sm font-semibold text-white">
-        {insight.title}
-      </h3>
-      <p className="text-xs leading-relaxed text-slate-500">
-        {insight.description}
-      </p>
-      <div className="mt-3 rounded-xl border border-[#00e676]/20 bg-[#00e676]/05 p-3">
-        <p className="text-xs font-medium text-[#00e676]">
-          → {insight.recommendation}
+      <div
+        className="absolute left-0 top-0 h-full w-1 rounded-l-2xl"
+        style={{ background: "linear-gradient(to bottom, #22d3ee, #7c3aed)" }}
+      />
+      <div className="pl-2">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="rounded-full border border-[#22d3ee]/30 bg-[#22d3ee]/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#22d3ee]">
+            {insight.category}
+          </span>
+        </div>
+        <h3 className="mb-1.5 text-sm font-semibold text-white">
+          {insight.title}
+        </h3>
+        <p className="text-xs leading-relaxed text-slate-500">
+          {insight.description}
         </p>
+        <div className="mt-3 rounded-xl border border-[#00e676]/20 bg-[#00e676]/05 p-3">
+          <p className="text-xs font-medium text-[#00e676]">
+            → {insight.recommendation}
+          </p>
+        </div>
+        {insight.estimated_impact && (
+          <p className="mt-2 text-[10px] text-slate-600 font-mono">
+            {insight.estimated_impact}
+          </p>
+        )}
       </div>
-      {insight.estimated_impact && (
-        <p className="mt-2 text-[10px] text-slate-600 font-mono">
-          {insight.estimated_impact}
-        </p>
-      )}
     </motion.div>
   );
 }
@@ -436,42 +443,41 @@ function ChatBubble({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className={`flex ${isUser ? "justify-end" : "justify-start"} items-end gap-2`}
     >
-      <div className={`max-w-[80%] ${isUser ? "order-2" : "order-1"}`}>
+      {!isUser && (
+        <div
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
+          style={{ background: `${CLAUDE_COLOR}25`, color: CLAUDE_COLOR, border: `1px solid ${CLAUDE_COLOR}35` }}
+        >
+          AI
+        </div>
+      )}
+      <div className={`max-w-[78%]`}>
         {!isUser && (
-          <div className="mb-1.5 flex items-center gap-2">
-            <span
-              className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{
-                background: `${CLAUDE_COLOR}20`,
-                color: CLAUDE_COLOR,
-                border: `1px solid ${CLAUDE_COLOR}40`,
-              }}
-            >
-              Claude
-            </span>
-            <span className="text-[10px] text-slate-700 font-mono">
-              {format(parseISO(msg.created_at), "HH:mm")}
-            </span>
-          </div>
+          <p className="mb-1 text-[10px] text-slate-700 font-mono pl-1">
+            Claude · {format(parseISO(msg.created_at), "HH:mm")}
+          </p>
         )}
         <div
           className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-            isUser
-              ? "rounded-tr-sm text-white"
-              : "rs-card rounded-tl-sm text-slate-300"
+            isUser ? "rounded-br-sm text-white" : "rounded-bl-sm text-slate-200"
           }`}
           style={
             isUser
               ? {
-                  background:
-                    "linear-gradient(135deg, rgba(255,60,60,0.25) 0%, rgba(201,42,42,0.2) 100%)",
-                  border: "1px solid rgba(255,60,60,0.2)",
+                  background: "linear-gradient(135deg, #ff3c3c 0%, #c92a2a 100%)",
+                  boxShadow: "0 4px 24px rgba(255,60,60,0.18)",
                 }
-              : undefined
+              : {
+                  background: "rgba(255,255,255,0.04)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.3)",
+                }
           }
         >
           {isUser ? (
@@ -481,7 +487,7 @@ function ChatBubble({
           )}
         </div>
         {isUser && (
-          <p className="mt-1 text-right text-[10px] text-slate-700 font-mono">
+          <p className="mt-1 text-right text-[10px] text-slate-700 font-mono pr-1">
             {format(parseISO(msg.created_at), "HH:mm")}
           </p>
         )}
@@ -566,7 +572,8 @@ function ReportTab({
       {/* ── Section 1: Score Cards ──────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.35 }}
         className="rs-card p-6"
       >
@@ -592,8 +599,9 @@ function ReportTab({
       {/* ── Section 2: Summary Banner ───────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, duration: 0.35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.35 }}
         className="rs-card-accent p-6"
       >
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
@@ -645,8 +653,9 @@ function ReportTab({
       {report.errors.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.3 }}
         >
           <p className="rs-kpi-label mb-4 flex items-center gap-2">
             <AlertTriangle className="h-3.5 w-3.5 text-[#ff3c3c]" />
@@ -664,8 +673,9 @@ function ReportTab({
       {report.insights.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.3 }}
         >
           <p className="rs-kpi-label mb-4 flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-[#22d3ee]" />
@@ -682,8 +692,9 @@ function ReportTab({
       {/* ── Section 5: Challenge Simulator ──────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.3 }}
       >
         <p className="rs-kpi-label mb-4 flex items-center gap-2">
           <Target className="h-3.5 w-3.5" /> Challenge Simulator
@@ -706,8 +717,9 @@ function ReportTab({
       {report.adaptations.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.3 }}
         >
           <p className="rs-kpi-label mb-4 flex items-center gap-2">
             <Shield className="h-3.5 w-3.5" /> Rule Adaptations
@@ -723,8 +735,9 @@ function ReportTab({
       {/* ── Section 7: Session & Symbol ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.3 }}
         className="grid gap-4 md:grid-cols-2"
       >
         <div className="rs-card p-5">
@@ -826,8 +839,9 @@ function ReportTab({
       {/* ── Section 8: Weekly Summary ────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.3 }}
         className="rs-card overflow-hidden p-6"
         style={{
           background:
@@ -844,8 +858,9 @@ function ReportTab({
       {allReports.length > 1 && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.3 }}
         >
           <p className="rs-kpi-label mb-3">Report History</p>
           <div className="flex flex-wrap gap-2">
@@ -902,13 +917,25 @@ function ChatTab({
   isMock: boolean;
 }) {
   const [input, setInput] = useState("");
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastCount = useRef(messages.length);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleSend = () => {
     const msg = input.trim();
@@ -936,7 +963,9 @@ function ChatTab({
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+      <div className="relative flex-1 overflow-hidden">
+      <div ref={scrollAreaRef} className="h-full overflow-y-auto space-y-4 pr-1">
+
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
@@ -1004,8 +1033,26 @@ function ChatTab({
         <div ref={bottomRef} />
       </div>
 
+      {/* Scroll-to-bottom button */}
+      <AnimatePresence>
+        {showScrollBtn && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="absolute bottom-2 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 shadow-lg hover:text-white"
+            style={{ background: "rgba(12,12,14,0.9)", backdropFilter: "blur(8px)" }}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+      </div>
+
       {/* Input area */}
-      <div className="mt-3 border-t border-white/[0.06] pt-3">
+      <div className="mt-3 pt-3">
         {/* Suggested chips when there are messages */}
         {messages.length > 0 && messages.length < 4 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -1015,18 +1062,26 @@ function ChatTab({
                 type="button"
                 onClick={() => onSend(q)}
                 disabled={loading || isMock}
-                className="rounded-full border border-white/[0.06] px-2.5 py-1 text-[10px] text-slate-600 transition-all hover:text-slate-300 disabled:opacity-50"
+                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-slate-500 transition-all hover:bg-white/[0.07] hover:text-slate-200 disabled:opacity-50"
               >
                 {q}
               </button>
             ))}
           </div>
         )}
-        <div className="flex gap-2">
+        <div
+          className="flex items-end gap-2 rounded-2xl border p-2"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            backdropFilter: "blur(16px)",
+            borderColor: "rgba(255,255,255,0.07)",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+          }}
+        >
           <textarea
             ref={textareaRef}
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-white/[0.08] bg-[#0c0c0e] px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-[#ff3c3c]/40 focus:ring-2 focus:ring-[#ff3c3c]/20 font-[family-name:var(--font-mono)] placeholder:text-slate-700"
+            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-slate-100 outline-none font-[family-name:var(--font-mono)] placeholder:text-slate-700"
             placeholder={
               isMock
                 ? "Chat disabled in demo mode"
@@ -1046,18 +1101,21 @@ function ChatTab({
               }
             }}
           />
-          <button
+          <motion.button
             type="button"
             disabled={!input.trim() || loading || isMock}
             onClick={handleSend}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff3c3c] to-[#c92a2a] text-white shadow-lg shadow-[#ff3c3c]/20 transition hover:opacity-90 disabled:opacity-40"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition disabled:opacity-40"
+            style={{ background: "linear-gradient(135deg, #ff3c3c, #c92a2a)", boxShadow: "0 4px 16px rgba(255,60,60,0.25)" }}
           >
             {loading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
             )}
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>

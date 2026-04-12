@@ -13,9 +13,9 @@ import {
   Brush
 } from "recharts";
 import { bt } from "@/components/backtesting/btClasses";
+import { motion } from "framer-motion";
 import { DdExposureCard } from "./components/DdExposureCard";
 import { AlertsOverview } from "./components/AlertsOverview";
-import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
@@ -516,8 +516,15 @@ export default function DashboardPage() {
                   { label: "Risk / trade", value: `${riskRules.max_risk_per_trade_pct}% limit`, status: "safe" as RuleStatus },
                   { label: "Exposure", value: `${riskRules.max_exposure_pct}% limit`, status: getRuleStatus(stats?.currentExposurePct ?? null, riskRules.max_exposure_pct) },
                   { label: "Revenge", value: `${riskRules.revenge_threshold_trades} losses`, status: "safe" as RuleStatus },
-                ].map(({ label, value, status }) => (
-                  <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+                ].map(({ label, value, status }, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.3, ease: "easeOut" }}
+                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                    className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3"
+                  >
                     <div className="rs-kpi-label">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className={`h-2 w-2 rounded-full ${
@@ -528,13 +535,19 @@ export default function DashboardPage() {
                         {value}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
               <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-                {["Daily loss", "Risk / trade", "Exposure", "Revenge"].map((label) => (
-                  <div key={label} className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
+                {["Daily loss", "Risk / trade", "Exposure", "Revenge"].map((label, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.3, ease: "easeOut" }}
+                    className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3"
+                  >
                     <div className="rs-kpi-label">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-slate-600" />
@@ -542,7 +555,7 @@ export default function DashboardPage() {
                         {label === "Revenge" ? "0 losses" : "0% limit"}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -561,7 +574,13 @@ export default function DashboardPage() {
 
           {/* KPI row 1 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="rs-kpi-label">Balance</div>
               <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.balancePct} suffix="%" />}
@@ -569,9 +588,15 @@ export default function DashboardPage() {
               <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.10, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="rs-kpi-label">Equity</div>
               <div className="mt-1 text-2xl font-bold font-display text-white">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.equityPct} suffix="%" />}
@@ -579,9 +604,15 @@ export default function DashboardPage() {
               <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="flex items-center justify-between">
                 <span className="rs-kpi-label">Win rate & avg R:R</span>
                 <button
@@ -622,13 +653,19 @@ export default function DashboardPage() {
                   />
                 )}
               </div>
-            </div>
+            </motion.div>
             <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
           </section>
 
           {/* KPI row 2 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.20, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="rs-kpi-label">Avg win</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />}
@@ -636,9 +673,15 @@ export default function DashboardPage() {
               <div className="mt-1 text-xs font-mono text-slate-500">
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgWinPct != null ? `${stats.avgWinPct.toFixed(2)}%` : "No data"}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="rs-kpi-label">Avg loss</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />}
@@ -646,9 +689,15 @@ export default function DashboardPage() {
               <div className="mt-1 text-xs font-mono text-slate-500">
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : stats?.avgLossPct != null ? `${stats.avgLossPct.toFixed(2)}%` : "No data"}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.30, duration: 0.3, ease: "easeOut" }}
+              whileHover={{ y: -2, transition: { duration: 0.15 } }}
+              className="rs-card-accent p-5 shadow-rs-soft"
+            >
               <div className="rs-kpi-label">Max drawdown</div>
               <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : (
@@ -660,7 +709,7 @@ export default function DashboardPage() {
                   ? new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
                   : "No data"}
               </div>
-            </div>
+            </motion.div>
           </section>
 
           <DdExposureCard
@@ -797,12 +846,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section>
-            <h2 className="rs-section-title mb-3 text-slate-400">
-              Quick actions
-            </h2>
-            <QuickActions onSyncTrades={handleSyncTrades} syncing={syncing} />
-          </section>
         </>
       )}
 

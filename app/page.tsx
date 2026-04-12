@@ -133,6 +133,15 @@ export default function HomePage() {
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden">
+        {/* Dot grid background */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+            maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
+          }}
+        />
         <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
@@ -182,29 +191,74 @@ export default function HomePage() {
           </h1>
 
           <div className="hero-sub flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-              One subscription. Backtesting, Journaling,<br />
-              Risk Manager, Live Alerts.<br />
-              <span className="text-slate-300">Everything your edge needs.</span>
-            </p>
-            <div className="hero-cta flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/signup"
-                className="group inline-flex items-center justify-center gap-2.5 rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset" }}
-              >
-                Start for free
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/mock/dashboard"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02]"
-                style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
-              >
-                Live demo
-                <ChevronRight className="h-4 w-4 opacity-50" />
-              </Link>
+            <div className="flex flex-col gap-6">
+              <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                One subscription. Backtesting, Journaling,<br />
+                Risk Manager, Live Alerts.<br />
+                <span className="text-slate-300">Everything your edge needs.</span>
+              </p>
+              <div className="hero-cta flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/signup"
+                  className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset" }}
+                >
+                  <span
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%)",
+                      backgroundSize: "200% 100%",
+                      animation: "shimmer 2.4s infinite linear",
+                    }}
+                  />
+                  Start for free
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/mock/dashboard"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02]"
+                  style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+                >
+                  Live demo
+                  <ChevronRight className="h-4 w-4 opacity-50" />
+                </Link>
+              </div>
             </div>
+
+            {/* Floating equity chart mockup */}
+            <motion.div
+              className="hero-cta hidden lg:block"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
+              style={{ animation: "float 4s ease-in-out infinite" }}
+            >
+              <div
+                className="relative rounded-2xl border p-5 w-72"
+                style={{
+                  background: "rgba(255,255,255,0.02)",
+                  borderColor: "rgba(255,255,255,0.07)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+                }}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600">Equity curve</span>
+                  <span className="text-xs font-mono text-emerald-400">+12.4%</span>
+                </div>
+                <svg viewBox="0 0 260 80" className="w-full" fill="none">
+                  <defs>
+                    <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4" stroke="#ff3c3c" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4 L260,80 L0,80 Z" fill="url(#heroChartGrad)" />
+                  <circle cx="260" cy="4" r="3" fill="#ff3c3c" />
+                </svg>
+              </div>
+            </motion.div>
           </div>
         </div>
 
@@ -537,12 +591,20 @@ export default function HomePage() {
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
                 boxShadow: "0 0 60px rgba(255,60,60,0.4), 0 1px 0 rgba(255,255,255,0.2) inset",
               }}
             >
+              <span
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 2.4s infinite linear",
+                }}
+              />
               Start for free
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
@@ -560,15 +622,12 @@ export default function HomePage() {
       {/* ─── FOOTER ─── */}
       <footer className="border-t px-6 py-8 lg:px-16" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-black text-white"
-              style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
-            >
-              RS
-            </div>
-            <span className="text-sm font-semibold text-slate-400">RiskSent</span>
-          </div>
+          <span
+            className="text-sm font-extrabold tracking-tight text-slate-300"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            RiskSent
+          </span>
           <p className="text-[11px] text-slate-600 font-mono">
             © {new Date().getFullYear()} RiskSent · All-in-one trading platform
           </p>

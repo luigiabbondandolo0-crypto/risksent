@@ -275,3 +275,13 @@ aside.lg\:flex {
 .rs-candle-scroll {
   animation: rs-candle-scroll 32s linear infinite;
 }
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
