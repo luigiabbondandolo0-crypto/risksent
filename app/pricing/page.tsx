@@ -285,8 +285,21 @@ export default function PricingPage() {
             const priceLabel = `€${price % 1 === 0 ? price : price.toFixed(2)}`;
             const billedLabel = annual ? `€${plan.annualTotal}/year` : null;
             const subLoading = subscription === null;
-            const isLoading = subLoading || loadingPlan === plan.id;
-            const isDirectLoading = loadingDirectPlan === plan.id;
+            const ctaBusy = loadingPlan === plan.id || loadingDirectPlan === plan.id;
+
+            const isSubscribedOrTrialing =
+              subscription != null &&
+              (subscription.status === "trialing" ||
+                subscription.plan === "trial" ||
+                subscription.isTrialing ||
+                subscription.plan === "new_trader" ||
+                subscription.plan === "experienced");
+
+            const showTrialInsteadLink =
+              subscription != null &&
+              !subscription.subscriptionFetchFailed &&
+              !isSubscribedOrTrialing &&
+              subscription.plan === "user";
 
             return (
               <motion.div
@@ -370,11 +383,11 @@ export default function PricingPage() {
                     </AnimatePresence>
                   </div>
 
-                  {/* Primary CTA — Start free trial */}
+                  {/* Primary CTA — Subscribe now (Stripe checkout) */}
                   <button
                     type="button"
-                    onClick={() => void startTrial(plan.id)}
-                    disabled={isLoading}
+                    onClick={() => void subscribeDirect(plan.id)}
+                    disabled={subLoading || ctaBusy}
                     className="mt-6 flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-60"
                     style={
                       isHighlight
@@ -390,19 +403,21 @@ export default function PricingPage() {
                           }
                     }
                   >
-                    {subLoading ? "Checking…" : isLoading ? "Loading…" : "Start 7-day free trial"}
-                    {!isLoading && <ArrowRight className="h-4 w-4" />}
+                    {subLoading ? "Checking…" : loadingDirectPlan === plan.id ? "Opening checkout…" : "Subscribe now"}
+                    {!(subLoading || loadingDirectPlan === plan.id) && <ArrowRight className="h-4 w-4" />}
                   </button>
 
-                  {/* Secondary CTA — Subscribe directly */}
-                  <button
-                    type="button"
-                    onClick={() => void subscribeDirect(plan.id)}
-                    disabled={isDirectLoading || subLoading}
-                    className="mt-2 w-full rounded-2xl py-2.5 text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
-                  >
-                    {isDirectLoading ? "Opening checkout…" : "Already tried it? Subscribe directly →"}
-                  </button>
+                  {/* Secondary — Free trial (demo / logged-out only) */}
+                  {showTrialInsteadLink && (
+                    <button
+                      type="button"
+                      onClick={() => void startTrial(plan.id)}
+                      disabled={subLoading || ctaBusy}
+                      className="mt-2 w-full rounded-2xl py-2.5 text-center text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+                    >
+                      {loadingPlan === plan.id ? "Starting trial…" : "Start 7-day free trial instead →"}
+                    </button>
+                  )}
 
                   <div className="mt-4 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
 
