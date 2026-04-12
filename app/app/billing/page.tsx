@@ -266,7 +266,7 @@ export default function BillingPage() {
               >
                 {PLAN_LABELS[plan] ?? plan}
               </span>
-              {sub?.status && (
+              {sub?.status && sub.status !== "trialing" && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-mono ${STATUS_COLOR[sub.status] ?? ""}`}
                 >
