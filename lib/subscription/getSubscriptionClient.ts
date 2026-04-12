@@ -76,14 +76,22 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
 export async function getSubscriptionClient(): Promise<SubscriptionInfo> {
   try {
     const res = await fetch("/api/stripe/subscription");
-    if (!res.ok) throw new Error("Failed");
+    if (res.status === 401) {
+      return { ...capsForPlan("user", "active", null), authenticated: false };
+    }
+    if (!res.ok) {
+      return { ...capsForPlan("user", "active", null), subscriptionFetchFailed: true };
+    }
     const d = (await res.json()) as {
       subscription?: { plan: Plan; status: SubStatus; current_period_end: string | null };
     };
     const sub = d.subscription;
-    if (!sub) return capsForPlan("user", "active", null);
-    return capsForPlan(sub.plan, sub.status, sub.current_period_end ?? null);
+    if (!sub) return { ...capsForPlan("user", "active", null), authenticated: true };
+    return {
+      ...capsForPlan(sub.plan, sub.status, sub.current_period_end ?? null),
+      authenticated: true
+    };
   } catch {
-    return capsForPlan("user", "active", null);
+    return { ...capsForPlan("user", "active", null), subscriptionFetchFailed: true };
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CreditCard, Clock, AlertCircle, CheckCircle, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
@@ -34,6 +35,16 @@ const STATUS_COLOR: Record<string, string> = {
   canceled: "text-red-300 bg-red-500/15",
   incomplete: "text-slate-300 bg-slate-500/15",
 };
+
+function TrialActiveNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("notice") !== "trial-active") return null;
+  return (
+    <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-mono text-amber-200">
+      You already have an active trial.
+    </div>
+  );
+}
 
 export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionRow | null>(null);
@@ -127,6 +138,10 @@ export default function BillingPage() {
           Manage your subscription and payment details.
         </p>
       </header>
+
+      <Suspense fallback={null}>
+        <TrialActiveNotice />
+      </Suspense>
 
       {/* Current plan card */}
       <motion.div

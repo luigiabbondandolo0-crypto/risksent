@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Zap, X } from "lucide-react";
+import { ArrowRight, Check, Zap } from "lucide-react";
+import { useSubscription } from "@/lib/subscription/SubscriptionContext";
 
 const containerVariants = {
   hidden: {},
@@ -67,69 +69,65 @@ const plans = [
   },
 ] as const;
 
-type ToastState = { type: "success" | "error"; message: string } | null;
-
 export default function PricingPage() {
+  const router = useRouter();
+  const subscription = useSubscription();
   const [annual, setAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState>(null);
+  const [ctaError, setCtaError] = useState<string | null>(null);
 
   const startTrial = async (planId: string) => {
-    setLoadingPlan(planId);
-    try {
-      // First try to activate a trial (for existing logged-in demo users)
-      const trialRes = await fetch("/api/stripe/start-trial", { method: "POST" });
-      if (trialRes.ok) {
-        setToast({ type: "success", message: "Trial activated! Redirecting to dashboard…" });
-        setTimeout(() => { window.location.href = "/app/dashboard"; }, 1500);
-        return;
-      }
+    setCtaError(null);
+    if (!subscription) return;
 
-      // Otherwise redirect to checkout
-      const checkoutRes = await fetch("/api/stripe/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
-      });
-      const d = (await checkoutRes.json()) as { url?: string; error?: string };
-      if (d.url) {
-        window.location.href = d.url;
-      } else if (d.error === "Unauthorized") {
-        window.location.href = `/signup?plan=${planId}`;
-      } else {
-        setToast({ type: "error", message: d.error ?? "Something went wrong" });
-      }
-    } catch {
-      setToast({ type: "error", message: "Network error — please try again" });
-    } finally {
-      setLoadingPlan(null);
+    if (subscription.subscriptionFetchFailed) {
+      setCtaError("We couldn't verify your account. Please refresh the page and try again.");
+      return;
     }
+
+    if (subscription.authenticated === false) {
+      router.push("/signup");
+      return;
+    }
+
+    const onActiveTrial =
+      subscription.status === "trialing" ||
+      subscription.plan === "trial" ||
+      subscription.isTrialing;
+
+    if (onActiveTrial) {
+      router.push("/app/billing?notice=trial-active");
+      return;
+    }
+
+    if (subscription.plan === "new_trader" || subscription.plan === "experienced") {
+      router.push("/app/billing");
+      return;
+    }
+
+    if (subscription.plan === "user") {
+      setLoadingPlan(planId);
+      try {
+        const trialRes = await fetch("/api/stripe/start-trial", { method: "POST" });
+        const data = (await trialRes.json().catch(() => ({}))) as { error?: string };
+        if (trialRes.ok) {
+          router.push("/app/dashboard");
+          return;
+        }
+        setCtaError(typeof data.error === "string" ? data.error : "Could not start your trial. Try again.");
+      } catch {
+        setCtaError("Could not start your trial. Check your connection and try again.");
+      } finally {
+        setLoadingPlan(null);
+      }
+      return;
+    }
+
+    setCtaError("Open billing to manage your subscription.");
   };
 
   return (
     <div className="min-h-full overflow-x-hidden bg-[#080809]">
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            key="toast"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed top-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-xl border px-5 py-3 text-sm font-mono shadow-2xl ${
-              toast.type === "success"
-                ? "border-emerald-500/25 bg-emerald-500/15 text-emerald-200"
-                : "border-red-500/25 bg-red-500/15 text-red-200"
-            }`}
-          >
-            {toast.message}
-            <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">
-              <X className="h-4 w-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Hero */}
       <section className="relative min-h-[52vh] flex flex-col justify-center px-6 pt-24 pb-10 lg:px-16 overflow-hidden">
@@ -233,6 +231,15 @@ export default function PricingPage() {
               </span>
             </span>
           </motion.div>
+
+          {ctaError && (
+            <p
+              className="mt-6 max-w-lg mx-auto rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-center text-sm font-mono text-red-200"
+              role="alert"
+            >
+              {ctaError}
+            </p>
+          )}
         </div>
       </section>
 
@@ -250,7 +257,8 @@ export default function PricingPage() {
             const price = annual ? plan.annualMonthly : plan.monthlyPrice;
             const priceLabel = `€${price % 1 === 0 ? price : price.toFixed(2)}`;
             const billedLabel = annual ? `€${plan.annualTotal}/year` : null;
-            const isLoading = loadingPlan === plan.id;
+            const subLoading = subscription === null;
+            const isLoading = subLoading || loadingPlan === plan.id;
 
             return (
               <motion.div
@@ -334,6 +342,7 @@ export default function PricingPage() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => void startTrial(plan.id)}
                     disabled={isLoading}
                     className="mt-6 flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-60"
@@ -351,7 +360,7 @@ export default function PricingPage() {
                           }
                     }
                   >
-                    {isLoading ? "Loading…" : "Start 7-day free trial"}
+                    {subLoading ? "Checking…" : isLoading ? "Loading…" : "Start 7-day free trial"}
                     {!isLoading && <ArrowRight className="h-4 w-4" />}
                   </button>
 
@@ -499,13 +508,18 @@ export default function PricingPage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
+              type="button"
               onClick={() => void startTrial("experienced")}
-              disabled={loadingPlan === "experienced"}
+              disabled={subscription === null || loadingPlan === "experienced"}
               className="inline-flex items-center justify-center gap-2 rounded-2xl px-10 py-4 text-base font-bold text-black transition-all hover:scale-[1.03] disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3)" }}
             >
-              {loadingPlan === "experienced" ? "Loading…" : "Start free trial"}
-              {loadingPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
+              {subscription === null
+                ? "Checking…"
+                : loadingPlan === "experienced"
+                  ? "Loading…"
+                  : "Start free trial"}
+              {subscription !== null && loadingPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
             </button>
             <Link
               href="/mock/dashboard"

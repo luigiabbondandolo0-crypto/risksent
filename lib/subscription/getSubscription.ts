@@ -15,6 +15,10 @@ export type SubscriptionInfo = {
   maxBrokerAccounts: number | null;
   maxBacktestingSessions: number | null;
   trialEndsAt: string | null;
+  /** Set only by client fetch: false = not logged in (401). */
+  authenticated?: boolean;
+  /** Client fetch failed (network or non-OK response). */
+  subscriptionFetchFailed?: boolean;
 };
 
 // Keep legacy alias for any existing imports
