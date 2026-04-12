@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
-
 function priceIdFromPlan(plan: string): string {
   if (plan === "new_trader") return process.env.STRIPE_NEW_TRADER_PRICE_ID ?? "";
   if (plan === "experienced") return process.env.STRIPE_EXPERIENCED_PRICE_ID ?? "";
@@ -11,6 +9,8 @@ function priceIdFromPlan(plan: string): string {
 }
 
 export async function POST(req: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
+
   const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
@@ -25,7 +25,6 @@ export async function POST(req: Request) {
   const priceId = priceIdFromPlan(plan);
   if (!priceId) return NextResponse.json({ error: "Invalid plan or missing price env var" }, { status: 400 });
 
-  // Get or create Stripe customer
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("stripe_customer_id")

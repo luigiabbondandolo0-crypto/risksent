@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
-
-// Service role client (bypasses RLS) for webhook writes
 function createServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,9 +10,6 @@ function createServiceClient() {
   );
 }
 
-// Local shape that covers the subscription fields we actually use.
-// Casting through unknown lets us access period fields regardless of the
-// SDK's exact generic wrapper type for this API version.
 type SubShape = {
   id: string;
   status: string;
@@ -37,6 +31,8 @@ function planFromPriceId(priceId: string): "new_trader" | "experienced" | "free"
 }
 
 export async function POST(req: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
+
   const rawBody = await req.text();
   const sig = req.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "No signature" }, { status: 400 });
