@@ -400,8 +400,8 @@ export default function PricingPage() {
                     {!(subLoading || loadingDirectPlan === plan.id) && <ArrowRight className="h-4 w-4" />}
                   </button>
 
-                  {/* Secondary — Free trial (demo / logged-out only) */}
-                  {showTrialInsteadLink && (
+                  {/* Secondary — full Experienced trial only on Experienced card */}
+                  {showTrialInsteadLink && plan.id === "experienced" && (
                     <button
                       type="button"
                       onClick={() => void startTrial(plan.id)}
