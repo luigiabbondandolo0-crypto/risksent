@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import type { BtTimeframe, Candle } from "@/lib/backtesting/btTypes";
 import { getCachedOhlcv, ohlcvCacheKey, setCachedOhlcv } from "@/lib/backtesting/ohlcvServerCache";
 import { normalizeTwelveDataSymbol, parseTwelveDataResponse, timeframeToInterval } from "@/lib/backtesting/twelveData";

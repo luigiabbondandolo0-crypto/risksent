@@ -1,4 +1,4 @@
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 /**

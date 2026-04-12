@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 const DEBUG = process.env.NODE_ENV !== "production" || process.env.DEBUG_ACCOUNTS === "1";
 const LOG = (...args: unknown[]) => (DEBUG ? console.log("[api/accounts]", ...args) : () => {});

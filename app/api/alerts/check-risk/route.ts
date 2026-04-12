@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteClient } from "@/lib/supabaseServer";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { runRiskCheckForAccount } from "@/lib/riskCheckRun";
 import { accountSelectColumns } from "@/lib/tradingApi";
 
