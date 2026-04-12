@@ -222,8 +222,8 @@ export default function PricingPage() {
             className="text-slate-400 max-w-lg mx-auto mb-10"
             style={{ fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", fontSize: "14px" }}
           >
-            Both plans include a 7-day free trial with full Experienced access.<br />
-            No credit card required · Cancel anytime.
+            Subscribe to a plan when you&rsquo;re ready, or start a separate 7-day trial first with full Experienced access.<br />
+            No credit card for the trial · Cancel anytime.
           </motion.p>
 
           {/* Annual toggle */}
@@ -333,15 +333,6 @@ export default function PricingPage() {
                         Most popular
                       </span>
                     )}
-                  </div>
-
-                  {/* Trial badge */}
-                  <div
-                    className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono font-bold"
-                    style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.3)", background: "rgba(255,140,0,0.08)" }}
-                  >
-                    <Zap className="h-2.5 w-2.5" />
-                    7-day free trial included
                   </div>
 
                   <p
@@ -454,7 +445,7 @@ export default function PricingPage() {
           className="max-w-3xl mx-auto mt-6 text-center"
         >
           <p className="text-[12px] font-mono text-slate-500 tracking-wide">
-            7-day free trial · No credit card required · Cancel anytime
+            Optional 7-day trial · No card for trial · Subscribe directly anytime
           </p>
         </motion.div>
       </section>

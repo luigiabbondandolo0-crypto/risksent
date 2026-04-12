@@ -148,8 +148,11 @@ function PlanChoiceGrid({
   );
 }
 
+const ADMIN_PLAN_STYLE = "text-violet-300 bg-violet-500/15 border-violet-500/30";
+
 export default function BillingPage() {
   const [sub, setSub] = useState<SubscriptionRow | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [trialLoading, setTrialLoading] = useState(false);
@@ -157,12 +160,21 @@ export default function BillingPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/stripe/subscription")
-      .then((r) => r.json())
-      .then((d: { subscription?: SubscriptionRow }) => {
-        setSub(d.subscription ?? null);
+    let cancelled = false;
+    Promise.all([fetch("/api/stripe/subscription"), fetch("/api/admin/check-role")])
+      .then(async ([subRes, roleRes]) => {
+        const subData = (await subRes.json().catch(() => ({}))) as { subscription?: SubscriptionRow };
+        const roleData = (await roleRes.json().catch(() => ({}))) as { isAdmin?: boolean };
+        if (cancelled) return;
+        setSub(subData.subscription ?? null);
+        setIsAdmin(roleData.isAdmin === true);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const openPortal = async () => {
@@ -219,11 +231,16 @@ export default function BillingPage() {
 
   const plan = sub?.plan ?? "user";
 
-  // Trial days remaining
+  // Trial days remaining (hidden for admins — DB row may still say trial)
   const trialDaysLeft =
-    sub?.current_period_end && (plan === "trial" || sub.status === "trialing")
+    !isAdmin &&
+    sub?.current_period_end &&
+    (plan === "trial" || sub.status === "trialing")
       ? Math.max(0, Math.ceil((new Date(sub.current_period_end).getTime() - Date.now()) / 86_400_000))
       : null;
+
+  const planChipLabel = isAdmin ? "Admin" : (PLAN_LABELS[plan] ?? plan);
+  const planChipClass = isAdmin ? ADMIN_PLAN_STYLE : (PLAN_COLOR[plan] ?? "");
 
   if (loading) {
     return (
@@ -261,12 +278,10 @@ export default function BillingPage() {
               Current plan
             </p>
             <div className="mt-2 flex items-center gap-2">
-              <span
-                className={`rounded-full border px-3 py-0.5 text-sm font-semibold ${PLAN_COLOR[plan] ?? ""}`}
-              >
-                {PLAN_LABELS[plan] ?? plan}
+              <span className={`rounded-full border px-3 py-0.5 text-sm font-semibold ${planChipClass}`}>
+                {planChipLabel}
               </span>
-              {sub?.status && sub.status !== "trialing" && (
+              {!isAdmin && sub?.status && sub.status !== "trialing" && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-mono ${STATUS_COLOR[sub.status] ?? ""}`}
                 >
@@ -274,10 +289,16 @@ export default function BillingPage() {
                 </span>
               )}
             </div>
-            <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-              €{PLAN_PRICES[plan] ?? 0}
-              <span className="text-base font-normal text-slate-500">/mo</span>
-            </p>
+            {isAdmin ? (
+              <p className="mt-3 text-sm font-mono leading-relaxed text-slate-400">
+                Full product access as an administrator. Any trial or plan shown in Stripe/DB is for testing only.
+              </p>
+            ) : (
+              <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
+                €{PLAN_PRICES[plan] ?? 0}
+                <span className="text-base font-normal text-slate-500">/mo</span>
+              </p>
+            )}
           </div>
 
           {/* Manage button for paid plans */}
@@ -325,7 +346,7 @@ export default function BillingPage() {
       </motion.div>
 
       {/* Demo — start trial CTA + direct subscribe */}
-      {plan === "user" && (
+      {plan === "user" && !isAdmin && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -380,7 +401,7 @@ export default function BillingPage() {
       )}
 
       {/* Trial — upgrade grid */}
-      {(plan === "trial" || sub?.status === "trialing") && (
+      {(plan === "trial" || sub?.status === "trialing") && !isAdmin && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
