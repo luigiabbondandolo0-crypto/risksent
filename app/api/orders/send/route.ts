@@ -8,7 +8,7 @@ const PENDING_OPS = ["BuyStop", "SellStop", "BuyLimit", "SellLimit"];
 /**
  * POST /api/orders/send
  * Body: { uuid?, symbol, operation, volume, price?, stoploss?, takeprofit? }
- * Places order via mtapi OrderSend. Optional stoploss/takeprofit = price levels.
+ * Places order via trading provider OrderSend (disabled until new integration). Optional stoploss/takeprofit = price levels.
  */
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();

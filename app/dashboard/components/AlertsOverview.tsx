@@ -11,6 +11,7 @@ type AlertRow = {
   alert_date: string;
   read: boolean | null;
   rule_type?: string | null;
+  account_nickname?: string | null;
 };
 
 type AlertsOverviewProps = {
@@ -42,8 +43,8 @@ export function AlertsOverview({ onRefresh, hasLinkedAccount = true }: AlertsOve
       items={alerts}
       loading={loading}
       maxItems={4}
-      viewAllHref="/rules#alerts"
-      viewAllLabel="Open alerts center"
+      viewAllHref="/app/risk-manager"
+      viewAllLabel="Open Risk Manager"
       subtitle="Unread items that need attention"
       emptyHeadline={hasLinkedAccount ? undefined : "No alerts"}
       emptyDescription={

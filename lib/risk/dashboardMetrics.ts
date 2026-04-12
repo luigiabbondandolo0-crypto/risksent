@@ -1,0 +1,69 @@
+import type { ClosedOrder } from "@/lib/dashboard/buildRealStats";
+
+export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number {
+  const valid = orders.filter(
+    (o): o is { closeTime: string; profit: number } =>
+      o != null && typeof o.closeTime === "string" && typeof o.profit === "number"
+  );
+  if (valid.length === 0) return 0;
+  const sorted = [...valid].sort(
+    (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
+  );
+  let n = 0;
+  for (const o of sorted) {
+    if (o.profit < 0) n++;
+    else break;
+  }
+  return n;
+}
+
+export type RawOpenPosition = {
+  symbol?: string;
+  volume?: number;
+  openPrice?: number;
+  stopLoss?: number;
+  type?: string;
+};
+
+const DEFAULT_CONTRACT_SIZE = 100_000;
+
+export function parseOpenPositions(raw: unknown): RawOpenPosition[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (o): o is RawOpenPosition =>
+      o != null && typeof o === "object" && typeof (o as RawOpenPosition).symbol === "string"
+  );
+}
+
+export function computeCurrentExposurePct(rawPositions: RawOpenPosition[], equity: number): number | null {
+  if (equity <= 0) return null;
+  let total = 0;
+  for (const p of rawPositions) {
+    const volume = Number(p.volume) || 0;
+    const openPrice = Number(p.openPrice) || 0;
+    const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
+    if (!volume || !openPrice) continue;
+    if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
+      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
+      total += (riskAmount / equity) * 100;
+    }
+  }
+  return total > 0 ? total : null;
+}
+
+export function maxOpenPositionRiskPct(positions: RawOpenPosition[], equity: number): number | null {
+  if (equity <= 0) return null;
+  let maxR: number | null = null;
+  for (const p of positions) {
+    const volume = Number(p.volume) || 0;
+    const openPrice = Number(p.openPrice) || 0;
+    const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
+    if (!volume || !openPrice) continue;
+    if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
+      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
+      const pct = (riskAmount / equity) * 100;
+      maxR = maxR == null ? pct : Math.max(maxR, pct);
+    }
+  }
+  return maxR;
+}

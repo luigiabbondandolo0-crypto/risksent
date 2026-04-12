@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   XAxis,
@@ -19,6 +19,11 @@ import { QuickActions } from "./components/QuickActions";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
+import { NoAccountState } from "@/components/shared/NoAccountState";
+import { AddAccountModal } from "@/components/journal/AddAccountModal";
+import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
+import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
+import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
 type Stats = {
   balance: number;
@@ -113,7 +118,11 @@ function AnimatedNumber({
 const POLL_MS = 45_000;
 
 export default function DashboardPage() {
-  const [linkedMetaId, setLinkedMetaId] = useState<string | null>(null);
+  const [tradingAccounts, setTradingAccounts] = useState<
+    { account_number: string; metaapi_account_id: string | null }[]
+  >([]);
+  const [selectedGlobalId, setSelectedGlobalId] = useState<"all" | string>("all");
+  const selInit = useRef(false);
   const [accountsResolved, setAccountsResolved] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [riskRules, setRiskRules] = useState<RiskRules | null>(null);
@@ -123,18 +132,42 @@ export default function DashboardPage() {
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [syncing] = useState(false);
+  const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+
+  const hasAnyBrokerMeta = useMemo(
+    () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
+    [tradingAccounts]
+  );
+
+  const resolvedStatsUuid = useMemo(
+    () =>
+      journalAccounts != null && journalAccounts.length > 0
+        ? resolveMetaapiUuidForJournalSelection(
+            selectedGlobalId,
+            journalAccounts,
+            tradingAccounts
+          )
+        : undefined,
+    [selectedGlobalId, journalAccounts, tradingAccounts]
+  );
+
+  const linkMetaUuid =
+    resolvedStatsUuid ??
+    tradingAccounts.find((t) => t.metaapi_account_id)?.metaapi_account_id ??
+    null;
 
   const pageReady = accountsResolved && rulesResolved;
-  const noLinkedAccount = accountsResolved && !linkedMetaId;
-  const kpiLoading = Boolean(linkedMetaId && stats === null);
+  const noLinkedAccount = accountsResolved && !hasAnyBrokerMeta;
+  const kpiLoading = Boolean(hasAnyBrokerMeta && stats === null);
   const noKpi = noLinkedAccount || Boolean(stats?.error);
 
-  const fetchStats = useCallback(async (uuid: string | null) => {
-    if (uuid === null) return;
-    const u = uuid || undefined;
-    const res = await fetch(
-      `/api/dashboard-stats${u ? `?uuid=${encodeURIComponent(u)}` : ""}`
-    );
+  const fetchStats = useCallback(async (uuid?: string) => {
+    const url =
+      uuid !== undefined && uuid !== ""
+        ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}`
+        : "/api/dashboard-stats";
+    const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) {
       setStats({
@@ -155,27 +188,109 @@ export default function DashboardPage() {
     setStats(data);
   }, []);
 
+  const reloadAccountData = useCallback(async () => {
+    try {
+      const [jRes, tRes] = await Promise.all([
+        fetch("/api/journal/accounts"),
+        fetch("/api/accounts"),
+      ]);
+      if (jRes.ok) {
+        const data = await jRes.json();
+        setJournalAccounts((data.accounts ?? []) as JournalAccountPublic[]);
+      }
+      if (tRes.ok) {
+        const data = await tRes.json();
+        const list = (data.accounts ?? []) as {
+          account_number?: string;
+          metaapi_account_id?: string | null;
+        }[];
+        setTradingAccounts(
+          list.map((a) => ({
+            account_number: String(a.account_number ?? ""),
+            metaapi_account_id: a.metaapi_account_id ?? null,
+          }))
+        );
+        setAccountsResolved(true);
+      } else {
+        setTradingAccounts([]);
+        setAccountsResolved(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/journal/accounts");
+        const data = await res.json();
+        if (!cancelled) {
+          setJournalAccounts(res.ok ? ((data.accounts ?? []) as JournalAccountPublic[]) : []);
+        }
+      } catch {
+        if (!cancelled) setJournalAccounts([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (journalAccounts === null || journalAccounts.length === 0 || selInit.current) return;
+    selInit.current = true;
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("rs_selected_account") ??
+          localStorage.getItem("rs_journal_account")
+        : null;
+    if (stored === "all" || (stored && journalAccounts.some((a) => a.id === stored))) {
+      setSelectedGlobalId(stored === "all" ? "all" : stored);
+    } else if (journalAccounts.length === 1) {
+      setSelectedGlobalId(journalAccounts[0]!.id);
+    } else {
+      setSelectedGlobalId("all");
+    }
+  }, [journalAccounts]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/accounts");
         if (!res.ok) {
-          if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
+          if (!cancelled) {
+            setTradingAccounts([]);
+            setAccountsResolved(true);
+          }
           return;
         }
         const data = await res.json();
-        const accounts = (data.accounts ?? []) as { metaapi_account_id?: string | null }[];
-        const linked = accounts.find((a) => Boolean(a.metaapi_account_id));
+        const list = (data.accounts ?? []) as {
+          account_number?: string;
+          metaapi_account_id?: string | null;
+        }[];
         if (!cancelled) {
-          setLinkedMetaId(linked?.metaapi_account_id ?? null);
+          setTradingAccounts(
+            list.map((a) => ({
+              account_number: String(a.account_number ?? ""),
+              metaapi_account_id: a.metaapi_account_id ?? null,
+            }))
+          );
           setAccountsResolved(true);
         }
       } catch {
-        if (!cancelled) { setLinkedMetaId(null); setAccountsResolved(true); }
+        if (!cancelled) {
+          setTradingAccounts([]);
+          setAccountsResolved(true);
+        }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -210,12 +325,23 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (linkedMetaId == null) { setStats(null); return; }
+    if (!accountsResolved) return;
+    if (journalAccounts === null || journalAccounts.length === 0) return;
+    if (!hasAnyBrokerMeta) {
+      setStats(null);
+      return;
+    }
     setStats(null);
-    fetchStats(linkedMetaId);
-    const t = setInterval(() => fetchStats(linkedMetaId), POLL_MS);
+    void fetchStats(resolvedStatsUuid);
+    const t = setInterval(() => void fetchStats(resolvedStatsUuid), POLL_MS);
     return () => clearInterval(t);
-  }, [linkedMetaId, fetchStats]);
+  }, [
+    resolvedStatsUuid,
+    accountsResolved,
+    journalAccounts,
+    hasAnyBrokerMeta,
+    fetchStats,
+  ]);
 
   const currency = stats?.currency ?? "EUR";
   const curve = stats?.equityCurve ?? [];
@@ -262,6 +388,45 @@ export default function DashboardPage() {
   const goPrevMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1));
   const goNextMonth = () => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1));
 
+  const showBrokerSyncBanner = accountsResolved && !hasAnyBrokerMeta;
+
+  if (journalAccounts === null) {
+    return (
+      <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+        <div className="rs-card overflow-hidden p-6" aria-hidden>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-48 max-w-full rounded bg-slate-800/80 animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-slate-800/60 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (journalAccounts.length === 0) {
+    return (
+      <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+        <NoAccountState
+          title="Connect your trading account"
+          description="Add your MT4 or MT5 account to see your live balance, equity curve, drawdown and risk metrics in real time."
+          ctaLabel="Connect your first account"
+          onCta={() => setAddAccountOpen(true)}
+        />
+        <AddAccountModal
+          open={addAccountOpen}
+          onClose={() => setAddAccountOpen(false)}
+          onCreated={() => {
+            setAddAccountOpen(false);
+            void reloadAccountData();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -279,7 +444,19 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-        <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0" />
+        <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+          <GlobalAccountSelector
+            accounts={journalAccounts.map((a) => ({
+              id: a.id,
+              nickname: a.nickname,
+              status: a.status,
+              platform: a.platform,
+            }))}
+            selectedId={selectedGlobalId}
+            onChange={setSelectedGlobalId}
+            onAddAccount={() => setAddAccountOpen(true)}
+          />
+        </div>
       </header>
 
       {!pageReady && (
@@ -301,6 +478,14 @@ export default function DashboardPage() {
 
       {pageReady && (
         <>
+          {showBrokerSyncBanner && (
+            <div
+              className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm leading-relaxed text-amber-100/95 font-[family-name:var(--font-mono)]"
+              role="status"
+            >
+              Account connected — sync pending. Data will appear once your broker connection is active.
+            </div>
+          )}
           {/* Active risk rules */}
           <section className="rs-card-accent p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -600,7 +785,7 @@ export default function DashboardPage() {
                 return dayData ? (
                   <Link
                     key={dateStr}
-                    href={`/trades?date=${dateStr}${linkedMetaId ? `&uuid=${encodeURIComponent(linkedMetaId)}` : ""}`}
+                    href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
                     className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
                   >
                     {content}
@@ -620,6 +805,15 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      <AddAccountModal
+        open={addAccountOpen}
+        onClose={() => setAddAccountOpen(false)}
+        onCreated={() => {
+          setAddAccountOpen(false);
+          void reloadAccountData();
+        }}
+      />
     </div>
   );
 }

@@ -13,6 +13,8 @@ import type {
   JournalTradeReview,
   JournalTradeRow,
 } from "@/lib/journal/journalTypes";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import { JournalScreenshotTile } from "@/components/journal/JournalScreenshotTile";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 
@@ -70,6 +72,9 @@ export function TradeReviewModal({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [shotUploading, setShotUploading] = useState(false);
+  const [shotDragOver, setShotDragOver] = useState(false);
+  const shotFileRef = useRef<HTMLInputElement>(null);
 
   // New strategy / checklist / rule inputs
   const [newStrategy, setNewStrategy] = useState("");
@@ -88,7 +93,15 @@ export function TradeReviewModal({
       const res = await fetch(`/api/journal/trades/${trade.id}/review`);
       if (res.ok) {
         const j = await res.json();
-        if (j.review) setReview(j.review);
+        if (j.review) {
+          const r = j.review as JournalTradeReview;
+          setReview({
+            ...r,
+            images: Array.isArray(r.images) ? r.images : [],
+            checklist_results: r.checklist_results ?? {},
+            rules_followed: r.rules_followed ?? {},
+          });
+        }
       }
       setLoading(false);
     })();
@@ -116,16 +129,62 @@ export function TradeReviewModal({
     [trade.id, isMock]
   );
 
+  type ReviewPatch =
+    | Partial<JournalTradeReview>
+    | ((prev: Partial<JournalTradeReview>) => Partial<JournalTradeReview>);
+
   const update = useCallback(
-    (patch: Partial<JournalTradeReview>) => {
+    (patch: ReviewPatch) => {
       setReview((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleAutoSave(next);
         return next;
       });
     },
     [scheduleAutoSave]
   );
+
+  const processReviewImages = async (files: FileList | File[]) => {
+    if (isMock) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setShotUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of list) {
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) newUrls.push(j.url);
+      }
+      if (newUrls.length > 0) {
+        update((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
+    } finally {
+      setShotUploading(false);
+    }
+  };
+
+  const removeReviewImage = (url: string) => {
+    update((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
+  };
 
   const toggleChecklist = (itemId: string) => {
     const current = review.checklist_results ?? {};
@@ -430,6 +489,78 @@ export function TradeReviewModal({
                     value={review.notes ?? ""}
                     onChange={(e) => update({ notes: e.target.value })}
                   />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+                    Screenshots
+                  </label>
+                  <p className="mb-2 text-[10px] text-slate-500 font-mono">
+                    Click preview to enlarge
+                  </p>
+                  <input
+                    ref={shotFileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void processReviewImages(e.target.files ?? []);
+                      e.target.value = "";
+                    }}
+                  />
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!isMock) shotFileRef.current?.click();
+                      }
+                    }}
+                    onDragEnter={() => setShotDragOver(true)}
+                    onDragLeave={() => setShotDragOver(false)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setShotDragOver(false);
+                      void processReviewImages(e.dataTransfer.files);
+                    }}
+                    onClick={() => !isMock && shotFileRef.current?.click()}
+                    className={`mt-1 flex min-h-[88px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-3 py-6 text-center font-mono transition-colors ${
+                      shotDragOver
+                        ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
+                        : "border-white/25 bg-white/[0.06] text-slate-200"
+                    } ${isMock ? "pointer-events-none opacity-50" : ""}`}
+                  >
+                    <span className="text-xs font-medium">
+                      {shotUploading
+                        ? "Uploading…"
+                        : "Drop screenshots or click to upload"}
+                    </span>
+                  </div>
+                  {(review.images ?? []).length > 0 && (
+                    <div className="mt-4 flex flex-col gap-5">
+                      {(review.images ?? [])
+                        .slice(0, JOURNAL_IMAGE_MAX)
+                        .map((url) => (
+                          <JournalScreenshotTile
+                            key={url}
+                            url={url}
+                            variant="compact"
+                            removeDisabled={isMock}
+                            onRemove={
+                              isMock
+                                ? undefined
+                                : () => removeReviewImage(url)
+                            }
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

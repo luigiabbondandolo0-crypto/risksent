@@ -42,7 +42,7 @@ export default function ManageAccountsPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Remove this MT account from RiskSent? It will be disconnected from mtapi.io.")) return;
+    if (!confirm("Remove this trading account from RiskSent?")) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/accounts/${id}`, { method: "DELETE" });
@@ -63,9 +63,9 @@ export default function ManageAccountsPage() {
     <div className="space-y-6 lg:space-y-8 animate-fade-in">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="rs-page-title">Manage MT accounts</h1>
+          <h1 className="rs-page-title">Manage accounts</h1>
           <p className="rs-page-sub">
-            Each MT account is linked to your trader profile. Add, view, or remove accounts here.
+            Each linked account is tied to your profile. Add, view, or remove accounts here.
           </p>
         </div>
         <Link
@@ -90,8 +90,10 @@ export default function ManageAccountsPage() {
       ) : accounts.length === 0 ? (
         <div className="rs-card p-8 text-center shadow-rs-soft">
           <CreditCard className="mx-auto h-10 w-10 text-slate-600" />
-          <p className="mt-2 text-slate-400">No MT accounts yet</p>
-          <p className="text-xs text-slate-500 mt-1">Add an MT4 or MT5 account to see balance and equity on the dashboard.</p>
+          <p className="mt-2 text-slate-400">No accounts yet</p>
+          <p className="text-xs text-slate-500 mt-1">
+            When broker linking is available again, add an account here to see balance and equity on the dashboard.
+          </p>
           <Link
             href="/add-account"
             className="mt-4 inline-flex items-center gap-2 rounded-lg border border-cyan-500/50 px-4 py-2 text-sm text-cyan-400 hover:bg-cyan-500/10"

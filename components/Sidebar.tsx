@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import type { NavItem } from "@/components/navConfig";
 import {
   primaryNavItems,
   adminOnlySidebarItems,
   isNavActive,
+  isJournalChildNavActive,
 } from "@/components/navConfig";
 import { motion } from "framer-motion";
 
@@ -19,7 +21,7 @@ function navLinkClass(active: boolean) {
   ].join(" ");
 }
 
-function NavGroup({
+function NavGroupInner({
   title,
   items,
   pathname,
@@ -28,6 +30,8 @@ function NavGroup({
   items: readonly NavItem[];
   pathname: string | null;
 }) {
+  const searchParams = useSearchParams();
+
   return (
     <div>
       <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
@@ -57,15 +61,26 @@ function NavGroup({
               {children && children.length > 0 && (
                 <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-slate-800/80 pl-3">
                   {children.map((ch) => {
-                    const subActive =
-                      pathname === ch.href || pathname?.startsWith(`${ch.href}/`);
+                    const ChIcon = ch.icon;
+                    const subActive = isJournalChildNavActive(
+                      pathname,
+                      searchParams,
+                      ch.href
+                    );
                     return (
                       <Link
                         key={ch.href}
                         href={ch.href}
-                        className={navLinkClass(!!subActive)}
+                        className={navLinkClass(subActive)}
                       >
-                        <span className="truncate pl-1 text-[13px]">{ch.label}</span>
+                        <ChIcon
+                          className={`h-3.5 w-3.5 flex-shrink-0 transition-colors ${
+                            subActive ? "text-cyan-400" : "text-slate-500"
+                          }`}
+                        />
+                        <span className="truncate pl-0.5 text-[13px]">
+                          {ch.label}
+                        </span>
                         {subActive && (
                           <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />
                         )}
@@ -78,6 +93,17 @@ function NavGroup({
           );
         })}
       </nav>
+    </div>
+  );
+}
+
+function NavGroupFallback() {
+  return (
+    <div>
+      <span className="mb-2 block px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+        Platform
+      </span>
+      <div className="h-40 animate-pulse rounded-xl bg-slate-900/40" />
     </div>
   );
 }
@@ -116,7 +142,6 @@ export function Sidebar({
 
   return (
     <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
-      {/* Logo */}
       <Link href="/app/dashboard" className="mb-8 flex items-center gap-2.5 px-1 group">
         <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 text-xs font-bold text-cyan-300 ring-1 ring-cyan-500/20 group-hover:ring-cyan-500/40 transition-all">
           RS
@@ -127,11 +152,13 @@ export function Sidebar({
       </Link>
 
       <div className="flex flex-col gap-8">
-        <NavGroup
-          title="Platform"
-          items={primaryNavItems}
-          pathname={pathname}
-        />
+        <Suspense fallback={<NavGroupFallback />}>
+          <NavGroupInner
+            title="Platform"
+            items={primaryNavItems}
+            pathname={pathname}
+          />
+        </Suspense>
       </div>
     </aside>
   );

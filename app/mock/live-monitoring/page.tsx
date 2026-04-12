@@ -4,7 +4,7 @@ export default function MockLiveMonitoringPage() {
       <header>
         <h1 className="rs-page-title">Live monitoring</h1>
         <p className="rs-page-sub">
-          Stessa area della live: stato connessione MetaAPI, closed/open orders, riepilogo risk check — dati finti.
+          Stessa area della live: stato connessione provider, closed/open orders, riepilogo risk check — dati finti.
         </p>
       </header>
       <section className="rs-card p-5 shadow-rs-soft">

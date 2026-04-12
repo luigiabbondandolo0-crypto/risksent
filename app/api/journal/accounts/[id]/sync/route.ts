@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
-/** Placeholder sync — updates last_synced_at; MetaApi integration later */
+/** Placeholder sync — updates last_synced_at; external broker sync when a provider is integrated */
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const supabase = await createSupabaseRouteClient();

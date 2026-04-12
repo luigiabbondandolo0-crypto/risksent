@@ -235,13 +235,13 @@ function getWelcomeEmailTemplate(userName: string): string {
         <div class="content">
           <p>We're thrilled to have you join RiskSent, your trusted trading risk management dashboard.</p>
           
-          <p>RiskSent helps you monitor your MT4/MT5 trading accounts, set risk rules, and get real-time alerts to protect your capital.</p>
+          <p>RiskSent helps you monitor your trading accounts, set risk rules, and get real-time alerts to protect your capital.</p>
         </div>
 
         <div class="features">
           <h3>What you can do:</h3>
           <ul>
-            <li>Connect your MetaTrader accounts securely</li>
+            <li>Connect your trading accounts securely (when broker linking is enabled)</li>
             <li>Set custom risk rules and daily loss limits</li>
             <li>Monitor trades and account performance in real-time</li>
             <li>Receive instant alerts via Telegram</li>

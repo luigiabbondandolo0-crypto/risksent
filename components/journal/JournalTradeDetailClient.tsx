@@ -16,6 +16,8 @@ import type {
 import { relatedTrades } from "@/lib/journal/analytics";
 import { jn } from "@/lib/journal/jnClasses";
 import { getSeedTradeById, SEED_TRADES } from "@/lib/journal/seedTrades";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import { JournalScreenshotTile } from "@/components/journal/JournalScreenshotTile";
 
 const EMOTIONS: JournalEmotion[] = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];
 const emotionColor: Record<JournalEmotion, string> = {
@@ -50,6 +52,9 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewSaved, setReviewSaved] = useState(false);
   const reviewSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const [shotUploading, setShotUploading] = useState(false);
+  const [shotDragOver, setShotDragOver] = useState(false);
+  const shotFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,7 +91,15 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
       }
       if (revRes.ok) {
         const rj = await revRes.json();
-        if (rj.review) setReview(rj.review);
+        if (rj.review) {
+          const r = rj.review as JournalTradeReview;
+          setReview({
+            ...r,
+            images: Array.isArray(r.images) ? r.images : [],
+            checklist_results: r.checklist_results ?? {},
+            rules_followed: r.rules_followed ?? {},
+          });
+        }
       }
       if (strRes.ok) setStrategies((await strRes.json()).strategies ?? []);
       if (clRes.ok) setChecklist((await clRes.json()).items ?? []);
@@ -139,16 +152,62 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
     [isSeed, tradeId]
   );
 
+  type ReviewPatch =
+    | Partial<JournalTradeReview>
+    | ((prev: Partial<JournalTradeReview>) => Partial<JournalTradeReview>);
+
   const updateReview = useCallback(
-    (patch: Partial<JournalTradeReview>) => {
+    (patch: ReviewPatch) => {
       setReview((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleReviewSave(next);
         return next;
       });
     },
     [scheduleReviewSave]
   );
+
+  const processReviewImages = async (files: FileList | File[]) => {
+    if (isSeed) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    setShotUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of list) {
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) newUrls.push(j.url);
+      }
+      if (newUrls.length > 0) {
+        updateReview((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
+    } finally {
+      setShotUploading(false);
+    }
+  };
+
+  const removeReviewImage = (url: string) => {
+    updateReview((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
+  };
 
   const rel = useMemo(() => {
     if (!trade) return [];
@@ -329,10 +388,78 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
           </div>
 
           <div className={jn.card}>
-            <p className={jn.label}>Screenshot</p>
-            <div className="mt-3 flex min-h-[140px] items-center justify-center rounded-xl border border-dashed border-white/[0.1] bg-black/20 text-sm text-slate-600">
-              Upload coming soon (Supabase Storage)
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+              Screenshots
+            </p>
+            <p className="mb-3 text-[11px] text-slate-500 font-mono">
+              Click a preview to open full size
+            </p>
+            <input
+              ref={shotFileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void processReviewImages(e.target.files ?? []);
+                e.target.value = "";
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (!isSeed) shotFileRef.current?.click();
+                }
+              }}
+              onDragEnter={() => setShotDragOver(true)}
+              onDragLeave={() => setShotDragOver(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setShotDragOver(false);
+                void processReviewImages(e.dataTransfer.files);
+              }}
+              onClick={() => !isSeed && shotFileRef.current?.click()}
+              className={`mt-1 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
+                shotDragOver
+                  ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
+                  : "border-white/25 bg-white/[0.06] text-slate-200"
+              } ${isSeed ? "pointer-events-none opacity-50" : ""}`}
+            >
+              <span className="text-sm font-medium">
+                {shotUploading
+                  ? "Uploading…"
+                  : "Drop screenshots here or click to upload"}
+              </span>
+              <span className="mt-1 text-[11px] text-slate-400">
+                Max {JOURNAL_IMAGE_MAX} images
+              </span>
             </div>
+            {(review.images ?? []).length > 0 && (
+              <div className="mt-5 flex flex-col gap-6">
+                {(review.images ?? []).slice(0, JOURNAL_IMAGE_MAX).map((url) => (
+                  <JournalScreenshotTile
+                    key={url}
+                    url={url}
+                    removeDisabled={isSeed}
+                    onRemove={
+                      isSeed ? undefined : () => removeReviewImage(url)
+                    }
+                  />
+                ))}
+              </div>
+            )}
+            {isSeed && (
+              <p className="mt-2 text-[10px] text-[#ff8c00] font-mono">
+                Demo — screenshots not saved.
+              </p>
+            )}
           </div>
         </div>
 

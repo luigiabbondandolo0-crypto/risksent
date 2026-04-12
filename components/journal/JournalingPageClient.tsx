@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,7 +14,6 @@ import {
   CalendarDays,
   RefreshCw,
   Settings2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -21,6 +21,8 @@ import {
   Check,
   TrendingUp,
   TrendingDown,
+  BarChart2,
+  Search,
 } from "lucide-react";
 import {
   format,
@@ -34,9 +36,12 @@ import {
   isToday,
 } from "date-fns";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
+import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { TradeReviewModal } from "@/components/journal/TradeReviewModal";
+import { JournalScreenshotTile } from "@/components/journal/JournalScreenshotTile";
 import type {
   JournalAccountPublic,
   JournalBias,
@@ -47,6 +52,7 @@ import type {
   JournalTradeRow,
 } from "@/lib/journal/journalTypes";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
+import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -73,7 +79,24 @@ const MOCK_SESSION: Partial<JournalSession> = {
   notes:
     "CPI data at 8:30am. Expect volatility. Waiting for London session to establish direction before entering.",
   images: [],
+  checklist_done: { c1: true, c2: true, c3: false },
+  rules_followed: { r1: true, r2: true, r3: false },
 };
+
+const MOTIVATIONAL_QUOTES = [
+  "Discipline is the bridge between goals and accomplishment.",
+  "The market rewards patience and punishes impulsiveness.",
+  "Your edge means nothing without the discipline to execute it.",
+  "One good trade beats ten impulsive ones.",
+  "Protect the account first. Profits follow discipline.",
+  "The best traders are not the most aggressive — they are the most disciplined.",
+  "Cut losses fast. Let winners run. Repeat.",
+  "A good trading day starts before the market opens.",
+  "Risk management is not optional. It is the job.",
+  "You don't need to trade every day. You need to trade right.",
+  "Consistency over perfection. Every single day.",
+  "Your stop loss is not a failure — it is your plan working.",
+] as const;
 
 const MOCK_STRATEGIES: JournalStrategy[] = [
   {
@@ -110,6 +133,34 @@ function getTodayStr() {
   return format(new Date(), "yyyy-MM-dd");
 }
 
+function normBoolRecord(r: unknown): Record<string, boolean> {
+  if (!r || typeof r !== "object" || Array.isArray(r)) return {};
+  const out: Record<string, boolean> = {};
+  for (const [k, v] of Object.entries(r)) out[k] = Boolean(v);
+  return out;
+}
+
+function normSessionImages(v: unknown): string[] {
+  if (Array.isArray(v)) {
+    return v.filter((x): x is string => typeof x === "string");
+  }
+  if (typeof v === "string") {
+    try {
+      const p = JSON.parse(v) as unknown;
+      return Array.isArray(p)
+        ? p.filter((x): x is string => typeof x === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+type JournalSessionPatch =
+  | Partial<JournalSession>
+  | ((prev: Partial<JournalSession>) => Partial<JournalSession>);
+
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
     (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
@@ -128,11 +179,13 @@ function BiasButton({
   active,
   color,
   onClick,
+  compact,
 }: {
   label: JournalBias;
   active: boolean;
   color: string;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <motion.button
@@ -141,7 +194,9 @@ function BiasButton({
       animate={active ? { scale: 1.04 } : { scale: 1 }}
       transition={{ type: "spring", damping: 20, stiffness: 400 }}
       onClick={onClick}
-      className="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all"
+      className={`flex-1 rounded-xl border font-semibold transition-all ${
+        compact ? "py-1.5 text-xs" : "py-2.5 text-sm"
+      }`}
       style={
         active
           ? {
@@ -238,6 +293,10 @@ function TradeCard({
 function TodayTab({
   session,
   todayTrades,
+  checklist,
+  rules,
+  updateSession,
+  onFlushSessionSave,
   onBiasChange,
   onKeyLevelsChange,
   onWatchlistChange,
@@ -248,9 +307,14 @@ function TodayTab({
   onSync,
   syncing,
   isMock,
+  settingsHref,
 }: {
   session: Partial<JournalSession>;
   todayTrades: JournalTradeRow[];
+  checklist: JournalChecklistItem[];
+  rules: JournalRule[];
+  updateSession: (patch: JournalSessionPatch) => void;
+  onFlushSessionSave: (override?: Partial<JournalSession>) => void;
   onBiasChange: (b: JournalBias | null) => void;
   onKeyLevelsChange: (v: string) => void;
   onWatchlistChange: (tags: string[]) => void;
@@ -261,8 +325,48 @@ function TodayTab({
   onSync: () => void;
   syncing: boolean;
   isMock: boolean;
+  settingsHref: string;
 }) {
+  const [quote] = useState(
+    () =>
+      MOTIVATIONAL_QUOTES[
+        Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)
+      ]!
+  );
   const [watchInput, setWatchInput] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const sortedChecklist = useMemo(
+    () => [...checklist].sort((a, b) => a.order_index - b.order_index),
+    [checklist]
+  );
+  const sortedRules = useMemo(
+    () => [...rules].sort((a, b) => a.order_index - b.order_index),
+    [rules]
+  );
+
+  const checklistDoneMap = session.checklist_done ?? {};
+  const rulesFollowedMap = session.rules_followed ?? {};
+
+  const checklistTotal = sortedChecklist.length;
+  const checklistCompleted = sortedChecklist.filter(
+    (c) => checklistDoneMap[c.id] === true
+  ).length;
+  const checklistPct =
+    checklistTotal > 0 ? (checklistCompleted / checklistTotal) * 100 : 0;
+  const progressColor =
+    checklistPct >= 100
+      ? "#00e676"
+      : checklistPct >= 60
+        ? "#ff8c00"
+        : "#ff3c3c";
+
+  const rulesActive = sortedRules.filter(
+    (r) => rulesFollowedMap[r.id] === true
+  ).length;
+  const rulesTotal = sortedRules.length;
 
   const addSymbol = () => {
     const s = watchInput.trim().toUpperCase();
@@ -278,6 +382,66 @@ function TodayTab({
     onWatchlistChange((session.watchlist ?? []).filter((x) => x !== sym));
   };
 
+  const processImageFiles = async (files: FileList | File[]) => {
+    if (isMock) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (list.length === 0) return;
+    const current = session.images ?? [];
+    const room = JOURNAL_IMAGE_MAX - current.length;
+    if (room <= 0) return;
+    setUploading(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of list.slice(0, room)) {
+        if (newUrls.length >= JOURNAL_IMAGE_MAX) break;
+        const dataUrl = await readImageFileAsDataUrl(file);
+        const res = await fetch("/api/journal/images/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, filename: file.name }),
+        });
+        if (!res.ok) continue;
+        const j: { url?: string } = await res.json();
+        if (j.url) newUrls.push(j.url);
+      }
+      if (newUrls.length > 0) {
+        updateSession((prev) => {
+          const cur = prev.images ?? [];
+          const merged = [...cur];
+          for (const u of newUrls) {
+            if (merged.length >= JOURNAL_IMAGE_MAX) break;
+            if (!merged.includes(u)) merged.push(u);
+          }
+          return { images: merged };
+        });
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (url: string) => {
+    updateSession((prev) => ({
+      images: (prev.images ?? []).filter((u) => u !== url),
+    }));
+  };
+
+  const settingsLinkProps = isMock
+    ? {
+        href: "#" as const,
+        onClick: (e: MouseEvent<HTMLAnchorElement>) => e.preventDefault(),
+      }
+    : { href: settingsHref };
+
+  const checklistVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
+  };
+  const checklistItemVariants = {
+    hidden: { opacity: 0, x: -8 },
+    show: { opacity: 1, x: 0 },
+  };
+
   return (
     <motion.div
       key="today"
@@ -285,24 +449,231 @@ function TodayTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.25 }}
-      className="flex gap-5"
+      className="relative rounded-2xl bg-[#080809] p-4 lg:p-6"
     >
-      {/* LEFT: Session Planner (60%) */}
-      <div className="flex w-3/5 flex-col gap-4">
-        <div className={jn.card}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">
-              Session Planner
-            </h2>
-            <SavedIndicator saving={saving} saved={saved} />
+      <Link
+        {...settingsLinkProps}
+        title="Manage checklist, rules & strategies"
+        className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:right-5 lg:top-5"
+        aria-label="Journal settings"
+      >
+        <Settings2 className="h-4 w-4" />
+      </Link>
+
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,40fr)_minmax(0,35fr)_minmax(0,25fr)] lg:gap-5 lg:pr-10">
+        {/* LEFT — Daily Briefing */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0 }}
+        >
+          <div className="space-y-2">
+            <p className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              {format(new Date(), "EEEE, MMMM d")}
+            </p>
+            <motion.p
+              className="text-sm leading-relaxed text-slate-400"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              {quote}
+            </motion.p>
           </div>
 
-          {/* Market Bias */}
-          <div className="mb-4">
-            <p className={jn.label}>Market Bias</p>
-            <div className="mt-2 flex gap-2">
+          {/* Pre-trade checklist */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-white">
+                Pre-trade checklist
+              </h3>
+              <Link
+                {...settingsLinkProps}
+                className="text-slate-500 transition hover:text-slate-300"
+                aria-label="Checklist settings"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
+            {checklistTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No checklist yet.{" "}
+                <Link
+                  {...settingsLinkProps}
+                  className="font-mono text-[#ff8c00] hover:underline"
+                >
+                  Add items →
+                </Link>
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <span>
+                      {checklistCompleted}/{checklistTotal} completed
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: progressColor }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${checklistPct}%` }}
+                      transition={{ type: "spring", stiffness: 120, damping: 22 }}
+                    />
+                  </div>
+                </div>
+                <motion.ul
+                  className="space-y-2"
+                  variants={checklistVariants}
+                  initial="hidden"
+                  animate="show"
+                >
+                  {sortedChecklist.map((item) => {
+                    const yes = checklistDoneMap[item.id] === true;
+                    return (
+                      <motion.li key={item.id} variants={checklistItemVariants}>
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 28 }}
+                          onClick={() =>
+                            updateSession({
+                              checklist_done: {
+                                ...checklistDoneMap,
+                                [item.id]: !yes,
+                              },
+                            })
+                          }
+                          className="flex w-full items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                        >
+                          <span
+                            className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 font-mono text-xs"
+                            style={{
+                              borderColor: yes ? "#00e676" : "#ff3c3c",
+                              color: yes ? "#00e676" : "#ff3c3c",
+                              background: yes
+                                ? "rgba(0,230,118,0.1)"
+                                : "rgba(255,60,60,0.08)",
+                            }}
+                          >
+                            {yes ? (
+                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                            ) : (
+                              <X className="h-3.5 w-3.5" strokeWidth={3} />
+                            )}
+                          </span>
+                          <span
+                            className={`text-sm text-slate-200 ${
+                              yes ? "line-through decoration-slate-600" : ""
+                            }`}
+                          >
+                            {item.text}
+                          </span>
+                        </motion.button>
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              </>
+            )}
+          </div>
+
+          {/* Today&apos;s rules */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-white">
+                Today&apos;s rules
+              </h3>
+              <Link
+                {...settingsLinkProps}
+                className="text-slate-500 transition hover:text-slate-300"
+                aria-label="Rules settings"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Link>
+            </div>
+            {rulesTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No rules set.{" "}
+                <Link
+                  {...settingsLinkProps}
+                  className="font-mono text-[#ff8c00] hover:underline"
+                >
+                  Add rules →
+                </Link>
+              </p>
+            ) : (
+              <>
+                <p className="text-[11px] font-mono text-slate-500">
+                  {rulesActive}/{rulesTotal} rules active
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {sortedRules.map((rule) => {
+                    const yes = rulesFollowedMap[rule.id] === true;
+                    return (
+                      <motion.button
+                        key={rule.id}
+                        type="button"
+                        layout
+                        onClick={() =>
+                          updateSession({
+                            rules_followed: {
+                              ...rulesFollowedMap,
+                              [rule.id]: !yes,
+                            },
+                          })
+                        }
+                        className="inline-flex max-w-full items-center gap-2 rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors duration-200"
+                        style={{
+                          borderColor: yes ? "#00e676" : "#ff3c3c",
+                          color: yes ? "#00e676" : "#ff3c3c",
+                          background: yes
+                            ? "rgba(0,230,118,0.08)"
+                            : "rgba(255,60,60,0.06)",
+                        }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {yes ? (
+                          <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                        ) : (
+                          <X className="h-3.5 w-3.5 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{rule.text}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Bias + key levels + watchlist */}
+          <div
+            className={`${jn.cardSm} space-y-3`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <p className={jn.label}>Market bias</p>
+            <div className="flex gap-1.5">
               <BiasButton
                 label="Bullish"
+                compact
                 active={session.bias === "Bullish"}
                 color="#00e676"
                 onClick={() =>
@@ -311,6 +682,7 @@ function TodayTab({
               />
               <BiasButton
                 label="Neutral"
+                compact
                 active={session.bias === "Neutral"}
                 color="#64748b"
                 onClick={() =>
@@ -319,6 +691,7 @@ function TodayTab({
               />
               <BiasButton
                 label="Bearish"
+                compact
                 active={session.bias === "Bearish"}
                 color="#ff3c3c"
                 onClick={() =>
@@ -326,133 +699,243 @@ function TodayTab({
                 }
               />
             </div>
+            <div>
+              <p className={jn.label}>Key levels</p>
+              <textarea
+                className={`${jn.input} mt-1 resize-none`}
+                style={{ minHeight: "4.5rem" }}
+                rows={3}
+                placeholder="Major S/R, session highs/lows…"
+                value={session.key_levels ?? ""}
+                onChange={(e) => onKeyLevelsChange(e.target.value)}
+                readOnly={isMock}
+              />
+            </div>
+            <div>
+              <p className={jn.label}>Watchlist</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {(session.watchlist ?? []).map((sym) => (
+                  <span
+                    key={sym}
+                    className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono text-slate-200"
+                  >
+                    {sym}
+                    {!isMock && (
+                      <button
+                        type="button"
+                        className="text-slate-600 hover:text-slate-300"
+                        onClick={() => removeSymbol(sym)}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+              {!isMock && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className={`${jn.input} text-xs`}
+                    placeholder="Symbol + Enter…"
+                    value={watchInput}
+                    onChange={(e) =>
+                      setWatchInput(e.target.value.toUpperCase())
+                    }
+                    onKeyDown={(e) => e.key === "Enter" && addSymbol()}
+                  />
+                  <button
+                    type="button"
+                    className={jn.btnGhost}
+                    onClick={addSymbol}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+        </motion.div>
 
-          {/* Key Levels */}
-          <div className="mb-4">
-            <p className={jn.label}>Key Levels</p>
+        {/* CENTER — Session notes */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+        >
+          <div
+            className={`${jn.card} flex flex-col gap-4`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-white">Session notes</h2>
+              <SavedIndicator saving={saving} saved={saved} />
+            </div>
             <textarea
-              className={`${jn.input} mt-1 min-h-[72px] resize-none`}
-              placeholder="Major S/R levels, session highs/lows…"
-              value={session.key_levels ?? ""}
-              onChange={(e) => onKeyLevelsChange(e.target.value)}
+              className={`${jn.input} min-h-[200px] resize-y`}
+              placeholder="Free-form session notes…"
+              value={session.notes ?? ""}
+              onChange={(e) => onNotesChange(e.target.value)}
+              onBlur={(e) =>
+                onFlushSessionSave({ notes: e.target.value })
+              }
               readOnly={isMock}
             />
-          </div>
-
-          {/* Watchlist */}
-          <div className="mb-4">
-            <p className={jn.label}>Watchlist</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {(session.watchlist ?? []).map((sym) => (
-                <span
-                  key={sym}
-                  className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono text-slate-200"
-                >
-                  {sym}
-                  {!isMock && (
-                    <button
-                      type="button"
-                      className="text-slate-600 hover:text-slate-300"
-                      onClick={() => removeSymbol(sym)}
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  )}
-                </span>
-              ))}
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+              Screenshots
+            </p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void processImageFiles(e.target.files ?? []);
+                e.target.value = "";
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileRef.current?.click();
+                }
+              }}
+              onDragEnter={() => setDragOver(true)}
+              onDragLeave={() => setDragOver(false)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                void processImageFiles(e.dataTransfer.files);
+              }}
+              onClick={() => !isMock && fileRef.current?.click()}
+              className={`mt-2 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
+                dragOver
+                  ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
+                  : "border-white/25 bg-white/[0.06] text-slate-200"
+              } ${isMock ? "pointer-events-none opacity-50" : ""}`}
+            >
+              <span className="text-sm font-medium">
+                {uploading
+                  ? "Uploading…"
+                  : "Drop screenshots here or click to upload"}
+              </span>
+              <span className="mt-1 text-[11px] text-slate-400">
+                PNG, JPG — max {JOURNAL_IMAGE_MAX} images
+              </span>
             </div>
-            {!isMock && (
-              <div className="mt-2 flex gap-2">
-                <input
-                  className={`${jn.input} text-xs`}
-                  placeholder="Type symbol + Enter…"
-                  value={watchInput}
-                  onChange={(e) => setWatchInput(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === "Enter" && addSymbol()}
-                />
-                <button
-                  type="button"
-                  className={jn.btnGhost}
-                  onClick={addSymbol}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
+            {(session.images ?? []).length > 0 && (
+              <div className="mt-5 flex flex-col gap-6">
+                {(session.images ?? [])
+                  .slice(0, JOURNAL_IMAGE_MAX)
+                  .map((url) => (
+                    <JournalScreenshotTile
+                      key={url}
+                      url={url}
+                      removeDisabled={isMock}
+                      onRemove={
+                        isMock ? undefined : () => removeImage(url)
+                      }
+                    />
+                  ))}
               </div>
             )}
           </div>
+        </motion.div>
 
-          {/* Notes */}
-          <div>
-            <p className={jn.label}>Notes</p>
-            <textarea
-              className={`${jn.input} mt-1 min-h-[100px] resize-none`}
-              placeholder="Today's macro context, news events, trading plan…"
-              value={session.notes ?? ""}
-              onChange={(e) => onNotesChange(e.target.value)}
-              readOnly={isMock}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Today's Trades (40%) */}
-      <div className="flex w-2/5 flex-col gap-4">
-        <div className={`${jn.card} flex flex-col`}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">
-              Today&apos;s Trades
-            </h2>
-            <button
-              type="button"
-              className={jn.btnGhost}
-              disabled={syncing}
-              onClick={onSync}
-              style={{ padding: "6px 10px", fontSize: "12px" }}
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
-              />
-              Sync
-            </button>
-          </div>
-
-          {todayTrades.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <Sun className="h-5 w-5 text-slate-600" />
-              </div>
-              <p className="text-sm text-slate-500">No trades today yet</p>
-              <p className="mt-1 text-xs text-slate-700">
-                They&apos;ll appear here after sync
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {todayTrades.map((trade) => (
-                <TradeCard
-                  key={trade.id}
-                  trade={trade}
-                  onClick={() => onTradeClick(trade)}
+        {/* RIGHT — Today&apos;s trades */}
+        <motion.div
+          className="flex min-w-0 flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
+        >
+          <div
+            className={`${jn.card} flex flex-col`}
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-white">
+                Today&apos;s Trades
+              </h2>
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={syncing}
+                onClick={onSync}
+                style={{ padding: "6px 10px", fontSize: "12px" }}
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
                 />
-              ))}
+                Sync
+              </button>
             </div>
-          )}
-        </div>
+
+            {todayTrades.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                  <Sun className="h-5 w-5 text-slate-600" />
+                </div>
+                <p className="text-sm text-slate-500">No trades today yet</p>
+                <p className="mt-1 text-xs text-slate-700">
+                  They&apos;ll appear here after sync
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {todayTrades.map((trade) => (
+                  <TradeCard
+                    key={trade.id}
+                    trade={trade}
+                    onClick={() => onTradeClick(trade)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
 }
 
-// ─── History Tab ──────────────────────────────────────────────────────────────
+// ─── Calendar Tab ─────────────────────────────────────────────────────────────
 
-function HistoryTab({
+function CalendarTab({
   allTrades,
+  isMock = false,
 }: {
   allTrades: JournalTradeRow[];
+  isMock?: boolean;
 }) {
   const [month, setMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const mockMonthInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isMock || allTrades.length === 0 || mockMonthInitialized.current) return;
+    const fc = allTrades.find((t) => t.close_time)?.close_time;
+    if (fc) {
+      setMonth(startOfMonth(parseISO(fc.slice(0, 10))));
+      mockMonthInitialized.current = true;
+    }
+  }, [isMock, allTrades]);
+
+  const tradeLinkBase = isMock ? "/mock/journal/trade" : "/app/journaling/trade";
 
   const start = startOfMonth(month);
   const end = endOfMonth(month);
@@ -510,7 +993,7 @@ function HistoryTab({
 
   return (
     <motion.div
-      key="history"
+      key="calendar"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
@@ -545,6 +1028,73 @@ function HistoryTab({
           >
             <ChevronRight className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* Month KPIs (same style as below — grouped with calendar) */}
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: "Total Trades",
+              value: monthTrades.length.toString(),
+              color: "#94a3b8",
+            },
+            {
+              label: "Win Rate",
+              value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
+              color: "#22d3ee",
+            },
+            {
+              label: "Total P&L",
+              value:
+                monthTrades.length > 0
+                  ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
+                  : "—",
+              color: monthPl >= 0 ? "#00e676" : "#ff3c3c",
+            },
+            {
+              label: "Best Day",
+              value: (() => {
+                const dayPls = Object.values(
+                  Object.fromEntries(
+                    Object.entries(
+                      allTrades
+                        .filter(
+                          (t) =>
+                            t.close_time?.slice(0, 7) === monthStr &&
+                            t.status === "closed"
+                        )
+                        .reduce(
+                          (acc, t) => {
+                            const d = t.close_time!.slice(0, 10);
+                            acc[d] =
+                              (acc[d] ?? 0) +
+                              (t.pl ?? 0) +
+                              (t.commission ?? 0) +
+                              (t.swap ?? 0);
+                            return acc;
+                          },
+                          {} as Record<string, number>
+                        )
+                    )
+                  )
+                );
+                if (dayPls.length === 0) return "—";
+                const best = Math.max(...dayPls);
+                return `+${best.toFixed(0)}`;
+              })(),
+              color: "#00e676",
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className={jn.cardSm}>
+              <p className={jn.label}>{label}</p>
+              <p
+                className="mt-1 font-display text-xl font-bold"
+                style={{ color }}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Day headers */}
@@ -609,13 +1159,18 @@ function HistoryTab({
                   {format(day, "d")}
                 </span>
                 {stats && (
-                  <span
-                    className="mt-0.5 text-[9px] font-mono"
-                    style={{ color: stats.pl >= 0 ? "#00e676" : "#ff3c3c" }}
-                  >
-                    {stats.pl >= 0 ? "+" : ""}
-                    {stats.pl.toFixed(0)}
-                  </span>
+                  <div className="mt-0.5 flex flex-col items-center gap-0">
+                    <span
+                      className="text-[9px] font-mono leading-tight"
+                      style={{ color: stats.pl >= 0 ? "#00e676" : "#ff3c3c" }}
+                    >
+                      {stats.pl >= 0 ? "+" : ""}
+                      {stats.pl.toFixed(0)}
+                    </span>
+                    <span className="text-[8px] font-mono leading-tight text-slate-500">
+                      {stats.count} {stats.count === 1 ? "trade" : "trades"}
+                    </span>
+                  </div>
                 )}
               </motion.button>
             );
@@ -659,7 +1214,7 @@ function HistoryTab({
                       return (
                         <Link
                           key={t.id}
-                          href={`/app/journaling/trade/${t.id}`}
+                          href={`${tradeLinkBase}/${t.id}`}
                           className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
                         >
                           <div className="flex items-center gap-2">
@@ -708,72 +1263,457 @@ function HistoryTab({
           )}
         </AnimatePresence>
       </div>
+    </motion.div>
+  );
+}
 
-      {/* Monthly stats strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          {
-            label: "Total Trades",
-            value: monthTrades.length.toString(),
-            color: "#94a3b8",
-          },
-          {
-            label: "Win Rate",
-            value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
-            color: "#22d3ee",
-          },
-          {
-            label: "Total P&L",
-            value:
-              monthTrades.length > 0
-                ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
-                : "—",
-            color: monthPl >= 0 ? "#00e676" : "#ff3c3c",
-          },
-          {
-            label: "Best Day",
-            value: (() => {
-              const dayPls = Object.values(
-                Object.fromEntries(
-                  Object.entries(
-                    allTrades
-                      .filter(
-                        (t) =>
-                          t.close_time?.slice(0, 7) === monthStr &&
-                          t.status === "closed"
-                      )
-                      .reduce(
-                        (acc, t) => {
-                          const d = t.close_time!.slice(0, 10);
-                          acc[d] =
-                            (acc[d] ?? 0) +
-                            (t.pl ?? 0) +
-                            (t.commission ?? 0) +
-                            (t.swap ?? 0);
-                          return acc;
-                        },
-                        {} as Record<string, number>
-                      )
-                  )
-                )
-              );
-              if (dayPls.length === 0) return "—";
-              const best = Math.max(...dayPls);
-              return `+${best.toFixed(0)}`;
-            })(),
-            color: "#00e676",
-          },
-        ].map(({ label, value, color }) => (
-          <div key={label} className={jn.cardSm}>
-            <p className={jn.label}>{label}</p>
-            <p
-              className="mt-1 font-display text-xl font-bold"
-              style={{ color }}
-            >
-              {value}
-            </p>
+// ─── Trades Tab ───────────────────────────────────────────────────────────────
+
+const TRADES_PAGE_SIZE = 50;
+
+function tradeNetPl(t: JournalTradeRow): number {
+  return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+}
+
+function fmtTradePrice(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(Number(n))) return "—";
+  const v = Number(n);
+  return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(5);
+}
+
+type DirFilter = "ALL" | "BUY" | "SELL";
+type StatusFilter = "ALL" | JournalTradeRow["status"];
+
+function TradesTab({
+  allTrades,
+  isMock,
+  basePath,
+}: {
+  allTrades: JournalTradeRow[];
+  isMock: boolean;
+  basePath: string;
+}) {
+  const router = useRouter();
+  const [symbolQ, setSymbolQ] = useState("");
+  const [dir, setDir] = useState<DirFilter>("ALL");
+  const [status, setStatus] = useState<StatusFilter>("ALL");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(0);
+
+  const filtersActive =
+    symbolQ.trim() !== "" ||
+    dir !== "ALL" ||
+    status !== "ALL" ||
+    fromDate !== "" ||
+    toDate !== "";
+
+  const filtered = useMemo(() => {
+    let list = [...allTrades];
+    const q = symbolQ.trim().toLowerCase();
+    if (q) list = list.filter((t) => t.symbol.toLowerCase().includes(q));
+    if (dir !== "ALL") list = list.filter((t) => t.direction === dir);
+    if (status !== "ALL") list = list.filter((t) => t.status === status);
+    if (fromDate || toDate) {
+      list = list.filter((t) => {
+        const anchor = (t.close_time ?? t.open_time).slice(0, 10);
+        if (fromDate && anchor < fromDate) return false;
+        if (toDate && anchor > toDate) return false;
+        return true;
+      });
+    }
+    list.sort((a, b) => {
+      const ta = new Date(a.close_time ?? a.open_time).getTime();
+      const tb = new Date(b.close_time ?? b.open_time).getTime();
+      return tb - ta;
+    });
+    return list;
+  }, [allTrades, symbolQ, dir, status, fromDate, toDate]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [symbolQ, dir, status, fromDate, toDate, allTrades]);
+
+  const stats = useMemo(() => {
+    const closed = filtered.filter((t) => t.status === "closed");
+    const nets = closed.map(tradeNetPl);
+    const wins = nets.filter((n) => n > 0).length;
+    const wr = closed.length > 0 ? (wins / closed.length) * 100 : 0;
+    const totalPl = filtered.reduce((s, t) => s + tradeNetPl(t), 0);
+    const rrVals = filtered
+      .map((t) => t.risk_reward)
+      .filter((x): x is number => x != null && Number.isFinite(Number(x)));
+    const avgRr =
+      rrVals.length > 0
+        ? rrVals.reduce((a, b) => a + Number(b), 0) / rrVals.length
+        : null;
+    return {
+      count: filtered.length,
+      closedCount: closed.length,
+      winRate: wr,
+      totalPl,
+      avgRr,
+    };
+  }, [filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / TRADES_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageStart = safePage * TRADES_PAGE_SIZE;
+  const pageRows = filtered.slice(pageStart, pageStart + TRADES_PAGE_SIZE);
+
+  const openTrade = (id: string) => {
+    if (isMock) return;
+    router.push(`${basePath}/trade/${id}`);
+  };
+
+  const pillBtn = (on: boolean) =>
+    `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      on
+        ? "border border-[#ff8c00]/40 bg-[#ff8c00]/15 text-white"
+        : "border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+    }`;
+
+  const statCard =
+    "rounded-xl border border-white/[0.07] p-3 shadow-xl backdrop-blur-sm";
+  const statCardBg = { background: "rgba(255,255,255,0.02)" } as const;
+
+  return (
+    <motion.div
+      key="trades"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.25 }}
+      className="space-y-5"
+    >
+      <div className={jn.card}>
+        <h2 className="font-display mb-4 text-base font-bold text-white">
+          All trades
+        </h2>
+        <div className="flex flex-col gap-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              type="search"
+              placeholder="Symbol…"
+              value={symbolQ}
+              onChange={(e) => setSymbolQ(e.target.value)}
+              className={`${jn.input} pl-10`}
+              aria-label="Filter by symbol"
+            />
           </div>
-        ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Direction
+            </span>
+            {(["ALL", "BUY", "SELL"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={pillBtn(dir === d)}
+                onClick={() => setDir(d)}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Status
+            </span>
+            {(["ALL", "open", "closed"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={pillBtn(status === s)}
+                onClick={() => setStatus(s)}
+              >
+                {s === "ALL" ? "ALL" : s.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className={jn.label}>From</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className={jn.input}
+              />
+            </div>
+            <div>
+              <label className={jn.label}>To</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className={jn.input}
+              />
+            </div>
+            {filtersActive && (
+              <button
+                type="button"
+                className={`${jn.btnGhost} text-xs`}
+                onClick={() => {
+                  setSymbolQ("");
+                  setDir("ALL");
+                  setStatus("ALL");
+                  setFromDate("");
+                  setToDate("");
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Total trades
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.count}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Win rate
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.closedCount === 0 ? "—" : `${stats.winRate.toFixed(0)}%`}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Total P&amp;L
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold"
+            style={{
+              color: stats.totalPl >= 0 ? "#00e676" : "#ff3c3c",
+            }}
+          >
+            {stats.count === 0 && stats.totalPl === 0
+              ? "—"
+              : `${stats.totalPl >= 0 ? "+" : ""}${stats.totalPl.toFixed(2)}`}
+          </p>
+        </div>
+        <div className={statCard} style={statCardBg}>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            Avg R:R
+          </p>
+          <p
+            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
+          >
+            {stats.avgRr == null ? "—" : stats.avgRr.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={`${jn.card} overflow-hidden p-0`}
+        style={{ background: "rgba(255,255,255,0.02)" }}
+      >
+        {allTrades.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500">
+            No trades yet — sync your account to see trades here
+          </p>
+        ) : filtered.length === 0 ? (
+          <p className="p-8 text-center text-sm text-slate-500">
+            No trades match your filters
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[960px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.07] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Symbol</th>
+                  <th className="px-4 py-3 font-medium">Dir</th>
+                  <th className="px-4 py-3 font-medium">Lots</th>
+                  <th className="px-4 py-3 font-medium">Open</th>
+                  <th className="px-4 py-3 font-medium">Close</th>
+                  <th className="px-4 py-3 font-medium">Pips</th>
+                  <th className="px-4 py-3 font-medium">P&amp;L</th>
+                  <th className="px-4 py-3 font-medium">R:R</th>
+                  <th className="px-4 py-3 font-medium">Tags</th>
+                  <th className="px-4 py-3 font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((t, i) => {
+                  const net = tradeNetPl(t);
+                  const win = net > 0;
+                  const loss = net < 0;
+                  const tags = t.setup_tags ?? [];
+                  const rest = Math.max(0, tags.length - 2);
+                  return (
+                    <motion.tr
+                      key={t.id}
+                      role="button"
+                      tabIndex={isMock ? -1 : 0}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.02, duration: 0.2 }}
+                      onClick={() => openTrade(t.id)}
+                      onKeyDown={(e) => {
+                        if (!isMock && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          openTrade(t.id);
+                        }
+                      }}
+                      className={`cursor-pointer border-b border-white/[0.04] transition-colors hover:bg-white/[0.04] ${
+                        win
+                          ? "border-l-2 border-l-[#00e676]/40"
+                          : loss
+                            ? "border-l-2 border-l-[#ff3c3c]/40"
+                            : ""
+                      }`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-300">
+                        {format(
+                          parseISO(t.close_time ?? t.open_time),
+                          "MMM d, HH:mm"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-white">
+                        {t.symbol}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="rounded-md px-2 py-0.5 text-[10px] font-bold"
+                          style={
+                            t.direction === "BUY"
+                              ? {
+                                  background: "rgba(0,230,118,0.15)",
+                                  color: "#00e676",
+                                }
+                              : {
+                                  background: "rgba(255,60,60,0.15)",
+                                  color: "#ff3c3c",
+                                }
+                          }
+                        >
+                          {t.direction}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
+                        {t.lot_size}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-500">
+                        {fmtTradePrice(t.open_price)}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-500">
+                        {fmtTradePrice(t.close_price)}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs font-medium"
+                        style={{
+                          color:
+                            t.pips == null
+                              ? "#64748b"
+                              : t.pips > 0
+                                ? "#00e676"
+                                : t.pips < 0
+                                  ? "#ff3c3c"
+                                  : "#94a3b8",
+                        }}
+                      >
+                        {t.pips == null
+                          ? "—"
+                          : `${t.pips > 0 ? "+" : ""}${t.pips}`}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-[family-name:var(--font-mono)] text-sm font-bold"
+                        style={{
+                          color: net >= 0 ? "#00e676" : "#ff3c3c",
+                        }}
+                      >
+                        {net >= 0 ? "+" : ""}
+                        {net.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-400">
+                        {t.risk_reward == null
+                          ? "—"
+                          : Number(t.risk_reward).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {tags.slice(0, 2).map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-slate-400"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {rest > 0 && (
+                            <span className="text-[10px] text-slate-600">
+                              +{rest}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {isMock ? (
+                          <span className="inline-flex cursor-not-allowed rounded-lg border border-white/[0.08] px-3 py-1 text-xs text-slate-600 opacity-60">
+                            Review
+                          </span>
+                        ) : (
+                          <Link
+                            href={`${basePath}/trade/${t.id}`}
+                            className={`${jn.btnGhost} inline-flex py-1.5 text-xs`}
+                          >
+                            Review
+                          </Link>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {allTrades.length > 0 && filtered.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-3">
+            <p className="text-xs font-mono text-slate-500">
+              Showing {pageStart + 1}–{Math.min(pageStart + TRADES_PAGE_SIZE, filtered.length)} of{" "}
+              {filtered.length} trades
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={safePage <= 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                style={{ padding: "6px 12px" }}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className={jn.btnGhost}
+                disabled={safePage >= totalPages - 1}
+                onClick={() =>
+                  setPage((p) => Math.min(totalPages - 1, p + 1))
+                }
+                style={{ padding: "6px 12px" }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -829,13 +1769,15 @@ function EmptyState({ onConnected }: { onConnected: () => void }) {
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<JournalAccountPublic[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | "all">(
     "all"
   );
-  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
-  const [tab, setTab] = useState<"today" | "history">("today");
+  const [tab, setTab] = useState<"today" | "calendar" | "trades">("today");
   const [loading, setLoading] = useState(!isMock);
   const [syncing, setSyncing] = useState(false);
 
@@ -846,6 +1788,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const saveTimer = useRef<NodeJS.Timeout | null>(null);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // Trades
   const [todayTrades, setTodayTrades] = useState<JournalTradeRow[]>([]);
@@ -863,13 +1807,23 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   );
   const [rules, setRules] = useState<JournalRule[]>(isMock ? MOCK_RULES : []);
 
-  // Read tab from URL ?tab=history on first load
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "history") setTab("history");
+    const t = searchParams.get("tab");
+    if (t === "calendar" || t === "history") setTab("calendar");
+    else if (t === "trades") setTab("trades");
+    else setTab("today");
+  }, [searchParams]);
+
+  const goTab = (next: "today" | "calendar" | "trades") => {
+    setTab(next);
+    if (next === "today") {
+      router.replace(pathname, { scroll: false });
+    } else {
+      router.replace(`${pathname}?tab=${next}`, { scroll: false });
     }
-  }, []);
+  };
+
+  const journalTradeBase = isMock ? "/mock/journal" : "/app/journaling";
 
   const load = useCallback(async () => {
     if (isMock) {
@@ -904,7 +1858,8 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
         setAccounts(accs);
         const stored =
           typeof window !== "undefined"
-            ? localStorage.getItem("rs_journal_account")
+            ? localStorage.getItem("rs_selected_account") ??
+              localStorage.getItem("rs_journal_account")
             : null;
         if (
           stored &&
@@ -917,7 +1872,27 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
       }
       if (sRes.ok) {
         const j = await sRes.json();
-        if (j.session) setSession(j.session);
+        if (j.session) {
+          const s = j.session as JournalSession;
+          setSession((prev) => {
+            const serverImages = normSessionImages(s.images).slice(
+              0,
+              JOURNAL_IMAGE_MAX
+            );
+            const prevImages = (prev.images ?? []).slice(0, JOURNAL_IMAGE_MAX);
+            const merged: string[] = [...serverImages];
+            for (const u of prevImages) {
+              if (merged.length >= JOURNAL_IMAGE_MAX) break;
+              if (u && !merged.includes(u)) merged.push(u);
+            }
+            return {
+              ...s,
+              checklist_done: normBoolRecord(s.checklist_done),
+              rules_followed: normBoolRecord(s.rules_followed),
+              images: merged,
+            };
+          });
+        }
       }
       if (tTodayRes.ok) {
         const j = await tTodayRes.json();
@@ -971,10 +1946,38 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
     [isMock]
   );
 
+  const flushSessionSave = useCallback(
+    async (override?: Partial<JournalSession>) => {
+      if (isMock) return;
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+      setSaving(true);
+      try {
+        await fetch("/api/journal/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...sessionRef.current,
+            ...override,
+            session_date: getTodayStr(),
+          }),
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [isMock]
+  );
+
   const updateSession = useCallback(
-    (patch: Partial<JournalSession>) => {
+    (patch: JournalSessionPatch) => {
       setSession((prev) => {
-        const next = { ...prev, ...patch };
+        const part = typeof patch === "function" ? patch(prev) : patch;
+        const next = { ...prev, ...part };
         scheduleSessionSave(next);
         return next;
       });
@@ -985,9 +1988,11 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
   const handleSync = async () => {
     if (isMock || syncing) return;
     const target =
-      accounts.length === 1
+      selectedAccountId === "all"
         ? accounts[0]
-        : accounts.find((a) => a.id === selectedAccountId);
+        : accounts.length === 1
+          ? accounts[0]
+          : accounts.find((a) => a.id === selectedAccountId);
     if (!target) return;
     setSyncing(true);
     try {
@@ -1002,13 +2007,7 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
 
   const selectAccount = (id: string | "all") => {
     setSelectedAccountId(id);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("rs_journal_account", id);
-    }
-    setAccountDropdownOpen(false);
   };
-
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
   // ── Empty state ──
   if (!loading && accounts.length === 0 && !isMock) {
@@ -1029,71 +2028,18 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
 
         {/* Account selector — center */}
         <div className="flex flex-1 justify-center">
-          {accounts.length === 1 || isMock ? (
-            <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-1.5">
-              <span className="text-sm font-medium text-slate-200">
-                {isMock ? MOCK_ACCOUNT.nickname : accounts[0]?.nickname}
-              </span>
-              <span className="rounded-full bg-[#00e676]/15 px-2 py-0.5 text-[10px] font-mono text-[#00e676]">
-                {isMock ? "demo" : accounts[0]?.status}
-              </span>
-            </div>
-          ) : accounts.length > 1 ? (
-            <div className="relative">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-1.5 text-sm text-slate-200 hover:bg-white/[0.04] transition-colors"
-                onClick={() => setAccountDropdownOpen((o) => !o)}
-              >
-                {selectedAccount?.nickname ?? "All accounts"}
-                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
-              </button>
-              <AnimatePresence>
-                {accountDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                    className="absolute left-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl"
-                  >
-                    <button
-                      type="button"
-                      className="w-full px-3 py-2.5 text-left text-sm text-slate-300 hover:bg-white/[0.04] transition-colors"
-                      onClick={() => selectAccount("all")}
-                    >
-                      All accounts
-                    </button>
-                    {accounts.map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-slate-300 hover:bg-white/[0.04] transition-colors"
-                        onClick={() => selectAccount(a.id)}
-                      >
-                        <span>{a.nickname}</span>
-                        <span
-                          className="rounded-full px-1.5 py-0.5 text-[9px] font-mono uppercase"
-                          style={
-                            a.status === "active"
-                              ? {
-                                  background: "rgba(0,230,118,0.15)",
-                                  color: "#00e676",
-                                }
-                              : {
-                                  background: "rgba(255,255,255,0.06)",
-                                  color: "#64748b",
-                                }
-                          }
-                        >
-                          {a.status}
-                        </span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : null}
+          <GlobalAccountSelector
+            accounts={accounts.map((a) => ({
+              id: a.id,
+              nickname: a.nickname,
+              status: a.status,
+              platform: a.platform,
+            }))}
+            selectedId={selectedAccountId}
+            onChange={(id) => selectAccount(id)}
+            onAddAccount={isMock ? undefined : () => setAddAccountOpen(true)}
+            isMock={isMock}
+          />
         </div>
 
         {/* Right actions */}
@@ -1135,31 +2081,30 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
       {/* Tab switcher */}
       {!loading && (
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
-          {(["today", "history"] as const).map((t) => (
-            <motion.button
-              key={t}
+          {(
+            [
+              { id: "today" as const, label: "Today", Icon: Sun },
+              { id: "calendar" as const, label: "Calendar", Icon: CalendarDays },
+              { id: "trades" as const, label: "Trades", Icon: BarChart2 },
+            ] as const
+          ).map(({ id: tid, label, Icon }) => (
+            <button
+              key={tid}
               type="button"
-              layoutId="journal-tab-bg"
-              onClick={() => setTab(t)}
+              onClick={() => goTab(tid)}
               className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={{
-                color: tab === t ? "#fff" : "#64748b",
-              }}
+              style={{ color: tab === tid ? "#fff" : "#64748b" }}
             >
-              {tab === t && (
+              {tab === tid && (
                 <motion.span
                   layoutId="journal-tab-pill"
                   className="absolute inset-0 rounded-lg bg-white/[0.06]"
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
-              {t === "today" ? (
-                <Sun className="relative z-10 h-3.5 w-3.5" />
-              ) : (
-                <CalendarDays className="relative z-10 h-3.5 w-3.5" />
-              )}
-              <span className="relative z-10 capitalize">{t}</span>
-            </motion.button>
+              <Icon className="relative z-10 h-3.5 w-3.5" />
+              <span className="relative z-10">{label}</span>
+            </button>
           ))}
         </div>
       )}
@@ -1174,6 +2119,11 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               key="today"
               session={session}
               todayTrades={todayTrades}
+              checklist={checklist}
+              rules={rules}
+              updateSession={updateSession}
+              onFlushSessionSave={flushSessionSave}
+              settingsHref="/app/journaling/settings"
               onBiasChange={(b) => updateSession({ bias: b })}
               onKeyLevelsChange={(v) => updateSession({ key_levels: v })}
               onWatchlistChange={(tags) => updateSession({ watchlist: tags })}
@@ -1185,8 +2135,15 @@ export function JournalingPageClient({ isMock = false }: { isMock?: boolean }) {
               syncing={syncing}
               isMock={isMock}
             />
+          ) : tab === "calendar" ? (
+            <CalendarTab key="calendar" allTrades={allTrades} isMock={isMock} />
           ) : (
-            <HistoryTab key="history" allTrades={allTrades} />
+            <TradesTab
+              key="trades"
+              allTrades={allTrades}
+              isMock={isMock}
+              basePath={journalTradeBase}
+            />
           )}
         </AnimatePresence>
       )}

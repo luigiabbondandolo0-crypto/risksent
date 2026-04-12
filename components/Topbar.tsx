@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { LogOut, User, Shield, LayoutDashboard, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems } from "@/components/navConfig";
+import { AppHeaderBar } from "@/components/AppHeaderBar";
+import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
@@ -47,20 +49,18 @@ export function Topbar() {
     loadUserData();
   }, []);
 
-  const handleLogout = async () => {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
+  const logoHref = inApp ? "/app/dashboard" : "/";
 
   return (
-    <header className="sticky top-0 z-50 border-b backdrop-blur-xl"
-      style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}>
+    <header
+      className="sticky top-0 z-50 h-14 border-b backdrop-blur-[20px]"
+      style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
+    >
 
-      <div className="flex w-full items-center justify-between gap-4 px-6 py-3 lg:px-10">
+      <div className="mx-auto flex h-full w-full max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+        <Link href={logoHref} className="flex items-center gap-2.5 shrink-0">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
             style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
@@ -101,32 +101,16 @@ export function Topbar() {
         {/* Right side */}
         <div className="flex items-center gap-2 shrink-0">
           {email ? (
-            <>
-              {isAdminArea && (
-                <Link href="/app/dashboard"
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-800/40 px-2.5 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-700/50">
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  <span>Dashboard</span>
-                </Link>
-              )}
-              {isAdmin && !isAdminArea && (
-                <Link href="/admin"
-                  className="flex items-center gap-1.5 rounded-xl border border-amber-700/50 bg-amber-900/20 px-2.5 py-1.5 text-xs text-amber-300 transition-colors hover:bg-amber-800/30">
-                  <Shield className="h-3.5 w-3.5" />
-                  <span>Admin</span>
-                </Link>
-              )}
-              <Link href="/profile"
-                className="flex max-w-[160px] items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/40 px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-slate-800/60">
-                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span className="truncate">{fullName || email}</span>
-              </Link>
-              <button type="button" onClick={handleLogout}
-                className="flex items-center gap-2 rounded-xl border border-slate-700/50 bg-slate-900/50 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70">
-                <LogOut className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </>
+            inApp ? (
+              <AppHeaderBar
+                email={email}
+                fullName={fullName}
+                isAdmin={isAdmin}
+                isAdminArea={isAdminArea}
+              />
+            ) : (
+              <MarketingUserMenu email={email} fullName={fullName} isAdmin={isAdmin} />
+            )
           ) : !isLoginPage ? (
             <>
               {/* Mobile menu toggle */}

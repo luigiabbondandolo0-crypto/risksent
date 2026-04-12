@@ -53,7 +53,7 @@ function parsePositions(raw: unknown[]): PositionRow[] {
 }
 
 /**
- * GET /api/orders/overview?uuid=metaapi_account_id
+ * GET /api/orders/overview?uuid=<trading_account.metaapi_account_id>
  * Returns account summary (balance, equity, currency) and open positions for the given account.
  */
 export async function GET(req: NextRequest) {

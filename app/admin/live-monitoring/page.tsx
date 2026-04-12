@@ -151,7 +151,7 @@ export default function AdminLiveMonitoringPage() {
                 {status.summary.supabase}
               </span>
               {" "}
-              <span className="text-slate-300">mtapi: </span>
+              <span className="text-slate-300">Trading: </span>
               <span className={status.summary.trading === "connected" ? "text-emerald-400" : "text-red-400"}>
                 {status.summary.trading}
               </span>

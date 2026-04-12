@@ -34,6 +34,10 @@ export type JournalSession = {
   watchlist: string[] | null;
   notes: string | null;
   images: string[] | null;
+  /** Checklist item id → completed today */
+  checklist_done?: Record<string, boolean> | null;
+  /** Rule id → trader marked YES (following) */
+  rules_followed?: Record<string, boolean> | null;
   created_at: string | null;
   updated_at: string | null;
 };

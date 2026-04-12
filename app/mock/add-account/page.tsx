@@ -4,7 +4,7 @@ export default function MockAddAccountPage() {
       <header>
         <h1 className="rs-page-title">Add account</h1>
         <p className="rs-page-sub">
-          MetaTrader connection flow — mock. In production you connect MetaAPI credentials here.
+          Broker connection flow — mock. In production you will connect your account here when the new provider is live.
         </p>
       </header>
       <section className="rs-card p-6 shadow-rs-soft">
