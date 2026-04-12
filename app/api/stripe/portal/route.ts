@@ -17,12 +17,13 @@ export async function POST() {
     .eq("user_id", user.id)
     .single();
 
-  if (!(sub?.stripe_customer_id as string | null)) {
+  const customerId = sub?.stripe_customer_id;
+  if (!customerId) {
     return NextResponse.json({ error: "No Stripe customer found" }, { status: 404 });
   }
 
   const session = await stripe.billingPortal.sessions.create({
-    customer: sub.stripe_customer_id as string,
+    customer: customerId,
     return_url: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/app/billing`,
   });
 
