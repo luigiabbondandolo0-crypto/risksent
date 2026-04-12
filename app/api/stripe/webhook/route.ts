@@ -30,6 +30,15 @@ function planFromPriceId(priceId: string): "new_trader" | "experienced" | "free"
   return "free";
 }
 
+/** Stripe exposes period bounds as Unix seconds; they can be missing right after checkout. */
+function stripePeriodSecondsToIso(seconds: unknown): string | null {
+  if (seconds == null) return null;
+  const n = typeof seconds === "number" ? seconds : Number(seconds);
+  if (!Number.isFinite(n)) return null;
+  const d = new Date(n * 1000);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
 
@@ -58,6 +67,13 @@ export async function POST(req: Request) {
         : null;
       const sub = rawSub ? toSubShape(rawSub) : null;
 
+      const periodStart = sub
+        ? stripePeriodSecondsToIso(sub.current_period_start)
+        : null;
+      const periodEnd = sub
+        ? stripePeriodSecondsToIso(sub.current_period_end)
+        : null;
+
       await supabase.from("subscriptions").upsert(
         {
           user_id: userId,
@@ -66,12 +82,8 @@ export async function POST(req: Request) {
           stripe_price_id: sub?.items.data[0]?.price.id ?? null,
           plan,
           status: sub?.status ?? "active",
-          current_period_start: sub
-            ? new Date(sub.current_period_start * 1000).toISOString()
-            : null,
-          current_period_end: sub
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null,
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
           cancel_at_period_end: sub?.cancel_at_period_end ?? false,
           updated_at: new Date().toISOString(),
         },
@@ -95,8 +107,8 @@ export async function POST(req: Request) {
           stripe_price_id: priceId,
           plan,
           status: sub.status,
-          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          current_period_start: stripePeriodSecondsToIso(sub.current_period_start),
+          current_period_end: stripePeriodSecondsToIso(sub.current_period_end),
           cancel_at_period_end: sub.cancel_at_period_end,
           updated_at: new Date().toISOString(),
         },
