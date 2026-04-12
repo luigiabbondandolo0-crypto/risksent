@@ -13,6 +13,23 @@ function createServiceClient() {
   );
 }
 
+// Local shape that covers the subscription fields we actually use.
+// Casting through unknown lets us access period fields regardless of the
+// SDK's exact generic wrapper type for this API version.
+type SubShape = {
+  id: string;
+  status: string;
+  current_period_start: number;
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+  metadata: Record<string, string>;
+  items: { data: { price: { id: string } }[] };
+};
+
+function toSubShape(s: unknown): SubShape {
+  return s as SubShape;
+}
+
 function planFromPriceId(priceId: string): "new_trader" | "experienced" | "free" {
   if (priceId === process.env.STRIPE_NEW_TRADER_PRICE_ID) return "new_trader";
   if (priceId === process.env.STRIPE_EXPERIENCED_PRICE_ID) return "experienced";
@@ -40,9 +57,10 @@ export async function POST(req: Request) {
       const plan = session.metadata?.plan ?? "free";
       if (!userId) break;
 
-      const sub = session.subscription
+      const rawSub = session.subscription
         ? await stripe.subscriptions.retrieve(session.subscription as string)
         : null;
+      const sub = rawSub ? toSubShape(rawSub) : null;
 
       await supabase.from("subscriptions").upsert(
         {
@@ -67,7 +85,7 @@ export async function POST(req: Request) {
     }
 
     case "customer.subscription.updated": {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = toSubShape(event.data.object);
       const userId = sub.metadata?.user_id;
       if (!userId) break;
 
@@ -92,7 +110,7 @@ export async function POST(req: Request) {
     }
 
     case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
+      const sub = toSubShape(event.data.object);
       const userId = sub.metadata?.user_id;
       if (!userId) break;
 
