@@ -384,4 +384,10 @@ export const MOCK_AI_REPORT = {
   overallScore: 74,
   summary:
     "Strong month with 68.4% win rate and +€2,840 net P&L (+29.5%). Your risk management is disciplined and your setups are producing consistent edge. Main development areas: Friday/afternoon trading and letting winners run to full target.",
+  insights: [
+    "Risk: daily drawdown stayed under 1.5% on 22 of 24 sessions — strong baseline discipline.",
+    "Edge: London session trades win 74% vs 52% outside — lean into your best window.",
+    "Watch: Friday + post–stop-out hours (14:00–16:00) cluster most revenge-style entries.",
+    "Next step: hard 15:00 London cutoff for new positions until Friday stats improve.",
+  ],
 };
