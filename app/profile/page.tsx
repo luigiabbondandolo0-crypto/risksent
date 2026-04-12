@@ -474,6 +474,14 @@ export default function ProfilePage() {
         >
           {passwordLoading ? "Updating…" : "Update password"}
         </motion.button>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="mt-3 w-full">
+          <Link
+            href="/reset-password"
+            className="flex w-full items-center justify-center rounded-xl border border-white/[0.12] bg-white/[0.04] py-3 text-sm font-semibold text-white hover:bg-white/[0.07]"
+          >
+            Forgot password?
+          </Link>
+        </motion.div>
       </motion.form>
 
       <motion.form
