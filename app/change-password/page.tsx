@@ -1,86 +1,101 @@
 "use client";
 
-import { FormEvent, Suspense, useState, useCallback, useEffect } from "react";
+import { FormEvent, Suspense, useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function ChangePasswordPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-screen bg-[#080809]" />}>
       <ChangePasswordForm />
     </Suspense>
   );
 }
 
+function passwordStrength(pw: string): "weak" | "fair" | "strong" {
+  if (pw.length < 6) return "weak";
+  const hasNum = /\d/.test(pw);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+  const long = pw.length >= 10;
+  if (long && hasNum && hasSpecial) return "strong";
+  if (pw.length >= 8 && (hasNum || hasSpecial)) return "fair";
+  return "weak";
+}
+
+const inputClass =
+  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#ff3c3c] font-[family-name:var(--font-mono)]";
+
 function ChangePasswordForm() {
   const router = useRouter();
+  const [email, setEmail] = useState<string>("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const strength = useMemo(() => passwordStrength(newPassword), [newPassword]);
 
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createSupabaseBrowserClient();
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         router.push("/login?redirectedFrom=/change-password");
         return;
       }
-      
-      setIsAuthenticated(true);
+      setEmail(user.email ?? "");
       setCheckingAuth(false);
     };
-
-    checkAuth();
+    void checkAuth();
   }, [router]);
 
   const handleChangePassword = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
-
     if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters long.");
+      setError("New password must be at least 6 characters.");
       return;
     }
-
     if (newPassword === currentPassword) {
       setError("New password must be different from current password.");
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setError("New passwords do not match.");
       return;
     }
 
     setLoading(true);
-
     try {
       const supabase = createSupabaseBrowserClient();
-      
-      // Verify current password by attempting to sign in
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
-        setError("Unable to verify your identity. Please log in again.");
+
+      // Step 1: verifica password corrente
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword
+      });
+
+      if (signInError) {
+        setError("Current password is incorrect.");
         setLoading(false);
         return;
       }
 
-      // Note: Supabase doesn't have a direct way to verify current password
-      // We'll update directly. In production, you might want to add an additional verification step
+      // Step 2: aggiorna con nuova password
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -91,113 +106,181 @@ function ChangePasswordForm() {
         return;
       }
 
-      setInfo("Password updated successfully!");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      
-      setTimeout(() => {
-        router.push("/app/dashboard");
-      }, 2000);
-    } catch (err) {
+      setDone(true);
+      setTimeout(() => router.push("/app/dashboard"), 3000);
+    } catch {
       setError("Unexpected error. Please try again.");
-      setLoading(false);
     }
-  }, [currentPassword, newPassword, confirmPassword, router]);
+    setLoading(false);
+  }, [currentPassword, newPassword, confirmPassword, email, router]);
 
   if (checkingAuth) {
     return (
-      <div className="flex flex-col items-center mt-12">
-        <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-surface/80 p-6 shadow-lg shadow-black/40">
-          <p className="text-sm text-slate-400">Checking authentication...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#080809]">
+        <p className="font-mono text-sm text-slate-500">Loading…</p>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col items-center mt-12">
-      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-surface/80 p-6 shadow-lg shadow-black/40">
-        <h1 className="text-lg font-semibold text-slate-50 mb-1">
-          Change password
-        </h1>
-        <p className="text-xs text-slate-500 mb-6">
-          Update your account password. Make sure it's strong and secure.
-        </p>
-
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <div className="space-y-1">
-            <label className="block text-xs text-slate-400" htmlFor="currentPassword">
-              Current password
-            </label>
-            <input
-              id="currentPassword"
-              type="password"
-              required
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs text-slate-400" htmlFor="newPassword">
-              New password
-            </label>
-            <input
-              id="newPassword"
-              type="password"
-              required
-              minLength={6}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="block text-xs text-slate-400" htmlFor="confirmPassword">
-              Confirm new password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              required
-              minLength={6}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-md border border-slate-800 bg-black/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          {error && (
-            <p className="text-xs text-danger bg-danger/10 border border-danger/40 rounded-md px-2 py-1">
-              {error}
+    <div className="flex min-h-screen items-center justify-center bg-[#080809] px-4 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <Link href="/">
+            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
+              RiskSent
             </p>
-          )}
-          {info && !error && (
-            <p className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/40 rounded-md px-2 py-1">
-              {info}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-emerald-500 px-3 py-2 text-sm font-medium text-black hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? "Updating password..." : "Update password"}
-          </button>
-        </form>
-
-        <p className="mt-3 text-[11px] text-slate-500">
-          <Link href="/app/dashboard" className="text-slate-200 hover:text-emerald-300">
-            Back to dashboard
           </Link>
-        </p>
-      </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 backdrop-blur-xl">
+
+          {done ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center gap-4 py-4 text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
+              >
+                <CheckCircle className="h-14 w-14 text-[#00e676]" />
+              </motion.div>
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+                Password updated
+              </h1>
+              <p className="font-[family-name:var(--font-mono)] text-sm text-slate-400">
+                Redirecting to dashboard…
+              </p>
+            </motion.div>
+          ) : (
+            <>
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+                Change password
+              </h1>
+              <p className="mt-2 font-[family-name:var(--font-mono)] text-sm text-slate-500">
+                Enter your current password to set a new one.
+              </p>
+
+              <form onSubmit={handleChangePassword} className="mt-8 space-y-4">
+                {/* Current password */}
+                <div>
+                  <label className="mb-1 block text-xs font-mono text-slate-500">
+                    Current password
+                  </label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type={showCurrent ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={`${inputClass} pl-10 pr-10`}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
+                    >
+                      {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New password */}
+                <div>
+                  <label className="mb-1 block text-xs font-mono text-slate-500">
+                    New password
+                  </label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type={showNew ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={`${inputClass} pl-10 pr-10`}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
+                    >
+                      {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {newPassword && (
+                    <p className={`mt-1 text-[10px] font-mono ${
+                      strength === "strong" ? "text-[#00e676]" :
+                      strength === "fair" ? "text-[#ff8c00]" : "text-[#ff3c3c]"
+                    }`}>
+                      {strength === "strong" ? "Strong" : strength === "fair" ? "Fair" : "Weak"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm password */}
+                <div>
+                  <label className="mb-1 block text-xs font-mono text-slate-500">
+                    Confirm new password
+                  </label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`${inputClass} pl-10 pr-10`}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white"
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {error}
+                  </p>
+                )}
+
+                <motion.button
+                  type="submit"
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(255,60,60,0.25)] disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #ff3c3c, #cc0000)" }}
+                >
+                  {loading ? "Updating…" : "Update password"}
+                </motion.button>
+              </form>
+
+              <div className="mt-6 flex items-center justify-between text-xs font-mono text-slate-500">
+                <Link href="/app/dashboard" className="hover:text-white transition-colors">
+                  ← Back to dashboard
+                </Link>
+                <Link href="/profile" className="hover:text-white transition-colors">
+                  Profile settings
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

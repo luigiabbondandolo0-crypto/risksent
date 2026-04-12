@@ -214,29 +214,57 @@ export default function ProfilePage() {
     e.preventDefault();
     setPasswordError(null);
     setPasswordInfo(null);
+  
+    if (!currentPassword) {
+      setPasswordError("Please enter your current password.");
+      return;
+    }
     if (!newPassword || newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
+      setPasswordError("New passwords do not match.");
       return;
     }
     if (newPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters.");
       return;
     }
+    if (currentPassword === newPassword) {
+      setPasswordError("New password must be different from current password.");
+      return;
+    }
+  
     setPasswordLoading(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+  
+      // Step 1: verifica la password corrente
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: currentPassword
+      });
+  
+      if (signInError) {
+        setPasswordError("Current password is incorrect.");
+        setPasswordLoading(false);
+        return;
+      }
+  
+      // Step 2: aggiorna con la nuova password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+  
       if (updateError) {
         setPasswordError(updateError.message);
         setPasswordLoading(false);
         return;
       }
-      setPasswordInfo("Password updated.");
+  
+      setPasswordInfo("Password updated successfully.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      setPasswordError("Unexpected error.");
+      setPasswordError("Unexpected error. Please try again.");
     }
     setPasswordLoading(false);
   };
