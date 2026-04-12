@@ -38,21 +38,28 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [step, setStep] = useState<"request" | "reset" | "done">("request");
+  const [step, setStep] = useState<"loading" | "request" | "reset" | "done">("loading");
 
   const strength = passwordStrength(newPassword);
 
-  // Detect recovery mode from Supabase hash fragment
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === "PASSWORD_RECOVERY") {
-          setStep("reset");
-        }
+    // Controlla subito se c'è sessione recovery attiva
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setStep("reset");
+      } else {
+        setStep("request");
       }
-    );
+    });
+
+    // Ascolta evento PASSWORD_RECOVERY
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setStep("reset");
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -145,6 +152,16 @@ function ResetPasswordForm() {
         </div>
 
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 backdrop-blur-xl">
+
+          {/* STEP: loading */}
+          {step === "loading" && (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#ff3c3c]" />
+              <p className="font-[family-name:var(--font-mono)] text-sm text-slate-500">
+                Loading…
+              </p>
+            </div>
+          )}
 
           {/* STEP: done */}
           {step === "done" && (
