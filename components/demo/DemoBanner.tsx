@@ -37,17 +37,22 @@ export function DemoBanner() {
         background: "linear-gradient(90deg, rgba(255,140,0,0.08) 0%, rgba(255,60,60,0.06) 100%)",
       }}
     >
-      <div className="flex items-center gap-2 text-sm font-mono">
-        <Zap className="h-4 w-4 shrink-0 text-amber-400" />
-        <span className="text-amber-200">
-          You&rsquo;re viewing a demo with sample data.
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2 text-sm font-mono">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 shrink-0 text-amber-400" />
+          <span className="text-amber-200 font-semibold">
+            You&rsquo;re exploring RiskSent with a sample Experienced account.
+          </span>
+        </div>
+        <span className="text-slate-400 ml-6 sm:ml-0">
+          Start your free trial to connect your real trading data.{" "}
+          <Link
+            href="/pricing"
+            className="text-slate-400 underline underline-offset-2 hover:text-slate-200 transition-colors"
+          >
+            View plans
+          </Link>
         </span>
-        <Link
-          href="/pricing"
-          className="text-slate-400 underline underline-offset-2 hover:text-slate-200 transition-colors"
-        >
-          View plans
-        </Link>
       </div>
 
       <div className="flex items-center gap-2">

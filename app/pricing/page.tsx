@@ -74,6 +74,7 @@ export default function PricingPage() {
   const subscription = useSubscription();
   const [annual, setAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [loadingDirectPlan, setLoadingDirectPlan] = useState<string | null>(null);
   const [ctaError, setCtaError] = useState<string | null>(null);
 
   const startTrial = async (planId: string) => {
@@ -81,7 +82,7 @@ export default function PricingPage() {
     if (!subscription) return;
 
     if (subscription.subscriptionFetchFailed) {
-      setCtaError("We couldn't verify your account. Please refresh the page and try again.");
+      setCtaError("We couldn't verify your account. Please refresh and try again.");
       return;
     }
 
@@ -90,17 +91,14 @@ export default function PricingPage() {
       return;
     }
 
-    const onActiveTrial =
+    const isActive =
       subscription.status === "trialing" ||
       subscription.plan === "trial" ||
-      subscription.isTrialing;
+      subscription.isTrialing ||
+      subscription.plan === "new_trader" ||
+      subscription.plan === "experienced";
 
-    if (onActiveTrial) {
-      router.push("/app/billing?notice=trial-active");
-      return;
-    }
-
-    if (subscription.plan === "new_trader" || subscription.plan === "experienced") {
+    if (isActive) {
       router.push("/app/billing");
       return;
     }
@@ -114,9 +112,9 @@ export default function PricingPage() {
           router.push("/app/dashboard");
           return;
         }
-        setCtaError(typeof data.error === "string" ? data.error : "Could not start your trial. Try again.");
+        setCtaError(typeof data.error === "string" ? data.error : "Could not start trial.");
       } catch {
-        setCtaError("Could not start your trial. Check your connection and try again.");
+        setCtaError("Connection error. Try again.");
       } finally {
         setLoadingPlan(null);
       }
@@ -124,6 +122,35 @@ export default function PricingPage() {
     }
 
     setCtaError("Open billing to manage your subscription.");
+  };
+
+  const subscribeDirect = async (planId: string) => {
+    setCtaError(null);
+    if (!subscription) return;
+
+    if (subscription.authenticated === false) {
+      router.push("/signup");
+      return;
+    }
+
+    setLoadingDirectPlan(planId);
+    try {
+      const res = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setCtaError(data.error ?? "Could not open checkout.");
+      }
+    } catch {
+      setCtaError("Connection error. Try again.");
+    } finally {
+      setLoadingDirectPlan(null);
+    }
   };
 
   return (
@@ -259,6 +286,7 @@ export default function PricingPage() {
             const billedLabel = annual ? `€${plan.annualTotal}/year` : null;
             const subLoading = subscription === null;
             const isLoading = subLoading || loadingPlan === plan.id;
+            const isDirectLoading = loadingDirectPlan === plan.id;
 
             return (
               <motion.div
@@ -293,7 +321,8 @@ export default function PricingPage() {
                   </div>
 
                   {/* Trial badge */}
-                  <div className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono font-bold"
+                  <div
+                    className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono font-bold"
                     style={{ color: "#ff8c00", borderColor: "rgba(255,140,0,0.3)", background: "rgba(255,140,0,0.08)" }}
                   >
                     <Zap className="h-2.5 w-2.5" />
@@ -341,6 +370,7 @@ export default function PricingPage() {
                     </AnimatePresence>
                   </div>
 
+                  {/* Primary CTA — Start free trial */}
                   <button
                     type="button"
                     onClick={() => void startTrial(plan.id)}
@@ -364,7 +394,17 @@ export default function PricingPage() {
                     {!isLoading && <ArrowRight className="h-4 w-4" />}
                   </button>
 
-                  <div className="mt-6 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                  {/* Secondary CTA — Subscribe directly */}
+                  <button
+                    type="button"
+                    onClick={() => void subscribeDirect(plan.id)}
+                    disabled={isDirectLoading || subLoading}
+                    className="mt-2 w-full rounded-2xl py-2.5 text-xs font-mono text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+                  >
+                    {isDirectLoading ? "Opening checkout…" : "Already tried it? Subscribe directly →"}
+                  </button>
+
+                  <div className="mt-4 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
 
                   <ul className="mt-6 space-y-2.5">
                     {plan.features.map((f) => (
@@ -397,7 +437,7 @@ export default function PricingPage() {
           className="max-w-3xl mx-auto mt-6 text-center"
         >
           <p className="text-[12px] font-mono text-slate-500 tracking-wide">
-            7-day free trial &middot; No credit card required &middot; Cancel anytime
+            7-day free trial · No credit card required · Cancel anytime
           </p>
         </motion.div>
       </section>
