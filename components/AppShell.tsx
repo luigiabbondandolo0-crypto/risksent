@@ -228,29 +228,32 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-0 w-full flex-1 overflow-hidden">
       <Sidebar variant={isAdminArea ? "admin" : "default"} />
-      <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1600px] flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        {/* Demo banner (not dismissible at shell level — handled inside component) */}
-        {sub?.isDemoMode && !sub?.isAdmin && <DemoBanner />}
+      {/* Full-width scroll column so wheel/trackpad on side gutters still scrolls page content */}
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          {/* Demo banner (not dismissible at shell level — handled inside component) */}
+          {sub?.isDemoMode && !sub?.isAdmin && <DemoBanner />}
 
-        {/* Trial countdown banner */}
-        <AnimatePresence>
-          {sub?.isTrialing && !sub?.isAdmin && <TrialBanner />}
-        </AnimatePresence>
+          {/* Trial countdown banner */}
+          <AnimatePresence>
+            {sub?.isTrialing && !sub?.isAdmin && <TrialBanner />}
+          </AnimatePresence>
 
-        {/* Announcement banners */}
-        <AnimatePresence mode="popLayout">
-          {visible.map((ann) => (
-            <ActiveAnnouncementCard
-              key={ann.id}
-              ann={ann}
-              onDismiss={() =>
-                setDismissed((prev) => new Set([...prev, ann.id]))
-              }
-            />
-          ))}
-        </AnimatePresence>
+          {/* Announcement banners */}
+          <AnimatePresence mode="popLayout">
+            {visible.map((ann) => (
+              <ActiveAnnouncementCard
+                key={ann.id}
+                ann={ann}
+                onDismiss={() =>
+                  setDismissed((prev) => new Set([...prev, ann.id]))
+                }
+              />
+            ))}
+          </AnimatePresence>
 
-        {children}
+          {children}
+        </div>
       </main>
     </div>
   );

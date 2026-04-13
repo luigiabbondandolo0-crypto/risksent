@@ -243,8 +243,10 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
             <MockMobileNavStrip />
           </Suspense>
 
-          <main className="mx-auto min-h-0 w-full min-w-0 max-w-[1600px] flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            {children}
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+              {children}
+            </div>
           </main>
         </div>
       </div>
