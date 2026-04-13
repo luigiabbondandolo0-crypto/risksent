@@ -116,17 +116,53 @@ type SectionTone = "default" | "critical" | "insight" | "challenge" | "rules" | 
 
 const sectionToneClass: Record<SectionTone, string> = {
   default:
-    "border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
+    "border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015]",
   critical:
-    "border-red-500/20 bg-gradient-to-b from-red-500/[0.06] to-transparent",
+    "border-red-500/25 bg-gradient-to-b from-red-500/[0.08] to-transparent",
   insight:
-    "border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.04] to-transparent",
+    "border-cyan-500/20 bg-gradient-to-b from-cyan-500/[0.06] to-transparent",
   challenge:
-    "border-violet-500/15 bg-gradient-to-b from-violet-500/[0.05] to-transparent",
+    "border-violet-500/20 bg-gradient-to-b from-violet-500/[0.07] to-transparent",
   rules:
-    "border-emerald-500/12 bg-gradient-to-b from-emerald-500/[0.03] to-transparent",
-  context: "border-white/[0.06] bg-gradient-to-b from-slate-900/40 to-transparent",
+    "border-emerald-500/15 bg-gradient-to-b from-emerald-500/[0.05] to-transparent",
+  context:
+    "border-white/[0.08] bg-gradient-to-b from-slate-900/50 to-transparent",
 };
+
+/** Left accent bar on section header — high visibility */
+const headerAccentBar: Record<SectionTone, string> = {
+  default: "from-cyan-400 via-violet-500 to-fuchsia-500/80",
+  critical: "from-red-500 via-red-400 to-orange-500/90",
+  insight: "from-cyan-400 to-teal-500",
+  challenge: "from-violet-500 via-fuchsia-500 to-indigo-400",
+  rules: "from-emerald-400 to-cyan-600/90",
+  context: "from-slate-400 via-slate-300 to-slate-500",
+};
+
+const headerBgTone: Record<SectionTone, string> = {
+  default:
+    "bg-gradient-to-br from-white/[0.12] via-white/[0.04] to-transparent",
+  critical:
+    "bg-gradient-to-br from-red-500/20 via-red-500/5 to-transparent",
+  insight:
+    "bg-gradient-to-br from-cyan-500/15 via-cyan-500/5 to-transparent",
+  challenge:
+    "bg-gradient-to-br from-violet-500/18 via-violet-500/6 to-transparent",
+  rules:
+    "bg-gradient-to-br from-emerald-500/12 via-emerald-500/4 to-transparent",
+  context:
+    "bg-gradient-to-br from-slate-600/15 via-slate-800/30 to-transparent",
+};
+
+const CARD_HOVER = {
+  hover: { scale: 1.02 },
+  tap: { scale: 0.99 },
+} as const;
+
+const SECTION_HOVER = {
+  hover: { scale: 1.012 },
+  tap: { scale: 1.005 },
+} as const;
 
 type LucideIcon = ComponentType<{ className?: string }>;
 
@@ -154,29 +190,42 @@ function CoachSection({
       whileInView="show"
       viewport={{ once: true, margin: "-48px" }}
       variants={coachSectionVariants}
+      whileHover={SECTION_HOVER.hover}
+      whileTap={SECTION_HOVER.tap}
+      transition={{ type: "spring", stiffness: 420, damping: 28 }}
       className={[
-        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_12px_48px_-16px_rgba(0,0,0,0.55)] sm:scroll-mt-28",
+        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] will-change-transform sm:scroll-mt-28",
         sectionToneClass[tone],
         className,
       ].join(" ")}
     >
-      <div className="border-b border-white/[0.06] bg-black/20 px-4 py-3.5 backdrop-blur-sm sm:px-5 sm:py-4">
-        <div className="flex items-start gap-3">
+      <div
+        className={[
+          "relative border-b border-white/10 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5",
+          headerBgTone[tone],
+        ].join(" ")}
+      >
+        <div
+          className={`absolute left-0 top-0 h-full w-[4px] bg-gradient-to-b ${headerAccentBar[tone]} shadow-[2px_0_20px_rgba(0,0,0,0.45)]`}
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+        <div className="relative flex items-start gap-3 sm:gap-4 pl-2 sm:pl-3">
           <motion.div
             initial={{ scale: 0.92, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ type: "spring", stiffness: 380, damping: 24 }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.05] text-slate-100 shadow-inner shadow-white/[0.03]"
+            transition={{ type: "spring", stiffness: 380, damping: 22 }}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/30 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.45)] sm:h-12 sm:w-12"
           >
-            <Icon className="h-5 w-5" aria-hidden />
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
           </motion.div>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-white sm:text-lg">
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h2 className="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-transparent drop-shadow-[0_1px_24px_rgba(255,255,255,0.12)] sm:text-xl">
               {title}
             </h2>
             {description ? (
-              <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
                 {description}
               </p>
             ) : null}
@@ -209,6 +258,8 @@ function ReportJumpNav({
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.04, duration: 0.25 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.98 }}
           className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-100 sm:text-xs"
         >
           {item.label}
@@ -308,7 +359,9 @@ function ErrorCard({
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.06, duration: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border p-5"
+      whileHover={CARD_HOVER.hover}
+      whileTap={CARD_HOVER.tap}
+      className="relative cursor-default overflow-hidden rounded-2xl border p-5"
       style={{ background: cfg.bg, borderColor: cfg.border }}
     >
       <div
@@ -362,7 +415,9 @@ function InsightCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ delay: index * 0.07, duration: 0.3 }}
-      className="relative overflow-hidden rs-card p-5"
+      whileHover={CARD_HOVER.hover}
+      whileTap={CARD_HOVER.tap}
+      className="relative cursor-default overflow-hidden rs-card p-5"
     >
       <div
         className="absolute left-0 top-0 h-full w-1 rounded-l-2xl"
@@ -411,7 +466,9 @@ function ChallengeCard({
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.12, duration: 0.35, type: "spring" }}
-      className="rs-card p-6"
+      whileHover={CARD_HOVER.hover}
+      whileTap={CARD_HOVER.tap}
+      className="cursor-default rs-card p-6"
       style={{
         borderColor: result.would_pass
           ? "rgba(0,230,118,0.2)"
@@ -501,7 +558,9 @@ function AdaptationCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
-      className="rs-card p-5"
+      whileHover={CARD_HOVER.hover}
+      whileTap={CARD_HOVER.tap}
+      className="cursor-default rs-card p-5"
       style={{
         boxShadow:
           adapt.priority === "high" ? `0 0 20px ${pc.glow}` : undefined,
@@ -554,62 +613,63 @@ function ChatBubble({
       i++;
       setDisplayed(msg.content.slice(0, i));
       if (i >= msg.content.length) clearInterval(interval);
-    }, 12);
+    }, 10);
     return () => clearInterval(interval);
   }, [isNew, isUser, msg.content]);
 
+  if (isUser) {
+    return (
+      <motion.article
+        initial={{ opacity: 0, y: 10, x: 8 }}
+        animate={{ opacity: 1, y: 0, x: 0 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="flex justify-end"
+      >
+        <div className="max-w-[min(92%,28rem)]">
+          <motion.div
+            whileHover={{ scale: 1.015 }}
+            transition={{ type: "spring", stiffness: 500, damping: 35 }}
+            className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#ff3c3c] via-[#d62f2f] to-[#9a1f1f] px-4 py-3 text-sm leading-relaxed text-white shadow-[0_16px_48px_-16px_rgba(255,60,60,0.55)]"
+          >
+            {msg.content}
+          </motion.div>
+          <p className="mt-2 text-right text-[10px] font-mono text-slate-500">
+            {format(parseISO(msg.created_at), "HH:mm")}
+          </p>
+        </div>
+      </motion.article>
+    );
+  }
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={`flex ${isUser ? "justify-end" : "justify-start"} items-end gap-2`}
+    <motion.article
+      initial={{ opacity: 0, y: 12, x: -6 }}
+      animate={{ opacity: 1, y: 0, x: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="flex w-full justify-start"
     >
-      {!isUser && (
+      <div className="flex w-full max-w-[min(96%,40rem)] gap-3 sm:gap-4">
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9px] font-bold"
-          style={{ background: `${CLAUDE_COLOR}25`, color: CLAUDE_COLOR, border: `1px solid ${CLAUDE_COLOR}35` }}
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/35 bg-gradient-to-br from-violet-500/20 to-violet-900/30 text-[10px] font-bold text-violet-100 shadow-inner shadow-violet-500/10"
+          style={{ color: CLAUDE_COLOR, borderColor: `${CLAUDE_COLOR}44` }}
         >
           AI
         </div>
-      )}
-      <div className={`max-w-[78%]`}>
-        {!isUser && (
-          <p className="mb-1 text-[10px] text-slate-700 font-mono pl-1">
-            Claude · {format(parseISO(msg.created_at), "HH:mm")}
-          </p>
-        )}
-        <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-            isUser ? "rounded-br-sm text-white" : "rounded-bl-sm text-slate-200"
-          }`}
-          style={
-            isUser
-              ? {
-                  background: "linear-gradient(135deg, #ff3c3c 0%, #c92a2a 100%)",
-                  boxShadow: "0 4px 24px rgba(255,60,60,0.18)",
-                }
-              : {
-                  background: "rgba(255,255,255,0.04)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.3)",
-                }
-          }
-        >
-          {isUser ? (
-            msg.content
-          ) : (
-            <span style={{ whiteSpace: "pre-wrap" }}>{displayed}</span>
-          )}
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/[0.1] bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+              Claude
+            </span>
+            <span className="font-mono text-[10px] text-slate-600">
+              {format(parseISO(msg.created_at), "HH:mm")}
+            </span>
+          </div>
+          <div className="rounded-2xl rounded-tl-md border border-white/[0.1] bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent px-4 py-3.5 text-sm leading-relaxed text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <span className="whitespace-pre-wrap">{displayed}</span>
+          </div>
         </div>
-        {isUser && (
-          <p className="mt-1 text-right text-[10px] text-slate-700 font-mono pr-1">
-            {format(parseISO(msg.created_at), "HH:mm")}
-          </p>
-        )}
       </div>
-    </motion.div>
+    </motion.article>
   );
 }
 
@@ -741,6 +801,8 @@ function ReportTab({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.05, duration: 0.35 }}
+              whileHover={{ scale: 1.045 }}
+              whileTap={{ scale: 0.99 }}
               className="flex justify-center"
             >
               <CircularScore score={s.value} label={s.label} />
@@ -748,7 +810,12 @@ function ReportTab({
           ))}
         </div>
 
-        <div className="rs-card-accent relative mt-6 p-4 sm:p-6">
+        <motion.div
+          whileHover={{ scale: 1.012 }}
+          whileTap={{ scale: 1.005 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className="rs-card-accent relative mt-6 cursor-default p-4 sm:p-6"
+        >
           <p className="rs-kpi-label mb-2 flex items-center gap-2">
             <Brain className="h-3.5 w-3.5" /> Coach summary
           </p>
@@ -792,7 +859,7 @@ function ReportTab({
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </CoachSection>
 
       {report.errors.length > 0 && (
@@ -872,7 +939,11 @@ function ReportTab({
         tone="context"
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+          <motion.div
+            whileHover={CARD_HOVER.hover}
+            whileTap={CARD_HOVER.tap}
+            className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
+          >
             <p className="rs-kpi-label mb-3 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" /> Sessions
             </p>
@@ -921,9 +992,13 @@ function ReportTab({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
 
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+          <motion.div
+            whileHover={CARD_HOVER.hover}
+            whileTap={CARD_HOVER.tap}
+            className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
+          >
             <p className="rs-kpi-label mb-3 flex items-center gap-2">
               <TrendingDown className="h-3.5 w-3.5" /> Symbols
             </p>
@@ -969,7 +1044,7 @@ function ReportTab({
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </CoachSection>
 
@@ -1081,193 +1156,209 @@ function ChatTab({
   }, [messages.length]);
 
   return (
-    <div className="flex min-h-[min(100dvh-120px,720px)] flex-col sm:min-h-[min(100vh-200px,780px)]">
-      {/* Context banner */}
-      {reportRow && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-xs text-slate-500 sm:px-4"
-        >
-          <Brain className="h-3.5 w-3.5 shrink-0 text-cyan-500/70" />
-          <span>
-            Context: report{" "}
-            <span className="text-slate-400">
-              {format(parseISO(reportRow.created_at), "MMM d")} ·{" "}
-              {reportRow.trades_analyzed} trades
-            </span>
-          </span>
-        </motion.div>
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="flex w-full min-h-0 flex-col"
+    >
+      <div className="flex min-h-[min(70dvh,640px)] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)]">
+        {/* Panel header */}
+        <div className="relative shrink-0 border-b border-white/[0.08] bg-black/45 px-4 py-4 backdrop-blur-md sm:px-5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-500/35 to-transparent" />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-violet-950/40 shadow-lg shadow-violet-900/25">
+                <MessageSquare className="h-5 w-5 text-violet-300" />
+              </div>
+              <div>
+                <h3 className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white sm:text-lg">
+                  Coach chat
+                </h3>
+                <p className="text-[11px] leading-snug text-slate-500 sm:text-xs">
+                  {reportRow
+                    ? "Replies use your latest report as context."
+                    : "Generate a report first for deeper, personalized answers."}
+                </p>
+              </div>
+            </div>
+            {reportRow && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-cyan-500/15 bg-cyan-500/5 px-3 py-2 text-[11px] text-slate-400 sm:shrink-0">
+                <Brain className="h-3.5 w-3.5 text-cyan-400/80" />
+                <span>
+                  Report{" "}
+                  <span className="text-slate-300">
+                    {format(parseISO(reportRow.created_at), "MMM d")}
+                  </span>
+                  <span className="text-slate-600"> · </span>
+                  {reportRow.trades_analyzed} trades
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
-      {/* Messages area */}
-      <div className="relative min-h-[240px] flex-1 overflow-hidden sm:min-h-[320px]">
-      <div ref={scrollAreaRef} className="h-full max-h-[55vh] overflow-y-auto space-y-4 pr-1 sm:max-h-none">
-
-        {messages.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex h-full min-h-[220px] flex-col items-center justify-center px-2 py-10 text-center sm:min-h-[280px]"
+        {/* Thread */}
+        <div className="relative flex min-h-[200px] flex-1 flex-col overflow-hidden">
+          <div
+            ref={scrollAreaRef}
+            className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
           >
-            <motion.div
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5"
-            >
-              <MessageSquare className="h-6 w-6 text-cyan-500/60" />
-            </motion.div>
-            <p className="text-sm font-medium text-slate-400">
-              Ask your coach anything
-            </p>
-            <p className="mt-1 max-w-sm text-xs text-slate-600">
-              {reportRow
-                ? "Your last report is loaded as context."
-                : "Generate a report first for richer answers."}
-            </p>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_45%_at_50%_-10%,rgba(99,102,241,0.12),transparent_55%)]" />
+            <div className="relative space-y-6 sm:space-y-7">
+              {messages.length === 0 ? (
+                <div className="mx-auto flex max-w-3xl flex-col items-center px-1 py-6 text-center sm:py-10">
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-transparent shadow-[0_0_40px_-8px_rgba(34,211,238,0.35)]">
+                    <Sparkles className="h-7 w-7 text-cyan-400/80" />
+                  </div>
+                  <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+                    Start the conversation
+                  </p>
+                  <p className="mt-2 max-w-md text-sm text-slate-500">
+                    Pick a prompt below or write your own. The coach reads your
+                    numbers, not your excuses.
+                  </p>
+                  <div className="mt-8 grid w-full gap-2.5 sm:grid-cols-2">
+                    {SUGGESTED_QUESTIONS.map((q, i) => (
+                      <motion.button
+                        key={q}
+                        type="button"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.04 * i, duration: 0.28 }}
+                        whileHover={CARD_HOVER.hover}
+                        whileTap={CARD_HOVER.tap}
+                        onClick={() => onSend(q)}
+                        disabled={isMock}
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-cyan-500/25 hover:bg-cyan-500/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {q}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg, i) => (
+                    <ChatBubble
+                      key={msg.id}
+                      msg={msg}
+                      isNew={isNewMsg && i === newMsgIndex}
+                    />
+                  ))}
+                  {loading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start pl-0 sm:pl-1"
+                    >
+                      <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
+                        <div
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-[9px] font-bold text-violet-200"
+                          style={{ color: CLAUDE_COLOR }}
+                        >
+                          AI
+                        </div>
+                        <div className="flex gap-1.5">
+                          {[0, 1, 2].map((dot) => (
+                            <motion.span
+                              key={dot}
+                              className="h-2 w-2 rounded-full bg-slate-500"
+                              animate={{ opacity: [0.25, 1, 0.25], scale: [0.9, 1, 0.9] }}
+                              transition={{
+                                duration: 1.1,
+                                repeat: Infinity,
+                                delay: dot * 0.18,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </>
+              )}
+              <div ref={bottomRef} className="h-px w-full shrink-0" />
+            </div>
+          </div>
 
-            <div className="mt-6 flex w-full max-w-lg gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap sm:justify-center">
-              {SUGGESTED_QUESTIONS.map((q, i) => (
+          <AnimatePresence>
+            {showScrollBtn && (
+              <motion.button
+                type="button"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#0c0c0e]/95 text-slate-400 shadow-xl backdrop-blur-md transition-colors hover:border-cyan-500/30 hover:text-white"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Composer */}
+        <div className="shrink-0 border-t border-white/[0.08] bg-gradient-to-t from-black/80 to-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-4">
+          {messages.length > 0 && messages.length < 5 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {SUGGESTED_QUESTIONS.slice(0, 3).map((q) => (
                 <motion.button
                   key={q}
                   type="button"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * i, duration: 0.25 }}
+                  whileHover={CARD_HOVER.hover}
+                  whileTap={CARD_HOVER.tap}
                   onClick={() => onSend(q)}
-                  disabled={isMock}
-                  className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-left text-xs text-slate-400 transition-colors hover:border-cyan-500/25 hover:bg-cyan-500/10 hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={loading || isMock}
+                  className="rounded-full border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-[11px] text-slate-500 transition-colors hover:border-white/15 hover:text-slate-200 disabled:opacity-40"
                 >
                   {q}
                 </motion.button>
               ))}
             </div>
-          </motion.div>
-        ) : (
-          <>
-            {messages.map((msg, i) => (
-              <ChatBubble
-                key={msg.id}
-                msg={msg}
-                isNew={isNewMsg && i === newMsgIndex}
-              />
-            ))}
-            {loading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
-              >
-                <div className="rs-card rounded-tl-sm px-4 py-3">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <motion.span
-                        key={i}
-                        className="h-1.5 w-1.5 rounded-full bg-slate-500"
-                        animate={{ opacity: [0.3, 1, 0.3] }}
-                        transition={{
-                          duration: 1.2,
-                          repeat: Infinity,
-                          delay: i * 0.2,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Scroll-to-bottom button */}
-      <AnimatePresence>
-        {showScrollBtn && (
-          <motion.button
-            type="button"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-            className="absolute bottom-2 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-400 shadow-lg hover:text-white"
-            style={{ background: "rgba(12,12,14,0.9)", backdropFilter: "blur(8px)" }}
-          >
-            <ChevronDown className="h-4 w-4" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-      </div>
-
-      {/* Input area */}
-      <div className="mt-3 pt-3">
-        {/* Suggested chips when there are messages */}
-        {messages.length > 0 && messages.length < 4 && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {SUGGESTED_QUESTIONS.slice(0, 3).map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => onSend(q)}
-                disabled={loading || isMock}
-                className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[11px] text-slate-500 transition-all hover:bg-white/[0.07] hover:text-slate-200 disabled:opacity-50"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-        )}
-        <div
-          className="flex items-end gap-2 rounded-2xl border p-2"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(16px)",
-            borderColor: "rgba(255,255,255,0.07)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-          }}
-        >
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-slate-100 outline-none font-[family-name:var(--font-mono)] placeholder:text-slate-700"
-            placeholder={
-              isMock
-                ? "Chat disabled in demo mode"
-                : "Ask your coach…"
-            }
-            value={input}
-            disabled={loading || isMock}
-            onChange={(e) => {
-              setInput(e.target.value);
-              e.target.style.height = "auto";
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
+          )}
+          <div className="flex items-end gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] p-2 shadow-inner shadow-black/40">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              className="max-h-[120px] min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-slate-100 outline-none placeholder:text-slate-600"
+              placeholder={
+                isMock
+                  ? "Chat disabled in demo mode"
+                  : "Message your coach…"
               }
-            }}
-          />
-          <motion.button
-            type="button"
-            disabled={!input.trim() || loading || isMock}
-            onClick={handleSend}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white transition disabled:opacity-40"
-            style={{ background: "linear-gradient(135deg, #ff3c3c, #c92a2a)", boxShadow: "0 4px 16px rgba(255,60,60,0.25)" }}
-          >
-            {loading ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </motion.button>
+              value={input}
+              disabled={loading || isMock}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+            />
+            <motion.button
+              type="button"
+              disabled={!input.trim() || loading || isMock}
+              onClick={handleSend}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff3c3c] to-[#9a1a1a] text-white shadow-[0_8px_24px_-6px_rgba(255,60,60,0.45)] transition-opacity disabled:opacity-35"
+            >
+              {loading ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </motion.button>
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
