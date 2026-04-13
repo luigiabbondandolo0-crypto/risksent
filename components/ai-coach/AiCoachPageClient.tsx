@@ -159,11 +159,6 @@ const CARD_HOVER = {
   tap: { scale: 0.99 },
 } as const;
 
-const SECTION_HOVER = {
-  hover: { scale: 1.012 },
-  tap: { scale: 1.005 },
-} as const;
-
 /** Tween hover so scale follows the cursor without spring lag */
 const HOVER_SCALE_TRANSITION = {
   type: "tween" as const,
@@ -197,15 +192,12 @@ function CoachSection({
       whileInView="show"
       viewport={{ once: true, margin: "-48px" }}
       variants={coachSectionVariants}
-      whileHover={SECTION_HOVER.hover}
-      whileTap={SECTION_HOVER.tap}
       transition={{
         opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
         y: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-        scale: HOVER_SCALE_TRANSITION,
       }}
       className={[
-        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] will-change-transform sm:scroll-mt-28",
+        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] sm:scroll-mt-28",
         sectionToneClass[tone],
         className,
       ].join(" ")}
