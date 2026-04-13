@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import type { ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
@@ -23,6 +24,7 @@ import {
   Target,
   Zap,
   Shield,
+  History,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { authFetch } from "@/lib/api/authFetch";
@@ -100,6 +102,121 @@ const ANALYSIS_WINDOWS = [
   { value: 365, label: "1 year" },
   { value: 9999, label: "All time" },
 ];
+
+const coachSectionVariants = {
+  hidden: { opacity: 0, y: 22 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+type SectionTone = "default" | "critical" | "insight" | "challenge" | "rules" | "context";
+
+const sectionToneClass: Record<SectionTone, string> = {
+  default:
+    "border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
+  critical:
+    "border-red-500/20 bg-gradient-to-b from-red-500/[0.06] to-transparent",
+  insight:
+    "border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.04] to-transparent",
+  challenge:
+    "border-violet-500/15 bg-gradient-to-b from-violet-500/[0.05] to-transparent",
+  rules:
+    "border-emerald-500/12 bg-gradient-to-b from-emerald-500/[0.03] to-transparent",
+  context: "border-white/[0.06] bg-gradient-to-b from-slate-900/40 to-transparent",
+};
+
+type LucideIcon = ComponentType<{ className?: string }>;
+
+function CoachSection({
+  id,
+  icon: Icon,
+  title,
+  description,
+  tone = "default",
+  children,
+  className = "",
+}: {
+  id?: string;
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  tone?: SectionTone;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <motion.section
+      id={id}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-48px" }}
+      variants={coachSectionVariants}
+      className={[
+        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_12px_48px_-16px_rgba(0,0,0,0.55)] sm:scroll-mt-28",
+        sectionToneClass[tone],
+        className,
+      ].join(" ")}
+    >
+      <div className="border-b border-white/[0.06] bg-black/20 px-4 py-3.5 backdrop-blur-sm sm:px-5 sm:py-4">
+        <div className="flex items-start gap-3">
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", stiffness: 380, damping: 24 }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.05] text-slate-100 shadow-inner shadow-white/[0.03]"
+          >
+            <Icon className="h-5 w-5" aria-hidden />
+          </motion.div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-white sm:text-lg">
+              {title}
+            </h2>
+            {description ? (
+              <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
+                {description}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      <div className="p-4 sm:p-5 md:p-6">{children}</div>
+    </motion.section>
+  );
+}
+
+function ReportJumpNav({
+  items,
+}: {
+  items: readonly { id: string; label: string }[];
+}) {
+  if (items.length === 0) return null;
+  return (
+    <motion.nav
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto pb-1 sm:mx-0 sm:flex-wrap"
+      aria-label="Report sections"
+    >
+      {items.map((item, i) => (
+        <motion.a
+          key={item.id}
+          href={`#${item.id}`}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: i * 0.04, duration: 0.25 }}
+          className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-100 sm:text-xs"
+        >
+          {item.label}
+        </motion.a>
+      ))}
+    </motion.nav>
+  );
+}
 
 // ─── Circular Score SVG ────────────────────────────────────────────────────
 
@@ -559,7 +676,7 @@ function ReportTab({
     { label: "Emotional", value: report.emotional_score },
     { label: "Performance", value: report.performance_score },
     { label: "Discipline", value: report.discipline_score },
-    { label: "Risk Consty.", value: report.risk_consistency_score },
+    { label: "Risk consistency", value: report.risk_consistency_score },
     { label: "Strategy", value: report.strategy_adherence_score },
   ];
 
@@ -567,139 +684,157 @@ function ReportTab({
     scores.reduce((s, x) => s + x.value, 0) / scores.length
   );
 
+  const jumpLinks: { id: string; label: string }[] = [
+    { id: "coach-overview", label: "Overview" },
+  ];
+  if (report.errors.length > 0) {
+    jumpLinks.push({
+      id: "coach-errors",
+      label: `Errors (${report.errors.length})`,
+    });
+  }
+  if (report.insights.length > 0) {
+    jumpLinks.push({
+      id: "coach-insights",
+      label: `Insights (${report.insights.length})`,
+    });
+  }
+  jumpLinks.push({ id: "coach-challenges", label: "Challenges" });
+  if (report.adaptations.length > 0) {
+    jumpLinks.push({ id: "coach-adaptations", label: "Rule tweaks" });
+  }
+  jumpLinks.push({ id: "coach-context", label: "Sessions & symbols" });
+  jumpLinks.push({ id: "coach-weekly", label: "Weekly" });
+  if (allReports.length > 1) {
+    jumpLinks.push({ id: "coach-history", label: "History" });
+  }
+
   return (
-    <div className="space-y-6">
-      {/* ── Section 1: Score Cards ──────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.35 }}
-        className="rs-card p-6"
+    <motion.div
+      className="space-y-5 md:space-y-7"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <ReportJumpNav items={jumpLinks} />
+
+      <CoachSection
+        id="coach-overview"
+        icon={Zap}
+        title="Overview"
+        description="Dimensional scores and coach narrative for this analysis."
+        tone="default"
       >
-        <div className="mb-5 flex items-center justify-between">
-          <p className="rs-kpi-label flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5" /> Scores
+        {reportRow && (
+          <p className="rs-mono mb-5 text-[10px] text-slate-500 sm:text-xs">
+            {format(parseISO(reportRow.created_at), "MMM d, yyyy · HH:mm")} ·{" "}
+            {reportRow.trades_analyzed} trades ·{" "}
+            <span style={{ color: CLAUDE_COLOR }}>Claude</span>
           </p>
-          {reportRow && (
-            <span className="font-mono text-[10px] text-slate-600">
-              {format(parseISO(reportRow.created_at), "MMM d, HH:mm")} ·{" "}
-              {reportRow.trades_analyzed} trades ·{" "}
-              <span style={{ color: CLAUDE_COLOR }}>Claude</span>
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap justify-around gap-6">
-          {scores.map((s) => (
-            <CircularScore key={s.label} score={s.value} label={s.label} />
+        )}
+        <p className="rs-section-title mb-3">Score breakdown</p>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {scores.map((s, idx) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.05, duration: 0.35 }}
+              className="flex justify-center"
+            >
+              <CircularScore score={s.value} label={s.label} />
+            </motion.div>
           ))}
         </div>
-      </motion.div>
 
-      {/* ── Section 2: Summary Banner ───────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.35 }}
-        className="rs-card-accent p-6"
-      >
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-          <div className="flex-1">
-            <p className="rs-kpi-label mb-2 flex items-center gap-2">
-              <Brain className="h-3.5 w-3.5" /> Coach Summary
-            </p>
-            <p className="leading-relaxed text-slate-300">{report.summary}</p>
-          </div>
-          <div className="flex flex-col gap-3 lg:w-64 lg:shrink-0">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-slate-600 mb-1">
-                Overall Score
-              </p>
-              <p
-                className="font-[family-name:var(--font-display)] text-4xl font-bold"
-                style={{ color: scoreColor(overallScore) }}
-              >
-                {overallScore}
-              </p>
+        <div className="rs-card-accent relative mt-6 p-4 sm:p-6">
+          <p className="rs-kpi-label mb-2 flex items-center gap-2">
+            <Brain className="h-3.5 w-3.5" /> Coach summary
+          </p>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+            <div className="min-w-0 flex-1">
+              <p className="leading-relaxed text-slate-300">{report.summary}</p>
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs space-y-1.5">
-              <p>
-                <span className="text-slate-600">Best session: </span>
-                <span className="font-medium text-[#00e676]">
-                  {report.best_session}
-                </span>
-              </p>
-              <p>
-                <span className="text-slate-600">Worst pattern: </span>
-                <span className="font-medium text-[#ff3c3c]">
-                  {report.worst_pattern}
-                </span>
-              </p>
-            </div>
-            <div className="rounded-xl border border-[#ff8c00]/20 bg-[#ff8c00]/08 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-[#ff8c00] mb-1">
-                Fix this week
-              </p>
-              <p className="text-xs text-slate-300">
-                {report.one_thing_to_fix_this_week}
-              </p>
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch lg:w-72 lg:shrink-0 lg:flex-col">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center sm:flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-600">
+                  Overall
+                </p>
+                <p
+                  className="font-[family-name:var(--font-display)] text-3xl font-bold sm:text-4xl"
+                  style={{ color: scoreColor(overallScore) }}
+                >
+                  {overallScore}
+                </p>
+              </div>
+              <div className="space-y-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs sm:flex-1">
+                <p>
+                  <span className="text-slate-600">Best session </span>
+                  <span className="font-medium text-[#00e676]">
+                    {report.best_session}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-slate-600">Worst pattern </span>
+                  <span className="font-medium text-[#ff3c3c]">
+                    {report.worst_pattern}
+                  </span>
+                </p>
+              </div>
+              <div className="rounded-xl border border-[#ff8c00]/20 bg-[#ff8c00]/08 p-3 sm:flex-1">
+                <p className="mb-1 text-[10px] uppercase tracking-wider text-[#ff8c00]">
+                  Fix this week
+                </p>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  {report.one_thing_to_fix_this_week}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </CoachSection>
 
-      {/* ── Section 3: Errors ───────────────────────────────────────────── */}
       {report.errors.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.3 }}
+        <CoachSection
+          id="coach-errors"
+          icon={AlertTriangle}
+          title="Behavioral errors"
+          description="Repeated mistakes ranked by severity and estimated cost."
+          tone="critical"
         >
-          <p className="rs-kpi-label mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-3.5 w-3.5 text-[#ff3c3c]" />
-            Behavioral Errors ({report.errors.length})
-          </p>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {report.errors.map((err, i) => (
               <ErrorCard key={err.type} err={err} index={i} />
             ))}
           </div>
-        </motion.div>
+        </CoachSection>
       )}
 
-      {/* ── Section 4: Insights ─────────────────────────────────────────── */}
       {report.insights.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.3 }}
+        <CoachSection
+          id="coach-insights"
+          icon={Sparkles}
+          title="Insights"
+          description="Actionable observations tied to your recent behavior."
+          tone="insight"
         >
-          <p className="rs-kpi-label mb-4 flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-[#22d3ee]" />
-            Insights ({report.insights.length})
-          </p>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {report.insights.map((ins, i) => (
               <InsightCard key={ins.title} insight={ins} index={i} />
             ))}
           </div>
-        </motion.div>
+        </CoachSection>
       )}
 
-      {/* ── Section 5: Challenge Simulator ──────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.3 }}
+      <CoachSection
+        id="coach-challenges"
+        icon={Target}
+        title="Challenge simulator"
+        description="How your stats would fare against common prop rules."
+        tone="challenge"
       >
-        <p className="rs-kpi-label mb-4 flex items-center gap-2">
-          <Target className="h-3.5 w-3.5" /> Challenge Simulator
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <ChallengeCard
             title="FTMO Standard (Phase 1)"
             result={report.challenge_simulation.ftmo_phase1}
@@ -711,158 +846,151 @@ function ReportTab({
             index={1}
           />
         </div>
-      </motion.div>
+      </CoachSection>
 
-      {/* ── Section 6: Adaptations ──────────────────────────────────────── */}
       {report.adaptations.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.3 }}
+        <CoachSection
+          id="coach-adaptations"
+          icon={Shield}
+          title="Rule adaptations"
+          description="Concrete tweaks to your risk rules, by priority."
+          tone="rules"
         >
-          <p className="rs-kpi-label mb-4 flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5" /> Rule Adaptations
-          </p>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {report.adaptations.map((a, i) => (
               <AdaptationCard key={a.rule} adapt={a} index={i} />
             ))}
           </div>
-        </motion.div>
+        </CoachSection>
       )}
 
-      {/* ── Section 7: Session & Symbol ─────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.3 }}
-        className="grid gap-4 md:grid-cols-2"
+      <CoachSection
+        id="coach-context"
+        icon={Clock}
+        title="Sessions & symbols"
+        description="When and what you trade best — and what to avoid."
+        tone="context"
       >
-        <div className="rs-card p-5">
-          <p className="rs-kpi-label mb-3 flex items-center gap-2">
-            <Clock className="h-3.5 w-3.5" /> Sessions
-          </p>
-          <div className="space-y-2">
-            {[
-              { label: "Best", value: report.best_session, color: "#00e676" },
-              { label: "Worst", value: report.worst_session, color: "#ff3c3c" },
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5"
-              >
-                <span className="text-xs text-slate-500">{label} session</span>
-                <span
-                  className="text-sm font-bold font-[family-name:var(--font-display)]"
-                  style={{ color }}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+            <p className="rs-kpi-label mb-3 flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5" /> Sessions
+            </p>
+            <div className="space-y-2">
+              {[
+                { label: "Best", value: report.best_session, color: "#00e676" },
+                {
+                  label: "Worst",
+                  value: report.worst_session,
+                  color: "#ff3c3c",
+                },
+              ].map(({ label, value, color }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-black/20 px-3 py-2.5"
                 >
-                  {value}
-                </span>
-              </div>
-            ))}
-            {report.best_trading_hours.length > 0 && (
-              <div className="pt-2">
-                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-700">
-                  Best hours (UTC)
+                  <span className="text-xs text-slate-500">{label} session</span>
+                  <span
+                    className="font-[family-name:var(--font-display)] text-sm font-bold"
+                    style={{ color }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+              {report.best_trading_hours.length > 0 && (
+                <div className="pt-2">
+                  <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
+                    Best hours (UTC)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {report.best_trading_hours.slice(0, 5).map((h) => (
+                      <span
+                        key={h}
+                        className="rounded-full px-2 py-0.5 font-mono text-[10px]"
+                        style={{
+                          background: "rgba(0,230,118,0.12)",
+                          color: "#00e676",
+                          border: "1px solid rgba(0,230,118,0.2)",
+                        }}
+                      >
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5">
+            <p className="rs-kpi-label mb-3 flex items-center gap-2">
+              <TrendingDown className="h-3.5 w-3.5" /> Symbols
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
+                  Best
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {report.best_trading_hours.slice(0, 5).map((h) => (
+                  {report.best_symbols.map((s) => (
                     <span
-                      key={h}
-                      className="rounded-full px-2 py-0.5 text-[10px] font-mono"
+                      key={s}
+                      className="rounded-full px-2.5 py-0.5 font-mono text-xs"
                       style={{
                         background: "rgba(0,230,118,0.12)",
                         color: "#00e676",
                         border: "1px solid rgba(0,230,118,0.2)",
                       }}
                     >
-                      {h}
+                      {s}
                     </span>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rs-card p-5">
-          <p className="rs-kpi-label mb-3 flex items-center gap-2">
-            <TrendingDown className="h-3.5 w-3.5" /> Symbols
-          </p>
-          <div className="space-y-2">
-            <div>
-              <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-700">
-                Best
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {report.best_symbols.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-full px-2.5 py-0.5 text-xs font-mono"
-                    style={{
-                      background: "rgba(0,230,118,0.12)",
-                      color: "#00e676",
-                      border: "1px solid rgba(0,230,118,0.2)",
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="pt-1">
-              <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-700">
-                Worst
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {report.worst_symbols.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-full px-2.5 py-0.5 text-xs font-mono"
-                    style={{
-                      background: "rgba(255,60,60,0.12)",
-                      color: "#ff3c3c",
-                      border: "1px solid rgba(255,60,60,0.2)",
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
+              <div>
+                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
+                  Worst
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {report.worst_symbols.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-full px-2.5 py-0.5 font-mono text-xs"
+                      style={{
+                        background: "rgba(255,60,60,0.12)",
+                        color: "#ff3c3c",
+                        border: "1px solid rgba(255,60,60,0.2)",
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </CoachSection>
 
-      {/* ── Section 8: Weekly Summary ────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.3 }}
-        className="rs-card overflow-hidden p-6"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-        }}
+      <CoachSection
+        id="coach-weekly"
+        icon={Sparkles}
+        title="Weekly summary"
+        description="Rolling narrative for the last week of activity."
+        tone="challenge"
       >
-        <p className="rs-kpi-label mb-3 flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-[#818cf8]" /> Weekly Summary
-        </p>
         <p className="leading-relaxed text-slate-300">{report.weekly_summary}</p>
-      </motion.div>
+      </CoachSection>
 
-      {/* ── Section 9: Report History ────────────────────────────────────── */}
       {allReports.length > 1 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.3 }}
+        <CoachSection
+          id="coach-history"
+          icon={History}
+          title="Report history"
+          description="Open a previous run without leaving this page."
+          tone="default"
         >
-          <p className="rs-kpi-label mb-3">Report History</p>
           <div className="flex flex-wrap gap-2">
             {allReports.map((r) => {
               const score = Math.round(
@@ -873,16 +1001,18 @@ function ReportTab({
               );
               const isActive = r.id === reportRow?.id;
               return (
-                <button
+                <motion.button
                   key={r.id}
                   type="button"
                   onClick={() => onLoadReport(r)}
-                  className="rounded-xl border px-3 py-2 text-left transition-all hover:bg-white/[0.04]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
                   style={{
                     borderColor: isActive
-                      ? "rgba(255,255,255,0.15)"
-                      : "rgba(255,255,255,0.06)",
-                    background: isActive ? "rgba(255,255,255,0.04)" : "transparent",
+                      ? "rgba(34,211,238,0.35)"
+                      : "rgba(255,255,255,0.08)",
+                    background: isActive ? "rgba(34,211,238,0.06)" : "transparent",
                   }}
                 >
                   <p className="text-xs font-medium text-slate-300">
@@ -891,13 +1021,13 @@ function ReportTab({
                   <p className="font-mono text-[10px] text-slate-600">
                     {r.trades_analyzed} trades · score {score}
                   </p>
-                </button>
+                </motion.button>
               );
             })}
           </div>
-        </motion.div>
+        </CoachSection>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -951,50 +1081,69 @@ function ChatTab({
   }, [messages.length]);
 
   return (
-    <div className="flex h-[calc(100dvh-140px)] min-h-[400px] flex-col sm:h-[calc(100vh-220px)] sm:min-h-[500px]">
+    <div className="flex min-h-[min(100dvh-120px,720px)] flex-col sm:min-h-[min(100vh-200px,780px)]">
       {/* Context banner */}
       {reportRow && (
-        <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs text-slate-500">
-          <Brain className="h-3.5 w-3.5 flex-shrink-0 text-slate-600" />
-          Chat context: report from{" "}
-          {format(parseISO(reportRow.created_at), "MMM d")},{" "}
-          {reportRow.trades_analyzed} trades analyzed
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-xs text-slate-500 sm:px-4"
+        >
+          <Brain className="h-3.5 w-3.5 shrink-0 text-cyan-500/70" />
+          <span>
+            Context: report{" "}
+            <span className="text-slate-400">
+              {format(parseISO(reportRow.created_at), "MMM d")} ·{" "}
+              {reportRow.trades_analyzed} trades
+            </span>
+          </span>
+        </motion.div>
       )}
 
       {/* Messages area */}
-      <div className="relative flex-1 overflow-hidden">
-      <div ref={scrollAreaRef} className="h-full overflow-y-auto space-y-4 pr-1">
+      <div className="relative min-h-[240px] flex-1 overflow-hidden sm:min-h-[320px]">
+      <div ref={scrollAreaRef} className="h-full max-h-[55vh] overflow-y-auto space-y-4 pr-1 sm:max-h-none">
 
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <MessageSquare className="h-6 w-6 text-slate-600" />
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex h-full min-h-[220px] flex-col items-center justify-center px-2 py-10 text-center sm:min-h-[280px]"
+          >
+            <motion.div
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5"
+            >
+              <MessageSquare className="h-6 w-6 text-cyan-500/60" />
+            </motion.div>
             <p className="text-sm font-medium text-slate-400">
               Ask your coach anything
             </p>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 max-w-sm text-xs text-slate-600">
               {reportRow
                 ? "Your last report is loaded as context."
                 : "Generate a report first for richer answers."}
             </p>
 
-            {/* Suggested questions */}
-            <div className="mt-6 flex gap-2 overflow-x-auto pb-1 hide-scrollbar sm:flex-wrap sm:justify-center">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <button
+            <div className="mt-6 flex w-full max-w-lg gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap sm:justify-center">
+              {SUGGESTED_QUESTIONS.map((q, i) => (
+                <motion.button
                   key={q}
                   type="button"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * i, duration: 0.25 }}
                   onClick={() => onSend(q)}
                   disabled={isMock}
-                  className="rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs text-slate-400 transition-all hover:bg-white/[0.05] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-left text-xs text-slate-400 transition-colors hover:border-cyan-500/25 hover:bg-cyan-500/10 hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {q}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         ) : (
           <>
             {messages.map((msg, i) => (
@@ -1255,32 +1404,33 @@ export function AiCoachPageClient({
   const tradeCount = useMemo(() => reportRow?.trades_analyzed ?? 0, [reportRow]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-wrap items-start justify-between gap-4"
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
-        <div>
+        <div className="min-w-0">
           <h1 className="rs-page-title">AI Coach</h1>
           <p className="rs-page-sub">
             Behavioral analysis — no excuses, only data.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Analysis window dropdown */}
-          <div className="relative">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="relative sm:min-w-0">
             <button
               type="button"
               disabled={isMock}
               onClick={() => setWindowOpen((o) => !o)}
-              className="flex items-center gap-1.5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-1.5 text-xs text-slate-300 hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs text-slate-300 transition-colors hover:bg-white/[0.04] disabled:opacity-50 sm:w-auto sm:justify-start"
             >
-              {ANALYSIS_WINDOWS.find((w) => w.value === analysisWindow)?.label}
-              <ChevronDown className="h-3 w-3 text-slate-500" />
+              <span className="truncate">
+                {ANALYSIS_WINDOWS.find((w) => w.value === analysisWindow)?.label}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-500" />
             </button>
             <AnimatePresence>
               {windowOpen && (
@@ -1288,13 +1438,13 @@ export function AiCoachPageClient({
                   initial={{ opacity: 0, y: 4, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                  className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl"
+                  className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl sm:right-0 sm:left-auto sm:w-36"
                 >
                   {ANALYSIS_WINDOWS.map((w) => (
                     <button
                       key={w.value}
                       type="button"
-                      className="w-full px-3 py-2 text-left text-xs text-slate-300 hover:bg-white/[0.04] transition-colors"
+                      className="w-full px-3 py-2.5 text-left text-xs text-slate-300 transition-colors hover:bg-white/[0.04]"
                       onClick={() => {
                         setAnalysisWindow(w.value);
                         setWindowOpen(false);
@@ -1308,7 +1458,6 @@ export function AiCoachPageClient({
             </AnimatePresence>
           </div>
 
-          {/* Generate button */}
           <motion.button
             type="button"
             whileHover={!generating && !isMock ? { scale: 1.02 } : {}}
@@ -1316,7 +1465,7 @@ export function AiCoachPageClient({
             disabled={generating || isMock}
             onClick={() => void handleGenerate()}
             title={isMock ? "Not available in demo" : undefined}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 disabled:opacity-50 transition-opacity"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 transition-opacity disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
             transition={generating ? { duration: 1.4, repeat: Infinity } : {}}
           >
@@ -1328,7 +1477,7 @@ export function AiCoachPageClient({
             {isMock
               ? "Demo mode"
               : generating
-                ? `Analyzing ${tradeCount > 0 ? tradeCount : ""}trades…`
+                ? `Analyzing${tradeCount > 0 ? ` ${tradeCount}` : ""} trades…`
                 : "Generate Report"}
           </motion.button>
         </div>
@@ -1337,12 +1486,16 @@ export function AiCoachPageClient({
       {/* Demo banner */}
       {isMock && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-4 py-2.5 text-sm text-[#818cf8] font-mono"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="flex flex-col gap-2 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-4 py-3 text-sm text-[#818cf8] sm:flex-row sm:items-center sm:gap-3 rs-mono"
         >
-          <Sparkles className="h-4 w-4 flex-shrink-0" />
-          Demo mode — pre-loaded with sample analysis. Sign up to run real AI analysis on your trades.
+          <Sparkles className="h-4 w-4 shrink-0" />
+          <span>
+            Demo mode — sample analysis loaded. Sign up to run real AI on your
+            trades.
+          </span>
         </motion.div>
       )}
 
@@ -1363,7 +1516,7 @@ export function AiCoachPageClient({
 
       {/* Tab switcher */}
       {!loading && (
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
           {(
             [
               { id: "report", label: "Report", Icon: Brain },
@@ -1374,17 +1527,17 @@ export function AiCoachPageClient({
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium"
+              className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium sm:min-h-0 sm:justify-start"
               style={{ color: tab === id ? "#fff" : "#64748b" }}
             >
               {tab === id && (
                 <motion.span
                   layoutId="coach-tab-pill"
-                  className="absolute inset-0 rounded-lg bg-white/[0.06]"
+                  className="absolute inset-0 rounded-lg bg-white/[0.08] shadow-sm shadow-black/20"
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
-              <Icon className="relative z-10 h-3.5 w-3.5" />
+              <Icon className="relative z-10 h-4 w-4 sm:h-3.5 sm:w-3.5" />
               <span className="relative z-10">{label}</span>
             </motion.button>
           ))}
@@ -1393,15 +1546,26 @@ export function AiCoachPageClient({
 
       {/* Loading */}
       {loading ? (
-        <p className="font-mono text-sm text-slate-500">Loading…</p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="space-y-3"
+          aria-busy
+          aria-label="Loading coach"
+        >
+          <div className="h-4 w-48 max-w-full animate-pulse rounded-lg bg-white/[0.06]" />
+          <div className="h-32 rounded-2xl animate-pulse bg-white/[0.04]" />
+          <div className="h-24 rounded-2xl animate-pulse bg-white/[0.04]" />
+        </motion.div>
       ) : (
         <AnimatePresence mode="wait">
           {tab === "report" ? (
             <motion.div
               key="report"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
               <ReportTab
                 report={report}
@@ -1416,9 +1580,10 @@ export function AiCoachPageClient({
           ) : (
             <motion.div
               key="chat"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
               <ChatTab
                 messages={messages}
