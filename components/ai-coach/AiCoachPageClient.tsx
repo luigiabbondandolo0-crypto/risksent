@@ -164,6 +164,13 @@ const SECTION_HOVER = {
   tap: { scale: 1.005 },
 } as const;
 
+/** Tween hover so scale follows the cursor without spring lag */
+const HOVER_SCALE_TRANSITION = {
+  type: "tween" as const,
+  duration: 0.13,
+  ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+};
+
 type LucideIcon = ComponentType<{ className?: string }>;
 
 function CoachSection({
@@ -192,7 +199,11 @@ function CoachSection({
       variants={coachSectionVariants}
       whileHover={SECTION_HOVER.hover}
       whileTap={SECTION_HOVER.tap}
-      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+      transition={{
+        opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+        y: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+        scale: HOVER_SCALE_TRANSITION,
+      }}
       className={[
         "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] will-change-transform sm:scroll-mt-28",
         sectionToneClass[tone],
@@ -257,9 +268,13 @@ function ReportJumpNav({
           href={`#${item.id}`}
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.04, duration: 0.25 }}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.98 }}
+          transition={{
+            opacity: { delay: i * 0.04, duration: 0.25 },
+            x: { delay: i * 0.04, duration: 0.25 },
+            scale: HOVER_SCALE_TRANSITION,
+          }}
           className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-100 sm:text-xs"
         >
           {item.label}
@@ -358,7 +373,11 @@ function ErrorCard({
     <motion.div
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3 }}
+      transition={{
+        opacity: { delay: index * 0.06, duration: 0.28 },
+        x: { delay: index * 0.06, duration: 0.28 },
+        scale: HOVER_SCALE_TRANSITION,
+      }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
       className="relative cursor-default overflow-hidden rounded-2xl border p-5"
@@ -414,7 +433,11 @@ function InsightCard({
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ delay: index * 0.07, duration: 0.3 }}
+      transition={{
+        opacity: { delay: index * 0.07, duration: 0.28 },
+        y: { delay: index * 0.07, duration: 0.28 },
+        scale: HOVER_SCALE_TRANSITION,
+      }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
       className="relative cursor-default overflow-hidden rs-card p-5"
@@ -463,9 +486,13 @@ function ChallengeCard({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.12, duration: 0.35, type: "spring" }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        opacity: { delay: index * 0.1, duration: 0.3 },
+        y: { delay: index * 0.1, duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+        scale: HOVER_SCALE_TRANSITION,
+      }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
       className="cursor-default rs-card p-6"
@@ -557,7 +584,11 @@ function AdaptationCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
+      transition={{
+        opacity: { delay: index * 0.08, duration: 0.28 },
+        y: { delay: index * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+        scale: HOVER_SCALE_TRANSITION,
+      }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
       className="cursor-default rs-card p-5"
@@ -628,7 +659,7 @@ function ChatBubble({
         <div className="max-w-[min(92%,28rem)]">
           <motion.div
             whileHover={{ scale: 1.015 }}
-            transition={{ type: "spring", stiffness: 500, damping: 35 }}
+            transition={{ scale: HOVER_SCALE_TRANSITION }}
             className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#ff3c3c] via-[#d62f2f] to-[#9a1f1f] px-4 py-3 text-sm leading-relaxed text-white shadow-[0_16px_48px_-16px_rgba(255,60,60,0.55)]"
           >
             {msg.content}
@@ -713,6 +744,7 @@ function ReportTab({
           type="button"
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
+          transition={{ scale: HOVER_SCALE_TRANSITION }}
           disabled={generating || isMock}
           onClick={onGenerate}
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 disabled:opacity-50"
@@ -800,7 +832,11 @@ function ReportTab({
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.05, duration: 0.35 }}
+              transition={{
+                opacity: { delay: idx * 0.05, duration: 0.32 },
+                y: { delay: idx * 0.05, duration: 0.32 },
+                scale: HOVER_SCALE_TRANSITION,
+              }}
               whileHover={{ scale: 1.045 }}
               whileTap={{ scale: 0.99 }}
               className="flex justify-center"
@@ -813,7 +849,7 @@ function ReportTab({
         <motion.div
           whileHover={{ scale: 1.012 }}
           whileTap={{ scale: 1.005 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          transition={{ scale: HOVER_SCALE_TRANSITION }}
           className="rs-card-accent relative mt-6 cursor-default p-4 sm:p-6"
         >
           <p className="rs-kpi-label mb-2 flex items-center gap-2">
@@ -942,6 +978,7 @@ function ReportTab({
           <motion.div
             whileHover={CARD_HOVER.hover}
             whileTap={CARD_HOVER.tap}
+            transition={{ scale: HOVER_SCALE_TRANSITION }}
             className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
           >
             <p className="rs-kpi-label mb-3 flex items-center gap-2">
@@ -997,6 +1034,7 @@ function ReportTab({
           <motion.div
             whileHover={CARD_HOVER.hover}
             whileTap={CARD_HOVER.tap}
+            transition={{ scale: HOVER_SCALE_TRANSITION }}
             className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
           >
             <p className="rs-kpi-label mb-3 flex items-center gap-2">
@@ -1082,6 +1120,7 @@ function ReportTab({
                   onClick={() => onLoadReport(r)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  transition={{ scale: HOVER_SCALE_TRANSITION }}
                   className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
                   style={{
                     borderColor: isActive
@@ -1129,8 +1168,12 @@ function ChatTab({
   const lastCount = useRef(messages.length);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+  }, [messages, loading]);
 
   useEffect(() => {
     const el = scrollAreaRef.current;
@@ -1138,9 +1181,10 @@ function ChatTab({
     const onScroll = () => {
       setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
     };
-    el.addEventListener("scroll", onScroll);
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [messages, loading]);
 
   const handleSend = () => {
     const msg = input.trim();
@@ -1155,6 +1199,12 @@ function ChatTab({
     lastCount.current = messages.length;
   }, [messages.length]);
 
+  const scrollThreadToBottom = () => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -1162,7 +1212,7 @@ function ChatTab({
       transition={{ duration: 0.35 }}
       className="flex w-full min-h-0 flex-col"
     >
-      <div className="flex min-h-[min(70dvh,640px)] flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)]">
+      <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
         {/* Panel header */}
         <div className="relative shrink-0 border-b border-white/[0.08] bg-black/45 px-4 py-4 backdrop-blur-md sm:px-5">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-500/35 to-transparent" />
@@ -1198,11 +1248,11 @@ function ChatTab({
           </div>
         </div>
 
-        {/* Thread */}
-        <div className="relative flex min-h-[200px] flex-1 flex-col overflow-hidden">
+        {/* Thread — scrolls inside panel only; page does not grow */}
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div
             ref={scrollAreaRef}
-            className="relative flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_45%_at_50%_-10%,rgba(99,102,241,0.12),transparent_55%)]" />
             <div className="relative space-y-6 sm:space-y-7">
@@ -1225,7 +1275,11 @@ function ChatTab({
                         type="button"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.04 * i, duration: 0.28 }}
+                        transition={{
+                          opacity: { delay: 0.04 * i, duration: 0.28 },
+                          y: { delay: 0.04 * i, duration: 0.28 },
+                          scale: HOVER_SCALE_TRANSITION,
+                        }}
                         whileHover={CARD_HOVER.hover}
                         whileTap={CARD_HOVER.tap}
                         onClick={() => onSend(q)}
@@ -1289,7 +1343,7 @@ function ChatTab({
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
-                onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+                onClick={scrollThreadToBottom}
                 className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#0c0c0e]/95 text-slate-400 shadow-xl backdrop-blur-md transition-colors hover:border-cyan-500/30 hover:text-white"
               >
                 <ChevronDown className="h-4 w-4" />
@@ -1308,6 +1362,7 @@ function ChatTab({
                   type="button"
                   whileHover={CARD_HOVER.hover}
                   whileTap={CARD_HOVER.tap}
+                  transition={{ scale: HOVER_SCALE_TRANSITION }}
                   onClick={() => onSend(q)}
                   disabled={loading || isMock}
                   className="rounded-full border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-[11px] text-slate-500 transition-colors hover:border-white/15 hover:text-slate-200 disabled:opacity-40"
@@ -1347,6 +1402,7 @@ function ChatTab({
               onClick={handleSend}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
+              transition={{ scale: HOVER_SCALE_TRANSITION }}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff3c3c] to-[#9a1a1a] text-white shadow-[0_8px_24px_-6px_rgba(255,60,60,0.45)] transition-opacity disabled:opacity-35"
             >
               {loading ? (
@@ -1553,12 +1609,17 @@ export function AiCoachPageClient({
             type="button"
             whileHover={!generating && !isMock ? { scale: 1.02 } : {}}
             whileTap={!generating && !isMock ? { scale: 0.97 } : {}}
+            transition={{
+              opacity: generating
+                ? { duration: 1.4, repeat: Infinity }
+                : { duration: 0.2 },
+              scale: HOVER_SCALE_TRANSITION,
+            }}
             disabled={generating || isMock}
             onClick={() => void handleGenerate()}
             title={isMock ? "Not available in demo" : undefined}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 transition-opacity disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
-            transition={generating ? { duration: 1.4, repeat: Infinity } : {}}
           >
             {generating ? (
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -1675,6 +1736,7 @@ export function AiCoachPageClient({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="min-h-0"
             >
               <ChatTab
                 messages={messages}
