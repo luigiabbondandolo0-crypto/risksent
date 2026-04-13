@@ -226,9 +226,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-0 w-full flex-1">
+    <div className="flex min-h-0 w-full flex-1 overflow-hidden">
       <Sidebar variant={isAdminArea ? "admin" : "default"} />
-      <main className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1600px] flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {/* Demo banner (not dismissible at shell level — handled inside component) */}
         {sub?.isDemoMode && !sub?.isAdmin && <DemoBanner />}
 

@@ -117,7 +117,7 @@ export function Sidebar({
 
   if (variant === "admin") {
     return (
-      <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
+      <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
         <span className="mb-4 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600">
           Admin
         </span>
@@ -141,7 +141,7 @@ export function Sidebar({
   }
 
   return (
-    <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
+    <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
       <Link href="/app/dashboard" className="mb-8 flex items-center px-1">
         <span
           className="text-base font-extrabold tracking-tight text-white transition-opacity hover:opacity-80"

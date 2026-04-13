@@ -152,7 +152,7 @@ function MockMobileNavStrip() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   return (
-    <div className="scrollbar-none flex gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-3 py-2.5 lg:hidden">
+    <div className="scrollbar-none flex shrink-0 gap-1 overflow-x-auto border-b border-slate-800/60 bg-slate-950/40 px-3 py-2.5 lg:hidden">
       {mockMobileNavItems.map(({ href, label, icon: Icon }) => {
         const active = mockNavLinkActive(pathname, searchParams, href);
         return (
@@ -170,8 +170,8 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col">
-      <div className="border-b border-violet-500/30 bg-gradient-to-r from-violet-950/90 via-slate-950 to-amber-950/30 px-4 py-2.5 text-center sm:text-left">
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 border-b border-violet-500/30 bg-gradient-to-r from-violet-950/90 via-slate-950 to-amber-950/30 px-4 py-2.5 text-center sm:text-left">
         <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-2 sm:flex-row sm:px-2">
           <div className="flex items-center gap-2 text-xs text-violet-100/95 sm:text-sm">
             <Sparkles className="h-4 w-4 shrink-0 text-amber-300" />
@@ -190,7 +190,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
       </div>
 
       <div
-        className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4 backdrop-blur-[20px] sm:px-6"
+        className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] px-4 backdrop-blur-[20px] sm:px-6"
         style={{ background: "rgba(8,8,9,0.85)" }}
       >
         <Link href="/mock/dashboard" className="flex items-center gap-2">
@@ -217,8 +217,8 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-[240px] shrink-0 flex-col border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
           <Link href="/mock/dashboard" className="mb-8 flex items-center gap-2.5 px-1">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/25 to-amber-500/10 text-xs font-bold text-violet-200 ring-1 ring-violet-500/25">
               RS
@@ -238,12 +238,12 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <Suspense fallback={<NavGroupFallback title="" mobile />}>
             <MockMobileNavStrip />
           </Suspense>
 
-          <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <main className="mx-auto min-h-0 w-full min-w-0 max-w-[1600px] flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </main>
         </div>

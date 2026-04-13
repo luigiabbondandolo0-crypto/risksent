@@ -24,9 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${syne.variable} ${jetbrainsMono.variable}`}>
       <body
-        className={`${syne.className} min-h-screen bg-background text-slate-100 antialiased`}
+        className={`${syne.className} flex min-h-screen flex-col bg-background text-slate-100 antialiased`}
       >
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <RootLayoutChrome>{children}</RootLayoutChrome>
         </div>
       </body>
