@@ -1,9 +1,30 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(grep -n 'animate={{ opacity: 1, y: 0' components/ai-coach/AiCoachPageClient.tsx)",
-      "Bash(npx tsc:*)"
+      "Bash(git clone:*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm install:*)",
+      "Bash(npx skills:*)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ui-ux-pro-max/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ckm-design/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ckm-brand/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ckm-design-system/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ckm-ui-styling/**)",
+      "Read(//Users/federicaabbondandolo/.agents/skills/ckm-banner-design/**)",
+      "Read(//mnt/skills/**)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)",
+      "Bash(security find-internet-password:*)",
+      "Read(//Users/federicaabbondandolo/**)",
+      "Bash(security find-generic-password:*)"
     ]
   }
 }
