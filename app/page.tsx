@@ -1,557 +1,807 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight } from "lucide-react";
-import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, ChevronDown, Shield, BookOpen, FlaskConical, Zap } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
+/* ─── Shimmer button ─── */
+const shimmerStyle: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #ff3c3c, #ff8c00, #ff3c3c)',
+  backgroundSize: '200% auto',
+};
+
+/* ─── Particle positions (fixed so SSR-safe) ─── */
+const PARTICLES = [
+  { top: '8%', left: '12%', delay: '0s', dur: '6s' },
+  { top: '15%', left: '78%', delay: '1.2s', dur: '7.5s' },
+  { top: '22%', left: '45%', delay: '0.4s', dur: '5.5s' },
+  { top: '35%', left: '88%', delay: '2.1s', dur: '8s' },
+  { top: '42%', left: '5%', delay: '0.8s', dur: '6.5s' },
+  { top: '55%', left: '62%', delay: '1.6s', dur: '7s' },
+  { top: '65%', left: '30%', delay: '0.2s', dur: '5s' },
+  { top: '72%', left: '92%', delay: '2.8s', dur: '9s' },
+  { top: '80%', left: '18%', delay: '1.4s', dur: '6s' },
+  { top: '88%', left: '55%', delay: '0.6s', dur: '7.5s' },
+  { top: '10%', left: '38%', delay: '3.2s', dur: '8.5s' },
+  { top: '28%', left: '70%', delay: '1.8s', dur: '6s' },
+  { top: '48%', left: '22%', delay: '2.4s', dur: '5.5s' },
+  { top: '58%', left: '80%', delay: '0.9s', dur: '7s' },
+  { top: '75%', left: '42%', delay: '3.6s', dur: '8s' },
+  { top: '18%', left: '95%', delay: '1.1s', dur: '6.5s' },
+  { top: '32%', left: '3%', delay: '2.7s', dur: '7s' },
+  { top: '62%', left: '50%', delay: '0.3s', dur: '5s' },
+  { top: '85%', left: '75%', delay: '4.1s', dur: '9s' },
+  { top: '5%', left: '58%', delay: '1.9s', dur: '6s' },
+];
+
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  const [counters, setCounters] = useState({ traders: 0, volume: 0, winrate: 0 });
+  const countersTriggered = useRef(false);
 
   useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const ctx = gsap.context(() => {
       ScrollTrigger.refresh();
 
-      // Hero text stagger
-      gsap.from(".hero-word", {
-        yPercent: 110,
-        opacity: 0,
-        duration: 1,
-        stagger: 0.08,
-        ease: "expo.out",
-        delay: 0.2,
-      });
-
-      gsap.from(".hero-sub", {
-        opacity: 0,
-        y: 20,
-        duration: 0.8,
-        delay: 0.9,
-        ease: "power3.out",
-      });
-
-      gsap.from(".hero-cta", {
-        opacity: 0,
-        y: 16,
-        duration: 0.7,
-        delay: 1.1,
-        ease: "power3.out",
-      });
-
-      // Marquee
-      gsap.to(".marquee-inner", {
-        xPercent: -50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".marquee-section",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 0.5,
-        },
-      });
-
-      // Feature sections
-      gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
-        const heading = section.querySelector(".feature-heading");
-        const body = section.querySelector(".feature-body");
-        const num = section.querySelector(".feature-num");
-
-        gsap.from(num, {
+      if (!prefersReduced) {
+        /* Hero words slam in */
+        gsap.from('.hw', {
+          yPercent: 120,
           opacity: 0,
-          x: -40,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 85%", toggleActions: "play none none none" },
-        });
-
-        gsap.from(heading, {
-          yPercent: 60,
-          opacity: 0,
+          filter: 'blur(8px)',
+          stagger: 0.08,
           duration: 1,
-          ease: "expo.out",
-          scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
-        });
-
-        gsap.from(body, {
-          opacity: 0,
-          y: 20,
-          duration: 0.8,
+          ease: 'expo.out',
           delay: 0.2,
-          ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 75%", toggleActions: "play none none none" },
         });
-      });
 
-      // Stats
-      gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el, i) => {
-        gsap.from(el, {
+        gsap.from('.hero-sub', { opacity: 0, y: 20, duration: 0.8, delay: 0.9, ease: 'power3.out' });
+        gsap.from('.hero-cta', { opacity: 0, y: 16, duration: 0.7, delay: 1.1, ease: 'power3.out' });
+        gsap.from('.hero-trust', { opacity: 0, duration: 0.6, delay: 1.4 });
+        gsap.from('.scroll-chevron', { opacity: 0, y: -10, duration: 0.6, delay: 1.8 });
+
+        /* Scroll chevron fade-out */
+        gsap.to('.scroll-chevron', {
           opacity: 0,
-          y: 30,
-          duration: 0.7,
-          delay: i * 0.1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none none" },
+          scrollTrigger: { trigger: containerRef.current, start: '120px top', end: '240px top', scrub: true },
         });
-      });
 
-      // Module cards — set visible immediately then animate
-      gsap.set(".module-card", { opacity: 1 });
-      gsap.from(".module-card", {
-        opacity: 0,
-        y: 40,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".modules-grid",
-          start: "top 95%",
-          toggleActions: "play none none none",
+        /* Problem section word-by-word */
+        gsap.utils.toArray<HTMLElement>('.prob-word').forEach((el) => {
+          gsap.fromTo(el, { yPercent: 110, opacity: 0 }, {
+            yPercent: 0, opacity: 1, duration: 0.7, ease: 'expo.out',
+            scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' },
+          });
+        });
+
+        /* Pain cards stagger */
+        gsap.from('.pain-card', {
+          opacity: 0, x: -30, stagger: 0.15, duration: 0.7, ease: 'power3.out',
+          scrollTrigger: { trigger: '.pain-cards', start: 'top 80%', toggleActions: 'play none none none' },
+        });
+
+        /* Solution headline */
+        gsap.from('.sol-word', {
+          yPercent: 100, opacity: 0, stagger: 0.06, duration: 0.9, ease: 'expo.out',
+          scrollTrigger: { trigger: '.solution-section', start: 'top 80%', toggleActions: 'play none none none' },
+        });
+
+        /* Feature cards slide from different directions */
+        const dirs = [
+          { x: -60, y: -40 }, { x: 60, y: -40 },
+          { x: -60, y: 40 }, { x: 60, y: 40 },
+        ];
+        gsap.utils.toArray<HTMLElement>('.feat-card').forEach((card, i) => {
+          gsap.from(card, {
+            ...dirs[i % 4], opacity: 0, duration: 0.9, ease: 'expo.out',
+            scrollTrigger: { trigger: '.features-grid', start: 'top 80%', toggleActions: 'play none none none' },
+            delay: i * 0.1,
+          });
+        });
+
+        /* Backtesting candlesticks */
+        gsap.from('.candle-body', {
+          scaleY: 0, transformOrigin: 'bottom', stagger: 0.05, duration: 0.5, ease: 'power2.out',
+          scrollTrigger: { trigger: '.bt-card', start: 'top 80%', toggleActions: 'play none none none' },
+          delay: 0.3,
+        });
+
+        /* Dashboard section */
+        gsap.from('.dash-headline', {
+          yPercent: 60, opacity: 0, duration: 1, ease: 'expo.out',
+          scrollTrigger: { trigger: '.dashboard-section', start: 'top 80%', toggleActions: 'play none none none' },
+        });
+
+        /* Equity curve path draw */
+        const equityPath = document.querySelector<SVGPathElement>('.equity-path');
+        if (equityPath) {
+          const len = equityPath.getTotalLength();
+          gsap.set(equityPath, { strokeDasharray: len, strokeDashoffset: len });
+          gsap.to(equityPath, {
+            strokeDashoffset: 0, duration: 2, ease: 'power2.inOut',
+            scrollTrigger: { trigger: '.dashboard-section', start: 'top 70%', toggleActions: 'play none none none' },
+          });
+        }
+
+        /* Gauge arcs */
+        gsap.utils.toArray<SVGPathElement>('.gauge-fill').forEach((arc) => {
+          const len = (arc as SVGPathElement).getTotalLength?.() ?? 125;
+          const target = parseFloat(arc.getAttribute('data-pct') ?? '0');
+          gsap.from(arc, {
+            strokeDashoffset: len,
+            strokeDasharray: `${len * target} ${len}`,
+            duration: 1.2, ease: 'power2.out',
+            scrollTrigger: { trigger: arc, start: 'top 85%', toggleActions: 'play none none none' },
+          });
+        });
+
+        /* Final CTA */
+        gsap.from('.final-headline', {
+          yPercent: 30, opacity: 0, duration: 1.2, ease: 'expo.out',
+          scrollTrigger: { trigger: '.final-cta', start: 'top 80%', toggleActions: 'play none none none' },
+        });
+      }
+
+      /* Counter trigger (no reduced-motion check needed — just numbers) */
+      ScrollTrigger.create({
+        trigger: '.counters-section',
+        start: 'top 80%',
+        onEnter: () => {
+          if (countersTriggered.current) return;
+          countersTriggered.current = true;
+          const duration = 2000;
+          const steps = 60;
+          const targets = { traders: 10000, volume: 42, winrate: 67 };
+          let step = 0;
+          const interval = setInterval(() => {
+            step++;
+            const pct = step / steps;
+            const ease = 1 - Math.pow(1 - pct, 3);
+            setCounters({
+              traders: Math.round(targets.traders * ease),
+              volume: Math.round(targets.volume * ease * 10) / 10,
+              winrate: Math.round(targets.winrate * ease),
+            });
+            if (step >= steps) clearInterval(interval);
+          }, duration / steps);
         },
-      });
-
-      // Final CTA
-      gsap.from(".final-cta-text", {
-        yPercent: 30,
-        opacity: 0,
-        duration: 1.2,
-        ease: "expo.out",
-        scrollTrigger: { trigger: ".final-cta", start: "top 80%", toggleActions: "play none none none" },
       });
 
     }, containerRef);
 
-    return () => ctx.revert();
+    /* Mouse parallax on dashboard */
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dashboardRef.current || prefersReduced) return;
+      const rect = dashboardRef.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const rx = ((e.clientY - cy) / window.innerHeight) * 6;
+      const ry = -((e.clientX - cx) / window.innerWidth) * 6;
+      gsap.to(dashboardRef.current, { rotateX: rx, rotateY: ry, duration: 0.5, ease: 'power2.out' });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      ctx.revert();
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
   }, []);
 
   return (
     <div ref={containerRef} className="min-h-full overflow-x-hidden bg-[#080809]">
+      <style>{`
+        @keyframes shimmer { from { background-position: -200% center } to { background-position: 200% center } }
+        @keyframes float { 0%,100% { transform: translateY(-8px) } 50% { transform: translateY(8px) } }
+        @keyframes float-widget { 0%,100% { transform: translateY(0px) } 50% { transform: translateY(-12px) } }
+        @keyframes bounce-chevron { 0%,100% { transform: translateY(0) } 50% { transform: translateY(8px) } }
+        @keyframes pulse-glow { 0%,100% { opacity:0.6; transform:scale(1) } 50% { opacity:1; transform:scale(1.06) } }
+        @keyframes ticker-left { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+        @keyframes ticker-right { from { transform: translateX(-50%) } to { transform: translateX(0) } }
+        @keyframes particle-float {
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(-80px) translateX(20px) scale(0.5); opacity: 0; }
+        }
+        @keyframes chat-blink { 0%,80%,100% { opacity:1 } 40% { opacity:0.3 } }
+        @keyframes eq-draw { from { stroke-dashoffset: 320 } to { stroke-dashoffset: 0 } }
+        .shimmer-btn:hover { animation: shimmer 1.5s linear infinite; }
+        .widget-float { animation: float-widget 3s ease-in-out infinite; }
+      `}</style>
 
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden">
-        {/* Dot grid background */}
-        <div
-          className="pointer-events-none absolute inset-0"
+        {/* Dot grid */}
+        <div className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
-          }}
-        />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          }}
-        />
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(255,60,60,0.06) 0%, transparent 65%)" }} />
-          <div className="absolute top-[10%] right-[-15%] w-[60vw] h-[60vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 65%)" }} />
-          <div className="absolute bottom-[-10%] left-[30%] w-[50vw] h-[50vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(0,230,118,0.04) 0%, transparent 65%)" }} />
+            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
+          }} />
+
+        {/* Floating micro-particles */}
+        {PARTICLES.map((p, i) => (
+          <div key={i} className="pointer-events-none absolute h-1 w-1 rounded-full bg-white/30"
+            style={{ top: p.top, left: p.left, animation: `particle-float ${p.dur} ${p.delay} ease-in-out infinite` }} />
+        ))}
+
+        {/* Red center glow */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-[60vw] w-[60vw] rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(255,60,60,0.12) 0%, transparent 70%)',
+              animation: 'pulse-glow 4s ease-in-out infinite',
+            }} />
         </div>
 
         <div className="relative max-w-7xl mx-auto w-full">
-          <div className="hero-sub mb-8 flex items-center gap-3">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-400" />
-            </span>
-            <span className="text-[11px] font-mono font-medium uppercase tracking-[0.25em] text-slate-500">
-              All-in-one trading platform · risk and execution discipline
-            </span>
-          </div>
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-center">
 
-          <h1 className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
-            style={{ fontFamily: "'Syne', sans-serif" }}>
-            {["Stop", "trading", "blind."].map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
-                <span className="hero-word inline-block">{word}</span>
-              </span>
-            ))}
-            <br />
-            {["Start", "trading", "with"].map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
-                <span className="hero-word inline-block">{word}</span>
-              </span>
-            ))}
-            <span className="inline-block overflow-hidden mr-[0.2em]">
-              <span
-                className="hero-word inline-block bg-clip-text text-transparent"
-                style={{ backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)", backgroundSize: "200% 100%" }}
-              >
-                data.
-              </span>
-            </span>
-          </h1>
+            {/* LEFT 60% */}
+            <div className="lg:w-[60%]">
+              <h1 className="font-black leading-[0.9] tracking-[-0.05em] text-white"
+                style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(80px, 10vw, 120px)' }}>
+                {['Trade', 'with'].map((w, i) => (
+                  <span key={i} className="inline-block overflow-hidden mr-[0.2em]" style={{ verticalAlign: 'bottom' }}>
+                    <span className="hw inline-block">{w}</span>
+                  </span>
+                ))}
+                <br />
+                <span className="inline-block overflow-hidden" style={{ verticalAlign: 'bottom' }}>
+                  <span className="hw inline-block">discipline.</span>
+                </span>
+              </h1>
+              <h2 className="font-black leading-[0.9] tracking-[-0.04em] mt-2"
+                style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(54px, 7vw, 80px)' }}>
+                {['Protect', 'your'].map((w, i) => (
+                  <span key={i} className="inline-block overflow-hidden mr-[0.2em] text-white" style={{ verticalAlign: 'bottom' }}>
+                    <span className="hw inline-block">{w}</span>
+                  </span>
+                ))}
+                <br />
+                <span className="inline-block overflow-hidden" style={{ verticalAlign: 'bottom' }}>
+                  <span className="hw inline-block bg-clip-text text-transparent"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #ff3c3c, #ff8c00)' }}>
+                    capital.
+                  </span>
+                </span>
+              </h2>
 
-          <div className="hero-sub flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex flex-col gap-6">
-              <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                One subscription. Backtesting, Journaling,<br />
-                Risk Manager, Live Alerts.<br />
-                <span className="text-slate-300">Everything your edge needs.</span>
+              <p className="hero-sub mt-6 max-w-md text-[#94a3b8]"
+                style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: '14px' }}>
+                The risk management platform for serious traders.
               </p>
-              <div className="hero-cta flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/signup"
-                  className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset" }}
-                >
-                  <span
-                    className="pointer-events-none absolute inset-0"
+
+              <div className="hero-cta mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/signup"
+                  className="shimmer-btn group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all hover:scale-[1.03]"
+                  style={{ ...shimmerStyle, backgroundSize: '200% auto', boxShadow: '0 0 40px rgba(255,60,60,0.35)' }}>
+                  <span className="pointer-events-none absolute inset-0"
                     style={{
-                      background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%)",
-                      backgroundSize: "200% 100%",
-                      animation: "shimmer 2.4s infinite linear",
-                    }}
-                  />
-                  Start for free
+                      background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'shimmer 2.4s infinite linear',
+                    }} />
+                  Start free trial
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link
-                  href="/mock/dashboard"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02]"
-                  style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
-                >
-                  Live demo
-                  <ChevronRight className="h-4 w-4 opacity-50" />
+                <Link href="/mock/dashboard"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all hover:text-white hover:scale-[1.02]"
+                  style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                  Watch demo
                 </Link>
               </div>
+
+              <p className="hero-trust mt-4 text-xs text-[#94a3b8]"
+                style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+                7-day trial · No card required · Cancel anytime
+              </p>
             </div>
 
-            {/* Floating equity chart mockup */}
-            <motion.div
-              className="hero-cta hidden lg:block"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
-              style={{ animation: "float 4s ease-in-out infinite" }}
-            >
-              <div
-                className="relative rounded-2xl border p-5 w-72"
+            {/* RIGHT 40% — hero widget */}
+            <div className="hidden md:flex lg:w-[40%] items-center justify-center relative">
+              {/* Glow behind widget */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="h-96 w-96 rounded-full"
+                  style={{ background: 'radial-gradient(ellipse, rgba(255,60,60,0.15) 0%, rgba(255,140,0,0.08) 40%, transparent 70%)' }} />
+              </div>
+              <div className="widget-float relative rounded-[20px] p-6 w-72"
                 style={{
-                  background: "rgba(255,255,255,0.02)",
-                  borderColor: "rgba(255,255,255,0.07)",
-                  backdropFilter: "blur(12px)",
-                  boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
-                }}
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600">Equity curve</span>
-                  <span className="text-xs font-mono text-emerald-400">+12.4%</span>
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+                }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Balance</p>
+                    <p className="text-2xl font-black text-white mt-0.5"
+                      style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>€12,450</p>
+                  </div>
+                  <div className="rounded-full px-2.5 py-1 text-xs font-mono font-bold"
+                    style={{ background: 'rgba(0,230,118,0.15)', color: '#00e676', border: '1px solid rgba(0,230,118,0.3)' }}>
+                    +€312.50
+                  </div>
                 </div>
-                <svg viewBox="0 0 260 80" className="w-full" fill="none">
+                {/* Mini equity curve */}
+                <svg viewBox="0 0 240 70" className="w-full mb-4" fill="none">
                   <defs>
-                    <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.3" />
                       <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4" stroke="#ff3c3c" strokeWidth="2" strokeLinecap="round" />
-                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4 L260,80 L0,80 Z" fill="url(#heroChartGrad)" />
-                  <circle cx="260" cy="4" r="3" fill="#ff3c3c" />
+                  <path d="M0,65 L24,58 L48,52 L72,44 L96,36 L120,28 L144,20 L168,14 L192,8 L216,5 L240,2"
+                    stroke="#ff3c3c" strokeWidth="2" strokeLinecap="round"
+                    style={{
+                      strokeDasharray: 320,
+                      strokeDashoffset: 0,
+                      animation: 'eq-draw 2s ease-out 1.4s both',
+                    }} />
+                  <path d="M0,65 L24,58 L48,52 L72,44 L96,36 L120,28 L144,20 L168,14 L192,8 L216,5 L240,2 L240,70 L0,70Z"
+                    fill="url(#wGrad)" />
+                  <circle cx="240" cy="2" r="3" fill="#ff3c3c" style={{ filter: 'drop-shadow(0 0 4px #ff3c3c)' }} />
                 </svg>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl p-3 text-center"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-xl font-black" style={{ color: '#00e676', fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>68.4%</p>
+                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">Win Rate</p>
+                  </div>
+                  <div className="rounded-xl p-3 text-center"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>2.31</p>
+                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">Profit Factor</p>
+                  </div>
+                </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-500">Scroll</span>
-          <div className="h-8 w-px bg-gradient-to-b from-slate-500 to-transparent" />
+        {/* Scroll chevron */}
+        <div className="scroll-chevron absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50"
+          style={{ animation: 'bounce-chevron 1.8s ease-in-out infinite' }}>
+          <ChevronDown className="h-6 w-6 text-slate-400" />
         </div>
       </section>
 
-      {/* ─── MARQUEE ─── */}
-      <div className="marquee-section overflow-hidden border-y py-5"
-        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
-        <div className="marquee-inner flex gap-16 whitespace-nowrap will-change-transform"
-          style={{ width: "200%" }}>
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex gap-16">
-              {["Backtesting", "·", "Journaling", "·", "Risk Manager", "·", "Live Alerts", "·", "Telegram Alerts", "·", "Equity Curve", "·", "Drawdown Control", "·", "Win Rate Analytics", "·"].map((item, j) => (
-                <span key={j} className={`text-[13px] font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : "text-slate-500"}`}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          ))}
+      {/* ─── TICKER ─── */}
+      <div className="overflow-hidden border-y py-4"
+        style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.07)' }}>
+        {/* Row 1 → */}
+        <div className="flex mb-3" style={{ overflow: 'hidden' }}>
+          <div className="flex whitespace-nowrap"
+            style={{ animation: 'ticker-left 22s linear infinite', width: 'max-content' }}>
+            {[...Array(2)].map((_, rep) => (
+              <div key={rep} className="flex">
+                {['68.4% Win Rate', '€12,450 Balance', '2.31 Profit Factor', '94 Trades Logged', '4.2% Max DD', '1.92 Avg R:R'].map((item, j) => (
+                  <span key={j} className="mx-8 text-[12px] font-mono uppercase tracking-[0.15em] text-slate-500">
+                    {item} <span className="text-slate-700 mx-2">·</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Row 2 ← */}
+        <div className="flex" style={{ overflow: 'hidden' }}>
+          <div className="flex whitespace-nowrap"
+            style={{ animation: 'ticker-right 26s linear infinite', width: 'max-content', transform: 'translateX(-50%)' }}>
+            {[...Array(2)].map((_, rep) => (
+              <div key={rep} className="flex">
+                {['Risk Manager', 'AI Coach', 'Backtesting Lab', 'Trading Journal', 'Live Alerts', 'Prop Firm Ready'].map((item, j) => (
+                  <span key={j} className="mx-8 text-[12px] font-mono uppercase tracking-[0.15em]"
+                    style={{ color: '#ff3c3c', opacity: 0.6 }}>
+                    {item} <span className="text-slate-700 mx-2">·</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ─── FEATURE SECTIONS ─── */}
-      <section className="px-6 lg:px-16 py-8">
-        <div className="max-w-7xl mx-auto space-y-4">
-          {[
-            {
-              num: "01",
-              heading: "Backtest before\nyou bet.",
-              body: "Test every strategy on real historical data before you risk a single dollar. Know your edge before the market does.",
-              accent: "#22d3ee",
-              tag: "Backtesting Lab",
-              stats: [
-                { val: "278", label: "Strategies tested" },
-                { val: "94%", label: "Accuracy rate" },
-              ],
-            },
-            {
-              num: "02",
-              heading: "Journal every\ndecision.",
-              body: "Track your trades, tag your setups, review your psychology. Turn every loss into a lesson — automatically.",
-              accent: "#00e676",
-              tag: "Trading Journal",
-              stats: [
-                { val: "346", label: "Trades logged" },
-                { val: "58%", label: "Win rate tracked" },
-              ],
-            },
-            {
-              num: "03",
-              heading: "Never blow\nan account\nagain.",
-              body: "Real-time risk monitoring. The moment you're about to do something stupid, RiskSent stops you. Hard blocks. Live alerts. Zero excuses.",
-              accent: "#ff3c3c",
-              tag: "Risk Sentinel",
-              stats: [
-                { val: "< 1s", label: "Alert latency" },
-                { val: "24/7", label: "Live monitoring" },
-              ],
-            },
-            {
-              num: "04",
-              heading: "One alert.\nOne decision.",
-              body: "When a rule is breached, you receive a single, documented notice via Telegram at the time of the event. No ambiguity — aligned with the risk parameters you set. Appropriate action is advised in accordance with your trading plan.",
-              accent: "#ff8c00",
-              tag: "Live Alerts",
-              stats: [
-                { val: "∞", label: "Custom rules" },
-                { val: "0", label: "Missed alerts" },
-              ],
-            },
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              initial={false}
-              whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 28 } }}
-              whileTap={{ scale: 0.997 }}
-              className="feature-section group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
-              style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}
-            >
-              <div
-                className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{ background: `radial-gradient(ellipse at 0% 50%, ${feature.accent}0a 0%, transparent 60%)` }}
-              />
-              <div className="relative flex flex-col gap-10">
-                {i === 3 ? (
-                  <>
-                    <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="lg:w-3/5">
-                        <div className="flex items-center gap-4 mb-6">
-                          <span
-                            className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
-                            style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
-                          >
-                            {feature.tag}
-                          </span>
-                        </div>
-                        <div className="overflow-hidden">
-                          <h2
-                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
-                            style={{ fontFamily: "'Syne', sans-serif" }}
-                          >
-                            {feature.heading}
-                          </h2>
-                        </div>
-                        <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                          {feature.body}
-                        </p>
-                      </div>
-                      <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
-                        {feature.stats.map((s, j) => (
-                          <div key={j} className="stat-item">
-                            <div
-                              className="text-4xl font-black tracking-tight"
-                              style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
-                            >
-                              {s.val}
-                            </div>
-                            <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                              {s.label}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-center border-t border-white/[0.06] pt-12 lg:pt-14">
-                      <HomeLiveAlertsPhone />
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="lg:w-3/5">
-                      <div className="flex items-center gap-4 mb-6">
-                        <span
-                          className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
-                          style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
-                        >
-                          {feature.tag}
-                        </span>
-                      </div>
-                      <div className="overflow-hidden">
-                        <h2
-                          className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
-                          style={{ fontFamily: "'Syne', sans-serif" }}
-                        >
-                          {feature.heading}
-                        </h2>
-                      </div>
-                      <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-                        {feature.body}
-                      </p>
-                    </div>
-                    <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
-                      {feature.stats.map((s, j) => (
-                        <div key={j} className="stat-item">
-                          <div
-                            className="text-4xl font-black tracking-tight"
-                            style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
-                          >
-                            {s.val}
-                          </div>
-                          <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                            {s.label}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── MODULES GRID ─── */}
-      <section className="px-6 lg:px-16 py-24 relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,60,60,0.05) 0%, transparent 60%)" }} />
-        <div className="max-w-7xl mx-auto relative">
-          <div className="mb-16 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Platform</p>
-              <h2
-                className="text-[clamp(40px,6vw,80px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
-                style={{ fontFamily: "'Syne', sans-serif" }}
-              >
-                One subscription.<br />
-                <span className="text-slate-500">Everything included.</span>
-              </h2>
-            </div>
-            <Link
-              href="/signup"
-              className="group inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
-            >
-              Start for free
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+      {/* ─── PROBLEM ─── */}
+      <section className="py-28 px-6 lg:px-16">
+        <div className="max-w-7xl mx-auto flex flex-col gap-16 lg:flex-row lg:items-start lg:gap-24">
+          {/* Left — word-by-word */}
+          <div className="lg:w-1/2">
+            {[
+              { text: "Most traders don't fail because of bad setups.", color: 'text-white' },
+              { text: "They fail because they have no system.", color: 'text-[#94a3b8]' },
+              { text: "No limits. No data. No discipline.", color: 'text-[#ff3c3c]' },
+            ].map((line, li) => (
+              <p key={li} className={`font-black leading-tight mb-4 ${line.color}`}
+                style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2.2rem, 4.5vw, 4rem)', letterSpacing: '-0.03em' }}>
+                {line.text.split(' ').map((word, wi) => (
+                  <span key={wi} className="inline-block overflow-hidden mr-[0.2em]" style={{ verticalAlign: 'bottom' }}>
+                    <span className="prob-word inline-block">{word}</span>
+                  </span>
+                ))}
+              </p>
+            ))}
           </div>
 
-          <div className="modules-grid grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {/* Right — pain cards */}
+          <div className="pain-cards lg:w-1/2 flex flex-col gap-4">
             {[
-              { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#22d3ee" },
-              { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#00e676" },
-              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#ff3c3c" },
-              { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#ff8c00" },
-            ].map((m, i) => (
+              { icon: <Shield className="h-5 w-5" />, title: 'No daily loss limit', desc: 'You keep trading after blowing your risk budget — and one bad day erases a week of gains.' },
+              { icon: <Zap className="h-5 w-5" />, title: 'Revenge trading spiral', desc: 'A loss triggers panic. You size up. You lose again. The spiral starts and you can\'t stop it.' },
+              { icon: <BookOpen className="h-5 w-5" />, title: 'No performance data', desc: 'You have no idea which setups actually work for you. You\'re trading on gut feeling — not edge.' },
+            ].map((card, i) => (
               <motion.div
                 key={i}
-                initial={false}
-                whileHover={{
-                  y: -8,
-                  transition: { type: "spring", stiffness: 420, damping: 24 }
-                }}
-                whileTap={{ scale: 0.98 }}
-                className="module-card group relative overflow-hidden rounded-2xl p-6 transition-shadow duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+                className="pain-card rounded-[20px] p-6"
                 style={{
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.07)"
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderLeft: '2px solid #ff3c3c',
                 }}
-              >
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: `radial-gradient(ellipse at 50% 100%, ${m.color}12 0%, transparent 70%)` }}
-                />
-                <motion.div
-                  className="relative"
-                  whileHover={{ x: 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-600">{m.num}</span>
-                    <motion.div
-                      className="h-2 w-2 rounded-full"
-                      style={{ background: m.color, boxShadow: `0 0 8px ${m.color}` }}
-                      animate={{ scale: [1, 1.2, 1], opacity: [1, 0.85, 1] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
-                    />
+                whileHover={{
+                  x: 4,
+                  boxShadow: '0 0 30px rgba(255,60,60,0.12)',
+                  transition: { type: 'spring', stiffness: 400, damping: 25 },
+                }}>
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: 'rgba(255,60,60,0.1)', color: '#ff3c3c' }}>
+                    {card.icon}
                   </div>
-                  <h3
-                    className="text-xl font-black tracking-tight text-white mb-2 transition-colors group-hover:text-white"
-                    style={{ fontFamily: "'Syne', sans-serif" }}
-                  >
-                    {m.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed transition-colors group-hover:text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {m.desc}
-                  </p>
-                </motion.div>
+                  <div>
+                    <h3 className="font-black text-white mb-1" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                      {card.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed" style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)' }}>
+                      {card.desc}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── TESTIMONIALS ─── */}
-      <section className="px-6 lg:px-16 py-16 border-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+      {/* ─── SOLUTION / FEATURES ─── */}
+      <section id="features" className="solution-section py-28 px-6 lg:px-16"
+        style={{ background: '#060607' }}>
         <div className="max-w-7xl mx-auto">
-          <p className="text-center text-[11px] font-mono uppercase tracking-[0.3em] text-slate-600 mb-12">
-            From traders who made the switch
-          </p>
+          {/* Headline */}
+          <div className="mb-16 overflow-hidden">
+            <h2 className="font-black leading-[0.95] tracking-[-0.03em] text-white"
+              style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}>
+              {'RiskSent gives you the infrastructure'.split(' ').map((w, i) => (
+                <span key={i} className="inline-block overflow-hidden mr-[0.25em]" style={{ verticalAlign: 'bottom' }}>
+                  <span className="sol-word inline-block">{w}</span>
+                </span>
+              ))}
+              <br />
+              {'to trade like a pro.'.split(' ').map((w, i) => (
+                <span key={i} className="inline-block overflow-hidden mr-[0.25em]" style={{ verticalAlign: 'bottom' }}>
+                  <span className="sol-word inline-block bg-clip-text text-transparent"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #ff3c3c, #ff8c00)' }}>{w}</span>
+                </span>
+              ))}
+            </h2>
+          </div>
+
+          {/* 2x2 feature grid */}
+          <div className="features-grid grid gap-5 md:grid-cols-2">
+
+            {/* RISK MANAGER */}
+            <motion.div className="feat-card group relative overflow-hidden rounded-[20px] p-8 cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              whileHover={{ y: -8, boxShadow: '0 0 40px rgba(255,60,60,0.2)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(255,60,60,0.12) 0%, transparent 70%)' }} />
+              {/* SVG Gauge */}
+              <div className="relative mb-6 flex justify-center">
+                <svg viewBox="0 0 120 70" className="w-32 h-20">
+                  <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
+                  <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="#ff3c3c" strokeWidth="7" strokeLinecap="round"
+                    strokeDasharray="99 141" style={{ filter: 'drop-shadow(0 0 8px #ff3c3c)', transition: 'stroke-dasharray 1s ease' }} />
+                  {/* Needle */}
+                  <line x1="60" y1="60" x2="60" y2="22" stroke="#ff3c3c" strokeWidth="2.5" strokeLinecap="round"
+                    style={{ transformOrigin: '60px 60px', transform: 'rotate(15deg)', transition: 'transform 1s ease' }} />
+                  <circle cx="60" cy="60" r="4" fill="#ff3c3c" />
+                </svg>
+              </div>
+              <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                Set hard limits. Get alerts. Never blow an account again.
+              </h3>
+              <p className="text-xs text-slate-500 font-mono">Max DD 4.2% · 5 active rules · 3 alerts today</p>
+            </motion.div>
+
+            {/* BACKTESTING LAB */}
+            <motion.div className="bt-card feat-card group relative overflow-hidden rounded-[20px] p-8 cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              whileHover={{ y: -8, boxShadow: '0 0 40px rgba(34,211,238,0.15)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(34,211,238,0.1) 0%, transparent 70%)' }} />
+              {/* SVG Candlesticks */}
+              <div className="relative mb-6 flex items-end justify-center gap-1.5 h-20">
+                {[
+                  { h: 30, bull: false }, { h: 45, bull: true }, { h: 25, bull: true },
+                  { h: 50, bull: false }, { h: 40, bull: true }, { h: 55, bull: true },
+                  { h: 35, bull: false }, { h: 60, bull: true }, { h: 50, bull: true },
+                  { h: 42, bull: false }, { h: 65, bull: true }, { h: 58, bull: true },
+                ].map((c, i) => (
+                  <div key={i} className="flex flex-col items-center gap-0.5">
+                    <div className="w-0.5 h-2 rounded-full opacity-60"
+                      style={{ background: c.bull ? '#00e676' : '#ff3c3c' }} />
+                    <div className="candle-body w-4 rounded-sm"
+                      style={{ height: `${c.h}%`, background: c.bull ? '#00e676' : '#ff3c3c', opacity: 0.85, minHeight: 6 }} />
+                    <div className="w-0.5 h-2 rounded-full opacity-60"
+                      style={{ background: c.bull ? '#00e676' : '#ff3c3c' }} />
+                  </div>
+                ))}
+              </div>
+              <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                Replay any market. Know your edge before you risk it.
+              </h3>
+              <p className="text-xs text-slate-500 font-mono">847 candles · 71% WR · +18.4% return</p>
+            </motion.div>
+
+            {/* TRADING JOURNAL */}
+            <motion.div className="feat-card group relative overflow-hidden rounded-[20px] p-8 cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              whileHover={{ y: -8, boxShadow: '0 0 40px rgba(0,230,118,0.15)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(0,230,118,0.1) 0%, transparent 70%)' }} />
+              {/* CSS Calendar heatmap */}
+              <div className="relative mb-6 grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                {[
+                  0.6, 0.3, 0, -0.4, 0.8, 0, 0.2,
+                  0, 0.5, -0.3, 0.7, 0, 0.4, 0.6,
+                  -0.2, 0, 0.3, 0, 0.5, -0.5, 0,
+                  0.7, 0.4, 0, 0.6, 0, -0.3, 0.8,
+                  0, 0.5, 0.3, 0, 0.7, 0.2, 0,
+                ].map((v, i) => (
+                  <motion.div key={i} className="aspect-square rounded-md"
+                    style={{ background: v > 0 ? `rgba(0,230,118,${v * 0.8})` : v < 0 ? `rgba(255,60,60,${Math.abs(v) * 0.6})` : 'rgba(255,255,255,0.04)' }}
+                    whileHover={{ scale: 1.15, transition: { type: 'spring', stiffness: 500 } }} />
+                ))}
+              </div>
+              <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                Log every trade. Find patterns. Fix your weaknesses.
+              </h3>
+              <p className="text-xs text-slate-500 font-mono">30 trades · Best day +€420 · Score: 82%</p>
+            </motion.div>
+
+            {/* AI COACH */}
+            <motion.div className="feat-card group relative overflow-hidden rounded-[20px] p-8 cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+              whileHover={{ y: -8, boxShadow: '0 0 40px rgba(129,140,248,0.15)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(129,140,248,0.1) 0%, transparent 70%)' }} />
+              {/* Chat bubbles */}
+              <div className="relative mb-6 space-y-2">
+                {[
+                  { text: 'Revenge trading detected', delay: 0 },
+                  { text: 'Win rate improving +3.2%', delay: 0.4 },
+                  { text: 'FTMO ready: 74/100', delay: 0.8 },
+                ].map((msg, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: msg.delay + 1.2, duration: 0.5, ease: 'easeOut', repeat: Infinity, repeatDelay: 3 }}
+                    className="inline-flex items-center gap-2 rounded-xl px-3 py-2"
+                    style={{ background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.2)', display: 'flex' }}>
+                    <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#818cf8' }} />
+                    <span className="text-xs font-mono text-slate-300">{msg.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                Your personal analyst. Pattern detection. Prop firm readiness.
+              </h3>
+              <p className="text-xs text-slate-500 font-mono">Score 74/100 · 3 patterns · Ready for FTMO</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── DASHBOARD PREVIEW ─── */}
+      <section className="dashboard-section py-28 px-6 lg:px-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="dash-headline mb-12 text-center">
+            <h2 className="font-black text-white tracking-[-0.03em]"
+              style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2.5rem, 5vw, 5rem)' }}>
+              Everything in one place.
+            </h2>
+          </div>
+
+          {/* Glow orbs */}
+          <div className="relative">
+            <div className="pointer-events-none absolute -left-20 top-1/4 h-64 w-64 rounded-full"
+              style={{ background: 'radial-gradient(ellipse, rgba(255,60,60,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+            <div className="pointer-events-none absolute -right-20 bottom-1/4 h-64 w-64 rounded-full"
+              style={{ background: 'radial-gradient(ellipse, rgba(255,140,0,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+
+            {/* Dashboard mockup */}
+            <div ref={dashboardRef} className="relative rounded-[20px] overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                transformStyle: 'preserve-3d',
+                perspective: '1400px',
+              }}>
+              {/* Window chrome */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b"
+                style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                <div className="flex gap-1.5">
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#ff5f57' }} />
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#febc2e' }} />
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#28c840' }} />
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <div className="rounded-md px-4 py-1 text-[10px] font-mono text-slate-500"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    app.risksent.io/dashboard
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex">
+                {/* Sidebar */}
+                <div className="hidden md:flex w-48 flex-col gap-1 p-4 border-r"
+                  style={{ background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.05)', minHeight: 400 }}>
+                  <p className="text-sm font-black text-white mb-4" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                    RiskSent
+                  </p>
+                  {[
+                    { icon: '⚡', label: 'Dashboard', active: true },
+                    { icon: '📊', label: 'Journal', active: false },
+                    { icon: '🛡️', label: 'Risk Manager', active: false },
+                    { icon: '🔬', label: 'Backtesting', active: false },
+                    { icon: '🤖', label: 'AI Coach', active: false },
+                  ].map((nav, i) => (
+                    <div key={i} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-mono cursor-pointer"
+                      style={{
+                        background: nav.active ? 'rgba(255,60,60,0.12)' : 'transparent',
+                        color: nav.active ? '#ff3c3c' : '#94a3b8',
+                        border: nav.active ? '1px solid rgba(255,60,60,0.2)' : '1px solid transparent',
+                      }}>
+                      <span>{nav.icon}</span> {nav.label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main */}
+                <div className="flex-1 p-6">
+                  {/* Metric cards */}
+                  <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
+                    {[
+                      { label: 'Balance', val: '€12,450', color: '#fff' },
+                      { label: 'Daily P&L', val: '+€312.50', color: '#00e676' },
+                      { label: 'Win Rate', val: '68.4%', color: '#22d3ee' },
+                      { label: 'Profit Factor', val: '2.31', color: '#818cf8' },
+                    ].map((m, i) => (
+                      <div key={i} className="rounded-xl p-4"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{m.label}</p>
+                        <p className="text-lg font-black mt-1" style={{ color: m.color, fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>{m.val}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Equity curve */}
+                  <div className="rounded-xl p-4 mb-4"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-3">Equity curve · 3 months</p>
+                    <svg viewBox="0 0 500 100" className="w-full h-24" fill="none">
+                      <defs>
+                        <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path className="equity-path"
+                        d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4"
+                        stroke="#ff3c3c" strokeWidth="2.5" strokeLinecap="round" />
+                      <path d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4 L500,100 L0,100Z"
+                        fill="url(#dashGrad)" />
+                    </svg>
+                  </div>
+
+                  {/* Risk gauges + alert */}
+                  <div className="grid grid-cols-2 gap-3 mb-3 lg:grid-cols-3">
+                    {[
+                      { label: 'Daily DD', val: '1.1%', limit: '2.0%', pct: 0.55, color: '#00e676' },
+                      { label: 'Max DD', val: '4.2%', limit: '8.0%', pct: 0.525, color: '#00e676' },
+                    ].map((g, i) => (
+                      <div key={i} className="rounded-xl p-3 flex flex-col items-center"
+                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-2">{g.label}</p>
+                        <svg viewBox="0 0 80 45" className="w-20 h-12">
+                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
+                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke={g.color} strokeWidth="6" strokeLinecap="round"
+                            strokeDasharray={`${g.pct * 100} 100`} style={{ filter: `drop-shadow(0 0 4px ${g.color})` }} />
+                        </svg>
+                        <p className="text-sm font-black font-mono" style={{ color: g.color }}>{g.val}</p>
+                        <p className="text-[9px] font-mono text-slate-600">limit {g.limit}</p>
+                      </div>
+                    ))}
+                    <div className="hidden lg:flex rounded-xl p-3 flex-col justify-center col-span-1"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Open Trades</p>
+                      <p className="text-2xl font-black text-white" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>2/3</p>
+                      <p className="text-[9px] font-mono text-slate-600 mt-1">max 3 open</p>
+                    </div>
+                  </div>
+
+                  {/* Alert row */}
+                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                    style={{ background: 'rgba(255,140,0,0.07)', border: '1px solid rgba(255,140,0,0.25)' }}>
+                    <span className="text-base">⚡</span>
+                    <p className="text-xs font-mono text-orange-300">
+                      Daily loss limit approaching — €180 remaining
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── COUNTERS + TESTIMONIALS ─── */}
+      <section className="counters-section py-28 px-6 lg:px-16" style={{ background: '#060607' }}>
+        <div className="max-w-7xl mx-auto">
+          {/* Counters */}
+          <div className="grid grid-cols-3 gap-8 mb-20 text-center">
+            {[
+              { val: `${counters.traders.toLocaleString()}+`, label: 'Active Traders' },
+              { val: `€${counters.volume}M+`, label: 'Volume Tracked' },
+              { val: `${counters.winrate}%`, label: 'Avg Improvement' },
+            ].map((c, i) => (
+              <div key={i}>
+                <p className="font-black bg-clip-text text-transparent"
+                  style={{
+                    fontFamily: 'var(--font-display, "Syne", sans-serif)',
+                    fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+                    backgroundImage: 'linear-gradient(135deg, #ff3c3c, #ff8c00)',
+                  }}>
+                  {c.val}
+                </p>
+                <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mt-1">{c.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Testimonials */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { name: "Luca", role: "FTMO Trader", text: "I dropped 3 tools after moving to RiskSent. Everything feeds into my risk decisions now.", avatar: "L", color: "#22d3ee" },
-              { name: "Sara", role: "Swing Trader", text: "One subscription. Test, journal, control risk. I never switch apps anymore.", avatar: "S", color: "#00e676" },
-              { name: "Marco", role: "Prop Firm Coach", text: "The live alerts plus journaling history changed how I coach. Finally one process.", avatar: "M", color: "#ff3c3c" },
+              { name: 'Luca M.', role: 'FTMO Trader', text: 'I dropped 3 tools after moving to RiskSent. Everything I need is in one place now. My drawdown is half what it was.', avatar: 'L', color: '#22d3ee', delay: 0 },
+              { name: 'Sara K.', role: 'Swing Trader', text: 'The AI Coach caught my revenge trading pattern before I even realized I had it. This thing paid for itself in week one.', avatar: 'S', color: '#00e676', delay: 0.1 },
+              { name: 'Marco T.', role: 'Prop Firm Coach', text: 'My traders\' rule compliance went from 58% to 91% after switching to RiskSent. The live alerts are non-negotiable now.', avatar: 'M', color: '#ff3c3c', delay: 0.2 },
             ].map((t, i) => (
-              <motion.div
-                key={i}
-                initial={false}
-                whileHover={{ y: -6, borderColor: "rgba(255,255,255,0.14)", transition: { type: "spring", stiffness: 380, damping: 26 } }}
-                whileTap={{ scale: 0.99 }}
-                className="rounded-2xl p-6 transition-colors"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
-              >
-                <p className="text-sm text-slate-300 leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
+              <motion.div key={i}
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: t.delay }}
+                whileHover={{ y: -6, transition: { type: 'spring', stiffness: 380, damping: 26 } }}
+                className="rounded-[20px] p-6"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-sm text-slate-300 leading-relaxed mb-6">"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <motion.div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black"
-                    style={{ background: t.color }}
-                    whileHover={{ scale: 1.08, rotate: 4 }}
-                  >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black"
+                    style={{ background: t.color }}>
                     {t.avatar}
-                  </motion.div>
+                  </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-slate-500">{t.role}</p>
+                    <p className="text-xs text-slate-500 font-mono">{t.role}</p>
                   </div>
                 </div>
               </motion.div>
@@ -561,76 +811,64 @@ export default function HomePage() {
       </section>
 
       {/* ─── FINAL CTA ─── */}
-      <section className="final-cta px-6 lg:px-16 py-40 relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0.08) 0%, transparent 70%)" }} />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "80px 80px",
-          }}
-        />
-        <div className="final-cta-text relative max-w-7xl mx-auto text-center">
-          <h2
-            className="text-[clamp(52px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            Your edge.<br />
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)", backgroundSize: "200% 100%" }}
-            >
-              One platform.
+      <section className="final-cta relative min-h-screen flex items-center justify-center px-6 py-32 overflow-hidden">
+        {/* Pulsing glow */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-[80vw] w-[80vw] max-h-[600px] max-w-[600px] rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(255,60,60,0.18) 0%, rgba(255,140,0,0.06) 40%, transparent 70%)',
+              animation: 'pulse-glow 3s ease-in-out infinite',
+            }} />
+        </div>
+        <div className="relative max-w-4xl mx-auto text-center">
+          <h2 className="final-headline font-black text-white leading-[0.9] tracking-[-0.04em]"
+            style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(3rem, 8vw, 6rem)' }}>
+            Ready to trade<br />
+            <span className="bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(135deg, #ff3c3c, #ff8c00)' }}>
+              with discipline?
             </span>
           </h2>
-          <p className="mt-8 text-slate-500 max-w-xl mx-auto" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
-            Stop fragmenting your workflow across 4 tools.<br />
-            RiskSent is everything you need — nothing you don&apos;t.
+          <p className="mt-6 text-[#94a3b8] max-w-md mx-auto"
+            style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: '14px' }}>
+            Join thousands of traders who stopped guessing and started winning with data.
           </p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Link
-              href="/signup"
-              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-              style={{
-                background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-                boxShadow: "0 0 60px rgba(255,60,60,0.4), 0 1px 0 rgba(255,255,255,0.2) inset",
-              }}
-            >
-              <span
-                className="pointer-events-none absolute inset-0"
+            <Link href="/signup"
+              className="shimmer-btn group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all hover:scale-[1.03]"
+              style={{ ...shimmerStyle, backgroundSize: '200% auto', boxShadow: '0 0 60px rgba(255,60,60,0.4), 0 0 120px rgba(255,60,60,0.2)', animation: 'pulse-glow 2s ease-in-out infinite' }}>
+              <span className="pointer-events-none absolute inset-0"
                 style={{
-                  background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%)",
-                  backgroundSize: "200% 100%",
-                  animation: "shimmer 2.4s infinite linear",
-                }}
-              />
-              Start for free
+                  background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 2.4s infinite linear',
+                }} />
+              Start free trial
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
-            <Link
-              href="/mock/dashboard"
+            <Link href="/mock/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border px-10 py-5 text-base font-medium text-slate-300 transition-all hover:text-white hover:scale-[1.02]"
-              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}
-            >
+              style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
               View live demo
             </Link>
+          </div>
+          {/* Trust badges */}
+          <div className="mt-8 flex flex-wrap justify-center gap-6 text-xs font-mono text-slate-600">
+            {['7-day free trial', 'No credit card', 'Cancel anytime', 'Prop firm ready', 'FTMO compatible'].map((badge, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                <span style={{ color: '#00e676' }}>✓</span> {badge}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t px-6 py-8 lg:px-16" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <footer className="border-t px-6 py-8 lg:px-16" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <span
-            className="text-sm font-extrabold tracking-tight text-slate-300"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            RiskSent
-          </span>
-          <p className="text-[11px] text-slate-600 font-mono">
-            © {new Date().getFullYear()} RiskSent · All-in-one trading platform
-          </p>
+          <span className="text-sm font-extrabold tracking-tight text-slate-300"
+            style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>RiskSent</span>
+          <p className="text-[11px] text-slate-600 font-mono">© {new Date().getFullYear()} RiskSent · All-in-one trading platform</p>
           <div className="flex gap-6 text-[11px] font-mono text-slate-600">
             <Link href="/login" className="hover:text-slate-300 transition-colors">Log in</Link>
             <Link href="/mock/dashboard" className="hover:text-slate-300 transition-colors">Demo</Link>
