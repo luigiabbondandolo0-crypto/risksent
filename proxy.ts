@@ -10,7 +10,6 @@ const PROTECTED_PATHS = [
   "/trades",
   "/backtesting",
   "/simulator",
-  "/ai-coach",
   "/add-account",
   "/accounts",
   "/live-monitoring",
