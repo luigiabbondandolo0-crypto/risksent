@@ -237,7 +237,7 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1
-            className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
+            className="text-[clamp(36px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {["Stop", "trading", "blind."].map((word, i) => (
@@ -363,7 +363,7 @@ export default function HomePage() {
               {String(i + 1).padStart(2, "0")} / 03
             </p>
             <h2
-              className="text-[clamp(48px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
+              className="text-[clamp(36px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
               style={{
                 fontFamily: "var(--font-display)",
                 background: i === 0
@@ -463,7 +463,7 @@ export default function HomePage() {
               initial={false}
               whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 28 } }}
               whileTap={{ scale: 0.997 }}
-              className="feature-section scan-card group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.5)] cursor-pointer"
+              className="feature-section scan-card group relative overflow-hidden rounded-3xl p-6 sm:p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.5)] cursor-pointer"
               style={{
                 background: "rgba(14,14,18,0.85)",
                 border: "1px solid rgba(255,255,255,0.06)",
@@ -712,7 +712,7 @@ export default function HomePage() {
 
         <div className="final-cta-text relative max-w-7xl mx-auto text-center">
           <h2
-            className="text-[clamp(52px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
+            className="text-[clamp(36px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Your edge.<br />

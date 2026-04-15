@@ -10,6 +10,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
+  /* Prevent iOS font-size adjustment */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
