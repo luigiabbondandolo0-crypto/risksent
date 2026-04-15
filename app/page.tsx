@@ -557,24 +557,53 @@ export default function HomePage() {
               whileHover={{ y: -8, boxShadow: '0 0 40px rgba(0,230,118,0.15)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
               <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(0,230,118,0.1) 0%, transparent 70%)' }} />
-              {/* CSS Calendar heatmap */}
-              <div className="relative mb-6 grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
-                {[
-                  0.6, 0.3, 0, -0.4, 0.8, 0, 0.2,
-                  0, 0.5, -0.3, 0.7, 0, 0.4, 0.6,
-                  -0.2, 0, 0.3, 0, 0.5, -0.5, 0,
-                  0.7, 0.4, 0, 0.6, 0, -0.3, 0.8,
-                  0, 0.5, 0.3, 0, 0.7, 0.2, 0,
-                ].map((v, i) => (
-                  <motion.div key={i} className="aspect-square rounded-md"
-                    style={{ background: v > 0 ? `rgba(0,230,118,${v * 0.8})` : v < 0 ? `rgba(255,60,60,${Math.abs(v) * 0.6})` : 'rgba(255,255,255,0.04)' }}
-                    whileHover={{ scale: 1.15, transition: { type: 'spring', stiffness: 500 } }} />
-                ))}
+              {/* CSS Calendar heatmap with P&L */}
+              <div className="relative mb-5">
+                <div className="flex gap-1 mb-1">
+                  {['M','T','W','T','F','S','S'].map((d,i) => (
+                    <div key={i} className="flex-1 text-center text-[8px] font-mono text-slate-600">{d}</div>
+                  ))}
+                </div>
+                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                  {[
+                    { v: 0.6, pnl: '+€124' }, { v: 0.3, pnl: '+€67' }, { v: 0, pnl: null }, { v: -0.4, pnl: '-€85' }, { v: 0.8, pnl: '+€312' }, { v: 0, pnl: null }, { v: 0, pnl: null },
+                    { v: 0, pnl: null }, { v: 0.5, pnl: '+€98' }, { v: -0.3, pnl: '-€45' }, { v: 0.7, pnl: '+€210' }, { v: 0, pnl: null }, { v: 0.4, pnl: '+€89' }, { v: 0, pnl: null },
+                    { v: -0.2, pnl: '-€28' }, { v: 0, pnl: null }, { v: 0.3, pnl: '+€54' }, { v: 0, pnl: null }, { v: 0.5, pnl: '+€143' }, { v: -0.5, pnl: '-€112' }, { v: 0, pnl: null },
+                    { v: 0.7, pnl: '+€195' }, { v: 0.4, pnl: '+€76' }, { v: 0, pnl: null }, { v: 0.6, pnl: '+€167' }, { v: 0, pnl: null }, { v: -0.3, pnl: '-€52' }, { v: 0, pnl: null },
+                    { v: 0, pnl: null }, { v: 0.9, pnl: '+€420' }, { v: 0.3, pnl: '+€61' }, { v: 0, pnl: null }, { v: 0.7, pnl: '+€234' }, { v: 0.2, pnl: '+€38' }, { v: 0, pnl: null },
+                  ].map((cell, i) => (
+                    <motion.div key={i} className="relative aspect-square rounded-md group"
+                      style={{ background: cell.v > 0 ? `rgba(0,230,118,${cell.v * 0.85})` : cell.v < 0 ? `rgba(255,60,60,${Math.abs(cell.v) * 0.7})` : 'rgba(255,255,255,0.04)' }}
+                      whileHover={{ scale: 1.2, zIndex: 10, transition: { type: 'spring', stiffness: 500 } }}>
+                      {cell.pnl && (
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:flex whitespace-nowrap rounded px-1.5 py-0.5 text-[8px] font-mono font-bold z-10"
+                          style={{ background: '#1a1a1f', border: '1px solid rgba(255,255,255,0.1)', color: cell.v > 0 ? '#00e676' : '#ff3c3c' }}>
+                          {cell.pnl}
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="mt-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-[9px] font-mono text-slate-600">
+                    <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(0,230,118,0.7)' }} />Win</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm" style={{ background: 'rgba(255,60,60,0.6)' }} />Loss</span>
+                  </div>
+                  <span className="text-[9px] font-mono" style={{ color: '#00e676' }}>Best: +€420</span>
+                </div>
               </div>
               <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
                 Log every trade. Find patterns. Fix your weaknesses.
               </h3>
-              <p className="text-xs text-slate-500 font-mono">30 trades · Best day +€420 · Score: 82%</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-mono text-slate-500">30 trades</span>
+                <span className="text-slate-700">·</span>
+                <span className="text-xs font-mono" style={{ color: '#00e676' }}>Best +€420</span>
+                <span className="text-slate-700">·</span>
+                <span className="text-xs font-mono" style={{ color: '#ff3c3c' }}>Worst -€112</span>
+                <span className="text-slate-700">·</span>
+                <span className="text-xs font-mono text-slate-500">Score 82%</span>
+              </div>
             </motion.div>
 
             {/* AI COACH */}
@@ -583,173 +612,53 @@ export default function HomePage() {
               whileHover={{ y: -8, boxShadow: '0 0 40px rgba(129,140,248,0.15)', transition: { type: 'spring', stiffness: 380, damping: 28 } }}>
               <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(129,140,248,0.1) 0%, transparent 70%)' }} />
-              {/* Chat bubbles */}
-              <div className="relative mb-6 space-y-2">
-                {[
-                  { text: 'Revenge trading detected', delay: 0 },
-                  { text: 'Win rate improving +3.2%', delay: 0.4 },
-                  { text: 'FTMO ready: 74/100', delay: 0.8 },
-                ].map((msg, i) => (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: msg.delay + 1.2, duration: 0.5, ease: 'easeOut', repeat: Infinity, repeatDelay: 3 }}
-                    className="inline-flex items-center gap-2 rounded-xl px-3 py-2"
-                    style={{ background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.2)', display: 'flex' }}>
-                    <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: '#818cf8' }} />
-                    <span className="text-xs font-mono text-slate-300">{msg.text}</span>
-                  </motion.div>
-                ))}
+              {/* AI Coach preview */}
+              <div className="relative mb-5 space-y-2">
+                {/* Score bar */}
+                <div className="rounded-xl p-3" style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.15)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-mono text-slate-400">Weekly Score</span>
+                    <span className="text-sm font-black" style={{ color: '#818cf8', fontFamily: 'var(--font-display)' }}>74/100</span>
+                  </div>
+                  {[
+                    { label: 'Consistency', val: 82, color: '#00e676' },
+                    { label: 'Risk Discipline', val: 91, color: '#00e676' },
+                    { label: 'Execution', val: 67, color: '#ff8c00' },
+                  ].map((m) => (
+                    <div key={m.label} className="mb-1.5">
+                      <div className="flex justify-between text-[9px] font-mono mb-0.5">
+                        <span className="text-slate-500">{m.label}</span>
+                        <span style={{ color: m.color }}>{m.val}%</span>
+                      </div>
+                      <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${m.val}%`, background: m.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Alert bubble */}
+                <div className="flex items-start gap-2 rounded-xl px-3 py-2.5"
+                  style={{ background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.2)' }}>
+                  <div className="h-1.5 w-1.5 rounded-full mt-1 shrink-0" style={{ background: '#818cf8' }} />
+                  <span className="text-[10px] font-mono" style={{ color: '#c4b5fd' }}>🔁 Revenge trading detected — 3 trades in 8 min after loss</span>
+                </div>
+                <div className="flex items-start gap-2 rounded-xl px-3 py-2.5"
+                  style={{ background: 'rgba(255,140,0,0.07)', border: '1px solid rgba(255,140,0,0.18)' }}>
+                  <div className="h-1.5 w-1.5 rounded-full mt-1 shrink-0" style={{ background: '#ff8c00' }} />
+                  <span className="text-[10px] font-mono text-orange-300">🎯 FTMO ready: 74/100 — reduce consecutive losses to pass</span>
+                </div>
               </div>
               <h3 className="font-black text-white text-lg mb-2" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
                 Your personal analyst. Pattern detection. Prop firm readiness.
               </h3>
-              <p className="text-xs text-slate-500 font-mono">Score 74/100 · 3 patterns · Ready for FTMO</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs font-mono text-slate-500">Score 74/100</span>
+                <span className="text-slate-700">·</span>
+                <span className="text-xs font-mono" style={{ color: '#818cf8' }}>3 patterns found</span>
+                <span className="text-slate-700">·</span>
+                <span className="text-xs font-mono" style={{ color: '#00e676' }}>FTMO ready</span>
+              </div>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── DASHBOARD PREVIEW ─── */}
-      <section className="dashboard-section py-28 px-6 lg:px-16 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="dash-headline mb-12 text-center">
-            <h2 className="font-black text-white tracking-[-0.03em]"
-              style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2.5rem, 5vw, 5rem)' }}>
-              Everything in one place.
-            </h2>
-          </div>
-
-          {/* Glow orbs */}
-          <div className="relative">
-            <div className="pointer-events-none absolute -left-20 top-1/4 h-64 w-64 rounded-full"
-              style={{ background: 'radial-gradient(ellipse, rgba(255,60,60,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-            <div className="pointer-events-none absolute -right-20 bottom-1/4 h-64 w-64 rounded-full"
-              style={{ background: 'radial-gradient(ellipse, rgba(255,140,0,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-
-            {/* Dashboard mockup */}
-            <div ref={dashboardRef} className="relative rounded-[20px] overflow-hidden"
-              style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                transformStyle: 'preserve-3d',
-                perspective: '1400px',
-              }}>
-              {/* Window chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b"
-                style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-                <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full" style={{ background: '#ff5f57' }} />
-                  <div className="h-3 w-3 rounded-full" style={{ background: '#febc2e' }} />
-                  <div className="h-3 w-3 rounded-full" style={{ background: '#28c840' }} />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="rounded-md px-4 py-1 text-[10px] font-mono text-slate-500"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    app.risksent.io/dashboard
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex">
-                {/* Sidebar */}
-                <div className="hidden md:flex w-48 flex-col gap-1 p-4 border-r"
-                  style={{ background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.05)', minHeight: 400 }}>
-                  <p className="text-sm font-black text-white mb-4" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
-                    RiskSent
-                  </p>
-                  {[
-                    { icon: '⚡', label: 'Dashboard', active: true },
-                    { icon: '📊', label: 'Journal', active: false },
-                    { icon: '🛡️', label: 'Risk Manager', active: false },
-                    { icon: '🔬', label: 'Backtesting', active: false },
-                    { icon: '🤖', label: 'AI Coach', active: false },
-                  ].map((nav, i) => (
-                    <div key={i} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-mono cursor-pointer"
-                      style={{
-                        background: nav.active ? 'rgba(255,60,60,0.12)' : 'transparent',
-                        color: nav.active ? '#ff3c3c' : '#94a3b8',
-                        border: nav.active ? '1px solid rgba(255,60,60,0.2)' : '1px solid transparent',
-                      }}>
-                      <span>{nav.icon}</span> {nav.label}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Main */}
-                <div className="flex-1 p-6">
-                  {/* Metric cards */}
-                  <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
-                    {[
-                      { label: 'Balance', val: '€12,450', color: '#fff' },
-                      { label: 'Daily P&L', val: '+€312.50', color: '#00e676' },
-                      { label: 'Win Rate', val: '68.4%', color: '#22d3ee' },
-                      { label: 'Profit Factor', val: '2.31', color: '#818cf8' },
-                    ].map((m, i) => (
-                      <div key={i} className="rounded-xl p-4"
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{m.label}</p>
-                        <p className="text-lg font-black mt-1" style={{ color: m.color, fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>{m.val}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Equity curve */}
-                  <div className="rounded-xl p-4 mb-4"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-3">Equity curve · 3 months</p>
-                    <svg viewBox="0 0 500 100" className="w-full h-24" fill="none">
-                      <defs>
-                        <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path className="equity-path"
-                        d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4"
-                        stroke="#ff3c3c" strokeWidth="2.5" strokeLinecap="round" />
-                      <path d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4 L500,100 L0,100Z"
-                        fill="url(#dashGrad)" />
-                    </svg>
-                  </div>
-
-                  {/* Risk gauges + alert */}
-                  <div className="grid grid-cols-2 gap-3 mb-3 lg:grid-cols-3">
-                    {[
-                      { label: 'Daily DD', val: '1.1%', limit: '2.0%', pct: 0.55, color: '#00e676' },
-                      { label: 'Max DD', val: '4.2%', limit: '8.0%', pct: 0.525, color: '#00e676' },
-                    ].map((g, i) => (
-                      <div key={i} className="rounded-xl p-3 flex flex-col items-center"
-                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-2">{g.label}</p>
-                        <svg viewBox="0 0 80 45" className="w-20 h-12">
-                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
-                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke={g.color} strokeWidth="6" strokeLinecap="round"
-                            strokeDasharray={`${g.pct * 100} 100`} style={{ filter: `drop-shadow(0 0 4px ${g.color})` }} />
-                        </svg>
-                        <p className="text-sm font-black font-mono" style={{ color: g.color }}>{g.val}</p>
-                        <p className="text-[9px] font-mono text-slate-600">limit {g.limit}</p>
-                      </div>
-                    ))}
-                    <div className="hidden lg:flex rounded-xl p-3 flex-col justify-center col-span-1"
-                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Open Trades</p>
-                      <p className="text-2xl font-black text-white" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>2/3</p>
-                      <p className="text-[9px] font-mono text-slate-600 mt-1">max 3 open</p>
-                    </div>
-                  </div>
-
-                  {/* Alert row */}
-                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-                    style={{ background: 'rgba(255,140,0,0.07)', border: '1px solid rgba(255,140,0,0.25)' }}>
-                    <span className="text-base">⚡</span>
-                    <p className="text-xs font-mono text-orange-300">
-                      Daily loss limit approaching — €180 remaining
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -895,6 +804,150 @@ export default function HomePage() {
     </div>
   </div>
 </section>
+
+      {/* ─── DASHBOARD PREVIEW ─── */}
+      <section className="dashboard-section py-28 px-6 lg:px-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="dash-headline mb-12 text-center">
+            <h2 className="font-black text-white tracking-[-0.03em]"
+              style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2.5rem, 5vw, 5rem)' }}>
+              Everything in one place.
+            </h2>
+          </div>
+
+          {/* Glow orbs */}
+          <div className="relative">
+            <div className="pointer-events-none absolute -left-20 top-1/4 h-64 w-64 rounded-full"
+              style={{ background: 'radial-gradient(ellipse, rgba(255,60,60,0.12) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+            <div className="pointer-events-none absolute -right-20 bottom-1/4 h-64 w-64 rounded-full"
+              style={{ background: 'radial-gradient(ellipse, rgba(255,140,0,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+
+            {/* Dashboard mockup */}
+            <div ref={dashboardRef} className="relative rounded-[20px] overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                transformStyle: 'preserve-3d',
+                perspective: '1400px',
+              }}>
+              {/* Window chrome */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b"
+                style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
+                <div className="flex gap-1.5">
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#ff5f57' }} />
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#febc2e' }} />
+                  <div className="h-3 w-3 rounded-full" style={{ background: '#28c840' }} />
+                </div>
+                <div className="flex-1 flex justify-center">
+                  <div className="rounded-md px-4 py-1 text-[10px] font-mono text-slate-500"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    app.risksent.io/dashboard
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex">
+                {/* Sidebar */}
+                <div className="hidden md:flex w-48 flex-col gap-1 p-4 border-r"
+                  style={{ background: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.05)', minHeight: 400 }}>
+                  <p className="text-sm font-black text-white mb-4" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
+                    RiskSent
+                  </p>
+                  {[
+                    { icon: '⚡', label: 'Dashboard', active: true },
+                    { icon: '📊', label: 'Journal', active: false },
+                    { icon: '🛡️', label: 'Risk Manager', active: false },
+                    { icon: '🔬', label: 'Backtesting', active: false },
+                    { icon: '🤖', label: 'AI Coach', active: false },
+                  ].map((nav, i) => (
+                    <div key={i} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-mono cursor-pointer"
+                      style={{
+                        background: nav.active ? 'rgba(255,60,60,0.12)' : 'transparent',
+                        color: nav.active ? '#ff3c3c' : '#94a3b8',
+                        border: nav.active ? '1px solid rgba(255,60,60,0.2)' : '1px solid transparent',
+                      }}>
+                      <span>{nav.icon}</span> {nav.label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main */}
+                <div className="flex-1 p-6">
+                  {/* Metric cards */}
+                  <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
+                    {[
+                      { label: 'Balance', val: '€12,450', color: '#fff' },
+                      { label: 'Daily P&L', val: '+€312.50', color: '#00e676' },
+                      { label: 'Win Rate', val: '68.4%', color: '#22d3ee' },
+                      { label: 'Profit Factor', val: '2.31', color: '#818cf8' },
+                    ].map((m, i) => (
+                      <div key={i} className="rounded-xl p-4"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{m.label}</p>
+                        <p className="text-lg font-black mt-1" style={{ color: m.color, fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>{m.val}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Equity curve */}
+                  <div className="rounded-xl p-4 mb-4"
+                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-3">Equity curve · 3 months</p>
+                    <svg viewBox="0 0 500 100" className="w-full h-24" fill="none">
+                      <defs>
+                        <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path className="equity-path"
+                        d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4"
+                        stroke="#ff3c3c" strokeWidth="2.5" strokeLinecap="round" />
+                      <path d="M0,90 L25,85 L50,80 L75,75 L100,72 L125,68 L150,62 L175,58 L200,54 L225,50 L250,44 L275,40 L300,36 L325,30 L350,25 L375,20 L400,16 L425,12 L450,9 L475,6 L500,4 L500,100 L0,100Z"
+                        fill="url(#dashGrad)" />
+                    </svg>
+                  </div>
+
+                  {/* Risk gauges + alert */}
+                  <div className="grid grid-cols-2 gap-3 mb-3 lg:grid-cols-3">
+                    {[
+                      { label: 'Daily DD', val: '1.1%', limit: '2.0%', pct: 0.55, color: '#00e676' },
+                      { label: 'Max DD', val: '4.2%', limit: '8.0%', pct: 0.525, color: '#00e676' },
+                    ].map((g, i) => (
+                      <div key={i} className="rounded-xl p-3 flex flex-col items-center"
+                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-2">{g.label}</p>
+                        <svg viewBox="0 0 80 45" className="w-20 h-12">
+                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
+                          <path d="M 8 40 A 32 32 0 0 1 72 40" fill="none" stroke={g.color} strokeWidth="6" strokeLinecap="round"
+                            strokeDasharray={`${g.pct * 100} 100`} style={{ filter: `drop-shadow(0 0 4px ${g.color})` }} />
+                        </svg>
+                        <p className="text-sm font-black font-mono" style={{ color: g.color }}>{g.val}</p>
+                        <p className="text-[9px] font-mono text-slate-600">limit {g.limit}</p>
+                      </div>
+                    ))}
+                    <div className="hidden lg:flex rounded-xl p-3 flex-col justify-center col-span-1"
+                      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <p className="text-[9px] font-mono uppercase tracking-widest text-slate-500 mb-1">Open Trades</p>
+                      <p className="text-2xl font-black text-white" style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>2/3</p>
+                      <p className="text-[9px] font-mono text-slate-600 mt-1">max 3 open</p>
+                    </div>
+                  </div>
+
+                  {/* Alert row */}
+                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                    style={{ background: 'rgba(255,140,0,0.07)', border: '1px solid rgba(255,140,0,0.25)' }}>
+                    <span className="text-base">⚡</span>
+                    <p className="text-xs font-mono text-orange-300">
+                      Daily loss limit approaching — €180 remaining
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ─── COUNTERS + TESTIMONIALS ─── */}
       <section className="counters-section py-28 px-6 lg:px-16" style={{ background: '#060607' }}>
