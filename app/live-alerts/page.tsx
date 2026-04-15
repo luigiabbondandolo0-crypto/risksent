@@ -86,12 +86,7 @@ export default function LiveAlertsPage() {
         gsap.from('.la-fade', {
           opacity: 0, y: 20, duration: 0.8, stagger: 0.1, delay: 0.8, ease: 'power3.out',
         });
-        gsap.utils.toArray<HTMLElement>('.la-reveal').forEach((el) => {
-          gsap.from(el, {
-            opacity: 0, y: 40, duration: 0.8, ease: 'power3.out',
-            scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none none' },
-          });
-        });
+        // la-reveal sections now use Framer Motion whileInView directly
       }
     }, containerRef);
     return () => ctx.revert();
@@ -217,14 +212,14 @@ export default function LiveAlertsPage() {
       {/* ─── SECTION 1: Alert Types ─── */}
       <section className="py-24 px-6 lg:px-16">
         <div className="max-w-7xl mx-auto">
-          <div className="la-reveal mb-8">
+          <motion.div className="mb-8" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}>
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Alert Types</p>
             <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[0.95] tracking-[-0.03em] text-white"
               style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
               Alerts that actually<br />
               <span className="text-slate-500">make you stop.</span>
             </h2>
-          </div>
+          </motion.div>
 
           <div className="grid gap-4 md:grid-cols-2">
             {ALERT_CARDS.map((alert, i) => (
@@ -237,7 +232,7 @@ export default function LiveAlertsPage() {
                 }}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
+                viewport={{ once: true, amount: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 400, damping: 25 } }}>
                 <div className="flex items-start justify-between mb-3">
@@ -267,16 +262,16 @@ export default function LiveAlertsPage() {
       {/* ─── SECTION 2: Telegram Integration ─── */}
       <section className="py-24 px-6 lg:px-16" style={{ background: '#060607' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="la-reveal mb-8 text-center">
+          <motion.div className="mb-8 text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}>
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Setup</p>
             <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[0.95] tracking-[-0.03em] text-white"
               style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
               Connect in 30 seconds.<br />
               <span className="text-slate-500">No API keys. No coding.</span>
             </h2>
-          </div>
+          </motion.div>
 
-          <div className="la-reveal max-w-sm mx-auto">
+          <motion.div className="max-w-sm mx-auto" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}>
             {/* Phone mockup */}
             <div className="rounded-[2.5rem] overflow-hidden"
               style={{ background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 32px 100px rgba(0,0,0,0.6)' }}>
@@ -312,7 +307,7 @@ export default function LiveAlertsPage() {
                     className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
                     initial={{ opacity: 0, y: 12 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    viewport={{ once: true, amount: 0 }}
                     transition={{ duration: 0.4, delay: i * 0.2 }}>
                     <div className="max-w-[80%] rounded-2xl px-3 py-2.5"
                       style={{
@@ -343,21 +338,21 @@ export default function LiveAlertsPage() {
                 <div className="h-1 w-24 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ─── SECTION 3: AI Smart Alerts ─── */}
       <section className="py-24 px-6 lg:px-16">
         <div className="max-w-7xl mx-auto">
-          <div className="la-reveal mb-8">
+          <motion.div className="mb-8" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}>
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">AI-Powered Alerts</p>
             <h2 className="text-[clamp(2rem,4vw,3.5rem)] font-black leading-[0.95] tracking-[-0.03em] text-white"
               style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)' }}>
               Smarter alerts.<br />
               <span style={{ color: '#818cf8' }}>Behavioral detection.</span>
             </h2>
-          </div>
+          </motion.div>
 
           <div className="space-y-4">
             {AI_ALERTS.map((alert, i) => (
@@ -370,7 +365,7 @@ export default function LiveAlertsPage() {
                 }}
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                viewport={{ once: true, amount: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 whileHover={{ x: 4, transition: { type: 'spring', stiffness: 400, damping: 25 } }}>
                 <span className="text-2xl shrink-0 mt-0.5">{alert.icon}</span>
@@ -395,7 +390,7 @@ export default function LiveAlertsPage() {
       {/* ─── CTA ─── */}
       <section className="py-24 px-6 lg:px-16">
         <div className="max-w-7xl mx-auto">
-          <div className="la-reveal relative overflow-hidden rounded-3xl p-px"
+          <motion.div className="relative overflow-hidden rounded-3xl p-px" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0 }} transition={{ duration: 0.8, ease: [0.22,1,0.36,1] }}
             style={{ background: 'linear-gradient(135deg, rgba(255,140,0,0.5), rgba(255,60,60,0.3), rgba(255,255,255,0.03))' }}>
             <div className="relative overflow-hidden rounded-3xl px-8 py-16 text-center" style={{ background: '#0e0e12' }}>
               <div className="pointer-events-none absolute inset-0"
@@ -426,7 +421,7 @@ export default function LiveAlertsPage() {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

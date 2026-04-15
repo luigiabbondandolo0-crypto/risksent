@@ -344,7 +344,7 @@ export default function PricingPage() {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
+          viewport={{ once: true, amount: 0 }}
         >
           {plans.map((plan) => {
             const isHighlight = plan.highlight;
@@ -513,7 +513,7 @@ export default function PricingPage() {
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="max-w-3xl mx-auto mt-6 text-center"
         >
@@ -580,7 +580,7 @@ export default function PricingPage() {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0 }}
             transition={{ duration: 0.7 }}
             className="mb-12 text-center"
           >
@@ -597,7 +597,7 @@ export default function PricingPage() {
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-40px" }}
+            viewport={{ once: true, amount: 0 }}
           >
             {FAQ_ITEMS.map((item, i) => (
               <motion.div
@@ -658,7 +658,7 @@ export default function PricingPage() {
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0 }}
           transition={{ duration: 0.8 }}
           className="relative max-w-3xl mx-auto text-center"
         >
