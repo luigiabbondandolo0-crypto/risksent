@@ -5,6 +5,7 @@ import { Topbar } from "@/components/Topbar";
 import { AppShell } from "@/components/AppShell";
 import { MockSiteChrome } from "@/components/mock/MockSiteChrome";
 import { isAppShellPath } from "@/components/navConfig";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 /** Fills the viewport; sidebar stays put while only main scrolls. */
 function ShellViewportLock({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <ScrollToTop />
       <Topbar />
       <AppShell>{children}</AppShell>
     </>
