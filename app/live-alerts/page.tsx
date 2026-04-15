@@ -226,7 +226,7 @@ export default function LiveAlertsPage() {
             </h2>
           </div>
 
-          <div className="la-reveal grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {ALERT_CARDS.map((alert, i) => (
               <motion.div key={i}
                 className="rounded-[20px] p-6"
@@ -235,6 +235,10 @@ export default function LiveAlertsPage() {
                   border: '1px solid rgba(255,255,255,0.07)',
                   borderLeft: `2px solid ${alert.badgeColor}`,
                 }}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
                 whileHover={{ scale: 1.02, transition: { type: 'spring', stiffness: 400, damping: 25 } }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -358,7 +362,7 @@ export default function LiveAlertsPage() {
           <div className="space-y-4">
             {AI_ALERTS.map((alert, i) => (
               <motion.div key={i}
-                className="la-reveal flex items-start gap-5 rounded-[20px] p-6"
+                className="flex items-start gap-5 rounded-[20px] p-6"
                 style={{
                   background: 'rgba(255,255,255,0.02)',
                   border: '1px solid rgba(255,255,255,0.07)',

@@ -15,6 +15,7 @@ const marketingNav = [
   { href: "/journaling", label: "Journaling" },
   { href: "/risk-manager", label: "Risk Manager" },
   { href: "/live-alerts", label: "Live Alerts" },
+  { href: "/ai-coach", label: "AI Coach" },
   { href: "/pricing", label: "Pricing" },
 ];
 

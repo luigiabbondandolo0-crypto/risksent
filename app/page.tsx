@@ -754,6 +754,148 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── AI COACH ─── */}
+<section className="py-28 px-6 lg:px-16 relative overflow-hidden" style={{ background: '#060607' }}>
+  {/* Purple glow */}
+  <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(129,140,248,0.06) 0%, transparent 70%)' }} />
+
+  <div className="relative max-w-7xl mx-auto">
+    {/* Header */}
+    <div className="text-center mb-16">
+      <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">AI Coach</p>
+      <h2 className="font-black leading-[0.95] tracking-[-0.03em] text-white"
+        style={{ fontFamily: 'var(--font-display, "Syne", sans-serif)', fontSize: 'clamp(2rem,4.5vw,3.8rem)' }}>
+        Your personal trading analyst.<br />
+        <span style={{ color: '#818cf8' }}>Available 24/7.</span>
+      </h2>
+      <p className="mt-4 max-w-lg mx-auto text-slate-400" style={{ fontFamily: 'var(--font-mono)', fontSize: '14px' }}>
+        Pattern detection, performance scoring, emotional bias analysis, prop firm readiness. All automated.
+      </p>
+    </div>
+
+    <div className="grid gap-6 lg:grid-cols-2 items-center">
+      {/* Left: chat preview */}
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.7, ease: [0.22,1,0.36,1] }}
+        className="rounded-[24px] overflow-hidden"
+        style={{ background: '#0e0e12', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)' }}
+      >
+        {/* Chat header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full text-white font-bold text-sm"
+            style={{ background: 'linear-gradient(135deg, #818cf8, #a78bfa)' }}>AI</div>
+          <div>
+            <p className="text-sm font-bold text-white" style={{ fontFamily: 'var(--font-display)' }}>RiskSent AI Coach</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="h-1.5 w-1.5 rounded-full" style={{ background: '#00e676', animation: 'pulse 2s infinite' }} />
+              <p className="text-[10px] font-mono text-slate-500">analyzing your trades...</p>
+            </div>
+          </div>
+          <div className="ml-auto rounded-full px-2 py-0.5 text-[9px] font-mono font-bold uppercase"
+            style={{ color: '#818cf8', background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.25)' }}>
+            Score 74/100
+          </div>
+        </div>
+        {/* Messages */}
+        <div className="p-5 space-y-4 min-h-72">
+          {[
+            { ai: true, text: '📊 Weekly report ready. Your win rate improved +3.2% to 68.4%. Best session: London Open.', delay: 0 },
+            { ai: false, text: 'Why do I lose more on Fridays?', delay: 0.15 },
+            { ai: true, text: '🔍 Detected: on Fridays you enter 2.3x more trades near end-of-day. Your Friday avg R:R is 0.8 vs 1.92 weekly avg. Recommendation: stop trading after 3pm on Fridays.', delay: 0.3 },
+            { ai: false, text: 'Am I ready for FTMO?', delay: 0.45 },
+            { ai: true, text: '✅ FTMO Readiness: 74/100. Strengths: consistency, risk per trade. To improve: reduce consecutive losses (currently 2.1 avg vs 1.5 FTMO standard).', delay: 0.6 },
+          ].map((msg, i) => (
+            <motion.div key={i}
+              className={`flex ${msg.ai ? 'justify-start' : 'justify-end'}`}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.4, delay: msg.delay }}
+            >
+              <div className="max-w-[85%] rounded-2xl px-4 py-3"
+                style={{
+                  background: msg.ai ? 'rgba(129,140,248,0.08)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${msg.ai ? 'rgba(129,140,248,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                  borderBottomLeftRadius: msg.ai ? 4 : undefined,
+                  borderBottomRightRadius: !msg.ai ? 4 : undefined,
+                }}>
+                <p className="text-xs font-mono leading-relaxed" style={{ color: msg.ai ? '#c4b5fd' : '#e2e8f0' }}>{msg.text}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Right: feature list */}
+      <div className="flex flex-col gap-5">
+        {[
+          {
+            icon: '🧠',
+            color: '#818cf8',
+            title: 'Pattern Detection',
+            desc: 'Identifies revenge trading, overtrading, FOMO entries and other behavioral patterns automatically from your trade history.',
+          },
+          {
+            icon: '📈',
+            color: '#00e676',
+            title: 'Performance Scoring',
+            desc: 'Weekly score across 12 metrics: consistency, discipline, risk management, execution quality. Track your progress over time.',
+          },
+          {
+            icon: '🎯',
+            color: '#ff8c00',
+            title: 'Prop Firm Readiness',
+            desc: 'FTMO, MyForexFunds, The5%ers — the AI benchmarks your stats against each firm\'s requirements and tells you what to fix.',
+          },
+          {
+            icon: '💬',
+            color: '#22d3ee',
+            title: 'Weekly Reports',
+            desc: 'Automated deep-dive report every Sunday: best sessions, worst mistakes, P&L breakdown, actionable improvements.',
+          },
+        ].map((feat, i) => (
+          <motion.div key={i}
+            className="flex items-start gap-4 rounded-[18px] p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, delay: i * 0.1, ease: [0.22,1,0.36,1] }}
+            whileHover={{ x: 4, boxShadow: `0 8px 32px ${feat.color}18`, transition: { duration: 0.2 } }}
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl text-xl flex-shrink-0"
+              style={{ background: `${feat.color}12`, border: `1px solid ${feat.color}25` }}>
+              {feat.icon}
+            </div>
+            <div>
+              <p className="font-black text-white mb-1" style={{ fontFamily: 'var(--font-display)', fontSize: '15px' }}>{feat.title}</p>
+              <p className="text-xs font-mono text-slate-400 leading-relaxed">{feat.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-2"
+        >
+          <Link href="/ai-coach"
+            className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white transition-all hover:scale-[1.03]"
+            style={{ background: 'linear-gradient(135deg, #818cf8, #a78bfa)', boxShadow: '0 0 30px rgba(129,140,248,0.25)' }}>
+            Explore AI Coach
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </motion.div>
+      </div>
+    </div>
+  </div>
+</section>
+
       {/* ─── COUNTERS + TESTIMONIALS ─── */}
       <section className="counters-section py-28 px-6 lg:px-16" style={{ background: '#060607' }}>
         <div className="max-w-7xl mx-auto">
