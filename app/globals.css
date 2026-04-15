@@ -308,3 +308,191 @@ aside.lg\:flex {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1rem;
 }
+
+/* ── SCAN-LINE sweep on card hover ── */
+@keyframes scan-sweep {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  100% { transform: translateX(220%)  skewX(-15deg); }
+}
+.scan-card {
+  position: relative;
+  overflow: hidden;
+}
+.scan-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255,255,255,0.06) 50%,
+    transparent 80%
+  );
+  transform: translateX(-120%) skewX(-15deg);
+  pointer-events: none;
+  transition: none;
+}
+.scan-card:hover::after {
+  animation: scan-sweep 0.65s ease-out forwards;
+}
+
+/* ── GLITCH effect for headings ── */
+@keyframes glitch-1 {
+  0%,100% { clip-path: inset(0 0 95% 0); transform: translateX(0); }
+  20%      { clip-path: inset(8% 0 88% 0);  transform: translateX(-3px); }
+  40%      { clip-path: inset(45% 0 50% 0); transform: translateX(3px); }
+  60%      { clip-path: inset(70% 0 25% 0); transform: translateX(-2px); }
+  80%      { clip-path: inset(30% 0 65% 0); transform: translateX(2px); }
+}
+@keyframes glitch-2 {
+  0%,100% { clip-path: inset(75% 0 10% 0); transform: translateX(0); }
+  20%      { clip-path: inset(55% 0 30% 0); transform: translateX(3px); }
+  40%      { clip-path: inset(20% 0 70% 0); transform: translateX(-2px); }
+  60%      { clip-path: inset(85% 0 5% 0);  transform: translateX(2px); }
+  80%      { clip-path: inset(40% 0 50% 0); transform: translateX(-3px); }
+}
+
+.text-glitch {
+  position: relative;
+}
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.text-glitch::before {
+  color: #ff3c3c;
+  animation: glitch-1 3.5s infinite steps(1) 2s;
+  opacity: 0;
+}
+.text-glitch::after {
+  color: #22d3ee;
+  animation: glitch-2 3.5s infinite steps(1) 2.1s;
+  opacity: 0;
+}
+.text-glitch:hover::before,
+.text-glitch:hover::after {
+  opacity: 0.7;
+}
+
+/* ── GRADIENT BORDER animated ── */
+@keyframes border-gradient-spin {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animated-border {
+  position: relative;
+}
+.animated-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    270deg,
+    rgba(255,60,60,0.6),
+    rgba(255,140,0,0.5),
+    rgba(34,211,238,0.4),
+    rgba(99,102,241,0.5),
+    rgba(255,60,60,0.6)
+  );
+  background-size: 400% 400%;
+  animation: border-gradient-spin 4s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.animated-border:hover::before {
+  opacity: 1;
+}
+
+/* ── ALARM PULSE (risk-manager) ── */
+@keyframes alarm-pulse {
+  0%,100% { opacity: 0.0; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(1.3); }
+}
+@keyframes alarm-ring {
+  0%,100% { box-shadow: 0 0 0px 0px rgba(255,60,60,0); }
+  50%      { box-shadow: 0 0 60px 20px rgba(255,60,60,0.15); }
+}
+.alarm-pulse { animation: alarm-pulse 2s ease-in-out infinite; }
+.alarm-ring  { animation: alarm-ring  2s ease-in-out infinite; }
+
+/* ── TERMINAL CURSOR blink ── */
+@keyframes cursor-blink {
+  0%,49% { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+.terminal-cursor::after {
+  content: '█';
+  font-size: 0.85em;
+  animation: cursor-blink 1s step-end infinite;
+  opacity: 1;
+}
+
+/* ── CRT SCANLINES overlay ── */
+.crt-overlay {
+  position: relative;
+}
+.crt-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ── STAT NUMBER glow animation ── */
+@keyframes stat-pop {
+  0%  { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100%{ transform: scale(1);    opacity: 1; }
+}
+.stat-pop { animation: stat-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── NOTIFICATION slide-in (live alerts) ── */
+@keyframes notif-in {
+  0%   { opacity: 0; transform: translateX(-24px) scale(0.96); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.notif-in { animation: notif-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* ── DRAWDOWN gauge needle ── */
+@keyframes needle-sweep {
+  0%   { transform: rotate(-90deg); }
+  100% { transform: rotate(45deg);  }
+}
+
+/* ── PARTICLE burst (used in JS canvas) ── */
+
+/* ── prefers-reduced-motion: kill decorative animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .scan-card::after,
+  .text-glitch::before,
+  .text-glitch::after,
+  .animated-border::before,
+  .alarm-pulse,
+  .alarm-ring,
+  .terminal-cursor::after,
+  .notif-in,
+  .rs-candle-scroll,
+  .partners-marquee {
+    animation: none !important;
+    transition: none !important;
+  }
+}

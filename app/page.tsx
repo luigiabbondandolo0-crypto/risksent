@@ -1,14 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
 
+// Three.js canvas — SSR disabled
+const HorizonCanvas = dynamic(() => import("@/components/ui/horizon-canvas"), {
+  ssr: false,
+  loading: () => null,
+});
+
 gsap.registerPlugin(ScrollTrigger);
+
+// Scroll-section labels
+const SECTIONS = [
+  { id: "CONTROL", sub: "Chaos without discipline" },
+  { id: "EDGE",    sub: "Your strategy, validated" },
+  { id: "EXECUTE", sub: "Discipline at every entry" },
+];
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,26 +38,24 @@ export default function HomePage() {
         duration: 1,
         stagger: 0.08,
         ease: "expo.out",
-        delay: 0.2,
+        delay: 0.3,
       });
-
       gsap.from(".hero-sub", {
         opacity: 0,
         y: 20,
         duration: 0.8,
-        delay: 0.9,
+        delay: 1.0,
         ease: "power3.out",
       });
-
       gsap.from(".hero-cta", {
         opacity: 0,
         y: 16,
         duration: 0.7,
-        delay: 1.1,
+        delay: 1.2,
         ease: "power3.out",
       });
 
-      // Marquee
+      // Marquee scroll
       gsap.to(".marquee-inner", {
         xPercent: -50,
         ease: "none",
@@ -62,51 +74,31 @@ export default function HomePage() {
         const num = section.querySelector(".feature-num");
 
         gsap.from(num, {
-          opacity: 0,
-          x: -40,
-          duration: 0.8,
-          ease: "power3.out",
+          opacity: 0, x: -40, duration: 0.8, ease: "power3.out",
           scrollTrigger: { trigger: section, start: "top 85%", toggleActions: "play none none none" },
         });
-
         gsap.from(heading, {
-          yPercent: 60,
-          opacity: 0,
-          duration: 1,
-          ease: "expo.out",
+          yPercent: 60, opacity: 0, duration: 1, ease: "expo.out",
           scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
         });
-
         gsap.from(body, {
-          opacity: 0,
-          y: 20,
-          duration: 0.8,
-          delay: 0.2,
-          ease: "power3.out",
+          opacity: 0, y: 20, duration: 0.8, delay: 0.2, ease: "power3.out",
           scrollTrigger: { trigger: section, start: "top 75%", toggleActions: "play none none none" },
         });
       });
 
-      // Stats
+      // Stat items
       gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el, i) => {
         gsap.from(el, {
-          opacity: 0,
-          y: 30,
-          duration: 0.7,
-          delay: i * 0.1,
-          ease: "power3.out",
+          opacity: 0, y: 30, duration: 0.7, delay: i * 0.1, ease: "power3.out",
           scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none none" },
         });
       });
 
-      // Module cards — set visible immediately then animate
+      // Module cards
       gsap.set(".module-card", { opacity: 1 });
       gsap.from(".module-card", {
-        opacity: 0,
-        y: 40,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: "power3.out",
+        opacity: 0, y: 40, duration: 0.7, stagger: 0.12, ease: "power3.out",
         scrollTrigger: {
           trigger: ".modules-grid",
           start: "top 95%",
@@ -116,11 +108,16 @@ export default function HomePage() {
 
       // Final CTA
       gsap.from(".final-cta-text", {
-        yPercent: 30,
-        opacity: 0,
-        duration: 1.2,
-        ease: "expo.out",
+        yPercent: 30, opacity: 0, duration: 1.2, ease: "expo.out",
         scrollTrigger: { trigger: ".final-cta", start: "top 80%", toggleActions: "play none none none" },
+      });
+
+      // Scroll-section labels fade in/out
+      gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
+        gsap.from(el, {
+          opacity: 0, y: 30, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 70%", toggleActions: "play none none none" },
+        });
       });
 
     }, containerRef);
@@ -129,34 +126,31 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-full overflow-x-hidden bg-[#080809]">
+    <div ref={containerRef} className="min-h-full overflow-x-hidden" style={{ background: "#080809" }}>
+
+      {/* ── THREE.JS BACKGROUND CANVAS ── */}
+      <HorizonCanvas accentColor="#ff3c3c" />
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden">
-        {/* Dot grid background */}
+      <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden" style={{ zIndex: 1 }}>
+        {/* Dot grid */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
             backgroundSize: "28px 28px",
-            maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)",
+            maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
           }}
         />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        {/* Noise */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.018]"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           }}
         />
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(255,60,60,0.06) 0%, transparent 65%)" }} />
-          <div className="absolute top-[10%] right-[-15%] w-[60vw] h-[60vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(99,102,241,0.07) 0%, transparent 65%)" }} />
-          <div className="absolute bottom-[-10%] left-[30%] w-[50vw] h-[50vw] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(0,230,118,0.04) 0%, transparent 65%)" }} />
-        </div>
 
         <div className="relative max-w-7xl mx-auto w-full">
+          {/* Badge */}
           <div className="hero-sub mb-8 flex items-center gap-3">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
@@ -167,8 +161,12 @@ export default function HomePage() {
             </span>
           </div>
 
-          <h1 className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
-            style={{ fontFamily: "'Syne', sans-serif" }}>
+          {/* Headline */}
+          <h1
+            className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10 text-glitch"
+            data-text="Stop trading blind. Start trading with data."
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
             {["Stop", "trading", "blind."].map((word, i) => (
               <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
                 <span className="hero-word inline-block">{word}</span>
@@ -183,7 +181,11 @@ export default function HomePage() {
             <span className="inline-block overflow-hidden mr-[0.2em]">
               <span
                 className="hero-word inline-block bg-clip-text text-transparent"
-                style={{ backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)", backgroundSize: "200% 100%" }}
+                style={{
+                  backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 2.4s infinite linear",
+                }}
               >
                 data.
               </span>
@@ -200,8 +202,11 @@ export default function HomePage() {
               <div className="hero-cta flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/signup"
-                  className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset" }}
+                  className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
+                    boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset",
+                  }}
                 >
                   <span
                     className="pointer-events-none absolute inset-0"
@@ -216,8 +221,8 @@ export default function HomePage() {
                 </Link>
                 <Link
                   href="/mock/dashboard"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02]"
-                  style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02] cursor-pointer"
+                  style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}
                 >
                   Live demo
                   <ChevronRight className="h-4 w-4 opacity-50" />
@@ -225,26 +230,25 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Floating equity chart mockup */}
+            {/* Floating equity card */}
             <motion.div
-              className="hero-cta hidden lg:block"
+              className="hero-cta hidden lg:block animate-float-y"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2, duration: 0.8, ease: "easeOut" }}
-              style={{ animation: "float 4s ease-in-out infinite" }}
+              transition={{ delay: 1.3, duration: 0.8, ease: "easeOut" }}
             >
               <div
-                className="relative rounded-2xl border p-5 w-72"
+                className="relative rounded-2xl border p-5 w-72 crt-overlay"
                 style={{
-                  background: "rgba(255,255,255,0.02)",
-                  borderColor: "rgba(255,255,255,0.07)",
-                  backdropFilter: "blur(12px)",
-                  boxShadow: "0 24px 80px rgba(0,0,0,0.4)",
+                  background: "rgba(14,14,18,0.7)",
+                  borderColor: "rgba(255,60,60,0.15)",
+                  backdropFilter: "blur(20px)",
+                  boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset",
                 }}
               >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600">Equity curve</span>
-                  <span className="text-xs font-mono text-emerald-400">+12.4%</span>
+                  <span className="text-xs font-mono" style={{ color: "#ff3c3c", textShadow: "0 0 12px rgba(255,60,60,0.6)" }}>+12.4%</span>
                 </div>
                 <svg viewBox="0 0 260 80" className="w-full" fill="none">
                   <defs>
@@ -255,28 +259,71 @@ export default function HomePage() {
                   </defs>
                   <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4" stroke="#ff3c3c" strokeWidth="2" strokeLinecap="round" />
                   <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4 L260,80 L0,80 Z" fill="url(#heroChartGrad)" />
-                  <circle cx="260" cy="4" r="3" fill="#ff3c3c" />
+                  <circle cx="260" cy="4" r="3" fill="#ff3c3c" style={{ filter: "drop-shadow(0 0 6px #ff3c3c)" }} />
                 </svg>
+                <div className="mt-3 flex gap-3">
+                  {["DD -1.4%", "WR 62%", "RR 2.1"].map((s) => (
+                    <span key={s} className="text-[9px] font-mono text-slate-600 bg-white/[0.03] rounded px-1.5 py-0.5 border border-white/[0.04]">{s}</span>
+                  ))}
+                </div>
               </div>
             </motion.div>
           </div>
         </div>
 
+        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
           <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-500">Scroll</span>
           <div className="h-8 w-px bg-gradient-to-b from-slate-500 to-transparent" />
         </div>
       </section>
 
+      {/* ─── SCROLL JOURNEY SECTIONS ─── */}
+      {SECTIONS.map((sec, i) => (
+        <section
+          key={sec.id}
+          className="relative flex items-center justify-center min-h-[60vh] px-6 lg:px-16"
+          style={{ zIndex: 1 }}
+        >
+          <div className="scroll-section-label text-center">
+            <p className="text-[11px] font-mono uppercase tracking-[0.35em] text-slate-600 mb-4">
+              {String(i + 1).padStart(2, "0")} / 03
+            </p>
+            <h2
+              className="text-[clamp(48px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                background: i === 0
+                  ? "linear-gradient(135deg, #ff3c3c, #ff8c00)"
+                  : i === 1
+                  ? "linear-gradient(135deg, #22d3ee, #6366f1)"
+                  : "linear-gradient(135deg, #00e676, #22d3ee)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              {sec.id}
+            </h2>
+            <p className="mt-3 text-slate-500 font-mono text-sm">{sec.sub}</p>
+          </div>
+        </section>
+      ))}
+
       {/* ─── MARQUEE ─── */}
-      <div className="marquee-section overflow-hidden border-y py-5"
-        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
-        <div className="marquee-inner flex gap-16 whitespace-nowrap will-change-transform"
-          style={{ width: "200%" }}>
+      <div
+        className="marquee-section overflow-hidden border-y py-5 relative"
+        style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.06)", background: "rgba(14,14,18,0.9)", backdropFilter: "blur(20px)" }}
+      >
+        <div className="marquee-inner flex gap-16 whitespace-nowrap will-change-transform" style={{ width: "200%" }}>
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex gap-16">
               {["Backtesting", "·", "Journaling", "·", "Risk Manager", "·", "Live Alerts", "·", "Telegram Alerts", "·", "Equity Curve", "·", "Drawdown Control", "·", "Win Rate Analytics", "·"].map((item, j) => (
-                <span key={j} className={`text-[13px] font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : "text-slate-500"}`}>
+                <span
+                  key={j}
+                  className={`text-[13px] font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : ""}`}
+                  style={item !== "·" ? { color: "#ff8c00", opacity: 0.6 } : {}}
+                >
                   {item}
                 </span>
               ))}
@@ -286,7 +333,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── FEATURE SECTIONS ─── */}
-      <section className="px-6 lg:px-16 py-8">
+      <section className="px-6 lg:px-16 py-8 relative" style={{ zIndex: 1 }}>
         <div className="max-w-7xl mx-auto space-y-4">
           {[
             {
@@ -299,6 +346,7 @@ export default function HomePage() {
                 { val: "278", label: "Strategies tested" },
                 { val: "94%", label: "Accuracy rate" },
               ],
+              glowPos: "tl" as const,
             },
             {
               num: "02",
@@ -310,6 +358,7 @@ export default function HomePage() {
                 { val: "346", label: "Trades logged" },
                 { val: "58%", label: "Win rate tracked" },
               ],
+              glowPos: "tr" as const,
             },
             {
               num: "03",
@@ -321,17 +370,19 @@ export default function HomePage() {
                 { val: "< 1s", label: "Alert latency" },
                 { val: "24/7", label: "Live monitoring" },
               ],
+              glowPos: "bl" as const,
             },
             {
               num: "04",
               heading: "One alert.\nOne decision.",
-              body: "When a rule is breached, you receive a single, documented notice via Telegram at the time of the event. No ambiguity — aligned with the risk parameters you set. Appropriate action is advised in accordance with your trading plan.",
+              body: "When a rule is breached, you receive a single, documented notice via Telegram at the time of the event. No ambiguity — aligned with the risk parameters you set.",
               accent: "#ff8c00",
               tag: "Live Alerts",
               stats: [
                 { val: "∞", label: "Custom rules" },
                 { val: "0", label: "Missed alerts" },
               ],
+              glowPos: "br" as const,
             },
           ].map((feature, i) => (
             <motion.div
@@ -339,16 +390,19 @@ export default function HomePage() {
               initial={false}
               whileHover={{ y: -6, transition: { type: "spring", stiffness: 400, damping: 28 } }}
               whileTap={{ scale: 0.997 }}
-              className="feature-section group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.35)]"
+              className="feature-section scan-card group relative overflow-hidden rounded-3xl p-10 lg:p-16 transition-shadow duration-500 hover:shadow-[0_24px_80px_rgba(0,0,0,0.5)] cursor-pointer"
               style={{
-                background: "rgba(255,255,255,0.02)",
+                background: "rgba(14,14,18,0.85)",
                 border: "1px solid rgba(255,255,255,0.06)",
+                backdropFilter: "blur(20px)",
               }}
             >
+              {/* Hover glow */}
               <div
                 className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                style={{ background: `radial-gradient(ellipse at 0% 50%, ${feature.accent}0a 0%, transparent 60%)` }}
+                style={{ background: `radial-gradient(ellipse at ${feature.glowPos === "tl" ? "0% 0%" : feature.glowPos === "tr" ? "100% 0%" : feature.glowPos === "bl" ? "0% 100%" : "100% 100%"}, ${feature.accent}0d 0%, transparent 60%)` }}
               />
+
               <div className="relative flex flex-col gap-10">
                 {i === 3 ? (
                   <>
@@ -383,14 +437,12 @@ export default function HomePage() {
                             >
                               {s.val}
                             </div>
-                            <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                              {s.label}
-                            </div>
+                            <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{s.label}</div>
                           </div>
                         ))}
                       </div>
                     </div>
-                    <div className="flex justify-center border-t border-white/[0.06] pt-12 lg:pt-14">
+                    <div className="flex justify-center border-t border-white/[0.05] pt-12 lg:pt-14">
                       <HomeLiveAlertsPhone />
                     </div>
                   </>
@@ -426,9 +478,7 @@ export default function HomePage() {
                           >
                             {s.val}
                           </div>
-                          <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">
-                            {s.label}
-                          </div>
+                          <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{s.label}</div>
                         </div>
                       ))}
                     </div>
@@ -441,9 +491,11 @@ export default function HomePage() {
       </section>
 
       {/* ─── MODULES GRID ─── */}
-      <section className="px-6 lg:px-16 py-24 relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,60,60,0.05) 0%, transparent 60%)" }} />
+      <section className="px-6 lg:px-16 py-24 relative overflow-hidden" style={{ zIndex: 1 }}>
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,60,60,0.04) 0%, transparent 60%)" }}
+        />
         <div className="max-w-7xl mx-auto relative">
           <div className="mb-16 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -458,7 +510,7 @@ export default function HomePage() {
             </div>
             <Link
               href="/signup"
-              className="group inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white"
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-white cursor-pointer"
             >
               Start for free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -467,62 +519,65 @@ export default function HomePage() {
 
           <div className="modules-grid grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#22d3ee" },
-              { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#00e676" },
-              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#ff3c3c" },
-              { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#ff8c00" },
+              { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#22d3ee", href: "/backtest" },
+              { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#00e676", href: "/journaling" },
+              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#ff3c3c", href: "/risk-manager" },
+              { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#ff8c00", href: "/live-alerts" },
             ].map((m, i) => (
-              <motion.div
-                key={i}
-                initial={false}
-                whileHover={{
-                  y: -8,
-                  transition: { type: "spring", stiffness: 420, damping: 24 }
-                }}
-                whileTap={{ scale: 0.98 }}
-                className="module-card group relative overflow-hidden rounded-2xl p-6 transition-shadow duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
-                style={{
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.07)"
-                }}
-              >
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: `radial-gradient(ellipse at 50% 100%, ${m.color}12 0%, transparent 70%)` }}
-                />
+              <Link href={m.href} key={i} className="block cursor-pointer">
                 <motion.div
-                  className="relative"
-                  whileHover={{ x: 2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  initial={false}
+                  whileHover={{ y: -8, transition: { type: "spring", stiffness: 420, damping: 24 } }}
+                  whileTap={{ scale: 0.98 }}
+                  className="module-card scan-card animated-border group relative overflow-hidden rounded-2xl p-6 transition-shadow duration-300 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  style={{
+                    background: "rgba(14,14,18,0.85)",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    backdropFilter: "blur(16px)",
+                  }}
                 >
-                  <div className="flex items-start justify-between mb-6">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-600">{m.num}</span>
-                    <motion.div
-                      className="h-2 w-2 rounded-full"
-                      style={{ background: m.color, boxShadow: `0 0 8px ${m.color}` }}
-                      animate={{ scale: [1, 1.2, 1], opacity: [1, 0.85, 1] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
-                    />
-                  </div>
-                  <h3
-                    className="text-xl font-black tracking-tight text-white mb-2 transition-colors group-hover:text-white"
-                    style={{ fontFamily: "'Syne', sans-serif" }}
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{ background: `radial-gradient(ellipse at 50% 100%, ${m.color}12 0%, transparent 70%)` }}
+                  />
+                  <motion.div
+                    className="relative"
+                    whileHover={{ x: 2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   >
-                    {m.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed transition-colors group-hover:text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    {m.desc}
-                  </p>
+                    <div className="flex items-start justify-between mb-6">
+                      <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-600">{m.num}</span>
+                      <motion.div
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: m.color, boxShadow: `0 0 8px ${m.color}` }}
+                        animate={{ scale: [1, 1.25, 1], opacity: [1, 0.8, 1] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+                      />
+                    </div>
+                    <h3
+                      className="text-xl font-black tracking-tight text-white mb-2 group-hover:text-white transition-colors"
+                      style={{ fontFamily: "'Syne', sans-serif" }}
+                    >
+                      {m.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {m.desc}
+                    </p>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
       {/* ─── TESTIMONIALS ─── */}
-      <section className="px-6 lg:px-16 py-16 border-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-        <div className="max-w-7xl mx-auto">
+      <section className="px-6 lg:px-16 py-16 border-y relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)" }}>
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "rgba(14,14,18,0.7)", backdropFilter: "blur(20px)" }}
+        />
+        <div className="max-w-7xl mx-auto relative">
           <p className="text-center text-[11px] font-mono uppercase tracking-[0.3em] text-slate-600 mb-12">
             From traders who made the switch
           </p>
@@ -535,16 +590,19 @@ export default function HomePage() {
               <motion.div
                 key={i}
                 initial={false}
-                whileHover={{ y: -6, borderColor: "rgba(255,255,255,0.14)", transition: { type: "spring", stiffness: 380, damping: 26 } }}
-                whileTap={{ scale: 0.99 }}
-                className="rounded-2xl p-6 transition-colors"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+                whileHover={{ y: -6, transition: { type: "spring", stiffness: 380, damping: 26 } }}
+                className="scan-card rounded-2xl p-6 cursor-default"
+                style={{
+                  background: "rgba(14,14,18,0.8)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  backdropFilter: "blur(16px)",
+                }}
               >
                 <p className="text-sm text-slate-300 leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <motion.div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black"
-                    style={{ background: t.color }}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black cursor-default"
+                    style={{ background: t.color, boxShadow: `0 0 14px ${t.color}50` }}
                     whileHover={{ scale: 1.08, rotate: 4 }}
                   >
                     {t.avatar}
@@ -561,16 +619,24 @@ export default function HomePage() {
       </section>
 
       {/* ─── FINAL CTA ─── */}
-      <section className="final-cta px-6 lg:px-16 py-40 relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0.08) 0%, transparent 70%)" }} />
+      <section className="final-cta px-6 lg:px-16 py-40 relative overflow-hidden" style={{ zIndex: 1 }}>
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.015]"
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "rgba(8,8,9,0.75)", backdropFilter: "blur(20px)" }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.012]"
           style={{
             backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
             backgroundSize: "80px 80px",
           }}
         />
+        {/* Pulsing red glow */}
+        <div
+          className="pointer-events-none absolute inset-0 alarm-ring"
+          style={{ borderRadius: 0 }}
+        />
+
         <div className="final-cta-text relative max-w-7xl mx-auto text-center">
           <h2
             className="text-[clamp(52px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
@@ -579,7 +645,11 @@ export default function HomePage() {
             Your edge.<br />
             <span
               className="bg-clip-text text-transparent"
-              style={{ backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)", backgroundSize: "200% 100%" }}
+              style={{
+                backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer 2.4s infinite linear",
+              }}
             >
               One platform.
             </span>
@@ -591,7 +661,7 @@ export default function HomePage() {
           <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
             <Link
               href="/signup"
-              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
               style={{
                 background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
                 boxShadow: "0 0 60px rgba(255,60,60,0.4), 0 1px 0 rgba(255,255,255,0.2) inset",
@@ -610,8 +680,8 @@ export default function HomePage() {
             </Link>
             <Link
               href="/mock/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border px-10 py-5 text-base font-medium text-slate-300 transition-all hover:text-white hover:scale-[1.02]"
-              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border px-10 py-5 text-base font-medium text-slate-300 transition-all hover:text-white hover:scale-[1.02] cursor-pointer"
+              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)" }}
             >
               View live demo
             </Link>
@@ -620,7 +690,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t px-6 py-8 lg:px-16" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+      <footer className="border-t px-6 py-8 lg:px-16 relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)", background: "rgba(8,8,9,0.95)", backdropFilter: "blur(20px)" }}>
         <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-4 sm:flex-row">
           <span
             className="text-sm font-extrabold tracking-tight text-slate-300"
