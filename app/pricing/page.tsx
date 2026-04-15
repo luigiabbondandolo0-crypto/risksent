@@ -343,8 +343,7 @@ export default function PricingPage() {
           className="max-w-3xl mx-auto grid gap-5 lg:grid-cols-2 lg:items-stretch"
           variants={containerVariants}
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0 }}
+          animate="visible"
         >
           {plans.map((plan) => {
             const isHighlight = plan.highlight;
@@ -512,8 +511,7 @@ export default function PricingPage() {
         {/* Trust */}
         <motion.div
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="max-w-3xl mx-auto mt-6 text-center"
         >
@@ -579,9 +577,8 @@ export default function PricingPage() {
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0 }}
-            transition={{ duration: 0.7 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
             className="mb-12 text-center"
           >
             <h2
@@ -596,8 +593,7 @@ export default function PricingPage() {
             className="space-y-3"
             variants={containerVariants}
             initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0 }}
+            animate="visible"
           >
             {FAQ_ITEMS.map((item, i) => (
               <motion.div
@@ -657,9 +653,8 @@ export default function PricingPage() {
         />
         <motion.div
           initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0 }}
-          transition={{ duration: 0.8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
           className="relative max-w-3xl mx-auto text-center"
         >
           <h2
