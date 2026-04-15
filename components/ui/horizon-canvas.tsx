@@ -43,7 +43,7 @@ export default function HorizonCanvas({
       0.1,
       2000
     );
-    camera.position.set(0, 20, 200);
+    camera.position.set(0, 18, 280);
 
     // ── Renderer ───────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({
@@ -159,7 +159,7 @@ export default function HorizonCanvas({
         time: { value: 0 },
         color1: { value: accent },
         color2: { value: new THREE.Color(0x0a0a1a) },
-        opacity: { value: 0.25 },
+        opacity: { value: 0.38 },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -195,31 +195,40 @@ export default function HorizonCanvas({
 
     // ── Market-volatility mountain silhouettes ─────────────────────────────
     const mountainLayers: THREE.Mesh[] = [];
+    const ridgeLines: THREE.Line[] = [];
+    const accentRGB = hexToColor(accentColor);
+
+    // Deterministic noise — no Math.random() in mountain shape (stable across renders)
+    const deterministicNoise = (i: number, seed: number) =>
+      Math.sin(i * 17.3 + seed) * 0.5 + Math.sin(i * 31.7 + seed * 2) * 0.3;
+
     const mtLayers = [
-      { z: -40,  h: 55,  color: 0x0e0e10, op: 1.0 },
-      { z: -90,  h: 75,  color: 0x111116, op: 0.85 },
-      { z: -150, h: 95,  color: 0x0d1020, op: 0.65 },
-      { z: -220, h: 115, color: 0x0a0e28, op: 0.45 },
+      { z: -40,  h: 80,  color: 0x1a1020, op: 1.0,  ridgeOp: 0.55, ridgeColor: accentRGB },
+      { z: -90,  h: 105, color: 0x16112a, op: 0.90, ridgeOp: 0.40, ridgeColor: accentRGB },
+      { z: -160, h: 130, color: 0x0f0e22, op: 0.70, ridgeOp: 0.25, ridgeColor: accentRGB },
+      { z: -240, h: 155, color: 0x0a0d1e, op: 0.50, ridgeOp: 0.15, ridgeColor: accentRGB },
     ];
 
-    mtLayers.forEach((layer) => {
+    mtLayers.forEach((layer, li) => {
       const pts: THREE.Vector2[] = [];
-      const segs = 80;
-      // Market-like jagged silhouette — mix multiple sine frequencies
+      const linePts3: THREE.Vector3[] = [];
+      const segs = 120;
       for (let i = 0; i <= segs; i++) {
-        const x = (i / segs - 0.5) * 1200;
+        const x = (i / segs - 0.5) * 1600;
         const t = i / segs;
         const y =
-          Math.sin(t * 6.28 * 2) * layer.h * 0.5 +
-          Math.sin(t * 6.28 * 5 + 1.2) * layer.h * 0.3 +
-          Math.sin(t * 6.28 * 11 + 2.4) * layer.h * 0.15 +
-          Math.random() * layer.h * 0.08 -
-          80;
+          Math.sin(t * 6.28 * 2 + li) * layer.h * 0.55 +
+          Math.sin(t * 6.28 * 5 + 1.2 + li * 0.7) * layer.h * 0.30 +
+          Math.sin(t * 6.28 * 12 + 2.4 + li * 1.1) * layer.h * 0.12 +
+          deterministicNoise(i, li * 3.7) * layer.h * 0.09 -
+          60;
         pts.push(new THREE.Vector2(x, y));
+        linePts3.push(new THREE.Vector3(x, y, 0));
       }
-      pts.push(new THREE.Vector2(6000, -400));
-      pts.push(new THREE.Vector2(-6000, -400));
+      pts.push(new THREE.Vector2(8000, -500));
+      pts.push(new THREE.Vector2(-8000, -500));
 
+      // Filled silhouette
       const shape = new THREE.Shape(pts);
       const geo = new THREE.ShapeGeometry(shape);
       const mat = new THREE.MeshBasicMaterial({
@@ -230,10 +239,27 @@ export default function HorizonCanvas({
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.z = layer.z;
-      mesh.position.y = layer.z * 0.4;
-      mesh.userData = { baseZ: layer.z, baseY: layer.z * 0.4 };
+      mesh.position.y = layer.z * 0.35;
+      mesh.userData = { baseZ: layer.z, baseY: layer.z * 0.35 };
       scene.add(mesh);
       mountainLayers.push(mesh);
+
+      // Glowing ridge line on top of each mountain
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts3);
+      const ridgeColor = new THREE.Color(accentColor);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: ridgeColor,
+        transparent: true,
+        opacity: layer.ridgeOp,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const ridge = new THREE.Line(lineGeo, lineMat);
+      ridge.position.z = layer.z + 0.5;
+      ridge.position.y = mesh.position.y;
+      ridge.userData = { baseY: mesh.position.y };
+      scene.add(ridge);
+      ridgeLines.push(ridge);
     });
 
     // ── Atmosphere glow ────────────────────────────────────────────────────
@@ -263,14 +289,14 @@ export default function HorizonCanvas({
     scene.add(new THREE.Mesh(atmGeo, atmMat));
 
     // ── Smooth camera state ────────────────────────────────────────────────
-    const smoothCam = { x: 0, y: 20, z: 200 };
-    const targetCam = { x: 0, y: 20, z: 200 };
+    const smoothCam = { x: 0, y: 18, z: 280 };
+    const targetCam = { x: 0, y: 18, z: 280 };
 
-    // Camera positions for scroll sections
+    // Camera positions for scroll sections — more dramatic z travel
     const camPositions = [
-      { x: 0, y: 20,  z: 200 },   // 0% — looking at horizon
-      { x: 0, y: 35,  z: 40  },   // 50% — moving through
-      { x: 0, y: 55,  z: -400 },  // 100% — deep space
+      { x: 0, y: 18,  z: 280  },  // 0% — wide view of mountains
+      { x: -8, y: 38, z: 80   },  // 50% — gliding over ridge
+      { x: 5,  y: 65, z: -500 },  // 100% — deep space above
     ];
 
     // ── Scroll handler ─────────────────────────────────────────────────────
@@ -289,12 +315,16 @@ export default function HorizonCanvas({
       targetCam.y = cur.y + (nxt.y - cur.y) * t;
       targetCam.z = cur.z + (nxt.z - cur.z) * t;
 
-      // Parallax mountains
+      // Parallax mountains + ridges
       mountainLayers.forEach((m, i) => {
         const speed = 1 + i * 0.8;
-        m.position.y = m.userData.baseY + window.scrollY * speed * 0.15;
+        m.userData.scrollOffsetY = window.scrollY * speed * 0.15;
       });
-      nebula.position.y = window.scrollY * 0.06;
+      ridgeLines.forEach((r, i) => {
+        const speed = 1 + i * 0.8;
+        r.userData.scrollOffsetY = window.scrollY * speed * 0.15;
+      });
+      nebula.position.y = window.scrollY * 0.08;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -326,9 +356,26 @@ export default function HorizonCanvas({
       camera.position.z = smoothCam.z;
       camera.lookAt(0, 8, -500);
 
-      // Mountain micro-sway
+      // Mountain micro-sway + scroll parallax + breathing opacity
       mountainLayers.forEach((m, i) => {
-        m.position.x = Math.sin(time * 0.07 + i) * (1 + i * 0.4);
+        const swayX = Math.sin(time * 0.05 + i * 1.3) * (2 + i * 0.6);
+        const swayY = Math.sin(time * 0.09 + i * 0.7) * 2.5;
+        const scrollOff = (m.userData.scrollOffsetY as number) ?? 0;
+        m.position.x = swayX;
+        m.position.y = m.userData.baseY + swayY + scrollOff;
+        const mat = m.material as THREE.MeshBasicMaterial;
+        const baseOp = [1.0, 0.90, 0.70, 0.50][i] ?? 0.5;
+        mat.opacity = baseOp + Math.sin(time * 0.18 + i * 0.9) * 0.08;
+      });
+      ridgeLines.forEach((r, i) => {
+        const swayX = Math.sin(time * 0.05 + i * 1.3) * (2 + i * 0.6);
+        const swayY = Math.sin(time * 0.09 + i * 0.7) * 2.5;
+        const scrollOff = (r.userData.scrollOffsetY as number) ?? 0;
+        r.position.x = swayX;
+        r.position.y = r.userData.baseY + swayY + scrollOff;
+        const mat = r.material as THREE.LineBasicMaterial;
+        const baseOp = [0.55, 0.40, 0.25, 0.15][i] ?? 0.2;
+        mat.opacity = baseOp + Math.sin(time * 0.22 + i) * 0.12;
       });
 
       if (composer) {
@@ -360,6 +407,10 @@ export default function HorizonCanvas({
       mountainLayers.forEach((m) => {
         m.geometry.dispose();
         (m.material as THREE.Material).dispose();
+      });
+      ridgeLines.forEach((r) => {
+        r.geometry.dispose();
+        (r.material as THREE.Material).dispose();
       });
       nebulaGeo.dispose();
       nebulaMat.dispose();

@@ -163,8 +163,7 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1
-            className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10 text-glitch"
-            data-text="Stop trading blind. Start trading with data."
+            className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             {["Stop", "trading", "blind."].map((word, i) => (
