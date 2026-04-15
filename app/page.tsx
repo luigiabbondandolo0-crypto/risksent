@@ -31,7 +31,17 @@ export default function HomePage() {
     const ctx = gsap.context(() => {
       ScrollTrigger.refresh();
 
-      // Hero text stagger
+      // ── Scroll progress bar ────────────────────────────────────────────
+      ScrollTrigger.create({
+        start: "top top",
+        end: "max",
+        onUpdate: (self) => {
+          const bar = document.getElementById("rs-scroll-progress");
+          if (bar) bar.style.transform = `scaleX(${self.progress})`;
+        },
+      });
+
+      // ── Hero text stagger on load ──────────────────────────────────────
       gsap.from(".hero-word", {
         yPercent: 110,
         opacity: 0,
@@ -55,7 +65,20 @@ export default function HomePage() {
         ease: "power3.out",
       });
 
-      // Marquee scroll
+      // ── Hero parallax — content rises as you scroll past ──────────────
+      gsap.to(".hero-content", {
+        y: -100,
+        opacity: 0.2,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".hero-section",
+          start: "top top",
+          end: "bottom top",
+          scrub: 1.2,
+        },
+      });
+
+      // ── Marquee scroll ─────────────────────────────────────────────────
       gsap.to(".marquee-inner", {
         xPercent: -50,
         ease: "none",
@@ -67,57 +90,97 @@ export default function HomePage() {
         },
       });
 
-      // Feature sections
+      // ── Feature sections — continuous scrub reveal ─────────────────────
       gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
         const heading = section.querySelector(".feature-heading");
         const body = section.querySelector(".feature-body");
         const num = section.querySelector(".feature-num");
 
-        gsap.from(num, {
-          opacity: 0, x: -40, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 85%", toggleActions: "play none none none" },
-        });
-        gsap.from(heading, {
-          yPercent: 60, opacity: 0, duration: 1, ease: "expo.out",
-          scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
-        });
-        gsap.from(body, {
-          opacity: 0, y: 20, duration: 0.8, delay: 0.2, ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 75%", toggleActions: "play none none none" },
-        });
+        gsap.fromTo(num,
+          { opacity: 0, x: -40 },
+          {
+            opacity: 1, x: 0,
+            scrollTrigger: { trigger: section, start: "top 88%", end: "top 55%", scrub: 0.6 },
+          }
+        );
+        gsap.fromTo(heading,
+          { yPercent: 50, opacity: 0 },
+          {
+            yPercent: 0, opacity: 1,
+            scrollTrigger: { trigger: section, start: "top 85%", end: "top 45%", scrub: 0.8 },
+          }
+        );
+        gsap.fromTo(body,
+          { opacity: 0, y: 28 },
+          {
+            opacity: 1, y: 0,
+            scrollTrigger: { trigger: section, start: "top 78%", end: "top 38%", scrub: 0.7 },
+          }
+        );
       });
 
-      // Stat items
-      gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el, i) => {
-        gsap.from(el, {
-          opacity: 0, y: 30, duration: 0.7, delay: i * 0.1, ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none none" },
-        });
+      // ── Stat items — scrub reveal ──────────────────────────────────────
+      gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el) => {
+        gsap.fromTo(el,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1, y: 0,
+            scrollTrigger: { trigger: el, start: "top 92%", end: "top 65%", scrub: 0.5 },
+          }
+        );
       });
 
-      // Module cards
+      // ── Module cards — stagger scrub ──────────────────────────────────
       gsap.set(".module-card", { opacity: 1 });
-      gsap.from(".module-card", {
-        opacity: 0, y: 40, duration: 0.7, stagger: 0.12, ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".modules-grid",
-          start: "top 95%",
-          toggleActions: "play none none none",
-        },
+      gsap.utils.toArray<HTMLElement>(".module-card").forEach((card, i) => {
+        gsap.fromTo(card,
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1, y: 0,
+            scrollTrigger: {
+              trigger: ".modules-grid",
+              start: `top ${92 - i * 2}%`,
+              end: `top ${60 - i * 2}%`,
+              scrub: 0.6 + i * 0.1,
+            },
+          }
+        );
       });
 
-      // Final CTA
-      gsap.from(".final-cta-text", {
-        yPercent: 30, opacity: 0, duration: 1.2, ease: "expo.out",
-        scrollTrigger: { trigger: ".final-cta", start: "top 80%", toggleActions: "play none none none" },
-      });
+      // ── Final CTA — scrub reveal ───────────────────────────────────────
+      gsap.fromTo(".final-cta-text",
+        { yPercent: 25, opacity: 0 },
+        {
+          yPercent: 0, opacity: 1,
+          scrollTrigger: { trigger: ".final-cta", start: "top 85%", end: "top 45%", scrub: 0.9 },
+        }
+      );
 
-      // Scroll-section labels fade in/out
+      // ── Scroll journey labels — scrub in + scrub out ───────────────────
       gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
-        gsap.from(el, {
-          opacity: 0, y: 30, duration: 0.8, ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 70%", toggleActions: "play none none none" },
-        });
+        gsap.fromTo(el,
+          { opacity: 0, scale: 0.88, y: 40 },
+          {
+            opacity: 1, scale: 1, y: 0,
+            scrollTrigger: { trigger: el, start: "top 80%", end: "top 40%", scrub: 0.7 },
+          }
+        );
+      });
+
+      // ── Testimonial cards — stagger scrub ────────────────────────────
+      gsap.utils.toArray<HTMLElement>(".testimonial-card").forEach((card, i) => {
+        gsap.fromTo(card,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1, y: 0,
+            scrollTrigger: {
+              trigger: ".testimonials-section",
+              start: `top ${88 - i * 3}%`,
+              end: `top ${55 - i * 3}%`,
+              scrub: 0.5 + i * 0.08,
+            },
+          }
+        );
       });
 
     }, containerRef);
@@ -126,13 +189,24 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-full overflow-x-hidden" style={{ background: "#080809" }}>
+    <div ref={containerRef} className="min-h-full overflow-x-hidden" style={{ background: "#070710" }}>
+
+      {/* ── SCROLL PROGRESS BAR ── */}
+      <div
+        id="rs-scroll-progress"
+        className="fixed top-0 left-0 right-0 h-[2px] origin-left pointer-events-none"
+        style={{
+          zIndex: 200,
+          background: "linear-gradient(90deg, #6366F1, #A78BFA, #38BDF8)",
+          transform: "scaleX(0)",
+        }}
+      />
 
       {/* ── THREE.JS BACKGROUND CANVAS ── */}
-      <HorizonCanvas accentColor="#ff3c3c" />
+      <HorizonCanvas accentColor="#6366F1" />
 
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden" style={{ zIndex: 1 }}>
+      <section className="hero-section relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden" style={{ zIndex: 1 }}>
         {/* Dot grid */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -149,12 +223,12 @@ export default function HomePage() {
           }}
         />
 
-        <div className="relative max-w-7xl mx-auto w-full">
+        <div className="hero-content relative max-w-7xl mx-auto w-full">
           {/* Badge */}
           <div className="hero-sub mb-8 flex items-center gap-3">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style={{ background: "#6366F1" }} />
+              <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#6366F1" }} />
             </span>
             <span className="text-[11px] font-mono font-medium uppercase tracking-[0.25em] text-slate-500">
               All-in-one trading platform · risk and execution discipline
@@ -164,7 +238,7 @@ export default function HomePage() {
           {/* Headline */}
           <h1
             className="text-[clamp(52px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-10"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             {["Stop", "trading", "blind."].map((word, i) => (
               <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
@@ -181,7 +255,7 @@ export default function HomePage() {
               <span
                 className="hero-word inline-block bg-clip-text text-transparent"
                 style={{
-                  backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)",
+                  backgroundImage: "linear-gradient(135deg, #6366F1 0%, #A78BFA 50%, #6366F1 100%)",
                   backgroundSize: "200% 100%",
                   animation: "shimmer 2.4s infinite linear",
                 }}
@@ -203,14 +277,14 @@ export default function HomePage() {
                   href="/signup"
                   className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
                   style={{
-                    background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-                    boxShadow: "0 0 40px rgba(255,60,60,0.3), 0 1px 0 rgba(255,255,255,0.2) inset",
+                    background: "linear-gradient(135deg, #6366F1, #A78BFA)",
+                    boxShadow: "0 0 40px rgba(99,102,241,0.35), 0 1px 0 rgba(255,255,255,0.2) inset",
                   }}
                 >
                   <span
                     className="pointer-events-none absolute inset-0"
                     style={{
-                      background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%)",
+                      background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
                       backgroundSize: "200% 100%",
                       animation: "shimmer 2.4s infinite linear",
                     }}
@@ -240,25 +314,25 @@ export default function HomePage() {
                 className="relative rounded-2xl border p-5 w-72 crt-overlay"
                 style={{
                   background: "rgba(14,14,18,0.7)",
-                  borderColor: "rgba(255,60,60,0.15)",
+                  borderColor: "rgba(99,102,241,0.15)",
                   backdropFilter: "blur(20px)",
                   boxShadow: "0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset",
                 }}
               >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-slate-600">Equity curve</span>
-                  <span className="text-xs font-mono" style={{ color: "#ff3c3c", textShadow: "0 0 12px rgba(255,60,60,0.6)" }}>+12.4%</span>
+                  <span className="text-xs font-mono" style={{ color: "#6366F1", textShadow: "0 0 12px rgba(99,102,241,0.6)" }}>+12.4%</span>
                 </div>
                 <svg viewBox="0 0 260 80" className="w-full" fill="none">
                   <defs>
                     <linearGradient id="heroChartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ff3c3c" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#ff3c3c" stopOpacity="0" />
+                      <stop offset="0%" stopColor="#6366F1" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
                     </linearGradient>
                   </defs>
-                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4" stroke="#ff3c3c" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
                   <path d="M0,70 L30,60 L60,55 L90,45 L120,38 L150,30 L180,20 L210,14 L240,8 L260,4 L260,80 L0,80 Z" fill="url(#heroChartGrad)" />
-                  <circle cx="260" cy="4" r="3" fill="#ff3c3c" style={{ filter: "drop-shadow(0 0 6px #ff3c3c)" }} />
+                  <circle cx="260" cy="4" r="3" fill="#6366F1" style={{ filter: "drop-shadow(0 0 6px #6366F1)" }} />
                 </svg>
                 <div className="mt-3 flex gap-3">
                   {["DD -1.4%", "WR 62%", "RR 2.1"].map((s) => (
@@ -291,12 +365,12 @@ export default function HomePage() {
             <h2
               className="text-[clamp(48px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
               style={{
-                fontFamily: "'Syne', sans-serif",
+                fontFamily: "var(--font-display)",
                 background: i === 0
-                  ? "linear-gradient(135deg, #ff3c3c, #ff8c00)"
+                  ? "linear-gradient(135deg, #6366F1, #A78BFA)"
                   : i === 1
-                  ? "linear-gradient(135deg, #22d3ee, #6366f1)"
-                  : "linear-gradient(135deg, #00e676, #22d3ee)",
+                  ? "linear-gradient(135deg, #A78BFA, #38BDF8)"
+                  : "linear-gradient(135deg, #38BDF8, #4ADE80)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -321,7 +395,7 @@ export default function HomePage() {
                 <span
                   key={j}
                   className={`text-[13px] font-mono uppercase tracking-[0.2em] ${item === "·" ? "text-slate-700" : ""}`}
-                  style={item !== "·" ? { color: "#ff8c00", opacity: 0.6 } : {}}
+                  style={item !== "·" ? { color: "#A78BFA", opacity: 0.6 } : {}}
                 >
                   {item}
                 </span>
@@ -339,7 +413,7 @@ export default function HomePage() {
               num: "01",
               heading: "Backtest before\nyou bet.",
               body: "Test every strategy on real historical data before you risk a single dollar. Know your edge before the market does.",
-              accent: "#22d3ee",
+              accent: "#38BDF8",
               tag: "Backtesting Lab",
               stats: [
                 { val: "278", label: "Strategies tested" },
@@ -351,7 +425,7 @@ export default function HomePage() {
               num: "02",
               heading: "Journal every\ndecision.",
               body: "Track your trades, tag your setups, review your psychology. Turn every loss into a lesson — automatically.",
-              accent: "#00e676",
+              accent: "#4ADE80",
               tag: "Trading Journal",
               stats: [
                 { val: "346", label: "Trades logged" },
@@ -363,7 +437,7 @@ export default function HomePage() {
               num: "03",
               heading: "Never blow\nan account\nagain.",
               body: "Real-time risk monitoring. The moment you're about to do something stupid, RiskSent stops you. Hard blocks. Live alerts. Zero excuses.",
-              accent: "#ff3c3c",
+              accent: "#F87171",
               tag: "Risk Sentinel",
               stats: [
                 { val: "< 1s", label: "Alert latency" },
@@ -375,7 +449,7 @@ export default function HomePage() {
               num: "04",
               heading: "One alert.\nOne decision.",
               body: "When a rule is breached, you receive a single, documented notice via Telegram at the time of the event. No ambiguity — aligned with the risk parameters you set.",
-              accent: "#ff8c00",
+              accent: "#FB923C",
               tag: "Live Alerts",
               stats: [
                 { val: "∞", label: "Custom rules" },
@@ -418,7 +492,7 @@ export default function HomePage() {
                         <div className="overflow-hidden">
                           <h2
                             className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
-                            style={{ fontFamily: "'Syne', sans-serif" }}
+                            style={{ fontFamily: "var(--font-display)" }}
                           >
                             {feature.heading}
                           </h2>
@@ -432,7 +506,7 @@ export default function HomePage() {
                           <div key={j} className="stat-item">
                             <div
                               className="text-4xl font-black tracking-tight"
-                              style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
+                              style={{ color: feature.accent, fontFamily: "var(--font-display)", textShadow: `0 0 30px ${feature.accent}60` }}
                             >
                               {s.val}
                             </div>
@@ -459,7 +533,7 @@ export default function HomePage() {
                       <div className="overflow-hidden">
                         <h2
                           className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
-                          style={{ fontFamily: "'Syne', sans-serif" }}
+                          style={{ fontFamily: "var(--font-display)" }}
                         >
                           {feature.heading}
                         </h2>
@@ -473,7 +547,7 @@ export default function HomePage() {
                         <div key={j} className="stat-item">
                           <div
                             className="text-4xl font-black tracking-tight"
-                            style={{ color: feature.accent, fontFamily: "'Syne', sans-serif", textShadow: `0 0 30px ${feature.accent}60` }}
+                            style={{ color: feature.accent, fontFamily: "var(--font-display)", textShadow: `0 0 30px ${feature.accent}60` }}
                           >
                             {s.val}
                           </div>
@@ -493,7 +567,7 @@ export default function HomePage() {
       <section className="px-6 lg:px-16 py-24 relative overflow-hidden" style={{ zIndex: 1 }}>
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,60,60,0.04) 0%, transparent 60%)" }}
+          style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.04) 0%, transparent 60%)" }}
         />
         <div className="max-w-7xl mx-auto relative">
           <div className="mb-16 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -501,7 +575,7 @@ export default function HomePage() {
               <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Platform</p>
               <h2
                 className="text-[clamp(40px,6vw,80px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
-                style={{ fontFamily: "'Syne', sans-serif" }}
+                style={{ fontFamily: "var(--font-display)" }}
               >
                 One subscription.<br />
                 <span className="text-slate-500">Everything included.</span>
@@ -518,10 +592,10 @@ export default function HomePage() {
 
           <div className="modules-grid grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#22d3ee", href: "/backtest" },
-              { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#00e676", href: "/journaling" },
-              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#ff3c3c", href: "/risk-manager" },
-              { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#ff8c00", href: "/live-alerts" },
+              { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#38BDF8", href: "/backtest" },
+              { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#4ADE80", href: "/journaling" },
+              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#F87171", href: "/risk-manager" },
+              { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#FB923C", href: "/live-alerts" },
             ].map((m, i) => (
               <Link href={m.href} key={i} className="block cursor-pointer">
                 <motion.div
@@ -555,7 +629,7 @@ export default function HomePage() {
                     </div>
                     <h3
                       className="text-xl font-black tracking-tight text-white mb-2 group-hover:text-white transition-colors"
-                      style={{ fontFamily: "'Syne', sans-serif" }}
+                      style={{ fontFamily: "var(--font-display)" }}
                     >
                       {m.title}
                     </h3>
@@ -571,7 +645,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── TESTIMONIALS ─── */}
-      <section className="px-6 lg:px-16 py-16 border-y relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)" }}>
+      <section className="testimonials-section px-6 lg:px-16 py-16 border-y relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)" }}>
         <div
           className="pointer-events-none absolute inset-0"
           style={{ background: "rgba(14,14,18,0.7)", backdropFilter: "blur(20px)" }}
@@ -582,15 +656,15 @@ export default function HomePage() {
           </p>
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { name: "Luca", role: "FTMO Trader", text: "I dropped 3 tools after moving to RiskSent. Everything feeds into my risk decisions now.", avatar: "L", color: "#22d3ee" },
-              { name: "Sara", role: "Swing Trader", text: "One subscription. Test, journal, control risk. I never switch apps anymore.", avatar: "S", color: "#00e676" },
-              { name: "Marco", role: "Prop Firm Coach", text: "The live alerts plus journaling history changed how I coach. Finally one process.", avatar: "M", color: "#ff3c3c" },
+              { name: "Luca", role: "FTMO Trader", text: "I dropped 3 tools after moving to RiskSent. Everything feeds into my risk decisions now.", avatar: "L", color: "#38BDF8" },
+              { name: "Sara", role: "Swing Trader", text: "One subscription. Test, journal, control risk. I never switch apps anymore.", avatar: "S", color: "#4ADE80" },
+              { name: "Marco", role: "Prop Firm Coach", text: "The live alerts plus journaling history changed how I coach. Finally one process.", avatar: "M", color: "#6366F1" },
             ].map((t, i) => (
               <motion.div
                 key={i}
                 initial={false}
                 whileHover={{ y: -6, transition: { type: "spring", stiffness: 380, damping: 26 } }}
-                className="scan-card rounded-2xl p-6 cursor-default"
+                className="testimonial-card scan-card rounded-2xl p-6 cursor-default"
                 style={{
                   background: "rgba(14,14,18,0.8)",
                   border: "1px solid rgba(255,255,255,0.07)",
@@ -639,13 +713,13 @@ export default function HomePage() {
         <div className="final-cta-text relative max-w-7xl mx-auto text-center">
           <h2
             className="text-[clamp(52px,10vw,140px)] font-black leading-[0.9] tracking-[-0.04em] text-white"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             Your edge.<br />
             <span
               className="bg-clip-text text-transparent"
               style={{
-                backgroundImage: "linear-gradient(135deg, #ff3c3c 0%, #ff8c00 50%, #ff3c3c 100%)",
+                backgroundImage: "linear-gradient(135deg, #6366F1 0%, #A78BFA 50%, #6366F1 100%)",
                 backgroundSize: "200% 100%",
                 animation: "shimmer 2.4s infinite linear",
               }}
@@ -662,8 +736,8 @@ export default function HomePage() {
               href="/signup"
               className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-10 py-5 text-base font-bold text-black transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
               style={{
-                background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-                boxShadow: "0 0 60px rgba(255,60,60,0.4), 0 1px 0 rgba(255,255,255,0.2) inset",
+                background: "linear-gradient(135deg, #6366F1, #A78BFA)",
+                boxShadow: "0 0 60px rgba(99,102,241,0.4), 0 1px 0 rgba(255,255,255,0.2) inset",
               }}
             >
               <span
@@ -693,7 +767,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-4 sm:flex-row">
           <span
             className="text-sm font-extrabold tracking-tight text-slate-300"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             RiskSent
           </span>

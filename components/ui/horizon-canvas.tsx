@@ -21,7 +21,7 @@ interface HorizonCanvasProps {
 }
 
 export default function HorizonCanvas({
-  accentColor = "#ff3c3c",
+  accentColor = "#6366F1",
   className = "",
 }: HorizonCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -278,7 +278,7 @@ export default function HorizonCanvas({
         uniform float time;
         void main() {
           float i = pow(0.7 - dot(vNormal, vec3(0,0,1)), 2.0);
-          vec3 atm = vec3(0.8, 0.2, 0.1) * i * (sin(time * 1.5) * 0.08 + 0.92);
+          vec3 atm = vec3(0.38, 0.40, 0.95) * i * (sin(time * 1.5) * 0.08 + 0.92);
           gl_FragColor = vec4(atm, i * 0.18);
         }
       `,
