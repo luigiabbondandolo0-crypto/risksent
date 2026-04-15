@@ -321,7 +321,7 @@ export default function AdminPage() {
             >
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ background: "linear-gradient(135deg,#ff3c3c,#cc1111)" }}
+                style={{ background: "linear-gradient(135deg,#6366f1,#cc1111)" }}
               >
                 {emailInitials(u.email)}
               </span>
@@ -349,7 +349,7 @@ export default function AdminPage() {
                 setPage(0);
               }}
               placeholder="Search email or role…"
-              className="w-full min-w-[200px] rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#ff3c3c] sm:w-72"
+              className="w-full min-w-[200px] rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#6366f1] sm:w-72"
             />
           </div>
         </div>

@@ -98,7 +98,7 @@ export default function JournalingPage() {
           </div>
 
           <h1 className="text-[clamp(48px,8vw,120px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
-            style={{ fontFamily: "'Syne', sans-serif" }}>
+            style={{ fontFamily: "var(--font-display)" }}>
             {["Every", "trade"].map((w, i) => (
               <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
                 <span className="jn-hero-word inline-block">{w}</span>
@@ -152,7 +152,7 @@ export default function JournalingPage() {
           ].map((s, i) => (
             <div key={i} className="stat-item text-center">
               <div className="text-[clamp(32px,4vw,56px)] font-black tracking-tight mb-1"
-                style={{ fontFamily: "'Syne', sans-serif", color: s.color, textShadow: `0 0 30px ${s.color}50` }}>
+                style={{ fontFamily: "var(--font-display)", color: s.color, textShadow: `0 0 30px ${s.color}50` }}>
                 <AnimatedCounter to={s.to} suffix={s.suffix} glowColor={s.color} duration={1400} />
               </div>
               <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{s.label}</p>
@@ -170,7 +170,7 @@ export default function JournalingPage() {
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">Journal Dashboard</p>
-                  <p className="text-lg font-bold text-white mt-1" style={{ fontFamily: "'Syne', sans-serif" }}>April 2026</p>
+                  <p className="text-lg font-bold text-white mt-1" style={{ fontFamily: "var(--font-display)" }}>April 2026</p>
                 </div>
                 <span className="rounded-full px-3 py-1 text-[11px] font-mono font-bold uppercase tracking-widest"
                   style={{ color: ACCENT, background: "rgba(0,230,118,0.1)", border: "1px solid rgba(0,230,118,0.2)" }}>
@@ -215,7 +215,7 @@ export default function JournalingPage() {
                     style={{ borderColor: "rgba(255,255,255,0.04)" }}>
                     <div className="flex items-center gap-3">
                       <div className="h-2 w-2 rounded-full" style={{ background: t.win ? ACCENT : "#ff3c3c" }} />
-                      <span className="text-sm font-bold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{t.pair}</span>
+                      <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t.pair}</span>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full"
                         style={{ color: t.dir === "LONG" ? ACCENT : "#ff3c3c", background: t.dir === "LONG" ? "rgba(0,230,118,0.1)" : "rgba(255,60,60,0.1)" }}>
                         {t.dir}
@@ -242,7 +242,7 @@ export default function JournalingPage() {
           <div className="jn-reveal mb-12">
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Your growth</p>
             <h2 className="text-[clamp(36px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
-              style={{ fontFamily: "'Syne', sans-serif" }}>
+              style={{ fontFamily: "var(--font-display)" }}>
               Trade by trade.<br /><span className="text-slate-500">Day by day.</span>
             </h2>
           </div>
@@ -262,14 +262,14 @@ export default function JournalingPage() {
             ].map((step, i) => (
               <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
-                className="jn-reveal relative pl-12 pb-10 last:pb-0">
+                className="relative pl-12 pb-10 last:pb-0">
                 {/* Dot */}
                 <div className="absolute left-[13px] top-[6px] h-[6px] w-[6px] rounded-full -translate-x-1/2"
                   style={{ background: ACCENT, boxShadow: `0 0 12px ${ACCENT}` }} />
                 <div className="scan-card rounded-xl p-5"
                   style={{ background: "rgba(14,14,18,0.85)", border: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(12px)" }}>
                   <div className="flex items-start justify-between gap-4 mb-2">
-                    <h3 className="text-sm font-bold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{step.title}</h3>
+                    <h3 className="text-sm font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{step.title}</h3>
                     <span className="text-[10px] font-mono shrink-0 px-2 py-0.5 rounded"
                       style={{ color: ACCENT, background: "rgba(0,230,118,0.1)" }}>{step.day}</span>
                   </div>
@@ -287,7 +287,7 @@ export default function JournalingPage() {
           <div className="jn-reveal mb-12">
             <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Features</p>
             <h2 className="text-[clamp(36px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
-              style={{ fontFamily: "'Syne', sans-serif" }}>
+              style={{ fontFamily: "var(--font-display)" }}>
               Stop guessing.<br /><span className="text-slate-500">Start reviewing.</span>
             </h2>
           </div>
@@ -308,7 +308,7 @@ export default function JournalingPage() {
                   style={{ background: `radial-gradient(ellipse at 0% 100%, ${f.color}10 0%, transparent 70%)` }} />
                 <div className="relative">
                   <div className="h-2 w-2 rounded-full mb-4" style={{ background: f.color, boxShadow: `0 0 8px ${f.color}` }} />
-                  <h3 className="text-base font-black text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>{f.title}</h3>
+                  <h3 className="text-base font-black text-white mb-2" style={{ fontFamily: "var(--font-display)" }}>{f.title}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed group-hover:text-slate-400 transition-colors"
                     style={{ fontFamily: "'JetBrains Mono', monospace" }}>{f.desc}</p>
                 </div>
@@ -327,7 +327,7 @@ export default function JournalingPage() {
               <div className="pointer-events-none absolute inset-0"
                 style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(0,230,118,0.08) 0%, transparent 60%)" }} />
               <h2 className="relative text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
-                style={{ fontFamily: "'Syne', sans-serif" }}>
+                style={{ fontFamily: "var(--font-display)" }}>
                 Your trades are<br />
                 <span className="bg-clip-text text-transparent"
                   style={{ backgroundImage: "linear-gradient(135deg, #00e676, #22d3ee)" }}>

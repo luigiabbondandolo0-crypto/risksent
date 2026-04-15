@@ -185,7 +185,7 @@ export default function AnnouncementsPage() {
             setFormError(null);
           }}
           className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02]"
-          style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+          style={{ background: "linear-gradient(135deg, #6366f1, #fb923c)" }}
         >
           <Plus className="h-4 w-4" />
           New announcement
@@ -212,7 +212,7 @@ export default function AnnouncementsPage() {
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                     placeholder="Announcement title"
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#ff3c3c] font-mono"
+                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono"
                   />
                 </div>
                 <div>
@@ -247,7 +247,7 @@ export default function AnnouncementsPage() {
                     type="datetime-local"
                     value={form.expires_at}
                     onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#ff3c3c] font-mono"
+                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono"
                   />
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function AnnouncementsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                   rows={3}
                   placeholder="Announcement message…"
-                  className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#ff3c3c] font-mono resize-none"
+                  className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono resize-none"
                 />
               </div>
 
@@ -290,7 +290,7 @@ export default function AnnouncementsPage() {
                   onClick={() => void handleCreate()}
                   disabled={submitting || !form.title.trim() || !form.message.trim()}
                   className="rounded-xl px-5 py-2.5 text-sm font-bold text-black disabled:opacity-40"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+                  style={{ background: "linear-gradient(135deg, #6366f1, #fb923c)" }}
                 >
                   {submitting ? "Creating…" : "Create"}
                 </button>

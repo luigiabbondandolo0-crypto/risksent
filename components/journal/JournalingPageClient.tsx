@@ -1046,7 +1046,7 @@ function CalendarTab({
             {
               label: "Win Rate",
               value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
-              color: "#22d3ee",
+              color: "#38BDF8",
             },
             {
               label: "Total P&L",
@@ -1054,7 +1054,7 @@ function CalendarTab({
                 monthTrades.length > 0
                   ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
                   : "—",
-              color: monthPl >= 0 ? "#00e676" : "#ff3c3c",
+              color: monthPl >= 0 ? "#4ADE80" : "#F87171",
             },
             {
               label: "Best Day",
@@ -1087,10 +1087,16 @@ function CalendarTab({
                 const best = Math.max(...dayPls);
                 return `+${best.toFixed(0)}`;
               })(),
-              color: "#00e676",
+              color: "#4ADE80",
             },
-          ].map(({ label, value, color }) => (
-            <div key={label} className={jn.cardSm}>
+          ].map(({ label, value, color }, ki) => (
+            <motion.div
+              key={label}
+              className={jn.cardSm}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: ki * 0.07 }}
+            >
               <p className={jn.label}>{label}</p>
               <p
                 className="mt-1 font-display text-xl font-bold"
@@ -1098,7 +1104,7 @@ function CalendarTab({
               >
                 {value}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
@@ -1114,8 +1120,16 @@ function CalendarTab({
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Calendar grid — AnimatePresence enables month slide transition */}
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={format(month, "yyyy-MM")}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.22, ease: "easeInOut" }}
+          className="grid grid-cols-7 gap-1"
+        >
           {cells.map((day, i) => {
             if (!day) {
               return <div key={`pad-${i}`} className="aspect-square" />;
@@ -1129,35 +1143,38 @@ function CalendarTab({
               <motion.button
                 key={ds}
                 type="button"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25, delay: i * 0.012, ease: "easeOut" }}
+                whileHover={{ scale: 1.08, transition: { duration: 0.15 } }}
+                whileTap={{ scale: 0.94 }}
                 onClick={() =>
                   setSelectedDay(isSelected ? null : ds)
                 }
                 className="flex aspect-square flex-col items-center justify-center rounded-xl border text-center transition-all"
                 style={{
                   borderColor: isSelected
-                    ? "rgba(34,211,238,0.4)"
+                    ? "rgba(99,102,241,0.5)"
                     : today
                       ? "rgba(255,255,255,0.15)"
                       : stats
                         ? stats.pl >= 0
-                          ? "rgba(0,230,118,0.2)"
-                          : "rgba(255,60,60,0.2)"
+                          ? "rgba(74,222,128,0.25)"
+                          : "rgba(248,113,113,0.25)"
                         : "rgba(255,255,255,0.04)",
                   background: isSelected
-                    ? "rgba(34,211,238,0.08)"
+                    ? "rgba(99,102,241,0.12)"
                     : stats
                       ? stats.pl >= 0
-                        ? `rgba(0,230,118,${Math.min(0.18, 0.06 + Math.abs(stats.pl) / 2000)})`
-                        : `rgba(255,60,60,${Math.min(0.18, 0.06 + Math.abs(stats.pl) / 2000)})`
+                        ? `rgba(74,222,128,${Math.min(0.2, 0.07 + Math.abs(stats.pl) / 2000)})`
+                        : `rgba(248,113,113,${Math.min(0.2, 0.07 + Math.abs(stats.pl) / 2000)})`
                       : "transparent",
                 }}
               >
                 <span
                   className="text-xs font-mono"
                   style={{
-                    color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#00e676" : "#ff3c3c") : "#475569",
+                    color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#4ADE80" : "#F87171") : "#475569",
                     fontWeight: today ? 700 : 400,
                   }}
                 >
@@ -1167,7 +1184,7 @@ function CalendarTab({
                   <div className="mt-0.5 flex flex-col items-center gap-0">
                     <span
                       className="text-[9px] font-mono leading-tight"
-                      style={{ color: stats.pl >= 0 ? "#00e676" : "#ff3c3c" }}
+                      style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
                     >
                       {stats.pl >= 0 ? "+" : ""}
                       {stats.pl.toFixed(0)}
@@ -1180,7 +1197,8 @@ function CalendarTab({
               </motion.button>
             );
           })}
-        </div>
+        </motion.div>
+        </AnimatePresence>
 
         {/* Expanded day detail */}
         <AnimatePresence>
@@ -1200,7 +1218,7 @@ function CalendarTab({
                   <span
                     className="font-mono text-sm font-bold"
                     style={{
-                      color: selectedDayPl >= 0 ? "#00e676" : "#ff3c3c",
+                      color: selectedDayPl >= 0 ? "#4ADE80" : "#F87171",
                     }}
                   >
                     {selectedDayPl >= 0 ? "+" : ""}
@@ -1228,12 +1246,12 @@ function CalendarTab({
                               style={
                                 t.direction === "BUY"
                                   ? {
-                                      background: "rgba(0,230,118,0.15)",
-                                      color: "#00e676",
+                                      background: "rgba(74,222,128,0.15)",
+                                      color: "#4ADE80",
                                     }
                                   : {
-                                      background: "rgba(255,60,60,0.15)",
-                                      color: "#ff3c3c",
+                                      background: "rgba(248,113,113,0.15)",
+                                      color: "#F87171",
                                     }
                               }
                             >
@@ -1252,7 +1270,7 @@ function CalendarTab({
                           <span
                             className="font-mono text-sm font-semibold"
                             style={{
-                              color: net >= 0 ? "#00e676" : "#ff3c3c",
+                              color: net >= 0 ? "#4ADE80" : "#F87171",
                             }}
                           >
                             {net >= 0 ? "+" : ""}
@@ -1378,7 +1396,7 @@ function TradesTab({
   const pillBtn = (on: boolean) =>
     `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
       on
-        ? "border border-[#ff8c00]/40 bg-[#ff8c00]/15 text-white"
+        ? "border border-[#6366f1]/40 bg-[#6366f1]/15 text-white"
         : "border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
     }`;
 
@@ -1741,8 +1759,8 @@ function EmptyState({ onConnected }: { onConnected: () => void }) {
         transition={{ duration: 0.4 }}
         className="max-w-sm"
       >
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#ff3c3c]/10 to-transparent">
-          <TrendingUp className="h-7 w-7 text-[#ff3c3c]" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#6366f1]/10 to-transparent">
+          <TrendingUp className="h-7 w-7 text-[#6366f1]" />
         </div>
         <h2 className="font-display text-2xl font-bold text-white">
           Start your trading journal

@@ -132,7 +132,7 @@ export default function SignupPage() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#ff3c3c] transition-colors"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#6366f1] transition-colors"
                 />
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#ff3c3c] transition-colors"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#6366f1] transition-colors"
                 />
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function SignupPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-10 text-sm text-white outline-none focus:border-[#ff3c3c] transition-colors"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-10 text-sm text-white outline-none focus:border-[#6366f1] transition-colors"
                 />
                 <button
                   type="button"
@@ -187,7 +187,7 @@ export default function SignupPage() {
                           background:
                             pwStrength.text === "Strong" ? "#00e676" :
                             pwStrength.text === "Fair" && i < 2 ? "#ff8c00" :
-                            pwStrength.text === "Weak" && i < 1 ? "#ff3c3c" :
+                            pwStrength.text === "Weak" && i < 1 ? "#F87171" :
                             "rgba(255,255,255,0.08)"
                         }}
                       />
@@ -210,7 +210,7 @@ export default function SignupPage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 px-3 text-sm text-white outline-none focus:border-[#ff3c3c] transition-colors"
+                className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 px-3 text-sm text-white outline-none focus:border-[#6366f1] transition-colors"
               />
               {confirmPassword && confirmPassword !== password && (
                 <p className="mt-1 text-[10px] font-mono text-red-400">Passwords do not match</p>
@@ -263,8 +263,8 @@ export default function SignupPage() {
               disabled={loading}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(255,60,60,0.25)] disabled:opacity-50 transition-opacity"
-              style={{ background: "linear-gradient(135deg, #ff3c3c, #cc0000)" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(99,102,241,0.25)] disabled:opacity-50 transition-opacity"
+              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
             >
               {loading ? "Creating account…" : "Create account"}
             </motion.button>
@@ -272,7 +272,7 @@ export default function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-mono text-[#ff3c3c] hover:underline">
+            <Link href="/login" className="font-mono text-[#a78bfa] hover:underline">
               Sign in
             </Link>
           </p>
@@ -290,7 +290,7 @@ export default function SignupPage() {
           className="pointer-events-none absolute inset-0 opacity-80"
           style={{
             background:
-              "radial-gradient(ellipse 70% 50% at 70% 30%, rgba(255,60,60,0.2), transparent 55%), radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,140,0,0.1), transparent 50%), #080809"
+              "radial-gradient(ellipse 70% 50% at 70% 30%, rgba(99,102,241,0.18), transparent 55%), radial-gradient(ellipse 40% 40% at 20% 80%, rgba(167,139,250,0.09), transparent 50%), #070710"
           }}
         />
         <div className="relative z-10">
@@ -315,7 +315,7 @@ export default function SignupPage() {
                 transition={{ delay: 0.1 + i * 0.08 }}
                 className="flex items-start gap-4"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] text-[#ff3c3c]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] text-[#a78bfa]">
                   <Icon className="h-5 w-5" />
                 </span>
                 <p className="pt-2 text-sm font-[family-name:var(--font-mono)] text-slate-300">{t}</p>

@@ -107,7 +107,7 @@ export function AppHeaderBar({
         >
           <Bell className="h-4 w-4" />
           {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#ff3c3c] px-1 text-[10px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#6366f1] px-1 text-[10px] font-bold text-white">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
@@ -172,7 +172,7 @@ export function AppHeaderBar({
           <span
             className="flex h-8 w-8 items-center justify-center rounded-md text-xs font-bold text-white"
             style={{
-              background: "linear-gradient(135deg, #ff3c3c, #cc1111)"
+              background: "linear-gradient(135deg, #6366f1, #4f46e5)"
             }}
           >
             {initials}

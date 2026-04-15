@@ -26,7 +26,7 @@ function passwordStrength(pw: string): "weak" | "fair" | "strong" {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#ff3c3c] font-[family-name:var(--font-mono)]";
+  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -205,7 +205,7 @@ function ResetPasswordForm() {
 
           {step === "checking" && (
             <div className="flex flex-col items-center justify-center gap-3 py-10">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#ff3c3c]" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-[#6366f1]" />
               <p className="font-[family-name:var(--font-mono)] text-sm text-slate-500">Verifying reset link…</p>
             </div>
           )}
@@ -268,7 +268,7 @@ function ResetPasswordForm() {
                   {newPassword && (
                     <p className={`mt-1 text-[10px] font-mono ${
                       strength === "strong" ? "text-[#00e676]" :
-                      strength === "fair" ? "text-[#ff8c00]" : "text-[#ff3c3c]"
+                      strength === "fair" ? "text-[#fb923c]" : "text-[#f87171]"
                     }`}>
                       {strength === "strong" ? "Strong" : strength === "fair" ? "Fair" : "Weak"}
                     </p>
@@ -309,8 +309,8 @@ function ResetPasswordForm() {
                   disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(255,60,60,0.25)] disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #cc0000)" }}
+                  className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(99,102,241,0.25)] disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
                 >
                   {loading ? "Updating…" : "Update password"}
                 </motion.button>
@@ -361,8 +361,8 @@ function ResetPasswordForm() {
                   disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(255,60,60,0.25)] disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #ff3c3c, #cc0000)" }}
+                  className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(99,102,241,0.25)] disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
                 >
                   {loading ? "Sending…" : "Send reset link"}
                 </motion.button>

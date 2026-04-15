@@ -68,7 +68,7 @@ function planBadgeClasses(u: UserRow): { label: string; className: string } {
   if (u.plan === "experienced") {
     return {
       label: "Experienced",
-      className: "text-[#ff6b6b] bg-[#ff3c3c]/12 border-[#ff3c3c]/35",
+      className: "text-[#ff6b6b] bg-[#6366f1]/12 border-[#6366f1]/35",
     };
   }
   return {
@@ -287,7 +287,7 @@ export default function AdminUsersPage() {
               setPage(0);
             }}
             placeholder="Search by email, role, or plan…"
-            className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-9 pr-3 font-mono text-sm text-white outline-none focus:border-[#ff3c3c]"
+            className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-9 pr-3 font-mono text-sm text-white outline-none focus:border-[#6366f1]"
           />
         </div>
         <select

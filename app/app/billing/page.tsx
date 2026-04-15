@@ -25,7 +25,7 @@ const PLAN_COLOR: Record<string, string> = {
   user: "text-slate-400 bg-slate-500/15 border-slate-500/30",
   trial: "text-amber-300 bg-amber-500/15 border-amber-500/30",
   new_trader: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
-  experienced: "text-[#ff3c3c] bg-[#ff3c3c]/10 border-[#ff3c3c]/30",
+  experienced: "text-[#6366f1] bg-[#6366f1]/10 border-[#6366f1]/30",
 };
 
 function TrialActiveNotice() {
@@ -94,7 +94,7 @@ function PlanChoiceGrid({
             whileHover={{ y: -4, transition: { type: "spring", stiffness: 420, damping: 26 } }}
             className={`flex flex-col rounded-2xl border p-5 backdrop-blur-sm ${
               p.highlight
-                ? "border-[#ff3c3c]/30 bg-[#ff3c3c]/[0.06]"
+                ? "border-[#6366f1]/30 bg-[#6366f1]/[0.06]"
                 : "border-white/[0.08] bg-white/[0.03]"
             }`}
           >
@@ -103,7 +103,7 @@ function PlanChoiceGrid({
                 {p.name}
               </p>
               {p.highlight && (
-                <span className="rounded-full border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-[#ff3c3c]">
+                <span className="rounded-full border border-[#6366f1]/40 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-[#6366f1]">
                   Most popular
                 </span>
               )}
@@ -126,8 +126,8 @@ function PlanChoiceGrid({
               disabled={upgradeLoading !== null}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-                boxShadow: p.highlight ? "0 0 22px rgba(255,60,60,0.25)" : "0 0 16px rgba(255,60,60,0.12)",
+                background: "linear-gradient(135deg, #6366f1, #fb923c)",
+                boxShadow: p.highlight ? "0 0 22px rgba(99,102,241,0.25)" : "0 0 16px rgba(99,102,241,0.12)",
               }}
             >
               {loading ? "Loading…" : buttonLabel}
@@ -363,7 +363,7 @@ export default function BillingPage() {
             onClick={() => void startTrial()}
             disabled={trialLoading}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #ff8c00, #ff3c3c)", boxShadow: "0 0 20px rgba(255,140,0,0.2)" }}
+            style={{ background: "linear-gradient(135deg, #fb923c, #6366f1)", boxShadow: "0 0 20px rgba(251,146,60,0.2)" }}
           >
             {trialLoading ? "Starting…" : "Start free trial"}
             {!trialLoading && <ArrowRight className="h-4 w-4" />}
@@ -475,10 +475,10 @@ export default function BillingPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-[#ff3c3c]/20 bg-[#ff3c3c]/[0.04] p-6"
+          className="rounded-2xl border border-[#6366f1]/20 bg-[#6366f1]/[0.04] p-6"
         >
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="h-5 w-5 text-[#ff3c3c]" />
+            <CheckCircle className="h-5 w-5 text-[#6366f1]" />
             <p className="font-semibold text-slate-200">
               You have the full RiskSent experience
             </p>
@@ -517,7 +517,7 @@ function UpgradeCard({
     <div
       className={`rounded-xl border p-5 transition-all ${
         highlight
-          ? "border-[#ff3c3c]/30 bg-[#ff3c3c]/[0.05]"
+          ? "border-[#6366f1]/30 bg-[#6366f1]/[0.05]"
           : "border-white/[0.07] bg-white/[0.02]"
       }`}
     >
@@ -526,7 +526,7 @@ function UpgradeCard({
           <div className="flex items-center gap-2">
             <p className="font-semibold text-white">{name}</p>
             {highlight && (
-              <span className="rounded-full border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-2 py-0.5 text-[10px] font-mono text-[#ff3c3c]">
+              <span className="rounded-full border border-[#6366f1]/40 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-mono text-[#6366f1]">
                 Most popular
               </span>
             )}
@@ -546,8 +546,8 @@ function UpgradeCard({
           disabled={loading}
           className="flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-50"
           style={{
-            background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-            boxShadow: highlight ? "0 0 20px rgba(255,60,60,0.2)" : "none",
+            background: "linear-gradient(135deg, #6366f1, #fb923c)",
+            boxShadow: highlight ? "0 0 20px rgba(99,102,241,0.2)" : "none",
           }}
         >
           {loading ? "Loading…" : `Upgrade to ${name}`}

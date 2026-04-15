@@ -138,7 +138,7 @@ function LoginForm() {
                 window.location.href = "/app/dashboard";
               }}
               className="w-full rounded-xl py-3 text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #ff3c3c, #cc1111)" }}
+              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
             >
               User area
             </motion.button>
@@ -167,7 +167,7 @@ function LoginForm() {
           className="pointer-events-none absolute inset-0 opacity-90"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 30% 20%, rgba(255,60,60,0.25), transparent 55%), radial-gradient(ellipse 50% 50% at 80% 60%, rgba(255,140,0,0.12), transparent 50%), #080809"
+              "radial-gradient(ellipse 80% 60% at 30% 20%, rgba(99,102,241,0.2), transparent 55%), radial-gradient(ellipse 50% 50% at 80% 60%, rgba(167,139,250,0.1), transparent 50%), #070710"
           }}
         />
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-10 py-12">
@@ -175,8 +175,8 @@ function LoginForm() {
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
-            className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl text-lg font-black text-white shadow-[0_0_48px_rgba(255,60,60,0.35)]"
-            style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+            className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl text-lg font-black text-white shadow-[0_0_48px_rgba(99,102,241,0.35)]"
+            style={{ background: "linear-gradient(135deg, #6366f1, #a78bfa)" }}
           >
             RS
           </motion.div>
@@ -243,7 +243,7 @@ function LoginForm() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#ff3c3c]"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-3 text-sm text-white outline-none focus:border-[#6366f1]"
                 />
               </div>
             </div>
@@ -254,7 +254,7 @@ function LoginForm() {
                 </label>
                 <Link
                   href="/reset-password"
-                  className="text-xs font-mono text-slate-500 hover:text-[#ff3c3c]"
+                  className="text-xs font-mono text-slate-500 hover:text-[#a78bfa]"
                 >
                   Forgot password?
                 </Link>
@@ -267,7 +267,7 @@ function LoginForm() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-10 text-sm text-white outline-none focus:border-[#ff3c3c]"
+                  className="w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-10 pr-10 text-sm text-white outline-none focus:border-[#6366f1]"
                 />
                 <button
                   type="button"
@@ -289,8 +289,8 @@ function LoginForm() {
               disabled={loading}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(255,60,60,0.25)] transition-shadow hover:shadow-[0_0_36px_rgba(255,60,60,0.4)] disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #ff3c3c, #cc0000)" }}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(99,102,241,0.25)] transition-shadow hover:shadow-[0_0_36px_rgba(99,102,241,0.4)] disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
             >
               {loading ? "Signing in…" : "Sign in"}
             </motion.button>
@@ -312,7 +312,7 @@ function LoginForm() {
             <span className="text-slate-400">Privacy Policy</span>.
           </p>
           <div className="mt-4 text-center">
-            <Link href="/" className="text-xs font-mono text-slate-500 hover:text-[#ff3c3c]">
+            <Link href="/" className="text-xs font-mono text-slate-500 hover:text-[#a78bfa]">
               ← Back to landing
             </Link>
           </div>

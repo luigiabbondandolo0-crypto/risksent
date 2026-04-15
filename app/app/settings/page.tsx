@@ -12,13 +12,13 @@ export default function AppSettingsPage() {
       <div className="space-y-3 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
         <Link
           href="/profile"
-          className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#ff3c3c]/40 hover:text-white"
+          className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#6366f1]/40 hover:text-white"
         >
           Profile & preferences →
         </Link>
         <Link
           href="/app/journaling/settings"
-          className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#ff3c3c]/40 hover:text-white"
+          className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#6366f1]/40 hover:text-white"
         >
           Journal settings →
         </Link>
