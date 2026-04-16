@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight, Brain } from "lucide-react";
 import { HomeLiveAlertsPhone } from "@/components/home/HomeLiveAlertsPhone";
 
 // Three.js canvas — SSR disabled
@@ -269,7 +269,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-6">
               <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                 One subscription. Backtesting, Journaling,<br />
-                Risk Manager, Live Alerts.<br />
+                Risk Manager, Live Alerts, AI Coach.<br />
                 <span className="text-slate-300">Everything your edge needs.</span>
               </p>
               <div className="hero-cta flex flex-col gap-3 sm:flex-row">
@@ -438,7 +438,7 @@ export default function HomePage() {
               heading: "Never blow\nan account\nagain.",
               body: "Real-time risk monitoring. The moment you're about to do something stupid, RiskSent stops you. Hard blocks. Live alerts. Zero excuses.",
               accent: "#F87171",
-              tag: "Risk Sentinel",
+              tag: "Risk Manager",
               stats: [
                 { val: "< 1s", label: "Alert latency" },
                 { val: "24/7", label: "Live monitoring" },
@@ -456,6 +456,18 @@ export default function HomePage() {
                 { val: "0", label: "Missed alerts" },
               ],
               glowPos: "br" as const,
+            },
+            {
+              num: "05",
+              heading: "Your AI.\nYour edge.\nDecoded.",
+              body: "Ask anything about your trades. The AI Coach reads your entire journal, finds your patterns, and tells you exactly where your edge is strongest — and where you're self-sabotaging.",
+              accent: "#a855f7",
+              tag: "AI Coach",
+              stats: [
+                { val: "67%", label: "Avg win rate lift" },
+                { val: "<1s", label: "Post-trade feedback" },
+              ],
+              glowPos: "tl" as const,
             },
           ].map((feature, i) => (
             <motion.div
@@ -517,6 +529,129 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-center border-t border-white/[0.05] pt-12 lg:pt-14">
                       <HomeLiveAlertsPhone />
+                    </div>
+                  </>
+                ) : i === 4 ? (
+                  <>
+                    <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="lg:w-3/5">
+                        <div className="flex items-center gap-4 mb-6">
+                          <span
+                            className="feature-num text-[11px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1.5 rounded-full"
+                            style={{ color: feature.accent, background: `${feature.accent}15`, border: `1px solid ${feature.accent}30` }}
+                          >
+                            {feature.tag}
+                          </span>
+                        </div>
+                        <div className="overflow-hidden">
+                          <h2
+                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                            style={{ fontFamily: "var(--font-display)" }}
+                          >
+                            {feature.heading}
+                          </h2>
+                        </div>
+                        <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                          {feature.body}
+                        </p>
+                      </div>
+                      <div className="flex gap-8 lg:flex-col lg:gap-6 lg:w-1/4">
+                        {feature.stats.map((s, j) => (
+                          <div key={j} className="stat-item">
+                            <div
+                              className="text-4xl font-black tracking-tight"
+                              style={{ color: feature.accent, fontFamily: "var(--font-display)", textShadow: `0 0 30px ${feature.accent}60` }}
+                            >
+                              {s.val}
+                            </div>
+                            <div className="mt-1 text-[11px] font-mono uppercase tracking-[0.2em] text-slate-500">{s.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* AI Coach chat preview */}
+                    <div className="flex justify-center border-t border-white/[0.05] pt-12 lg:pt-14">
+                      <div className="w-full max-w-lg">
+                        <div
+                          className="rounded-2xl overflow-hidden"
+                          style={{
+                            background: "rgba(10,10,16,0.95)",
+                            border: "1px solid rgba(168,85,247,0.25)",
+                            boxShadow: "0 0 60px rgba(168,85,247,0.12), 0 0 0 1px rgba(255,255,255,0.03) inset",
+                          }}
+                        >
+                          {/* Chat header */}
+                          <div
+                            className="px-4 py-3 border-b flex items-center gap-3"
+                            style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.07)" }}
+                          >
+                            <motion.div
+                              className="h-2 w-2 rounded-full"
+                              style={{ background: "#a855f7" }}
+                              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+                              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                            <Brain className="h-3.5 w-3.5 text-purple-400" />
+                            <span className="text-[11px] font-mono text-purple-400">AI Coach · analyzing your journal</span>
+                            <span className="ml-auto text-[9px] font-mono text-slate-600 uppercase tracking-widest">live</span>
+                          </div>
+                          {/* Messages */}
+                          <div className="p-5 space-y-3">
+                            {[
+                              { role: "user", text: "Why do I keep losing on GBPJPY Fridays?" },
+                              { role: "ai", text: "Win rate drops to 31% on Fridays — lower liquidity pre-weekend. Best GBPJPY window: Tues–Weds, London open." },
+                              { role: "user", text: "What's my actual edge?" },
+                              { role: "ai", text: "EURUSD breakout · 4H · London open · RR ≥ 2.0 → 67.4% win rate across 84 trades. That's your A+ setup." },
+                            ].map((msg, mi) => (
+                              <motion.div
+                                key={mi}
+                                initial={{ opacity: 0, y: 10 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: mi * 0.18, duration: 0.45, ease: "easeOut" }}
+                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                              >
+                                <div
+                                  className="max-w-[82%] rounded-xl px-3 py-2.5 text-xs font-mono leading-relaxed"
+                                  style={
+                                    msg.role === "user"
+                                      ? { background: "rgba(168,85,247,0.22)", color: "#e2e8f0", border: "1px solid rgba(168,85,247,0.35)" }
+                                      : { background: "rgba(255,255,255,0.04)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.07)" }
+                                  }
+                                >
+                                  {msg.role === "ai" && (
+                                    <span className="block text-[9px] text-purple-400 mb-1.5 uppercase tracking-widest">AI Coach</span>
+                                  )}
+                                  {msg.text}
+                                </div>
+                              </motion.div>
+                            ))}
+                            {/* Typing indicator */}
+                            <motion.div
+                              className="flex justify-start"
+                              initial={{ opacity: 0 }}
+                              whileInView={{ opacity: 1 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: 0.9, duration: 0.4 }}
+                            >
+                              <div
+                                className="rounded-xl px-3 py-2.5 flex gap-1.5 items-center"
+                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+                              >
+                                {[0, 1, 2].map((di) => (
+                                  <motion.div
+                                    key={di}
+                                    className="h-1.5 w-1.5 rounded-full"
+                                    style={{ background: "#a855f7" }}
+                                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                                    transition={{ duration: 1.1, repeat: Infinity, delay: di * 0.22, ease: "easeInOut" }}
+                                  />
+                                ))}
+                              </div>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -590,12 +725,13 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="modules-grid grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="modules-grid grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {[
               { title: "Backtesting", desc: "Validate strategies on historical data before going live.", num: "01", color: "#38BDF8", href: "/backtest" },
               { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#4ADE80", href: "/journaling" },
-              { title: "Risk Sentinel", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#F87171", href: "/risk-manager" },
+              { title: "Risk Manager", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#F87171", href: "/risk-manager" },
               { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#FB923C", href: "/live-alerts" },
+              { title: "AI Coach", desc: "Pattern detection, psychology analysis, and setup scoring from your journal data.", num: "05", color: "#a855f7", href: "/ai-coach" },
             ].map((m, i) => (
               <Link href={m.href} key={i} className="block cursor-pointer">
                 <motion.div
@@ -645,45 +781,144 @@ export default function HomePage() {
       </section>
 
       {/* ─── TESTIMONIALS ─── */}
-      <section className="testimonials-section px-6 lg:px-16 py-16 border-y relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)" }}>
+      <section className="testimonials-section px-6 lg:px-16 py-24 border-y relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)" }}>
         <div
           className="pointer-events-none absolute inset-0"
           style={{ background: "rgba(14,14,18,0.7)", backdropFilter: "blur(20px)" }}
         />
         <div className="max-w-7xl mx-auto relative">
-          <p className="text-center text-[11px] font-mono uppercase tracking-[0.3em] text-slate-600 mb-12">
-            From traders who made the switch
-          </p>
+
+          {/* Header */}
+          <div className="mb-14">
+            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-600 mb-3">Traders who made the switch</p>
+            <h2
+              className="text-[clamp(32px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Real results.<br />
+              <span className="text-slate-500">Real traders.</span>
+            </h2>
+          </div>
+
+          {/* Featured testimonial */}
+          <motion.div
+            initial={false}
+            whileHover={{ y: -4, transition: { type: "spring", stiffness: 380, damping: 26 } }}
+            className="testimonial-card mb-5 rounded-3xl p-8 lg:p-10 relative overflow-hidden cursor-default"
+            style={{
+              background: "rgba(14,14,18,0.9)",
+              border: "1px solid rgba(99,102,241,0.18)",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 0 80px rgba(99,102,241,0.06)",
+            }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 rounded-3xl"
+              style={{ background: "radial-gradient(ellipse at 0% 100%, rgba(99,102,241,0.1) 0%, transparent 55%)" }}
+            />
+            <div className="relative">
+              {/* Stars */}
+              <div className="flex gap-1 mb-6">
+                {[...Array(5)].map((_, si) => (
+                  <svg key={si} className="h-4 w-4" fill="#6366F1" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p
+                className="text-slate-200 leading-relaxed mb-8 max-w-3xl"
+                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "15px" }}
+              >
+                &ldquo;RiskSent replaced four tools I was paying for separately. The backtesting validates my edge, the journal catches my emotional trades, and the live alerts literally stopped me from blowing my funded account last month. One platform. That&apos;s it.&rdquo;
+              </p>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-black"
+                    style={{ background: "linear-gradient(135deg, #6366F1, #A78BFA)", boxShadow: "0 0 20px rgba(99,102,241,0.45)" }}
+                  >
+                    A
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Alessandro M.</p>
+                    <p className="text-[11px] text-slate-500 font-mono">FTMO Funded Trader · €100k account</p>
+                  </div>
+                </div>
+                <span
+                  className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full"
+                  style={{ color: "#4ADE80", background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)" }}
+                >
+                  ✓ Verified trader
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Three cards */}
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { name: "Luca", role: "FTMO Trader", text: "I dropped 3 tools after moving to RiskSent. Everything feeds into my risk decisions now.", avatar: "L", color: "#38BDF8" },
-              { name: "Sara", role: "Swing Trader", text: "One subscription. Test, journal, control risk. I never switch apps anymore.", avatar: "S", color: "#4ADE80" },
-              { name: "Marco", role: "Prop Firm Coach", text: "The live alerts plus journaling history changed how I coach. Finally one process.", avatar: "M", color: "#6366F1" },
+              {
+                name: "Luca T.",
+                role: "FTMO Trader",
+                text: "I stopped using 3 separate tools the week I found RiskSent. Everything feeds into one risk process. My drawdown dropped from 6% to 1.8% in the first month.",
+                avatar: "L",
+                color: "#38BDF8",
+                metric: "−4.2% DD",
+              },
+              {
+                name: "Sara V.",
+                role: "Swing Trader",
+                text: "The AI Coach found a pattern I never would have spotted — I lose 78% of my trades on Mondays. One insight, weeks of losses avoided.",
+                avatar: "S",
+                color: "#4ADE80",
+                metric: "+23% WR",
+              },
+              {
+                name: "Marco R.",
+                role: "Prop Firm Coach",
+                text: "I coach 12 traders. RiskSent gives them all a shared process — journal, alerts, risk controls. One tool. No more excuses about missed rules.",
+                avatar: "M",
+                color: "#A78BFA",
+                metric: "12 traders",
+              },
             ].map((t, i) => (
               <motion.div
                 key={i}
                 initial={false}
                 whileHover={{ y: -6, transition: { type: "spring", stiffness: 380, damping: 26 } }}
-                className="testimonial-card scan-card rounded-2xl p-6 cursor-default"
+                className="testimonial-card scan-card rounded-2xl p-6 cursor-default relative overflow-hidden"
                 style={{
                   background: "rgba(14,14,18,0.8)",
                   border: "1px solid rgba(255,255,255,0.07)",
                   backdropFilter: "blur(16px)",
                 }}
               >
-                <p className="text-sm text-slate-300 leading-relaxed mb-6">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black cursor-default"
-                    style={{ background: t.color, boxShadow: `0 0 14px ${t.color}50` }}
-                    whileHover={{ scale: 1.08, rotate: 4 }}
-                  >
-                    {t.avatar}
-                  </motion.div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-slate-500">{t.role}</p>
+                {/* Stars */}
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, si) => (
+                    <svg key={si} className="h-3 w-3" fill={t.color} viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed mb-6" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  &ldquo;{t.text}&rdquo;
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <motion.div
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-black cursor-default"
+                      style={{ background: t.color, boxShadow: `0 0 14px ${t.color}50` }}
+                      whileHover={{ scale: 1.08, rotate: 4 }}
+                    >
+                      {t.avatar}
+                    </motion.div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{t.name}</p>
+                      <p className="text-xs text-slate-500">{t.role}</p>
+                    </div>
                   </div>
+                  <span className="text-[11px] font-mono font-bold" style={{ color: t.color }}>{t.metric}</span>
                 </div>
               </motion.div>
             ))}

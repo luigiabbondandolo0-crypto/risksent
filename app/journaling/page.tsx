@@ -166,8 +166,10 @@ export default function JournalingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="jn-reveal relative overflow-hidden rounded-3xl p-px"
             style={{ background: "linear-gradient(135deg, rgba(0,230,118,0.3), rgba(34,211,238,0.2), rgba(255,255,255,0.04))" }}>
-            <div className="rounded-3xl p-8 lg:p-12" style={{ background: "#0a0a10" }}>
-              <div className="mb-6 flex items-center justify-between">
+            <div className="rounded-3xl p-6 sm:p-8 lg:p-12" style={{ background: "#0a0a10" }}>
+
+              {/* Header */}
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">Journal Dashboard</p>
                   <p className="text-lg font-bold text-white mt-1" style={{ fontFamily: "var(--font-display)" }}>April 2026</p>
@@ -178,12 +180,40 @@ export default function JournalingPage() {
                 </span>
               </div>
 
+              {/* Mini stat pills */}
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {[
+                  { label: "Win rate", value: "62%", color: ACCENT },
+                  { label: "Profit factor", value: "1.8", color: "#22d3ee" },
+                  { label: "Best setup", value: "Breakout", color: "#818cf8" },
+                ].map((s, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.4, ease: "easeOut" }}
+                    whileHover={{ scale: 1.03, transition: { type: "spring", stiffness: 400, damping: 24 } }}
+                    className="rounded-xl p-3 sm:p-4 text-center cursor-default"
+                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${s.color}20` }}
+                  >
+                    <p
+                      className="text-xl sm:text-2xl font-black"
+                      style={{ fontFamily: "var(--font-display)", color: s.color, textShadow: `0 0 20px ${s.color}50` }}
+                    >
+                      {s.value}
+                    </p>
+                    <p className="text-[9px] font-mono uppercase tracking-widest text-slate-600 mt-1">{s.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+
               {/* Calendar heatmap */}
-              <div className="rounded-2xl p-6 mb-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div className="rounded-2xl p-4 sm:p-6 mb-4" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                 <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-4">Monthly activity</p>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
-                    <div key={d} className="text-center text-[9px] font-mono text-slate-600 pb-1">{d}</div>
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                  {["S","M","T","W","T","F","S"].map((d, di) => (
+                    <div key={di} className="text-center text-[9px] font-mono text-slate-600 pb-1">{d}</div>
                   ))}
                   {[...Array(3)].map((_, i) => <div key={`pad-${i}`} />)}
                   {[
@@ -192,14 +222,23 @@ export default function JournalingPage() {
                     {p:-0.04,w:6}, null, null, null, {p:0.12,w:3}, null, {p:0.20,w:4},
                     null, null, null, null, null, null, null,
                   ].map((d, i) => (
-                    <div key={i} className="aspect-square rounded-lg flex flex-col items-center justify-center text-[9px] font-mono"
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.018, duration: 0.32, ease: "easeOut" }}
+                      whileHover={d ? { scale: 1.12, transition: { type: "spring", stiffness: 500, damping: 22 } } : {}}
+                      className="aspect-square rounded-lg flex flex-col items-center justify-center text-[8px] sm:text-[9px] font-mono cursor-default"
                       style={{
                         background: d ? (d.p >= 0 ? "rgba(0,230,118,0.15)" : "rgba(255,60,60,0.15)") : "rgba(255,255,255,0.03)",
-                        border: d ? `1px solid ${d.p >= 0 ? "rgba(0,230,118,0.3)" : "rgba(255,60,60,0.3)"}` : "1px solid rgba(255,255,255,0.05)",
+                        border: d ? `1px solid ${d.p >= 0 ? "rgba(0,230,118,0.35)" : "rgba(255,60,60,0.35)"}` : "1px solid rgba(255,255,255,0.05)",
                         color: d ? (d.p >= 0 ? ACCENT : "#ff3c3c") : "#334155",
-                      }}>
+                        boxShadow: d ? `0 0 12px ${d.p >= 0 ? "rgba(0,230,118,0.1)" : "rgba(255,60,60,0.1)"}` : "none",
+                      }}
+                    >
                       {d ? `${d.p >= 0 ? "+" : ""}${d.p.toFixed(2)}%` : ""}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -210,27 +249,42 @@ export default function JournalingPage() {
                   style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
                   <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Recent trades</p>
                 </div>
-                {TRADE_ROWS.slice(0, 3).map((t, i) => (
-                  <div key={i} className="flex items-center justify-between px-4 py-3 border-b last:border-0"
-                    style={{ borderColor: "rgba(255,255,255,0.04)" }}>
-                    <div className="flex items-center gap-3">
-                      <div className="h-2 w-2 rounded-full" style={{ background: t.win ? ACCENT : "#ff3c3c" }} />
-                      <span className="text-sm font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t.pair}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full"
+                {TRADE_ROWS.slice(0, 4).map((t, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -16 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08, duration: 0.4, ease: "easeOut" }}
+                    whileHover={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+                    className="flex items-center justify-between px-4 py-3 border-b last:border-0 transition-colors duration-150"
+                    style={{ borderColor: "rgba(255,255,255,0.04)" }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <motion.div
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ background: t.win ? ACCENT : "#ff3c3c", boxShadow: `0 0 6px ${t.win ? ACCENT : "#ff3c3c"}` }}
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }}
+                      />
+                      <span className="text-sm font-bold text-white truncate" style={{ fontFamily: "var(--font-display)" }}>{t.pair}</span>
+                      <span className="hidden sm:inline text-[10px] font-mono px-2 py-0.5 rounded-full shrink-0"
                         style={{ color: t.dir === "LONG" ? ACCENT : "#ff3c3c", background: t.dir === "LONG" ? "rgba(0,230,118,0.1)" : "rgba(255,60,60,0.1)" }}>
                         {t.dir}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-500 px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <span className="hidden md:inline text-[10px] font-mono text-slate-500 px-2 py-0.5 rounded-full shrink-0" style={{ background: "rgba(255,255,255,0.04)" }}>
                         {t.tag}
                       </span>
+                      <span className="hidden lg:inline text-[10px] font-mono text-slate-600 shrink-0">{t.date}</span>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0 ml-2">
                       <p className="text-sm font-bold font-mono" style={{ color: t.win ? ACCENT : "#ff3c3c" }}>{t.pl}</p>
                       <p className="text-[10px] font-mono text-slate-500">{t.pct}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
+
             </div>
           </div>
         </div>

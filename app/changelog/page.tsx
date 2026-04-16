@@ -16,6 +16,33 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "April 16, 2026",
+    items: [
+      { type: "feature",     text: "AI Coach feature section added to landing page — inline chat mockup preview with animated message bubbles and typing indicator" },
+      { type: "feature",     text: "AI Coach card added to modules grid — landing page now shows all 5 platform pillars" },
+      { type: "improvement", text: "Risk Sentinel renamed to Risk Manager across landing page feature list and modules grid" },
+      { type: "improvement", text: "Testimonials section fully redesigned — star ratings, verified trader badges, quantified metrics, featured quote card" },
+      { type: "improvement", text: "Hero description updated to include AI Coach in the feature list" },
+      { type: "improvement", text: "Modules grid expanded from 4 to 5 columns — responsive xl:grid-cols-5 layout" },
+      { type: "improvement", text: "Journaling dashboard preview: staggered calendar cell animations, animated trade dot pulses, hover scale on cells" },
+      { type: "improvement", text: "Journaling dashboard preview: mini stat pills row (Win rate, Profit factor, Best setup) with entrance animations" },
+      { type: "improvement", text: "Journaling dashboard: responsive trade rows with progressive disclosure — tag/date columns appear at md/lg breakpoints" },
+    ],
+  },
+  {
+    version: "1.4.1",
+    date: "April 15, 2026",
+    items: [
+      { type: "improvement", text: "Sidebar nav links updated — Risk Sentinel route renamed to Risk Manager" },
+      { type: "improvement", text: "AppHeaderBar: active route indicator uses route prefix matching for nested pages" },
+      { type: "improvement", text: "Mobile: hero equity card hidden below lg breakpoint to reduce layout shift on small screens" },
+      { type: "fix",         text: "ScrollTrigger.refresh() called after font load — fixes animation offset on first visit" },
+      { type: "fix",         text: "Marquee overflow clipped correctly on iOS Safari — added overflow-x: hidden to wrapper" },
+      { type: "fix",         text: "Risk Manager page: DrawdownGauge SVG arc length calculation corrected for values > 80%" },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "April 2026",
     items: [
