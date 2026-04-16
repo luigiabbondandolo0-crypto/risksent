@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { BtTimeframe, BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
 import { checkSlTpHit, unrealizedPl } from "@/lib/backtesting/replayEngine";
-import { TradingViewChart, type TradingViewChartHandle } from "./TradingViewChart";
+import { ReplayChart } from "./ReplayChart";
 import { TradeOpenModal } from "./TradeOpenModal";
 import { bt } from "./btClasses";
 
@@ -46,7 +46,6 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const [speed, setSpeed] = useState<1 | 2 | 5>(1);
   const [timeframe, setTimeframe] = useState<BtTimeframe>("H1");
   const entryIndexRef = useRef<number | null>(null);
-  const chartRef = useRef<TradingViewChartHandle | null>(null);
 
   const currentCandle = candles[currentIndex] ?? null;
   const openTrade = useMemo(() => trades.find((t) => t.status === "open") ?? null, [trades]);
@@ -112,12 +111,6 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   useEffect(() => {
     try { localStorage.setItem(lsKeyIndex(sessionId, timeframe), String(currentIndex)); } catch { /* ignore */ }
   }, [currentIndex, sessionId, timeframe]);
-
-  useEffect(() => {
-    const t = candles[currentIndex]?.time;
-    if (t == null || !Number.isFinite(t)) return;
-    chartRef.current?.goToDate(t);
-  }, [currentIndex, candles]);
 
   useEffect(() => {
     try { localStorage.setItem(lsKeyTf(sessionId), timeframe); } catch { /* ignore */ }
@@ -321,18 +314,14 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             </select>
           </div>
 
-          {/* CHART CONTAINER — altezza esplicita */}
+          {/* CHART CONTAINER */}
           <div
             className="p-4"
             style={{ flex: "1 1 0", minHeight: "400px", position: "relative" }}
           >
-            <TradingViewChart
-              ref={chartRef}
-              symbol={session.symbol}
-              timeframe={timeframe}
-              sessionDateFrom={session.date_from}
-              sessionDateTo={session.date_to}
-              replayVisibleEndSec={candles[currentIndex]?.time ?? null}
+            <ReplayChart
+              candles={candles}
+              currentIndex={currentIndex}
               entryPrice={openTrade?.entry_price ?? null}
               stopLoss={openTrade?.stop_loss ?? null}
               takeProfit={openTrade?.take_profit ?? null}

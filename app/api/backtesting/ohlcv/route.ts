@@ -47,16 +47,21 @@ export async function GET(req: NextRequest) {
   const twelveSymbol = normalizeTwelveDataSymbol(symbol);
   const interval = timeframeToInterval(timeframe);
 
-  const u = new URL("https://api.twelvedata.com/time_series");
-  u.searchParams.set("symbol", twelveSymbol);
-  u.searchParams.set("interval", interval);
-  u.searchParams.set("start_date", from);
-  u.searchParams.set("end_date", to);
-  u.searchParams.set("apikey", apiKey);
-  u.searchParams.set("format", "JSON");
-  u.searchParams.set("order", "asc");
+  // Build query manually: URLSearchParams percent-encodes "/" in symbols like "EUR/USD"
+  // but TwelveData requires the literal slash. Replace %2F back to "/" after encoding.
+  const encSym = encodeURIComponent(twelveSymbol).replace(/%2F/gi, "/");
+  const tdUrl =
+    `https://api.twelvedata.com/time_series` +
+    `?symbol=${encSym}` +
+    `&interval=${encodeURIComponent(interval)}` +
+    `&start_date=${encodeURIComponent(from)}` +
+    `&end_date=${encodeURIComponent(to)}` +
+    `&apikey=${encodeURIComponent(apiKey)}` +
+    `&format=JSON` +
+    `&order=asc` +
+    `&outputsize=5000`;
 
-  const res = await fetch(u.toString());
+  const res = await fetch(tdUrl);
   const json = (await res.json()) as Record<string, unknown>;
 
   if (!res.ok) {
