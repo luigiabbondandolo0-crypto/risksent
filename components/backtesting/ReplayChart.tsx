@@ -52,8 +52,8 @@ export function ReplayChart({
       if (!el) return;
 
       const rect = el.getBoundingClientRect();
-      const w = Math.max(rect.width, 300);
-      const h = Math.max(rect.height, 300);
+      const w = Math.max(rect.width || el.offsetWidth, 300);
+      const h = Math.max(rect.height || el.offsetHeight, 400);
 
       chart = createChart(el, {
         width: w,
@@ -107,10 +107,9 @@ export function ReplayChart({
         const c = chartRef.current;
         if (!container || !c) return;
         const r = container.getBoundingClientRect();
-        c.applyOptions({
-          width: Math.max(r.width, 300),
-          height: Math.max(r.height, 300)
-        });
+        const w = Math.max(r.width || container.offsetWidth, 300);
+        const h = Math.max(r.height || container.offsetHeight, 400);
+        c.applyOptions({ width: w, height: h });
       });
       ro.observe(el);
     };
@@ -262,7 +261,7 @@ export function ReplayChart({
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", height: "100%" }}
+      style={{ position: "absolute", inset: 0 }}
     />
   );
 }
