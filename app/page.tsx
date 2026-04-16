@@ -359,7 +359,7 @@ export default function HomePage() {
           style={{ zIndex: 1 }}
         >
           <div className="scroll-section-label text-center">
-            <p className="text-[11px] font-mono uppercase tracking-[0.35em] text-slate-600 mb-4">
+            <p className="text-[11px] font-mono uppercase tracking-[0.35em] text-slate-400 mb-4">
               {String(i + 1).padStart(2, "0")} / 03
             </p>
             <h2
@@ -707,7 +707,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto relative">
           <div className="mb-16 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">Platform</p>
+              <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-400 mb-3">Platform</p>
               <h2
                 className="text-[clamp(40px,6vw,80px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
                 style={{ fontFamily: "var(--font-display)" }}
@@ -731,7 +731,7 @@ export default function HomePage() {
               { title: "Journaling", desc: "Log every trade, tag setups, review your patterns.", num: "02", color: "#4ADE80", href: "/journaling" },
               { title: "Risk Manager", desc: "Live monitoring with hard blocks when rules are broken.", num: "03", color: "#F87171", href: "/risk-manager" },
               { title: "Live Alerts", desc: "Telegram alerts at the exact moment your rules are hit.", num: "04", color: "#FB923C", href: "/live-alerts" },
-              { title: "AI Coach", desc: "Pattern detection, psychology analysis, and setup scoring from your journal data.", num: "05", color: "#a855f7", href: "/ai-coach" },
+              { title: "AI Coach", desc: "AI pattern detection, psychology coaching, and setup scoring.", num: "05", color: "#a855f7", href: "/ai-coach" },
             ].map((m, i) => (
               <Link href={m.href} key={i} className="block cursor-pointer">
                 <motion.div
@@ -790,7 +790,7 @@ export default function HomePage() {
 
           {/* Header */}
           <div className="mb-14">
-            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-600 mb-3">Traders who made the switch</p>
+            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-3">Traders who made the switch</p>
             <h2
               className="text-[clamp(32px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
               style={{ fontFamily: "var(--font-display)" }}

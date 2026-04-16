@@ -340,6 +340,140 @@ export default function AiCoachPage() {
         </div>
       </section>
 
+      {/* ── WEEKLY REPORT PREVIEW ── */}
+      <section className="relative px-6 lg:px-16 py-20" style={{ zIndex: 1 }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-20">
+
+            {/* Left: text */}
+            <div className="flex-1">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="mb-8"
+              >
+                <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-400 mb-3">Weekly reports</p>
+                <h2 className="text-[clamp(36px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white mb-5"
+                  style={{ fontFamily: "var(--font-display)" }}>
+                  Know exactly<br />
+                  <span style={{ color: ACCENT }}>where you stand.</span>
+                </h2>
+                <p className="text-slate-400 max-w-md leading-relaxed"
+                  style={{ fontFamily: "var(--font-mono), monospace", fontSize: "14px" }}>
+                  Every week, the AI Coach compiles a full performance report. Patterns, psychology flags, edge analysis — ready before Monday open.
+                </p>
+              </motion.div>
+              <div className="space-y-3">
+                {[
+                  "Best and worst setups ranked by expectancy",
+                  "Psychology flags — tilt, overtrading, FOMO detected",
+                  "Edge score per session and pair — your actual A+ window",
+                  "Week-over-week improvement tracking",
+                ].map((item, i) => (
+                  <motion.div key={i}
+                    initial={{ opacity: 0, x: -12 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="h-1.5 w-1.5 rounded-full mt-1.5 shrink-0"
+                      style={{ background: ACCENT, boxShadow: `0 0 8px ${ACCENT}80` }} />
+                    <p className="text-sm text-slate-400"
+                      style={{ fontFamily: "var(--font-mono), monospace" }}>{item}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: report mockup */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="shrink-0 w-full lg:max-w-md"
+            >
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  background: "rgba(12,10,20,0.95)",
+                  border: "1px solid rgba(168,85,247,0.2)",
+                  boxShadow: "0 0 60px rgba(168,85,247,0.08), 0 24px 80px rgba(0,0,0,0.5)",
+                  backdropFilter: "blur(20px)",
+                }}
+              >
+                {/* Report header */}
+                <div className="px-5 py-4 border-b flex items-center justify-between"
+                  style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(168,85,247,0.05)" }}>
+                  <div>
+                    <p className="text-xs font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Weekly AI Report</p>
+                    <p className="text-[10px] font-mono text-slate-500">Apr 7–13, 2026</p>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-1 rounded-full"
+                    style={{ color: "#4ADE80", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)" }}>
+                    Generated
+                  </span>
+                </div>
+
+                {/* Metrics row */}
+                <div className="grid grid-cols-3 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                  {[
+                    { label: "Win rate", val: "64%", color: "#4ADE80", delta: "+3pts" },
+                    { label: "Risk score", val: "A−", color: ACCENT, delta: "stable" },
+                    { label: "Edge score", val: "71", color: "#38BDF8", delta: "+6" },
+                  ].map((m, i) => (
+                    <motion.div key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.15 + i * 0.08, duration: 0.4 }}
+                      className="px-4 py-3 text-center border-r last:border-r-0"
+                      style={{ background: "#0c0a14", borderColor: "rgba(255,255,255,0.05)" }}
+                    >
+                      <p className="text-xl font-black" style={{ fontFamily: "var(--font-display)", color: m.color, textShadow: `0 0 16px ${m.color}50` }}>{m.val}</p>
+                      <p className="text-[9px] font-mono uppercase tracking-widest text-slate-600 mt-0.5">{m.label}</p>
+                      <p className="text-[9px] font-mono mt-0.5" style={{ color: m.color, opacity: 0.7 }}>{m.delta}</p>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Insights */}
+                <div className="p-4 space-y-2">
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-slate-600 mb-3">AI insights this week</p>
+                  {[
+                    { text: "EURUSD London breakout: 71% WR this week — up 4pts. Keep this setup.", color: "#4ADE80", icon: "↑" },
+                    { text: "Monday trades underperforming by 22%. Reduce position size on Mondays.", color: ACCENT, icon: "⚠" },
+                    { text: "Revenge trading flag: 3 oversized entries after consecutive losses on Wed.", color: "#F87171", icon: "!" },
+                    { text: "Best session: London open 08:00–10:00 GMT. Win rate 69%, avg RR 2.3.", color: "#38BDF8", icon: "★" },
+                  ].map((item, i) => (
+                    <motion.div key={i}
+                      initial={{ opacity: 0, x: -8 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 + i * 0.09, duration: 0.35 }}
+                      className="flex items-start gap-2.5 rounded-lg px-3 py-2.5"
+                      style={{ background: `${item.color}08`, border: `1px solid ${item.color}18` }}
+                    >
+                      <span className="text-[11px] font-mono font-bold shrink-0 mt-0.5" style={{ color: item.color }}>{item.icon}</span>
+                      <p className="text-[11px] font-mono text-slate-400 leading-relaxed">{item.text}</p>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="px-4 py-3 border-t" style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.01)" }}>
+                  <p className="text-[10px] font-mono text-slate-600 text-center">Next report in 3 days · 12 trades queued</p>
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ── FEATURES ── */}
       <section className="relative px-6 lg:px-16 py-16" style={{ zIndex: 1 }}>
         <div className="max-w-7xl mx-auto">
