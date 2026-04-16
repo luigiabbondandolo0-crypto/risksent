@@ -97,7 +97,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
     return (
       <div className="space-y-4">
         <p className="text-red-400 text-sm font-mono">{err ?? "Loading…"}</p>
-        <Link href={basePath} className="text-[#ff3c3c] underline text-sm">
+        <Link href={basePath} className="text-[#6366f1] underline text-sm">
           Back
         </Link>
       </div>
@@ -116,7 +116,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
         {strategy && (
           <p className="mt-2 text-xs text-slate-500 font-mono">
             Strategy:{" "}
-            <Link href={basePath} className="text-[#ff3c3c] underline">
+            <Link href={basePath} className="text-[#6366f1] underline">
               {strategy.name}
             </Link>
           </p>
@@ -162,7 +162,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
                     fontSize: 12
                   }}
                 />
-                <Line type="monotone" dataKey="balance" stroke="#ff3c3c" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="balance" stroke="#6366f1" strokeWidth={2} dot={false} />
               </RLineChart>
             </ResponsiveContainer>
           ) : (
@@ -205,7 +205,7 @@ export function SessionSummaryView({ sessionId, basePath }: Props) {
 
       <Link
         href={`${basePath}/session/${sessionId}/replay`}
-        className="inline-block text-sm text-[#ff3c3c] underline font-mono"
+        className="inline-block text-sm text-[#6366f1] underline font-mono"
       >
         ← Back to replay
       </Link>

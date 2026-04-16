@@ -614,7 +614,7 @@ export function RiskManagerPageClient({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => void saveRules()}
-                  className="rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/20"
+                  className="rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#6366f1]/20"
                 >
                   Save rules
                 </motion.button>
@@ -694,7 +694,7 @@ export function RiskManagerPageClient({
         className="rs-card mb-8 p-6 sm:p-8"
       >
         <div className="mb-6 flex items-center gap-2">
-          <Activity className="h-5 w-5 text-cyan-400" />
+          <Activity className="h-5 w-5 text-[#6366f1]" />
           <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Live monitor</h2>
         </div>
         <p className="rs-page-sub mb-6 !mt-0 text-xs">

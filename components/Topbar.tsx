@@ -181,9 +181,9 @@ export function Topbar() {
             return (
               <Link key={href} href={href}
                 className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                  active ? "bg-cyan-500/15 text-cyan-100 ring-1 ring-cyan-500/25" : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100"
+                  active ? "bg-[#6366f1]/15 text-indigo-100 ring-1 ring-[#6366f1]/25" : "text-slate-400 hover:bg-slate-800/70 hover:text-slate-100"
                 }`}>
-                <Icon className={`h-3.5 w-3.5 ${active ? "text-cyan-400" : "text-slate-500"}`} />
+                <Icon className={`h-3.5 w-3.5 ${active ? "text-[#6366f1]" : "text-slate-500"}`} />
                 {label}
               </Link>
             );
@@ -242,13 +242,13 @@ export function Topbar() {
                       className={[
                         "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                         active
-                          ? "border border-cyan-500/30 bg-cyan-500/12 text-cyan-100"
+                          ? "border border-[#6366f1]/30 bg-[#6366f1]/10 text-indigo-100"
                           : "border border-transparent text-slate-500 hover:bg-slate-800/60 hover:text-slate-100",
                       ].join(" ")}
                     >
-                      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-cyan-400" : "text-slate-500"}`} />
+                      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#6366f1]" : "text-slate-500"}`} />
                       <span>{label}</span>
-                      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />}
+                      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#6366f1]" />}
                     </Link>
                   );
                 })}

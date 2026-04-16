@@ -242,7 +242,7 @@ export function JournalTradesPageClient({
                     <td className="px-4 py-3">
                       <Link
                         href={`${linkBase}/trade/${t.id}`}
-                        className="text-xs font-mono text-[#ff3c3c] underline hover:text-[#ff6b6b]"
+                        className="text-xs font-mono text-[#6366f1] underline hover:text-[#818cf8]"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View

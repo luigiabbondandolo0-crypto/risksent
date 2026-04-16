@@ -63,7 +63,7 @@ type ProfileData = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#ff3c3c] font-[family-name:var(--font-mono)]";
+  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
 
 const glassCard = "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 backdrop-blur-sm";
 
@@ -304,8 +304,8 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-xl font-bold text-white shadow-[0_0_40px_rgba(255,60,60,0.25)]"
-          style={{ background: "linear-gradient(135deg, #ff3c3c, #cc1111)" }}>
+        <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-xl font-bold text-white shadow-[0_0_40px_rgba(99,102,241,0.25)]"
+          style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}>
           {ini}
           <button
             type="button"
@@ -401,7 +401,7 @@ export default function ProfilePage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(255,60,60,0.2)] transition-shadow hover:shadow-[0_0_32px_rgba(255,60,60,0.35)] disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #ff3c3c, #cc1111)" }}
+          style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
         >
           {saving ? "Saving…" : "Save"}
         </motion.button>
@@ -527,7 +527,7 @@ export default function ProfilePage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg, #ff3c3c, #cc1111)" }}
+          style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
         >
           {prefSaving ? "Saving…" : "Save preferences"}
         </motion.button>

@@ -170,7 +170,7 @@ export function BacktestingDashboard({ basePath, subscriptionDemo = false }: Pro
             No strategies yet.{" "}
             <NavControl
               href={`${basePath}/strategy/new`}
-              className="text-[#ff3c3c] underline"
+              className="text-[#6366f1] underline"
               subscriptionDemo={subscriptionDemo}
               interceptAction={interceptAction}
               actionLabel="create a strategy"
@@ -228,7 +228,7 @@ export function BacktestingDashboard({ basePath, subscriptionDemo = false }: Pro
                   <div className="mb-2 flex justify-end">
                     <NavControl
                       href={`${basePath}/session/new?strategy_id=${encodeURIComponent(st.id)}`}
-                      className="text-xs font-mono text-[#ff3c3c] underline"
+                      className="text-xs font-mono text-[#6366f1] underline"
                       subscriptionDemo={subscriptionDemo}
                       interceptAction={interceptAction}
                       actionLabel="add a session for this strategy"
@@ -252,7 +252,7 @@ export function BacktestingDashboard({ basePath, subscriptionDemo = false }: Pro
                         <div className="flex flex-wrap gap-2">
                           <NavControl
                             href={`${basePath}/session/${se.id}/replay`}
-                            className="rounded-lg border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-3 py-1.5 text-[11px] font-medium text-[#ff3c3c]"
+                            className="rounded-lg border border-[#6366f1]/40 bg-[#6366f1]/10 px-3 py-1.5 text-[11px] font-medium text-[#6366f1]"
                             subscriptionDemo={subscriptionDemo}
                             interceptAction={interceptAction}
                             actionLabel="open session replay"

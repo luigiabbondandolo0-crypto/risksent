@@ -116,7 +116,7 @@ export function TelegramSetup({
           disabled={isMock ? false : !!testDisabledReason}
           title={isMock ? undefined : testDisabledReason}
           onClick={onTest}
-          className="rounded-xl border border-white/[0.1] bg-gradient-to-r from-[#ff3c3c]/90 to-[#c92a2a]/90 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-xl border border-white/[0.1] bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#6366f1]/15 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Test connection
         </motion.button>

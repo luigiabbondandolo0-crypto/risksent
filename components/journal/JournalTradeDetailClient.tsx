@@ -236,7 +236,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
     return (
       <div className={jn.page}>
         <p className="text-red-400">Trade not found.</p>
-        <Link href={`${linkBase}/trades`} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">
+        <Link href={`${linkBase}/trades`} className="mt-4 inline-block text-[#6366f1] underline text-sm">
           Back to trades
         </Link>
       </div>
@@ -633,7 +633,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
             {(checklist.length === 0 && rules.length === 0) && (
               <p className="text-xs text-slate-600 font-mono mb-4">
                 Add checklist items and rules in{" "}
-                <Link href="/app/journaling/settings" className="text-[#ff3c3c] hover:underline">Journal Settings</Link>.
+                <Link href="/app/journaling/settings" className="text-[#6366f1] hover:underline">Journal Settings</Link>.
               </p>
             )}
 

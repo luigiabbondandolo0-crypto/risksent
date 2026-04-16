@@ -136,7 +136,7 @@ export function AppHeaderBar({
                       <p className="line-clamp-2 text-xs font-medium text-slate-200">{a.message}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         {a.account_nickname ? (
-                          <span className="text-[10px] font-mono text-cyan-400/90">{a.account_nickname}</span>
+                          <span className="text-[10px] font-mono text-indigo-400/90">{a.account_nickname}</span>
                         ) : null}
                         <span className="text-[10px] font-mono text-slate-500">
                           {new Date(a.alert_date).toLocaleString(undefined, {
@@ -152,7 +152,7 @@ export function AppHeaderBar({
               <div className="border-t border-white/[0.06] px-2 pt-2">
                 <Link
                   href="/app/risk-manager"
-                  className="block rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-cyan-400 hover:bg-white/[0.04]"
+                  className="block rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-indigo-400 hover:bg-white/[0.04]"
                   onClick={() => setBellOpen(false)}
                 >
                   View all

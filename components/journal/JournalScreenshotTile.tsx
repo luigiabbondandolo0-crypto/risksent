@@ -71,7 +71,7 @@ export function JournalScreenshotTile({
           }
         }}
         onClick={() => setLightbox(true)}
-        className={`group relative flex w-full ${tileMin} cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border-2 border-white/40 bg-[#070708] p-0.5 shadow-[0_20px_60px_rgba(0,0,0,0.85)] ring-2 ring-cyan-400/30`}
+        className={`group relative flex w-full ${tileMin} cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border-2 border-white/40 bg-[#070708] p-0.5 shadow-[0_20px_60px_rgba(0,0,0,0.85)] ring-2 ring-[#6366f1]/30`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

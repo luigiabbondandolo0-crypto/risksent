@@ -263,7 +263,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     return (
       <div className={bt.page}>
         <p className="text-red-400 font-mono text-sm">{loadErr}</p>
-        <Link href={basePath} className="mt-4 inline-block text-[#ff3c3c] underline text-sm">Back</Link>
+        <Link href={basePath} className="mt-4 inline-block text-[#6366f1] underline text-sm">Back</Link>
       </div>
     );
   }
@@ -372,7 +372,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
                 <button
                   key={s}
                   type="button"
-                  className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#ff3c3c]/20 text-[#ff3c3c]" : "text-slate-500"}`}
+                  className={`rounded-lg px-2 py-1 ${speed === s ? "bg-[#6366f1]/20 text-[#6366f1]" : "text-slate-500"}`}
                   onClick={() => setSpeed(s)}
                 >
                   {s}x
@@ -470,7 +470,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
 
           <Link
             href={`${basePath}/session/${sessionId}`}
-            className="mt-auto block text-center text-xs text-[#ff3c3c] underline font-mono"
+            className="mt-auto block text-center text-xs text-[#6366f1] underline font-mono"
           >
             Session summary →
           </Link>

@@ -16,7 +16,7 @@ function navLinkClass(active: boolean) {
   return [
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
     active
-      ? "border border-cyan-500/30 bg-cyan-500/12 text-cyan-100 shadow-sm shadow-cyan-500/10"
+      ? "border border-[#6366f1]/30 bg-[#6366f1]/10 text-indigo-100 shadow-sm shadow-[#6366f1]/10"
       : "border border-transparent text-slate-500 hover:bg-slate-800/60 hover:text-slate-100 hover:border-slate-700/50",
   ].join(" ");
 }
@@ -50,12 +50,12 @@ function NavGroupInner({
               <Link href={href} className={navLinkClass(active)}>
                 <Icon
                   className={`h-4 w-4 flex-shrink-0 transition-colors ${
-                    active ? "text-cyan-400" : "text-slate-500"
+                    active ? "text-[#6366f1]" : "text-slate-500"
                   }`}
                 />
                 <span className="truncate">{label}</span>
                 {active && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
                 )}
               </Link>
               {children && children.length > 0 && (
@@ -75,14 +75,14 @@ function NavGroupInner({
                       >
                         <ChIcon
                           className={`h-3.5 w-3.5 flex-shrink-0 transition-colors ${
-                            subActive ? "text-cyan-400" : "text-slate-500"
+                            subActive ? "text-[#6366f1]" : "text-slate-500"
                           }`}
                         />
                         <span className="truncate pl-0.5 text-[13px]">
                           {ch.label}
                         </span>
                         {subActive && (
-                          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
                         )}
                       </Link>
                     );
@@ -128,7 +128,7 @@ export function Sidebar({
               <Link key={href} href={href} className={navLinkClass(active)}>
                 <Icon
                   className={`h-4 w-4 flex-shrink-0 ${
-                    active ? "text-cyan-400" : "text-slate-500"
+                    active ? "text-[#6366f1]" : "text-slate-500"
                   }`}
                 />
                 <span className="truncate">{label}</span>

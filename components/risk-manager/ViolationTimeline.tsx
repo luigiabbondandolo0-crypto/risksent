@@ -73,7 +73,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
             >
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 {v.account_nickname ? (
-                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-cyan-200/95">
+                  <span className="rounded-full border border-[#6366f1]/30 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-indigo-200/95">
                     {v.account_nickname}
                   </span>
                 ) : null}
@@ -117,7 +117,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 {v.account_nickname ? (
-                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-cyan-200/95">
+                  <span className="rounded-full border border-[#6366f1]/30 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-indigo-200/95">
                     {v.account_nickname}
                   </span>
                 ) : null}

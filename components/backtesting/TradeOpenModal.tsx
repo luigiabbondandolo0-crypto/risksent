@@ -61,7 +61,7 @@ export function TradeOpenModal({ open, direction, symbol, entryPrice, onClose, o
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog">
       <form
         onSubmit={submit}
-        className={`${bt.card} max-w-md border-[#ff3c3c]/20 shadow-[#ff3c3c]/10 w-full`}
+        className={`${bt.card} max-w-md border-[#6366f1]/20 shadow-[#6366f1]/10 w-full`}
       >
         <h2 className="font-display text-lg font-bold text-white">
           Open {direction} @ {entryPrice.toFixed(5)}

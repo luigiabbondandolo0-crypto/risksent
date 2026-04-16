@@ -60,14 +60,14 @@ export function DashboardAlertsSection({
 
   return (
     <section className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">
-      <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-500/5 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#6366f1]/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-violet-500/5 blur-3xl" />
 
       {/* Header */}
       <div className="relative flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/25 to-violet-500/20 ring-1 ring-cyan-500/25">
-            <Bell className="h-5 w-5 text-cyan-300" />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1]/25 to-violet-500/20 ring-1 ring-[#6366f1]/25">
+            <Bell className="h-5 w-5 text-indigo-300" />
           </div>
           <div>
             <h2 className="text-base font-semibold font-display tracking-tight text-slate-50">
@@ -81,7 +81,7 @@ export function DashboardAlertsSection({
         {items.length > 0 && (
           <Link
             href={viewAllHref}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-mono font-medium text-cyan-300/95 transition-colors hover:border-cyan-500/40 hover:bg-slate-800/70"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-600/80 bg-slate-800/40 px-3 py-1.5 text-xs font-mono font-medium text-indigo-300/95 transition-colors hover:border-[#6366f1]/40 hover:bg-slate-800/70"
           >
             {viewAllLabel}
             <ChevronRight className="h-3.5 w-3.5 opacity-80" />

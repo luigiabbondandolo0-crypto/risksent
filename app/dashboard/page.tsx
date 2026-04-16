@@ -655,14 +655,14 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRulesPopupOpen(true)}
-                  className="rounded-lg border border-cyan-500/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-mono font-medium text-cyan-200 transition-colors hover:bg-cyan-500/20"
+                  className="rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/10 px-3 py-1.5 text-xs font-mono font-medium text-indigo-200 transition-colors hover:bg-[#6366f1]/20"
                 >
                   Edit
                 </button>
               ) : (
                 <Link
                   href="/app/risk-manager"
-                  className="inline-flex items-center rounded-lg border border-cyan-500/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-mono font-medium text-cyan-200 transition-colors hover:bg-cyan-500/25"
+                  className="inline-flex items-center rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/15 px-3 py-1.5 text-xs font-mono font-medium text-indigo-200 transition-colors hover:bg-[#6366f1]/25"
                 >
                   Set your risk rules
                 </Link>
@@ -781,7 +781,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRrTableOpen(true)}
-                  className="rounded-full p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 transition-colors"
+                  className="rounded-full p-1 text-slate-500 hover:text-[#6366f1] hover:bg-slate-700/50 transition-colors"
                   title="Risk:Reward & Win Rate"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -912,19 +912,19 @@ export default function DashboardPage() {
                   >
                     <defs>
                       <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
-                        <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={{ stroke: "#475569" }} tickLine={{ stroke: "#475569" }} />
                     <YAxis tickFormatter={(v: number) => `${v}%`} tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={{ stroke: "#475569" }} tickLine={{ stroke: "#475569" }} />
                     <Tooltip
-                      cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
+                      cursor={{ stroke: "#a78bfa", strokeOpacity: 0.5 }}
                       content={({ active, payload }) => {
                         if (!active || !payload || !payload[0]?.payload) return null;
                         const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
                         return (
-                          <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
+                          <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(99,102,241,0.15)]">
                             <p className="text-[11px] font-mono text-slate-400">{row.displayDate}</p>
                             <p className="text-sm font-semibold font-mono text-slate-100">
                               {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
@@ -936,7 +936,7 @@ export default function DashboardPage() {
                     {rulesConfigured && riskRules && riskRules.daily_loss_pct > 0 && (
                       <ReferenceLine y={-riskRules.daily_loss_pct} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} />
                     )}
-                    <Area type="monotone" dataKey="pctFromStart" stroke="#ff3c3c" strokeWidth={2.5} fill="url(#equityGrad)" isAnimationActive animationDuration={900} animationEasing="ease-out" />
+                    <Area type="monotone" dataKey="pctFromStart" stroke="#6366f1" strokeWidth={2.5} fill="url(#equityGrad)" isAnimationActive animationDuration={900} animationEasing="ease-out" />
                     <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" tickFormatter={(v: string) => v} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -998,7 +998,7 @@ export default function DashboardPage() {
                   <Link
                     key={dateStr}
                     href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
-                    className={`${cellClass} hover:ring-2 hover:ring-cyan-500/50 transition-colors`}
+                    className={`${cellClass} hover:ring-2 hover:ring-[#6366f1]/50 transition-colors`}
                   >
                     {content}
                   </Link>
