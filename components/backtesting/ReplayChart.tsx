@@ -21,6 +21,8 @@ type Props = {
   accentEntry?: string;
   accentSl?: string;
   accentTp?: string;
+  /** When true, chart auto-scrolls to keep current candle visible (default: true). */
+  autoFollow?: boolean;
 };
 
 export function ReplayChart({
@@ -31,7 +33,8 @@ export function ReplayChart({
   takeProfit,
   accentEntry = "#ff8c00",
   accentSl = "#ff3c3c",
-  accentTp = "#00e676"
+  accentTp = "#00e676",
+  autoFollow = true
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -50,42 +53,49 @@ export function ReplayChart({
 
       const rect = el.getBoundingClientRect();
       const w = Math.max(rect.width, 300);
-      const h = Math.max(rect.height, 400);
+      const h = Math.max(rect.height, 300);
 
       chart = createChart(el, {
         width: w,
         height: h,
         layout: {
-          background: { type: ColorType.Solid, color: "#080809" },
-          textColor: "#94a3b8"
+          background: { type: ColorType.Solid, color: "#07070f" },
+          textColor: "#64748b"
         },
         grid: {
-          vertLines: { color: "rgba(255,255,255,0.04)" },
-          horzLines: { color: "rgba(255,255,255,0.04)" }
+          vertLines: { color: "rgba(255,255,255,0.03)" },
+          horzLines: { color: "rgba(255,255,255,0.03)" }
         },
-        crosshair: { mode: 1 },
+        crosshair: {
+          mode: 1,
+          vertLine: { color: "rgba(255,255,255,0.2)", labelBackgroundColor: "#1e1e2e" },
+          horzLine: { color: "rgba(255,255,255,0.2)", labelBackgroundColor: "#1e1e2e" }
+        },
         rightPriceScale: {
-          borderColor: "rgba(255,255,255,0.07)",
-          scaleMargins: { top: 0.1, bottom: 0.1 }
+          borderColor: "rgba(255,255,255,0.05)",
+          scaleMargins: { top: 0.08, bottom: 0.08 },
+          textColor: "#64748b"
         },
         timeScale: {
-          borderColor: "rgba(255,255,255,0.07)",
+          borderColor: "rgba(255,255,255,0.05)",
           timeVisible: true,
           secondsVisible: false,
-          rightOffset: 10,
-          barSpacing: 6,
-          minBarSpacing: 2
+          rightOffset: 12,
+          barSpacing: 8,
+          minBarSpacing: 2,
+          fixLeftEdge: false,
+          fixRightEdge: false
         },
         handleScroll: true,
         handleScale: true
       });
 
       const series = chart.addSeries(CandlestickSeries, {
-        upColor: "#00e676",
-        downColor: "#ff3c3c",
+        upColor: "#26a69a",
+        downColor: "#ef5350",
         borderVisible: false,
-        wickUpColor: "#00e676",
-        wickDownColor: "#ff3c3c"
+        wickUpColor: "#26a69a",
+        wickDownColor: "#ef5350"
       });
 
       chartRef.current = chart;
@@ -99,7 +109,7 @@ export function ReplayChart({
         const r = container.getBoundingClientRect();
         c.applyOptions({
           width: Math.max(r.width, 300),
-          height: Math.max(r.height, 400)
+          height: Math.max(r.height, 300)
         });
       });
       ro.observe(el);
@@ -126,7 +136,6 @@ export function ReplayChart({
     const isFirstLoad = prevCandlesLen.current === 0;
     prevCandlesLen.current = candles.length;
 
-    // Tutte le candele — passate visibili, future grigie
     const data: CandlestickData[] = candles
       .filter(
         (c) =>
@@ -148,8 +157,8 @@ export function ReplayChart({
             high: c.close,
             low: c.close,
             close: c.close,
-            color: "rgba(255,255,255,0.06)",
-            wickColor: "rgba(255,255,255,0.06)",
+            color: "rgba(255,255,255,0.04)",
+            wickColor: "rgba(255,255,255,0.04)",
             borderColor: "transparent"
           };
         }
@@ -160,16 +169,18 @@ export function ReplayChart({
           high: c.high,
           low: c.low,
           close: c.close,
-          color: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
-          wickColor: isCurrent ? "#ff8c00" : isBull ? "#00e676" : "#ff3c3c",
+          color: isCurrent ? "#f59e0b" : isBull ? "#26a69a" : "#ef5350",
+          wickColor: isCurrent ? "#f59e0b" : isBull ? "#26a69a" : "#ef5350",
           borderColor: "transparent"
         };
       });
 
     series.setData(data);
 
+    const currentCandle = candles[currentIndex];
+
     if (isFirstLoad) {
-      // Prima volta: vai alla candela corrente con 80 candele di contesto a sinistra
+      // First load: center on current candle with context
       const visibleFrom = Math.max(0, currentIndex - 80);
       const visibleTo = Math.min(candles.length - 1, currentIndex + 20);
       if (candles[visibleFrom] && candles[visibleTo]) {
@@ -178,18 +189,31 @@ export function ReplayChart({
           to: candles[visibleTo].time as UTCTimestamp
         });
       }
-    } else {
-      // Ad ogni step: mantieni la candela corrente visibile con contesto
-      const visibleFrom = Math.max(0, currentIndex - 80);
-      const visibleTo = Math.min(candles.length - 1, currentIndex + 20);
-      if (candles[visibleFrom] && candles[visibleTo]) {
-        chart.timeScale().setVisibleRange({
-          from: candles[visibleFrom].time as UTCTimestamp,
-          to: candles[visibleTo].time as UTCTimestamp
-        });
+    } else if (autoFollow && currentCandle) {
+      // Only scroll if current candle is outside the visible range
+      try {
+        const visibleRange = chart.timeScale().getVisibleRange();
+        if (visibleRange) {
+          const isOutOfView =
+            currentCandle.time > (visibleRange.to as number) ||
+            currentCandle.time < (visibleRange.from as number);
+
+          if (isOutOfView) {
+            const visibleFrom = Math.max(0, currentIndex - 80);
+            const visibleTo = Math.min(candles.length - 1, currentIndex + 20);
+            if (candles[visibleFrom] && candles[visibleTo]) {
+              chart.timeScale().setVisibleRange({
+                from: candles[visibleFrom].time as UTCTimestamp,
+                to: candles[visibleTo].time as UTCTimestamp
+              });
+            }
+          }
+        }
+      } catch {
+        /* getVisibleRange may fail if chart not yet ready */
       }
     }
-  }, [candles, currentIndex]);
+  }, [candles, currentIndex, autoFollow]);
 
   useEffect(() => {
     const series = seriesRef.current;
@@ -205,7 +229,8 @@ export function ReplayChart({
         series.createPriceLine({
           price: entryPrice,
           color: accentEntry,
-          lineWidth: 2,
+          lineWidth: 1,
+          lineStyle: 0,
           title: "Entry"
         })
       );
@@ -237,8 +262,7 @@ export function ReplayChart({
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", height: "100%", minHeight: "400px" }}
-      className="rounded-xl border border-white/[0.06]"
+      style={{ width: "100%", height: "100%" }}
     />
   );
 }
