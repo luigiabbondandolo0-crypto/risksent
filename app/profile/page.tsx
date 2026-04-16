@@ -400,7 +400,7 @@ export default function ProfilePage() {
           disabled={saving}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(255,60,60,0.2)] transition-shadow hover:shadow-[0_0_32px_rgba(255,60,60,0.35)] disabled:opacity-50"
+          className="mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(99,102,241,0.2)] transition-shadow hover:shadow-[0_0_32px_rgba(99,102,241,0.35)] disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
         >
           {saving ? "Saving…" : "Save"}
@@ -543,7 +543,7 @@ export default function ProfilePage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-1.5 text-xs font-mono text-cyan-300"
+            className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-1.5 text-xs font-mono text-indigo-300"
           >
             <Plus className="h-3.5 w-3.5" />
             Add account
