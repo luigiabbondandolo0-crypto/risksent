@@ -230,7 +230,7 @@ export default function HomePage() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style={{ background: "#6366F1" }} />
               <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "#6366F1" }} />
             </span>
-            <span className="text-[11px] font-mono font-medium uppercase tracking-[0.25em] text-slate-500">
+            <span className="text-[11px] font-mono font-medium uppercase tracking-[0.25em] text-slate-400">
               All-in-one trading platform · risk and execution discipline
             </span>
           </div>

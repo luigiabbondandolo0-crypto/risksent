@@ -235,7 +235,7 @@ export default function RiskManagerPage() {
             <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono font-bold uppercase tracking-[0.2em]"
               style={{ color: ACCENT, borderColor: "rgba(255,60,60,0.3)", background: "rgba(255,60,60,0.08)" }}>
               <Shield className="h-3 w-3" />
-              Risk Sentinel
+              Risk Manager
             </span>
           </div>
 
