@@ -8,6 +8,17 @@ function safeNextPath(next: string | null): string {
   return next;
 }
 
+function normalizeAuthCallbackErrorMessage(rawMessage: string): string {
+  const lower = rawMessage.toLowerCase();
+  if (lower.includes("expired")) {
+    return "Reset link expired. Request a new password reset email.";
+  }
+  if (lower.includes("invalid") || lower.includes("code")) {
+    return "Invalid reset link. Request a new password reset email.";
+  }
+  return "Authentication link is no longer valid. Request a new one.";
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -47,7 +58,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     const failUrl = new URL("/reset-password", requestUrl.origin);
-    failUrl.searchParams.set("error_description", error.message);
+    failUrl.searchParams.set("error_description", normalizeAuthCallbackErrorMessage(error.message));
     return NextResponse.redirect(failUrl);
   }
 

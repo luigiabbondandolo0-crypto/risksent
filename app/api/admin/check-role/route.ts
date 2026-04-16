@@ -8,10 +8,8 @@ import { checkAdminRole } from "@/lib/adminAuth";
 export async function GET() {
   try {
     const { isAdmin, userId } = await checkAdminRole();
-    console.log("[check-role API] Result:", { isAdmin, userId });
     return NextResponse.json({ isAdmin, userId });
-  } catch (err) {
-    console.error("[check-role API] Error:", err);
+  } catch {
     return NextResponse.json({ isAdmin: false, userId: null }, { status: 500 });
   }
 }

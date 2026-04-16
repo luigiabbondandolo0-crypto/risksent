@@ -16,12 +16,14 @@ export default function ResetPasswordPage() {
 }
 
 function passwordStrength(pw: string): "weak" | "fair" | "strong" {
-  if (pw.length < 6) return "weak";
+  if (pw.length < 10) return "weak";
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
   const hasNum = /\d/.test(pw);
   const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
-  const long = pw.length >= 10;
-  if (long && hasNum && hasSpecial) return "strong";
-  if (pw.length >= 8 && (hasNum || hasSpecial)) return "fair";
+  const long = pw.length >= 12;
+  if (long && hasUpper && hasLower && hasNum && hasSpecial) return "strong";
+  if (pw.length >= 10 && hasUpper && hasLower && (hasNum || hasSpecial)) return "fair";
   return "weak";
 }
 
@@ -129,17 +131,16 @@ function ResetPasswordForm() {
 
     setLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`
-        }
-      );
-      if (resetError) {
-        setError(resetError.message);
+      const response = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() })
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (!response.ok) {
+        setError(data.error ?? "Unable to send reset link.");
       } else {
-        setInfo("Check your email — we sent you a reset link.");
+        setInfo(data.message ?? "If the email exists, a reset link has been sent.");
       }
     } catch {
       setError("Unexpected error. Please try again.");
@@ -155,8 +156,8 @@ function ResetPasswordForm() {
       setError("Please fill in all fields.");
       return;
     }
-    if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (newPassword.length < 10) {
+      setError("Password must be at least 10 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -166,16 +167,19 @@ function ResetPasswordForm() {
 
     setLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword })
       });
-      if (updateError) {
-        setError(updateError.message);
+
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "Unable to update password.");
         setLoading(false);
         return;
       }
-      await supabase.auth.signOut();
+
       setStep("done");
       setTimeout(() => router.push("/login"), 3000);
     } catch {

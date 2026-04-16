@@ -19,6 +19,17 @@ const PROTECTED_PATHS = [
 ];
 
 const ADMIN_PATHS = ["/admin"];
+const SESSION_ACTIVITY_COOKIE = "rs_last_activity_at";
+const DEFAULT_SESSION_INACTIVITY_TIMEOUT_SECONDS = 60 * 60 * 8;
+
+function getSessionInactivityTimeoutSeconds() {
+  const envValue = process.env.AUTH_SESSION_INACTIVITY_TIMEOUT_SECONDS;
+  const parsed = envValue ? Number.parseInt(envValue, 10) : NaN;
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_SESSION_INACTIVITY_TIMEOUT_SECONDS;
+  }
+  return parsed;
+}
 
 export async function proxy(req: NextRequest) {
   // PKCE: exchange must run on the server so request cookies include the code verifier.
@@ -31,11 +42,6 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(dest);
   }
 
-  // Log all admin path requests in development
-  if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
-    console.log("[proxy] 🔍 Admin path requested:", req.nextUrl.pathname);
-  }
-
   let res = NextResponse.next({
     request: {
       headers: req.headers,
@@ -46,7 +52,6 @@ export async function proxy(req: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("[proxy] Missing Supabase environment variables");
     return res;
   }
 
@@ -68,14 +73,6 @@ export async function proxy(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (process.env.NODE_ENV === "development" && req.nextUrl.pathname.startsWith("/admin")) {
-    console.log("[proxy] Session check:", {
-      hasSession: !!user,
-      email: user?.email || null,
-      userId: user?.id || null,
-    });
-  }
-
   const isProtected = PROTECTED_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
 
   if (isProtected && !user) {
@@ -85,12 +82,37 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (isProtected && user) {
+    const timeoutSeconds = getSessionInactivityTimeoutSeconds();
+    const now = Math.floor(Date.now() / 1000);
+    const rawLastActivity = req.cookies.get(SESSION_ACTIVITY_COOKIE)?.value;
+    const lastActivity = rawLastActivity ? Number.parseInt(rawLastActivity, 10) : NaN;
+    const hasExpiredForInactivity =
+      Number.isFinite(lastActivity) && now - lastActivity > timeoutSeconds;
+
+    if (hasExpiredForInactivity) {
+      await supabase.auth.signOut();
+      const expiredRedirect = req.nextUrl.clone();
+      expiredRedirect.pathname = "/login";
+      expiredRedirect.searchParams.set("sessionExpired", "1");
+      const redirectRes = NextResponse.redirect(expiredRedirect);
+      redirectRes.cookies.delete(SESSION_ACTIVITY_COOKIE);
+      return redirectRes;
+    }
+
+    res.cookies.set(SESSION_ACTIVITY_COOKIE, String(now), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: timeoutSeconds,
+    });
+  }
+
   // Check admin access for admin paths
   const isAdminPath = ADMIN_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
 
   if (isAdminPath && user) {
-    console.log("[proxy] Checking admin access for:", user.email, "path:", req.nextUrl.pathname);
-
     try {
       const admin = createSupabaseAdmin();
       const userId = user.id;
@@ -102,52 +124,24 @@ export async function proxy(req: NextRequest) {
         .limit(1)
         .maybeSingle();
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("[proxy] Admin check:", {
-          userId,
-          email: user.email,
-          hasAppUser: !!appUser,
-          role: appUser?.role,
-          error: roleError?.message || null,
-          errorCode: roleError?.code || null,
-        });
-      }
-
       if (roleError && roleError.code !== "PGRST116") {
-        console.error("[proxy] ❌ Admin check database error:");
-        console.error("  Message:", roleError.message);
-        console.error("  Code:", roleError.code);
-        console.error("  Details:", roleError.details);
-        console.error("  Hint:", roleError.hint);
-        console.error("  Full error:", JSON.stringify(roleError, null, 2));
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
-      if (roleError && roleError.code === "PGRST116") {
-        console.warn("[proxy] ⚠️  No app_user record found (PGRST116) for user:", userId);
-      }
-
       if (!appUser) {
-        console.warn("[proxy] No app_user record found for user:", userId);
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
 
       if (appUser.role !== "admin") {
-        console.log("[proxy] User is not admin, role:", appUser.role);
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
         return NextResponse.redirect(url);
       }
-
-      if (process.env.NODE_ENV === "development") {
-        console.log("[proxy] ✅ Admin access granted for:", user.email);
-      }
-    } catch (err) {
-      console.error("[proxy] Admin check exception:", err);
+    } catch {
       const url = req.nextUrl.clone();
       url.pathname = "/app/dashboard";
       return NextResponse.redirect(url);

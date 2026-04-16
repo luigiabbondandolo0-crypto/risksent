@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Bell, Brain, Lock, Mail, Shield, User, Eye, EyeOff } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 function strengthLabel(pw: string): { text: string; color: string } {
-  if (pw.length < 6) return { text: "Weak", color: "text-red-400" };
+  if (pw.length < 10) return { text: "Weak", color: "text-red-400" };
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
   const hasNum = /\d/.test(pw);
   const hasSpec = /[^a-zA-Z0-9]/.test(pw);
-  if (pw.length >= 10 && hasNum && hasSpec) return { text: "Strong", color: "text-emerald-400" };
-  if (pw.length >= 8 && (hasNum || hasSpec)) return { text: "Fair", color: "text-amber-400" };
+  if (pw.length >= 12 && hasUpper && hasLower && hasNum && hasSpec) {
+    return { text: "Strong", color: "text-emerald-400" };
+  }
+  if (hasUpper && hasLower && (hasNum || hasSpec)) return { text: "Fair", color: "text-amber-400" };
   return { text: "Weak", color: "text-red-400" };
 }
 
@@ -43,60 +46,29 @@ export default function SignupPage() {
       setError("Passwords do not match.");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
     setLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName.trim() }
-        }
+      const signUpRes = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          email: email.trim(),
+          password
+        })
       });
 
-      if (signUpError) {
-        setError(signUpError.message);
+      const signUpData = (await signUpRes.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+      if (!signUpRes.ok) {
+        setError(signUpData.error ?? "Unable to create account.");
         setLoading(false);
         return;
       }
-
-      // Supabase returns a fake user with empty identities if email already exists
-      if (signUpData.user && signUpData.user.identities?.length === 0) {
-        setError("An account with this email already exists. Please sign in instead.");
-        setLoading(false);
-        return;
-      }
-
-      if (signUpData.user && fullName.trim()) {
-        try {
-          await fetch("/api/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fullName: fullName.trim() })
-          });
-        } catch {
-          /* non-fatal */
-        }
-      }
-
-      if (signUpData.user) {
-        try {
-          await fetch("/api/send-welcome-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }
-          });
-        } catch {
-          /* ignore */
-        }
-      }
-
-      setInfo("Account created! Redirecting to sign in…");
-      setTimeout(() => router.push("/login"), 2500);
+      setInfo(signUpData.message ?? "Account created! Please verify your email before signing in.");
+      setTimeout(() => router.push("/login"), 3000);
     } catch {
       setError("Unexpected error. Please try again.");
     }

@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
   return (
@@ -60,6 +59,7 @@ function LoginForm() {
     () => searchParams.get("redirectedFrom") ?? "/app/dashboard",
     [searchParams]
   );
+  const sessionExpired = searchParams.get("sessionExpired") === "1";
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -76,41 +76,37 @@ function LoginForm() {
       }
       setLoading(true);
       try {
-        const supabase = createSupabaseBrowserClient();
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            password
+          })
         });
-        if (signInError) {
-          let errorMessage = signInError.message;
-          if (signInError.message.includes("Invalid login credentials")) {
-            errorMessage = "Invalid email or password. Please try again.";
-          } else if (signInError.message.includes("Email not confirmed")) {
-            errorMessage = "Please confirm your email address before logging in.";
-          }
-          setError(errorMessage);
+
+        const loginData = (await loginRes.json().catch(() => ({}))) as { error?: string };
+        if (!loginRes.ok) {
+          setError(loginData.error ?? "Unable to sign in. Please try again.");
           setLoading(false);
           return;
         }
-        if (data?.user) {
-          try {
-            const roleRes = await fetch("/api/admin/check-role");
-            if (roleRes.ok) {
-              const roleData = await roleRes.json();
-              if (roleData.isAdmin) {
-                setIsAdmin(true);
-                setLoading(false);
-                return;
-              }
+
+        try {
+          const roleRes = await fetch("/api/admin/check-role");
+          if (roleRes.ok) {
+            const roleData = await roleRes.json();
+            if (roleData.isAdmin) {
+              setIsAdmin(true);
+              setLoading(false);
+              return;
             }
-          } catch {
-            /* continue */
           }
-          window.location.href = redirectTo;
-        } else {
-          setError("Login failed. Please try again.");
-          setLoading(false);
+        } catch {
+          /* continue */
         }
+
+        window.location.href = redirectTo;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unexpected error.");
         setLoading(false);
@@ -230,6 +226,11 @@ function LoginForm() {
           <p className="mt-2 text-sm font-[family-name:var(--font-mono)] text-slate-500">
             Sign in to your RiskSent account
           </p>
+          {sessionExpired && (
+            <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              Session expired due to inactivity. Please sign in again.
+            </p>
+          )}
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
               <label htmlFor="email" className="mb-1 block text-xs font-mono text-slate-500">

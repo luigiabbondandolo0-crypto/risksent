@@ -16,12 +16,14 @@ export default function ChangePasswordPage() {
 }
 
 function passwordStrength(pw: string): "weak" | "fair" | "strong" {
-  if (pw.length < 6) return "weak";
+  if (pw.length < 10) return "weak";
+  const hasUpper = /[A-Z]/.test(pw);
+  const hasLower = /[a-z]/.test(pw);
   const hasNum = /\d/.test(pw);
   const hasSpecial = /[^a-zA-Z0-9]/.test(pw);
-  const long = pw.length >= 10;
-  if (long && hasNum && hasSpecial) return "strong";
-  if (pw.length >= 8 && (hasNum || hasSpecial)) return "fair";
+  const long = pw.length >= 12;
+  if (long && hasUpper && hasLower && hasNum && hasSpecial) return "strong";
+  if (pw.length >= 10 && hasUpper && hasLower && (hasNum || hasSpecial)) return "fair";
   return "weak";
 }
 
@@ -30,7 +32,6 @@ const inputClass =
 
 function ChangePasswordForm() {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +53,6 @@ function ChangePasswordForm() {
         router.push("/login?redirectedFrom=/change-password");
         return;
       }
-      setEmail(user.email ?? "");
       setCheckingAuth(false);
     };
     void checkAuth();
@@ -66,8 +66,8 @@ function ChangePasswordForm() {
       setError("Please fill in all fields.");
       return;
     }
-    if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters.");
+    if (newPassword.length < 10) {
+      setError("New password must be at least 10 characters.");
       return;
     }
     if (newPassword === currentPassword) {
@@ -81,27 +81,18 @@ function ChangePasswordForm() {
 
     setLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
-
-      // Step 1: verifica password corrente
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: currentPassword
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
       });
 
-      if (signInError) {
-        setError("Current password is incorrect.");
-        setLoading(false);
-        return;
-      }
-
-      // Step 2: aggiorna con nuova password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (updateError) {
-        setError(updateError.message);
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "Unable to update password.");
         setLoading(false);
         return;
       }
@@ -112,7 +103,7 @@ function ChangePasswordForm() {
       setError("Unexpected error. Please try again.");
     }
     setLoading(false);
-  }, [currentPassword, newPassword, confirmPassword, email, router]);
+  }, [currentPassword, newPassword, confirmPassword, router]);
 
   if (checkingAuth) {
     return (
