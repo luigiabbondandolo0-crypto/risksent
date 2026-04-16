@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAiInsightRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
+import { parsePositiveIntList } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
@@ -12,6 +14,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const lim = checkAiInsightRateLimit(user.id, "trades");
+  if (!lim.allowed) {
+    return rateLimitJsonResponse(lim);
+  }
+
   let body: { ticketIds?: number[]; trades?: Record<string, unknown>[] };
   try {
     body = await req.json();
@@ -19,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const ticketIds = Array.isArray(body.ticketIds) ? body.ticketIds.filter((id) => Number.isFinite(id)) : [];
+  const ticketIds = parsePositiveIntList(body.ticketIds, 15);
   if (ticketIds.length === 0 || ticketIds.length > 15) {
     return NextResponse.json(
       { error: "Select between 1 and 15 trades to analyze" },

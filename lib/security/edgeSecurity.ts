@@ -3,8 +3,23 @@ import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 import { securityLog } from "@/lib/security/structuredLog";
 
-const API_REQUESTS_PER_IP_PER_MIN = 240;
+function globalApiLimitPerMinute(): number {
+  const raw = process.env.API_BURST_LIMIT_PER_MINUTE;
+  if (!raw) return 120;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 30 && n <= 2000 ? n : 120;
+}
+
 const SUSPICIOUS_LOG_COOLDOWN_MS = 60_000;
+
+function isGlobalApiRateLimitExcluded(pathname: string): boolean {
+  if (pathname === "/api/stripe/webhook") return true;
+  if (pathname === "/api/telegram-webhook" || pathname.startsWith("/api/telegram-webhook/")) return true;
+  if (pathname === "/api/telegram/webhook" || pathname.startsWith("/api/telegram/webhook/")) return true;
+  if (pathname.startsWith("/api/cron/")) return true;
+  if (pathname.startsWith("/api/health/")) return true;
+  return false;
+}
 
 /**
  * Production: redirect HTTP → HTTPS when the edge reports plain HTTP (e.g. misconfigured proxy).
@@ -43,24 +58,38 @@ export function applySecurityHeaders(_req: NextRequest, res: NextResponse): Next
 }
 
 /**
- * High-volume /api traffic from one IP (possible scan or abuse). Logs at most once per cooldown per IP per window.
+ * Per-IP burst limit on /api (scraping / scripted abuse). Webhooks and health excluded.
+ * Returns 429 when over limit; logs throttled security events.
  */
-export function maybeLogSuspiciousApiTraffic(req: NextRequest): void {
+export function enforceGlobalApiRateLimit(req: NextRequest): NextResponse | null {
   const path = req.nextUrl.pathname;
-  if (!path.startsWith("/api/")) return;
+  if (!path.startsWith("/api/") || isGlobalApiRateLimitExcluded(path)) {
+    return null;
+  }
 
+  const limit = globalApiLimitPerMinute();
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const burst = checkRateLimit(`traffic:api-burst:${ip}`, API_REQUESTS_PER_IP_PER_MIN, 60_000);
-  if (burst.allowed) return;
+  const burst = checkRateLimit(`traffic:api-burst:${ip}`, limit, 60_000);
+  if (burst.allowed) return null;
 
   const logGate = checkRateLimit(`traffic:api-burst:log:${ip}`, 1, SUSPICIOUS_LOG_COOLDOWN_MS);
-  if (!logGate.allowed) return;
+  if (logGate.allowed) {
+    securityLog("warn", "security.suspicious.api_traffic", {
+      ip,
+      path,
+      method: req.method,
+      userAgent: req.headers.get("user-agent")?.slice(0, 200) ?? null,
+      limitPerMinute: limit,
+      action: "blocked_429"
+    });
+  }
 
-  securityLog("warn", "security.suspicious.api_traffic", {
-    ip,
-    path,
-    method: req.method,
-    userAgent: req.headers.get("user-agent")?.slice(0, 200) ?? null,
-    limitPerMinute: API_REQUESTS_PER_IP_PER_MIN
-  });
+  const res = NextResponse.json(
+    { error: "Too many requests. Slow down or try again later." },
+    { status: 429 }
+  );
+  res.headers.set("Retry-After", String(burst.retryAfterSeconds));
+  res.headers.set("X-RateLimit-Limit", String(burst.limit));
+  res.headers.set("X-RateLimit-Remaining", "0");
+  return res;
 }

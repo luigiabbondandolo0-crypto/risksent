@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAiAnalyzeRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
+import { clampInt } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { COACH_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
 import type { CoachReport } from "@/lib/ai-coach/coachTypes";
@@ -15,6 +17,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const analyzeLimit = checkAiAnalyzeRateLimit(user.id);
+  if (!analyzeLimit.allowed) {
+    return rateLimitJsonResponse(analyzeLimit, "Too many analysis requests. Try again tomorrow.");
+  }
+
   let body: { days?: number };
   try {
     body = await req.json();
@@ -22,7 +29,18 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const days = Number(body.days ?? 9999);
+  let days: number;
+  const rd = body.days;
+  if (rd === undefined || rd === null) {
+    days = 9999;
+  } else {
+    const n = typeof rd === "number" ? rd : Number.parseFloat(String(rd));
+    if (!Number.isFinite(n) || n >= 9999) {
+      days = 9999;
+    } else {
+      days = clampInt(n, 1, 3650, 30);
+    }
+  }
 
   // All time: no date filter
   const fromDate =

@@ -4,8 +4,8 @@ import { createServerClient } from "@supabase/ssr";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   applySecurityHeaders,
-  httpsUpgradeResponseIfNeeded,
-  maybeLogSuspiciousApiTraffic
+  enforceGlobalApiRateLimit,
+  httpsUpgradeResponseIfNeeded
 } from "@/lib/security/edgeSecurity";
 import { securityLog } from "@/lib/security/structuredLog";
 import { getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
@@ -48,7 +48,10 @@ export async function proxy(req: NextRequest) {
     return secure(req, httpsRedirect);
   }
 
-  maybeLogSuspiciousApiTraffic(req);
+  const apiBlocked = enforceGlobalApiRateLimit(req);
+  if (apiBlocked) {
+    return secure(req, apiBlocked);
+  }
 
   const authPath = req.nextUrl.pathname;
   if (authPath.startsWith("/api/auth/") && req.method === "POST") {

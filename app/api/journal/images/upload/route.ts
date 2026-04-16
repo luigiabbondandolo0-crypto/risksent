@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkJournalUploadRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
+import {
+  assertJsonBodySize,
+  MAX_JOURNAL_IMAGE_BYTES,
+  safeImageFilename
+} from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+
+const MAX_JSON_BYTES = Math.ceil(MAX_JOURNAL_IMAGE_BYTES * 1.4) + 512;
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -11,6 +19,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const upLim = checkJournalUploadRateLimit(req, user.id);
+  if (!upLim.allowed) {
+    return rateLimitJsonResponse(upLim, "Too many upload attempts. Try again later.");
+  }
+
+  if (!assertJsonBodySize(req, MAX_JSON_BYTES)) {
+    return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+  }
+
   let body: { image?: string; filename?: string };
   try {
     body = await req.json();
@@ -18,23 +35,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { image, filename } = body;
-  if (!image) {
+  const imageRaw = body.image;
+  if (typeof imageRaw !== "string" || !imageRaw) {
     return NextResponse.json({ error: "image (base64) required" }, { status: 400 });
   }
 
-  // Strip data URL prefix if present
-  const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-  const buffer = Buffer.from(base64Data, "base64");
+  const safeName = safeImageFilename(
+    typeof body.filename === "string" ? body.filename : undefined
+  );
+  if (!safeName) {
+    return NextResponse.json(
+      { error: "Only png, jpg, jpeg, webp, or gif images are allowed." },
+      { status: 400 }
+    );
+  }
+  const { ext } = safeName;
 
-  const ext = filename?.split(".").pop() ?? "png";
+  // Strip data URL prefix if present
+  const image = imageRaw.replace(/^data:image\/\w+;base64,/, "");
+  if (image.length > MAX_JOURNAL_IMAGE_BYTES * 2) {
+    return NextResponse.json({ error: "Image too large" }, { status: 413 });
+  }
+
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(image, "base64");
+  } catch {
+    return NextResponse.json({ error: "Invalid base64 image" }, { status: 400 });
+  }
+
+  if (buffer.length === 0 || buffer.length > MAX_JOURNAL_IMAGE_BYTES) {
+    return NextResponse.json({ error: "Invalid or oversized image" }, { status: 400 });
+  }
+
   const timestamp = Date.now();
-  const path = `${user.id}/${timestamp}.${ext}`;
+  const path = `${user.id}/${timestamp}.${ext === "jpeg" ? "jpg" : ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("journal-images")
     .upload(path, buffer, {
-      contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+      contentType: `image/${ext}`,
       upsert: false,
     });
 

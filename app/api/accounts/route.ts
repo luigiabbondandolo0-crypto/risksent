@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { checkListApiRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 const DEBUG = process.env.NODE_ENV !== "production" || process.env.DEBUG_ACCOUNTS === "1";
 const LOG = (...args: unknown[]) => (DEBUG ? console.log("[api/accounts]", ...args) : () => {});
 const LOG_ERROR = (...args: unknown[]) => console.error("[api/accounts]", ...args);
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const requestId = `accounts-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   try {
     LOG(`[${requestId}] GET /api/accounts start`);
@@ -28,6 +29,11 @@ export async function GET() {
     if (authError || !user) {
       LOG_ERROR(`[${requestId}] Unauthorized:`, authError ?? "no user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const listLim = checkListApiRateLimit(req, user.id);
+    if (!listLim.allowed) {
+      return rateLimitJsonResponse(listLim);
     }
 
     LOG(`[${requestId}] Querying trading_account for user_id=${user.id}`);

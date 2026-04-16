@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkAiInsightRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 /**
@@ -15,6 +16,11 @@ export async function POST() {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const lim = checkAiInsightRateLimit(user.id, "rules");
+  if (!lim.allowed) {
+    return rateLimitJsonResponse(lim);
   }
 
   // Stub response. Real implementation would fetch rules + last N trades and call LLM.

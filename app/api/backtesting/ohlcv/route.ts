@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkOhlcvRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
+import { isIsoDate, sanitizeMarketSymbol } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import type { BtTimeframe, Candle } from "@/lib/backtesting/btTypes";
 import { getCachedOhlcv, ohlcvCacheKey, setCachedOhlcv } from "@/lib/backtesting/ohlcvServerCache";
@@ -20,14 +22,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const burst = checkOhlcvRateLimit(user.id);
+  if (!burst.allowed) {
+    return rateLimitJsonResponse(burst, "Too many market data requests. Try again shortly.");
+  }
+
   const url = req.nextUrl;
-  const symbol = String(url.searchParams.get("symbol") ?? "").trim();
+  const symCheck = sanitizeMarketSymbol(String(url.searchParams.get("symbol") ?? ""));
+  if (!symCheck.ok) {
+    return NextResponse.json({ error: symCheck.error }, { status: 400 });
+  }
+  const symbol = symCheck.symbol;
   const timeframe = String(url.searchParams.get("timeframe") ?? "").toUpperCase();
   const from = String(url.searchParams.get("from") ?? "").trim();
   const to = String(url.searchParams.get("to") ?? "").trim();
 
-  if (!symbol || !from || !to) {
-    return NextResponse.json({ error: "symbol, from, to required" }, { status: 400 });
+  if (!from || !to) {
+    return NextResponse.json({ error: "from and to required" }, { status: 400 });
+  }
+  if (!isIsoDate(from) || !isIsoDate(to)) {
+    return NextResponse.json({ error: "from and to must be YYYY-MM-DD" }, { status: 400 });
   }
   if (!isTimeframe(timeframe)) {
     return NextResponse.json({ error: "invalid timeframe" }, { status: 400 });

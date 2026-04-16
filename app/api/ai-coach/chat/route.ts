@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkAiChatRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
+import { sanitizeText } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
 
@@ -19,6 +21,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const chatLimit = checkAiChatRateLimit(user.id);
+  if (!chatLimit.allowed) {
+    return rateLimitJsonResponse(chatLimit, "Too many AI chat requests. Try again later.");
+  }
+
   let body: {
     message?: string;
     history?: ChatMessage[];
@@ -29,12 +36,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const message = String(body.message ?? "").trim();
+  const message = sanitizeText(String(body.message ?? ""), 12_000);
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
   const history: ChatMessage[] = Array.isArray(body.history)
-    ? body.history.slice(-20)
+    ? body.history.slice(-20).map((m) => ({
+        role: m?.role === "assistant" ? "assistant" : "user",
+        content: sanitizeText(String(m?.content ?? ""), 12_000)
+      }))
     : [];
 
   // ── Load last report for context ──────────────────────────────────────────
