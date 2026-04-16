@@ -24,7 +24,7 @@ const PLAN_PRICES: Record<string, number> = {
 const PLAN_COLOR: Record<string, string> = {
   user: "text-slate-400 bg-slate-500/15 border-slate-500/30",
   trial: "text-amber-300 bg-amber-500/15 border-amber-500/30",
-  new_trader: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
+  new_trader: "text-indigo-300 bg-[#6366f1]/15 border-[#6366f1]/30",
   experienced: "text-[#6366f1] bg-[#6366f1]/10 border-[#6366f1]/30",
 };
 
@@ -126,7 +126,7 @@ function PlanChoiceGrid({
               disabled={upgradeLoading !== null}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #6366f1, #fb923c)",
+                background: "linear-gradient(135deg, #6366f1, #4f46e5)",
                 boxShadow: p.highlight ? "0 0 22px rgba(99,102,241,0.25)" : "0 0 16px rgba(99,102,241,0.12)",
               }}
             >
@@ -363,7 +363,7 @@ export default function BillingPage() {
             onClick={() => void startTrial()}
             disabled={trialLoading}
             className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #fb923c, #6366f1)", boxShadow: "0 0 20px rgba(251,146,60,0.2)" }}
+            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", boxShadow: "0 0 20px rgba(99,102,241,0.2)" }}
           >
             {trialLoading ? "Starting…" : "Start free trial"}
             {!trialLoading && <ArrowRight className="h-4 w-4" />}
@@ -546,7 +546,7 @@ function UpgradeCard({
           disabled={loading}
           className="flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-50"
           style={{
-            background: "linear-gradient(135deg, #6366f1, #fb923c)",
+            background: "linear-gradient(135deg, #6366f1, #4f46e5)",
             boxShadow: highlight ? "0 0 20px rgba(99,102,241,0.2)" : "none",
           }}
         >

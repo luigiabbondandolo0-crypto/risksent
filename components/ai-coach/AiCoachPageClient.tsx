@@ -120,7 +120,7 @@ const sectionToneClass: Record<SectionTone, string> = {
   critical:
     "border-red-500/25 bg-gradient-to-b from-red-500/[0.08] to-transparent",
   insight:
-    "border-cyan-500/20 bg-gradient-to-b from-cyan-500/[0.06] to-transparent",
+    "border-[#6366f1]/20 bg-gradient-to-b from-[#6366f1]/[0.06] to-transparent",
   challenge:
     "border-violet-500/20 bg-gradient-to-b from-violet-500/[0.07] to-transparent",
   rules:
@@ -131,9 +131,9 @@ const sectionToneClass: Record<SectionTone, string> = {
 
 /** Left accent bar on section header — high visibility */
 const headerAccentBar: Record<SectionTone, string> = {
-  default: "from-cyan-400 via-violet-500 to-fuchsia-500/80",
+  default: "from-[#6366f1] via-violet-500 to-fuchsia-500/80",
   critical: "from-red-500 via-red-400 to-orange-500/90",
-  insight: "from-cyan-400 to-teal-500",
+  insight: "from-[#6366f1] to-[#4f46e5]",
   challenge: "from-violet-500 via-fuchsia-500 to-indigo-400",
   rules: "from-emerald-400 to-cyan-600/90",
   context: "from-slate-400 via-slate-300 to-slate-500",
@@ -145,7 +145,7 @@ const headerBgTone: Record<SectionTone, string> = {
   critical:
     "bg-gradient-to-br from-red-500/20 via-red-500/5 to-transparent",
   insight:
-    "bg-gradient-to-br from-cyan-500/15 via-cyan-500/5 to-transparent",
+    "bg-gradient-to-br from-[#6366f1]/15 via-[#6366f1]/5 to-transparent",
   challenge:
     "bg-gradient-to-br from-violet-500/18 via-violet-500/6 to-transparent",
   rules:
@@ -267,7 +267,7 @@ function ReportJumpNav({
             x: { delay: i * 0.04, duration: 0.25 },
             scale: HOVER_SCALE_TRANSITION,
           }}
-          className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-100 sm:text-xs"
+          className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-[#6366f1]/30 hover:bg-[#6366f1]/10 hover:text-indigo-100 sm:text-xs"
         >
           {item.label}
         </motion.a>
@@ -652,7 +652,7 @@ function ChatBubble({
           <motion.div
             whileHover={{ scale: 1.015 }}
             transition={{ scale: HOVER_SCALE_TRANSITION }}
-            className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#ff3c3c] via-[#d62f2f] to-[#9a1f1f] px-4 py-3 text-sm leading-relaxed text-white shadow-[0_16px_48px_-16px_rgba(255,60,60,0.55)]"
+            className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#6366f1] via-[#4f46e5] to-[#3730a3] px-4 py-3 text-sm leading-relaxed text-white shadow-[0_16px_48px_-16px_rgba(99,102,241,0.55)]"
           >
             {msg.content}
           </motion.div>
@@ -739,7 +739,7 @@ function ReportTab({
           transition={{ scale: HOVER_SCALE_TRANSITION }}
           disabled={generating || isMock}
           onClick={onGenerate}
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 disabled:opacity-50"
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#6366f1]/20 disabled:opacity-50"
         >
           {generating ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1207,7 +1207,7 @@ function ChatTab({
       <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
         {/* Panel header */}
         <div className="relative shrink-0 border-b border-white/[0.08] bg-black/45 px-4 py-4 backdrop-blur-md sm:px-5">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-500/35 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#6366f1]/35 to-transparent" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-violet-950/40 shadow-lg shadow-violet-900/25">
@@ -1225,8 +1225,8 @@ function ChatTab({
               </div>
             </div>
             {reportRow && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-cyan-500/15 bg-cyan-500/5 px-3 py-2 text-[11px] text-slate-400 sm:shrink-0">
-                <Brain className="h-3.5 w-3.5 text-cyan-400/80" />
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#6366f1]/15 bg-[#6366f1]/5 px-3 py-2 text-[11px] text-slate-400 sm:shrink-0">
+                <Brain className="h-3.5 w-3.5 text-indigo-400/80" />
                 <span>
                   Report{" "}
                   <span className="text-slate-300">
@@ -1250,8 +1250,8 @@ function ChatTab({
             <div className="relative space-y-6 sm:space-y-7">
               {messages.length === 0 ? (
                 <div className="mx-auto flex max-w-3xl flex-col items-center px-1 py-6 text-center sm:py-10">
-                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-transparent shadow-[0_0_40px_-8px_rgba(34,211,238,0.35)]">
-                    <Sparkles className="h-7 w-7 text-cyan-400/80" />
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#6366f1]/20 bg-gradient-to-br from-[#6366f1]/10 to-transparent shadow-[0_0_40px_-8px_rgba(99,102,241,0.35)]">
+                    <Sparkles className="h-7 w-7 text-indigo-400/80" />
                   </div>
                   <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
                     Start the conversation
@@ -1276,7 +1276,7 @@ function ChatTab({
                         whileTap={CARD_HOVER.tap}
                         onClick={() => onSend(q)}
                         disabled={isMock}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-cyan-500/25 hover:bg-cyan-500/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-[#6366f1]/25 hover:bg-[#6366f1]/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {q}
                       </motion.button>
@@ -1336,7 +1336,7 @@ function ChatTab({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 onClick={scrollThreadToBottom}
-                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#0c0c0e]/95 text-slate-400 shadow-xl backdrop-blur-md transition-colors hover:border-cyan-500/30 hover:text-white"
+                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#0c0c0e]/95 text-slate-400 shadow-xl backdrop-blur-md transition-colors hover:border-[#6366f1]/30 hover:text-white"
               >
                 <ChevronDown className="h-4 w-4" />
               </motion.button>
@@ -1395,7 +1395,7 @@ function ChatTab({
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
               transition={{ scale: HOVER_SCALE_TRANSITION }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff3c3c] to-[#9a1a1a] text-white shadow-[0_8px_24px_-6px_rgba(255,60,60,0.45)] transition-opacity disabled:opacity-35"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#3730a3] text-white shadow-[0_8px_24px_-6px_rgba(99,102,241,0.45)] transition-opacity disabled:opacity-35"
             >
               {loading ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1610,7 +1610,7 @@ export function AiCoachPageClient({
             disabled={generating || isMock}
             onClick={() => void handleGenerate()}
             title={isMock ? "Not available in demo" : undefined}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff3c3c] to-[#c92a2a] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-[#ff3c3c]/20 transition-opacity disabled:opacity-50 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-[#6366f1]/20 transition-opacity disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
           >
             {generating ? (
@@ -1650,7 +1650,7 @@ export function AiCoachPageClient({
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="flex items-center gap-2 rounded-xl border border-[#ff3c3c]/30 bg-[#ff3c3c]/10 px-4 py-2.5 text-sm text-[#ff3c3c]"
+            className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
           >
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             {generateError}
