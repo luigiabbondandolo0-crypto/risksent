@@ -38,7 +38,7 @@ const plans = [
       { text: "1 broker account", included: true },
       { text: "2 backtesting sessions", included: true },
       { text: "Full journal (unlimited trades)", included: true },
-      { text: "Basic Telegram alerts", included: true },
+      { text: "Basic Telegram alerts", included: false },
       { text: "AI Coach", included: false },
       { text: "Risk Manager", included: false },
     ],
