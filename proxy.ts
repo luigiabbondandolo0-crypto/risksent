@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
+import {
+  applySecurityHeaders,
+  httpsUpgradeResponseIfNeeded,
+  maybeLogSuspiciousApiTraffic
+} from "@/lib/security/edgeSecurity";
+import { securityLog } from "@/lib/security/structuredLog";
+import { getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 
 const PROTECTED_PATHS = [
   "/app",
@@ -31,7 +38,27 @@ function getSessionInactivityTimeoutSeconds() {
   return parsed;
 }
 
+function secure(req: NextRequest, res: NextResponse) {
+  return applySecurityHeaders(req, res);
+}
+
 export async function proxy(req: NextRequest) {
+  const httpsRedirect = httpsUpgradeResponseIfNeeded(req);
+  if (httpsRedirect) {
+    return secure(req, httpsRedirect);
+  }
+
+  maybeLogSuspiciousApiTraffic(req);
+
+  const authPath = req.nextUrl.pathname;
+  if (authPath.startsWith("/api/auth/") && req.method === "POST") {
+    securityLog("info", "security.api.auth_request", {
+      path: authPath,
+      method: req.method,
+      ip: getClientIpFromRequestHeaders(req.headers)
+    });
+  }
+
   // PKCE: exchange must run on the server so request cookies include the code verifier.
   if (req.nextUrl.pathname === "/reset-password" && req.nextUrl.searchParams.has("code")) {
     const dest = req.nextUrl.clone();
@@ -39,7 +66,7 @@ export async function proxy(req: NextRequest) {
     if (!dest.searchParams.has("next")) {
       dest.searchParams.set("next", "/reset-password");
     }
-    return NextResponse.redirect(dest);
+    return secure(req, NextResponse.redirect(dest));
   }
 
   let res = NextResponse.next({
@@ -52,7 +79,7 @@ export async function proxy(req: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return res;
+    return secure(req, res);
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -79,7 +106,7 @@ export async function proxy(req: NextRequest) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirectedFrom", req.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    return secure(req, NextResponse.redirect(url));
   }
 
   if (isProtected && user) {
@@ -97,7 +124,7 @@ export async function proxy(req: NextRequest) {
       expiredRedirect.searchParams.set("sessionExpired", "1");
       const redirectRes = NextResponse.redirect(expiredRedirect);
       redirectRes.cookies.delete(SESSION_ACTIVITY_COOKIE);
-      return redirectRes;
+      return secure(req, redirectRes);
     }
 
     res.cookies.set(SESSION_ACTIVITY_COOKIE, String(now), {
@@ -127,24 +154,24 @@ export async function proxy(req: NextRequest) {
       if (roleError && roleError.code !== "PGRST116") {
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
-        return NextResponse.redirect(url);
+        return secure(req, NextResponse.redirect(url));
       }
 
       if (!appUser) {
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
-        return NextResponse.redirect(url);
+        return secure(req, NextResponse.redirect(url));
       }
 
       if (appUser.role !== "admin") {
         const url = req.nextUrl.clone();
         url.pathname = "/app/dashboard";
-        return NextResponse.redirect(url);
+        return secure(req, NextResponse.redirect(url));
       }
     } catch {
       const url = req.nextUrl.clone();
       url.pathname = "/app/dashboard";
-      return NextResponse.redirect(url);
+      return secure(req, NextResponse.redirect(url));
     }
   }
 
@@ -159,7 +186,7 @@ export async function proxy(req: NextRequest) {
         .maybeSingle();
 
       if (appUser && appUser.role === "admin") {
-        return res;
+        return secure(req, res);
       }
     } catch {
       // If check fails, proceed with normal redirect
@@ -167,10 +194,10 @@ export async function proxy(req: NextRequest) {
 
     const url = req.nextUrl.clone();
     url.pathname = "/app/dashboard";
-    return NextResponse.redirect(url);
+    return secure(req, NextResponse.redirect(url));
   }
 
-  return res;
+  return secure(req, res);
 }
 
 export const config = {
