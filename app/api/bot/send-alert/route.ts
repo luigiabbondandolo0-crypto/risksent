@@ -8,19 +8,24 @@ import { sendAlertToTelegram } from "@/lib/telegramAlert";
  * Body: { user_id, message, severity, solution? } (+ opzionale secret in body o header x-bot-secret)
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.BOT_INTERNAL_SECRET;
-  if (secret) {
-    const headerSecret = req.headers.get("x-bot-secret");
-    let bodySecret: string | undefined;
-    try {
-      const b = await req.clone().json().catch(() => ({}));
-      bodySecret = b?.secret;
-    } catch {
-      // ignore
-    }
-    if (headerSecret !== secret && bodySecret !== secret) {
-      return NextResponse.json({ ok: false, reason: "Unauthorized" }, { status: 401 });
-    }
+  const secret = process.env.BOT_INTERNAL_SECRET?.trim();
+  if (!secret) {
+    return NextResponse.json(
+      { ok: false, reason: "BOT_INTERNAL_SECRET is not configured" },
+      { status: 503 }
+    );
+  }
+
+  const headerSecret = req.headers.get("x-bot-secret");
+  let bodySecret: string | undefined;
+  try {
+    const b = await req.clone().json().catch(() => ({}));
+    bodySecret = typeof b?.secret === "string" ? b.secret : undefined;
+  } catch {
+    // ignore
+  }
+  if (headerSecret !== secret && bodySecret !== secret) {
+    return NextResponse.json({ ok: false, reason: "Unauthorized" }, { status: 401 });
   }
 
   let body: { user_id?: string; message?: string; severity?: string; solution?: string | null };

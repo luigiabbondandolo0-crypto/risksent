@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
-import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const TELEGRAM_API = "https://api.telegram.org";
 const LOG_PREFIX = "[Telegram connection-check]";
@@ -58,8 +57,7 @@ export async function GET() {
     checks.push({ id: "env_channel", name: "Canale alert", status: "warn", message: "TELEGRAM_ALERT_CHANNEL_ID non impostato", detail: "Solo alert in chat utente, nessun canale" });
   }
 
-  const admin = createSupabaseAdmin();
-  const { data: appUser, error: userError } = await admin
+  const { data: appUser, error: userError } = await supabase
     .from("app_user")
     .select("id, telegram_chat_id")
     .eq("id", userId)

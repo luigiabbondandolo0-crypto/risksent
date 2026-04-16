@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { isJournalAccountOwnedBy } from "@/lib/api/ownership";
 
 export async function GET(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -104,6 +105,13 @@ export async function POST(req: NextRequest) {
   }
   if (checklistDone !== undefined) row.checklist_done = checklistDone;
   if (rulesFollowed !== undefined) row.rules_followed = rulesFollowed;
+
+  if (row.account_id != null && typeof row.account_id === "string" && row.account_id.trim()) {
+    const owned = await isJournalAccountOwnedBy(supabase, user.id, row.account_id.trim());
+    if (!owned) {
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+  }
 
   const { data, error } = await supabase
     .from("journal_session")

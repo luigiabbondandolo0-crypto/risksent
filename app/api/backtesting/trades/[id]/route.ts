@@ -75,6 +75,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ...(body.notes !== undefined ? { notes: body.notes } : {})
     })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 

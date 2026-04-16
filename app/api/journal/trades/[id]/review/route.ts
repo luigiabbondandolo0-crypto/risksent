@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { isJournalStrategyOwnedBy } from "@/lib/api/ownership";
 
 export async function GET(
   _req: NextRequest,
@@ -13,6 +14,16 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: tradeRow } = await supabase
+    .from("journal_trade")
+    .select("id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!tradeRow) {
+    return NextResponse.json({ error: "Trade not found" }, { status: 404 });
   }
 
   const { data, error } = await supabase
@@ -68,6 +79,13 @@ export async function POST(
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (body.strategy_id != null && typeof body.strategy_id === "string" && body.strategy_id.trim()) {
+    const owned = await isJournalStrategyOwnedBy(supabase, user.id, body.strategy_id.trim());
+    if (!owned) {
+      return NextResponse.json({ error: "Strategy not found" }, { status: 404 });
+    }
   }
 
   const validEmotions = ["Calm", "Confident", "Anxious", "FOMO", "Revenge"];

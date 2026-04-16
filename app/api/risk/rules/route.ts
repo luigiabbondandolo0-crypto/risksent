@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
-import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function GET(request: Request) {
   const auth = await requireRouteUser(request);
   if (auth instanceof NextResponse) return auth;
-  const { user } = auth;
+  const { supabase, user } = auth;
 
-  const admin = createSupabaseAdmin();
-  const { data: row, error } = await admin
+  const { data: row, error } = await supabase
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
     .eq("id", user.id)

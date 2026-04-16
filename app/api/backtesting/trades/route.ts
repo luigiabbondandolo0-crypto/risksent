@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
     .from("bt_trade")
     .select("*", { count: "exact", head: true })
     .eq("session_id", sessionId)
+    .eq("user_id", user.id)
     .eq("status", "open");
 
   if ((openTrades ?? 0) > 0) {

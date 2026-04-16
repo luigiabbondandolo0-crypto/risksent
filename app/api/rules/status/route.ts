@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
-import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   getAccountSummary,
   getClosedOrders,
@@ -25,8 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = createSupabaseAdmin();
-  const { data: row } = await admin
+  const { data: row } = await supabase
     .from("app_user")
     .select("daily_loss_pct, max_risk_per_trade_pct, max_exposure_pct, revenge_threshold_trades")
     .eq("id", user.id)
