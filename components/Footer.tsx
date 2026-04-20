@@ -1,7 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Github, Twitter, Mail, Shield } from "lucide-react";
+import { ArrowUpRight, Instagram, Shield } from "lucide-react";
+
+function XLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 export type FooterVariant = "marketing" | "app" | "mock";
 
@@ -14,7 +27,6 @@ const PRODUCT_LINKS: LinkItem[] = [
   { href: "/live-alerts", label: "Live Alerts" },
   { href: "/ai-coach", label: "AI Coach" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/mock/dashboard", label: "Live demo" },
 ];
 
 const RESOURCES_LINKS: LinkItem[] = [
@@ -26,7 +38,7 @@ const RESOURCES_LINKS: LinkItem[] = [
 ];
 
 const COMPANY_LINKS: LinkItem[] = [
-  { href: "/#mission", label: "Mission" },
+  { href: "/mission", label: "Mission" },
   { href: "/pricing", label: "Plans" },
   { href: "/changelog", label: "What’s new" },
   { href: "mailto:support@risksent.com", label: "support@risksent.com", external: true },
@@ -166,29 +178,22 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
 
             <div className="mt-6 flex items-center gap-2">
               <a
-                href="https://twitter.com/risksent"
+                href="https://x.com/risksent"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="RiskSent on Twitter / X"
+                aria-label="RiskSent on X"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
               >
-                <Twitter className="h-4 w-4" />
+                <XLogo className="h-[14px] w-[14px]" />
               </a>
               <a
-                href="https://github.com/risksent"
+                href="https://instagram.com/risksent"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="RiskSent on GitHub"
+                aria-label="RiskSent on Instagram"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
               >
-                <Github className="h-4 w-4" />
-              </a>
-              <a
-                href="mailto:support@risksent.com"
-                aria-label="Email RiskSent support"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-              >
-                <Mail className="h-4 w-4" />
+                <Instagram className="h-4 w-4" />
               </a>
             </div>
           </div>

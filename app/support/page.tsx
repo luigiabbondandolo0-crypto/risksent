@@ -4,7 +4,6 @@ import {
   BookOpen,
   LifeBuoy,
   Mail,
-  MessageCircle,
   Sparkles,
   FlaskConical,
   Shield,
@@ -28,13 +27,6 @@ const CHANNELS = [
     cta: "support@risksent.com",
     href: "mailto:support@risksent.com",
     external: true,
-  },
-  {
-    icon: MessageCircle,
-    title: "In-app chat",
-    desc: "Logged-in users can ping us directly from the help bubble in the top-right.",
-    cta: "Open the app",
-    href: "/app/dashboard",
   },
   {
     icon: LifeBuoy,
@@ -151,7 +143,7 @@ export default function SupportPage() {
         </header>
 
         {/* Channels */}
-        <section className="mb-16 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mb-16 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {CHANNELS.map(({ icon: Icon, title, desc, cta, href, external }) => (
             <Link
               key={title}
