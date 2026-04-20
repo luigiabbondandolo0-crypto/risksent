@@ -17,6 +17,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { isAppShellPath } from "@/components/navConfig";
 import { SubscriptionProvider, useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { DemoBanner } from "@/components/demo/DemoBanner";
+import { Footer } from "@/components/Footer";
 
 type AnnouncementRow = {
   id: string;
@@ -230,7 +231,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <Sidebar variant={isAdminArea ? "admin" : "default"} />
       {/* Full-width scroll column so wheel/trackpad on side gutters still scrolls page content */}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {/* Demo banner (not dismissible at shell level — handled inside component) */}
           {sub?.isDemoMode && !sub?.isAdmin && <DemoBanner />}
 
@@ -254,6 +255,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
           {children}
         </div>
+        <Footer variant="app" />
       </main>
     </div>
   );

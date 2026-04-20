@@ -7,6 +7,7 @@ import { MockSiteChrome } from "@/components/mock/MockSiteChrome";
 import { isAppShellPath } from "@/components/navConfig";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CommandPalette, useCommandPalette } from "@/components/ui/command-palette";
+import { Footer } from "@/components/Footer";
 
 /** Fills the viewport; sidebar stays put while only main scrolls. */
 function ShellViewportLock({ children }: { children: React.ReactNode }) {
@@ -52,6 +53,7 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
       <ScrollToTop />
       <Topbar />
       <AppShell>{children}</AppShell>
+      <Footer variant="marketing" />
     </>
   );
 }

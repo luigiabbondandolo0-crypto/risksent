@@ -485,6 +485,83 @@ aside.lg\:flex {
 
 /* ── PARTICLE burst (used in JS canvas) ── */
 
+/* ── Legal / support document typography ── */
+.legal-prose {
+  color: rgb(203 213 225);
+}
+.legal-prose h2 {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  scroll-margin-top: 6rem;
+}
+.legal-prose h3 {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+.legal-prose p {
+  margin-bottom: 1rem;
+}
+.legal-prose ul,
+.legal-prose ol {
+  margin: 0.75rem 0 1.25rem 1.25rem;
+}
+.legal-prose ul {
+  list-style: disc;
+}
+.legal-prose ol {
+  list-style: decimal;
+}
+.legal-prose li {
+  margin-bottom: 0.4rem;
+  padding-left: 0.25rem;
+}
+.legal-prose li::marker {
+  color: rgba(255, 140, 0, 0.85);
+}
+.legal-prose strong {
+  color: #fff;
+  font-weight: 600;
+}
+.legal-prose a {
+  color: #ff8c00;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.legal-prose a:hover {
+  color: #ffb347;
+}
+.legal-prose code {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+  font-family: var(--font-mono), monospace;
+  color: #f1f5f9;
+}
+.legal-prose hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 2.5rem 0;
+}
+.legal-prose blockquote {
+  border-left: 3px solid rgba(255, 60, 60, 0.4);
+  padding-left: 1rem;
+  margin: 1.25rem 0;
+  color: rgb(148 163 184);
+  font-style: italic;
+}
+
 /* ── prefers-reduced-motion: kill decorative animations ── */
 @media (prefers-reduced-motion: reduce) {
   .scan-card::after,

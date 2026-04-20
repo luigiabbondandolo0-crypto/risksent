@@ -997,25 +997,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="border-t px-6 py-8 lg:px-16 relative" style={{ zIndex: 1, borderColor: "rgba(255,255,255,0.05)", background: "rgba(8,8,9,0.95)", backdropFilter: "blur(20px)" }}>
-        <div className="mx-auto max-w-7xl flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <span
-            className="text-sm font-extrabold tracking-tight text-slate-300"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            RiskSent
-          </span>
-          <p className="text-[11px] text-slate-600 font-mono">
-            © {new Date().getFullYear()} RiskSent · All-in-one trading platform
-          </p>
-          <div className="flex gap-6 text-[11px] font-mono text-slate-600">
-            <Link href="/login" className="hover:text-slate-300 transition-colors">Log in</Link>
-            <Link href="/mock/dashboard" className="hover:text-slate-300 transition-colors">Demo</Link>
-            <Link href="/signup" className="hover:text-slate-300 transition-colors">Sign up</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   mockMobileNavItems,
 } from "@/components/mock/mockNavConfig";
 import { isJournalChildNavActive } from "@/components/navConfig";
+import { Footer } from "@/components/Footer";
 
 function mockNavLinkActive(
   pathname: string | null,
@@ -244,9 +245,10 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           </Suspense>
 
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-            <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="mx-auto w-full max-w-[1600px] flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
               {children}
             </div>
+            <Footer variant="mock" />
           </main>
         </div>
       </div>
