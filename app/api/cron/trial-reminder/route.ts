@@ -98,8 +98,10 @@ async function runCron(req: NextRequest) {
       (typeof meta.name === "string" && meta.name) ||
       undefined;
 
+    // Round UP: 35h left must read as "2 days", not "1 day". Only when the
+    // remaining time is literally 0 or negative do we show 0 ("ends today").
     const msLeft = new Date(sub.current_period_end).getTime() - now.getTime();
-    const daysLeft = Math.max(0, Math.round(msLeft / (24 * 60 * 60 * 1000)));
+    const daysLeft = msLeft <= 0 ? 0 : Math.ceil(msLeft / (24 * 60 * 60 * 1000));
 
     const send = await sendTrialEndingEmail({
       to: email,
