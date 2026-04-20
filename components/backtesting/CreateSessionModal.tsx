@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendingUp, ChevronDown } from "lucide-react";
-import { SYMBOL_GROUPS, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
+import { SYMBOL_GROUPS } from "@/lib/backtesting/symbolMap";
 import type { Strategy } from "@/lib/backtesting/types";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,6 @@ export function CreateSessionModal({ open, onClose, strategies, defaultStrategyI
   const [strategyId, setStrategyId] = useState(defaultStrategyId ?? "");
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("EURUSD");
-  const [timeframe, setTimeframe] = useState("H1");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [balance, setBalance] = useState("10000");
@@ -60,7 +59,7 @@ export function CreateSessionModal({ open, onClose, strategies, defaultStrategyI
           strategy_id: strategyId,
           name: name.trim(),
           symbol,
-          timeframe,
+          timeframe: "H1",
           date_from: dateFrom,
           date_to: dateTo,
           initial_balance: Number(balance) || 10000,
@@ -178,27 +177,6 @@ export function CreateSessionModal({ open, onClose, strategies, defaultStrategyI
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Timeframe */}
-              <div>
-                <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-slate-500">Timeframe</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {TIMEFRAMES.map((tf) => (
-                    <button
-                      key={tf}
-                      type="button"
-                      onClick={() => setTimeframe(tf)}
-                      className={`rounded-lg px-3 py-1.5 font-mono text-sm transition-all ${
-                        tf === timeframe
-                          ? "bg-[#6366f1]/20 text-[#818cf8] ring-1 ring-[#6366f1]/40"
-                          : "border border-white/[0.07] text-slate-500 hover:border-white/[0.15] hover:text-slate-300"
-                      }`}
-                    >
-                      {TIMEFRAME_LABELS[tf]}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Date range */}

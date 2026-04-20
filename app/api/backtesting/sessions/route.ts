@@ -44,10 +44,8 @@ export async function POST(req: NextRequest) {
   const symbol = String(body.symbol ?? "").toUpperCase().trim();
   if (!ALL_SYMBOLS.includes(symbol)) return NextResponse.json({ error: "Invalid symbol" }, { status: 400 });
 
-  const timeframe = String(body.timeframe ?? "").toUpperCase().trim();
-  if (!(TIMEFRAMES as readonly string[]).includes(timeframe)) {
-    return NextResponse.json({ error: "Invalid timeframe" }, { status: 400 });
-  }
+  const timeframeRaw = String(body.timeframe ?? "H1").toUpperCase().trim();
+  const timeframe = (TIMEFRAMES as readonly string[]).includes(timeframeRaw) ? timeframeRaw : "H1";
 
   const from = String(body.date_from ?? "").trim();
   const to = String(body.date_to ?? "").trim();

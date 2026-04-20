@@ -10,8 +10,8 @@ import {
 import {
   createChart,
   CandlestickSeries,
-  LineSeries,
   ColorType,
+  CrosshairMode,
   LineStyle,
   type IChartApi,
   type ISeriesApi,
@@ -19,24 +19,28 @@ import {
 } from "lightweight-charts";
 import type { Candle } from "@/lib/backtesting/types";
 
+export type CandleOhlc = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
 export type ReplayChartHandle = {
-  /** Replace visible dataset (reset or seek). */
   setCandles: (candles: Candle[], upTo: number) => void;
-  /** Append one candle incrementally (fastest path). */
   appendCandle: (candle: Candle) => void;
-  /** Set / update the three trade price lines. Pass null to remove. */
   setTradeLines: (entry: number | null, sl: number | null, tp: number | null) => void;
-  /** Clear all trade lines. */
   clearTradeLines: () => void;
 };
 
 type Props = {
-  /** Symbol name used for watermark only. */
   symbol?: string;
+  onCrosshairMove?: (data: CandleOhlc | null) => void;
 };
 
 export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
-  function ReplayChart({ symbol = "" }, ref) {
+  function ReplayChart({ symbol = "", onCrosshairMove }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -46,6 +50,10 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       tp: ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]> | null;
     }>({ entry: null, sl: null, tp: null });
 
+    // Keep crosshair callback in a ref to avoid stale closure in chart init
+    const crosshairCbRef = useRef(onCrosshairMove);
+    useEffect(() => { crosshairCbRef.current = onCrosshairMove; }, [onCrosshairMove]);
+
     // ── Chart init ──────────────────────────────────────────────────────────
     useLayoutEffect(() => {
       const el = containerRef.current;
@@ -54,26 +62,41 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       const chart = createChart(el, {
         layout: {
           background: { type: ColorType.Solid, color: "#080809" },
-          textColor: "#64748b",
+          textColor: "#94a3b8",
+          fontSize: 12,
           fontFamily: "'JetBrains Mono', monospace",
         },
         grid: {
-          vertLines: { color: "rgba(255,255,255,0.04)" },
-          horzLines: { color: "rgba(255,255,255,0.04)" },
+          vertLines: { color: "rgba(255,255,255,0.04)", style: LineStyle.Solid },
+          horzLines: { color: "rgba(255,255,255,0.04)", style: LineStyle.Solid },
         },
-        crosshair: { mode: 1 },
+        crosshair: {
+          mode: CrosshairMode.Normal,
+          vertLine: {
+            color: "rgba(255,255,255,0.3)",
+            width: 1,
+            style: LineStyle.Dashed,
+            labelBackgroundColor: "#1e1e2e",
+          },
+          horzLine: {
+            color: "rgba(255,255,255,0.3)",
+            width: 1,
+            style: LineStyle.Dashed,
+            labelBackgroundColor: "#1e1e2e",
+          },
+        },
         rightPriceScale: {
-          borderColor: "rgba(255,255,255,0.06)",
-          textColor: "#64748b",
-          scaleMargins: { top: 0.08, bottom: 0.08 },
+          borderColor: "rgba(255,255,255,0.07)",
+          textColor: "#94a3b8",
+          scaleMargins: { top: 0.1, bottom: 0.1 },
         },
         leftPriceScale: { visible: false },
         timeScale: {
-          borderColor: "rgba(255,255,255,0.06)",
+          borderColor: "rgba(255,255,255,0.07)",
           timeVisible: true,
           secondsVisible: false,
-          rightOffset: 8,
-          barSpacing: 9,
+          barSpacing: 8,
+          rightOffset: 10,
           minBarSpacing: 2,
         },
         handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
@@ -83,17 +106,19 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       });
 
       const series = chart.addSeries(CandlestickSeries, {
-        upColor: "#00e676",
-        downColor: "#ff3c3c",
-        borderVisible: false,
-        wickUpColor: "#00e676",
-        wickDownColor: "#ff3c3c",
+        upColor: "#26a69a",
+        downColor: "#ef5350",
+        borderUpColor: "#26a69a",
+        borderDownColor: "#ef5350",
+        wickUpColor: "#26a69a",
+        wickDownColor: "#ef5350",
+        borderVisible: true,
       });
 
       chartRef.current = chart;
       seriesRef.current = series;
 
-      // Watermark via createTextWatermark (v5)
+      // Watermark
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createTextWatermark } = require("lightweight-charts") as {
@@ -104,10 +129,39 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
           createTextWatermark(pane, {
             horzAlign: "center",
             vertAlign: "center",
-            lines: [{ text: symbol, color: "rgba(255,255,255,0.04)", fontSize: 56, fontStyle: "bold", fontFamily: "Outfit, sans-serif" }],
+            lines: [{
+              text: symbol,
+              color: "rgba(255,255,255,0.03)",
+              fontSize: 60,
+              fontStyle: "bold",
+              fontFamily: "Outfit, sans-serif",
+            }],
           });
         }
       } catch { /* older API */ }
+
+      // Crosshair subscription
+      chart.subscribeCrosshairMove((param) => {
+        const cb = crosshairCbRef.current;
+        if (!cb || !seriesRef.current) return;
+        if (!param.time) {
+          cb(null);
+          return;
+        }
+        const raw = param.seriesData.get(seriesRef.current);
+        if (raw && typeof (raw as { open?: unknown }).open === "number") {
+          const bar = raw as { open: number; high: number; low: number; close: number };
+          cb({
+            time: typeof param.time === "number" ? param.time : 0,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+          });
+        } else {
+          cb(null);
+        }
+      });
 
       // ResizeObserver
       const ro = new ResizeObserver(() => {
@@ -158,20 +212,17 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         if (!s) return;
         const refs = tradeLineRefs.current;
 
-        // Entry line
         if (refs.entry) { try { s.removePriceLine(refs.entry); } catch { /* */ } refs.entry = null; }
         if (entry != null) {
           refs.entry = s.createPriceLine({ price: entry, color: "#ff8c00", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "Entry", axisLabelVisible: true });
         }
-        // SL line
         if (refs.sl) { try { s.removePriceLine(refs.sl); } catch { /* */ } refs.sl = null; }
         if (sl != null) {
-          refs.sl = s.createPriceLine({ price: sl, color: "#ff3c3c", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "SL", axisLabelVisible: true });
+          refs.sl = s.createPriceLine({ price: sl, color: "#ef5350", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "SL", axisLabelVisible: true });
         }
-        // TP line
         if (refs.tp) { try { s.removePriceLine(refs.tp); } catch { /* */ } refs.tp = null; }
         if (tp != null) {
-          refs.tp = s.createPriceLine({ price: tp, color: "#00e676", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "TP", axisLabelVisible: true });
+          refs.tp = s.createPriceLine({ price: tp, color: "#26a69a", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "TP", axisLabelVisible: true });
         }
       },
 
