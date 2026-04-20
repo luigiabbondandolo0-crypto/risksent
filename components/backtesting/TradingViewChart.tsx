@@ -81,18 +81,18 @@ async function loadChartingLibraryWidget(): Promise<WidgetFactory> {
 }
 
 const TV_OVERRIDES: Record<string, string | number | boolean> = {
-  "paneProperties.background": "#080809",
+  "paneProperties.background": "#131722",
   "paneProperties.backgroundType": "solid",
-  "paneProperties.vertGridProperties.color": "rgba(255,255,255,0.04)",
-  "paneProperties.horzGridProperties.color": "rgba(255,255,255,0.04)",
-  "scalesProperties.textColor": "#94a3b8",
-  "scalesProperties.lineColor": "rgba(255,255,255,0.07)",
-  "mainSeriesProperties.candleStyle.upColor": "#00e676",
-  "mainSeriesProperties.candleStyle.downColor": "#ff3c3c",
-  "mainSeriesProperties.candleStyle.borderUpColor": "#00e676",
-  "mainSeriesProperties.candleStyle.borderDownColor": "#ff3c3c",
-  "mainSeriesProperties.candleStyle.wickUpColor": "#00e676",
-  "mainSeriesProperties.candleStyle.wickDownColor": "#ff3c3c"
+  "paneProperties.vertGridProperties.color": "rgba(42,46,57,0.8)",
+  "paneProperties.horzGridProperties.color": "rgba(42,46,57,0.8)",
+  "scalesProperties.textColor": "#d1d4dc",
+  "scalesProperties.lineColor": "rgba(42,46,57,1)",
+  "mainSeriesProperties.candleStyle.upColor": "#26a69a",
+  "mainSeriesProperties.candleStyle.downColor": "#ef5350",
+  "mainSeriesProperties.candleStyle.borderUpColor": "#26a69a",
+  "mainSeriesProperties.candleStyle.borderDownColor": "#ef5350",
+  "mainSeriesProperties.candleStyle.wickUpColor": "#26a69a",
+  "mainSeriesProperties.candleStyle.wickDownColor": "#ef5350"
 };
 
 export const TradingViewChart = forwardRef<TradingViewChartHandle, Props>(function TradingViewChart(
@@ -256,7 +256,7 @@ export const TradingViewChart = forwardRef<TradingViewChartHandle, Props>(functi
           autosize: false,
           width: wPx,
           height: hPx,
-          loading_screen: { backgroundColor: "#080809", foregroundColor: "#94a3b8" },
+          loading_screen: { backgroundColor: "#131722", foregroundColor: "#d1d4dc" },
           overrides: TV_OVERRIDES,
           enabled_features: ["study_templates"],
           time_frames: [
@@ -348,16 +348,15 @@ export const TradingViewChart = forwardRef<TradingViewChartHandle, Props>(functi
   }, [drawPriceLines]);
 
   return (
-    <div className="w-full">
+    <div style={{ position: "absolute", inset: 0 }}>
       {loadError && (
-        <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 font-mono">
+        <p className="absolute top-2 left-2 right-2 z-10 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 font-mono">
           {loadError}
         </p>
       )}
       <div
         ref={containerRef}
-        className="w-full overflow-hidden rounded-xl border border-white/[0.06] bg-[#080809]"
-        style={{ height: "600px", width: "100%" }}
+        style={{ position: "absolute", inset: 0, overflow: "hidden" }}
       />
     </div>
   );

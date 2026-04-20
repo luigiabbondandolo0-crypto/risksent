@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import type { BtTimeframe, BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
 import { checkSlTpHit, unrealizedPl } from "@/lib/backtesting/replayEngine";
-import { ReplayChart } from "./ReplayChart";
+import { TradingViewChart, type TradingViewChartHandle } from "./TradingViewChart";
 import { TradeOpenModal } from "./TradeOpenModal";
 
 type SessionPayload = {
@@ -80,6 +80,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const [loadingCandles, setLoadingCandles] = useState(false);
   const [closingTrade, setClosingTrade] = useState(false);
   const entryIndexRef = useRef<number | null>(null);
+  const tvChartRef = useRef<TradingViewChartHandle>(null);
 
   const currentCandle = candles[currentIndex] ?? null;
   const prevCandle = currentIndex > 0 ? (candles[currentIndex - 1] ?? null) : null;
@@ -301,6 +302,20 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     return { diff, pct };
   }, [currentCandle, prevCandle]);
 
+  // Cap TV chart at current replay position; before candles load, cap at session start
+  const replayEndSec = useMemo(() => {
+    if (currentCandle) return currentCandle.time;
+    if (!session) return null;
+    const t = Date.parse(`${session.date_from}T00:00:00.000Z`);
+    return Number.isFinite(t) ? Math.floor(t / 1000) : null;
+  }, [currentCandle, session]);
+
+  // Scroll TV chart to current replay position whenever index changes
+  useEffect(() => {
+    if (!currentCandle) return;
+    tvChartRef.current?.goToDate(currentCandle.time);
+  }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // === LOADING STATE ===
   if (loadErr && !session) {
     return (
@@ -428,13 +443,19 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
                 </div>
               </div>
             )}
-            <ReplayChart
-              candles={candles}
-              currentIndex={currentIndex}
-              entryPrice={openTrade?.entry_price ?? null}
-              stopLoss={openTrade?.stop_loss ?? null}
-              takeProfit={openTrade?.take_profit ?? null}
-            />
+            {session && (
+              <TradingViewChart
+                ref={tvChartRef}
+                symbol={session.symbol}
+                timeframe={timeframe}
+                sessionDateFrom={session.date_from}
+                sessionDateTo={session.date_to}
+                entryPrice={openTrade?.entry_price ?? null}
+                stopLoss={openTrade?.stop_loss ?? null}
+                takeProfit={openTrade?.take_profit ?? null}
+                replayVisibleEndSec={replayEndSec}
+              />
+            )}
           </div>
 
           {/* ── BOTTOM CONTROLS BAR ─────────────────────────────── */}
