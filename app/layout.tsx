@@ -126,7 +126,7 @@ export default function RootLayout({
                     "@type": "Offer",
                     price: "0",
                     priceCurrency: "USD",
-                    description: "Free trial available",
+                    description: "7-day free trial available (one per account, no card required)",
                   },
                   description: DESCRIPTION,
                   url: "https://risksent.com",

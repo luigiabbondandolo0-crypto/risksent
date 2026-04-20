@@ -118,6 +118,10 @@ export default function PricingPage() {
       router.push("/signup");
       return;
     }
+    if (subscription.trialUsed) {
+      setCtaError("You've already used your free trial. Pick a plan to continue.");
+      return;
+    }
     const isActive =
       subscription.isAdmin === true ||
       subscription.plan === "admin" ||
@@ -297,6 +301,7 @@ export default function PricingPage() {
               subscription != null &&
               !subscription.subscriptionFetchFailed &&
               !isSubscribedOrTrialing &&
+              !subscription.trialUsed &&
               subscription.plan === "user";
 
             return (
@@ -448,13 +453,23 @@ export default function PricingPage() {
             Start your 7-day free trial today.<br />No credit card. No commitment.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button type="button" onClick={() => void startTrial("experienced")}
-              disabled={subscription === null || loadingPlan === "experienced"}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl px-10 py-4 text-base font-bold text-black transition-all hover:scale-[1.03] disabled:opacity-60 cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3)" }}>
-              {subscription === null ? "Checking…" : loadingPlan === "experienced" ? "Loading…" : "Start free trial"}
-              {subscription !== null && loadingPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
-            </button>
+            {subscription?.trialUsed ? (
+              <button type="button" onClick={() => void subscribeDirect("experienced")}
+                disabled={subscription === null || loadingDirectPlan === "experienced"}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-10 py-4 text-base font-bold text-black transition-all hover:scale-[1.03] disabled:opacity-60 cursor-pointer"
+                style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3)" }}>
+                {loadingDirectPlan === "experienced" ? "Opening checkout…" : "Subscribe to Experienced"}
+                {loadingDirectPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
+              </button>
+            ) : (
+              <button type="button" onClick={() => void startTrial("experienced")}
+                disabled={subscription === null || loadingPlan === "experienced"}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-10 py-4 text-base font-bold text-black transition-all hover:scale-[1.03] disabled:opacity-60 cursor-pointer"
+                style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 40px rgba(255,60,60,0.3)" }}>
+                {subscription === null ? "Checking…" : loadingPlan === "experienced" ? "Loading…" : "Start free trial"}
+                {subscription !== null && loadingPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
+              </button>
+            )}
             <Link href="/mock/dashboard"
               className="inline-flex items-center justify-center rounded-2xl border px-10 py-4 text-base font-medium text-slate-300 transition-all hover:text-white cursor-pointer"
               style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>

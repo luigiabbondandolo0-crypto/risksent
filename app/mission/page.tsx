@@ -763,7 +763,7 @@ export default function MissionPage() {
                     boxShadow: "0 18px 46px -14px rgba(255,60,60,0.65)",
                   }}
                 >
-                  Start your 14-day trial
+                  Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link

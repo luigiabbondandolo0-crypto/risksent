@@ -15,6 +15,8 @@ export type SubscriptionInfo = {
   maxBrokerAccounts: number | null;
   maxBacktestingSessions: number | null;
   trialEndsAt: string | null;
+  /** True if the user has ever started a free trial (prevents starting another). */
+  trialUsed: boolean;
   /** Set only by client fetch: false = not logged in (401). */
   authenticated?: boolean;
   /** Client fetch failed (network or non-OK response). */
@@ -26,12 +28,37 @@ export type SubscriptionInfo = {
 // Keep legacy alias for any existing imports
 export type SubscriptionCapabilities = SubscriptionInfo;
 
-function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null): SubscriptionInfo {
-  const isTrialing = status === "trialing" || plan === "trial";
+export function capsForPlan(
+  plan: Plan,
+  status: SubStatus,
+  trialEndsAt: string | null,
+  trialUsed = false
+): SubscriptionInfo {
+  const isTrialingPlan = status === "trialing" || plan === "trial";
+  const trialMsLeft = trialEndsAt ? new Date(trialEndsAt).getTime() - Date.now() : null;
+  const trialExpired = isTrialingPlan && trialMsLeft !== null && trialMsLeft <= 0;
   const trialDaysLeft =
-    trialEndsAt
-      ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000))
-      : null;
+    trialEndsAt ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000)) : null;
+
+  // Trial row exists in DB but the window has expired → behave as demo user.
+  // The DB row is left alone (Stripe webhook / backend sync owns that); we
+  // just make sure the UI and gating no longer grant paid access.
+  if (trialExpired) {
+    return {
+      plan: "user",
+      status: "canceled",
+      isDemoMode: true,
+      isTrialing: false,
+      trialDaysLeft: 0,
+      canAccessBacktesting: false,
+      canAccessAICoach: false,
+      canAccessRiskManager: false,
+      maxBrokerAccounts: 0,
+      maxBacktestingSessions: 0,
+      trialEndsAt,
+      trialUsed: true,
+    };
+  }
 
   if (plan === "user") {
     return {
@@ -46,6 +73,7 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
       maxBrokerAccounts: 0,
       maxBacktestingSessions: 0,
       trialEndsAt: null,
+      trialUsed,
     };
   }
 
@@ -62,11 +90,12 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
       maxBrokerAccounts: null,
       maxBacktestingSessions: null,
       trialEndsAt: null,
+      trialUsed,
       isAdmin: true,
     };
   }
 
-  if (isTrialing) {
+  if (isTrialingPlan) {
     return {
       plan,
       status,
@@ -79,6 +108,7 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
       maxBrokerAccounts: null,
       maxBacktestingSessions: null,
       trialEndsAt,
+      trialUsed: true,
     };
   }
 
@@ -95,6 +125,7 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
       maxBrokerAccounts: null,
       maxBacktestingSessions: null,
       trialEndsAt: null,
+      trialUsed,
     };
   }
 
@@ -111,6 +142,7 @@ function capsForPlan(plan: Plan, status: SubStatus, trialEndsAt: string | null):
     maxBrokerAccounts: 1,
     maxBacktestingSessions: 2,
     trialEndsAt: null,
+    trialUsed,
   };
 }
 
@@ -121,22 +153,23 @@ export async function getSubscription(): Promise<SubscriptionInfo> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return capsForPlan("user", "active", null);
+    return capsForPlan("user", "active", null, false);
   }
 
   const { data } = await supabase
     .from("subscriptions")
-    .select("plan, status, current_period_end")
+    .select("plan, status, current_period_end, trial_started_at")
     .eq("user_id", user.id)
     .single();
 
   if (!data) {
-    return capsForPlan("user", "active", null);
+    return capsForPlan("user", "active", null, false);
   }
 
   const plan = (data.plan as Plan) ?? "user";
   const status = (data.status as SubStatus) ?? "active";
   const trialEndsAt = (data.current_period_end as string | null) ?? null;
+  const trialUsed = Boolean((data as { trial_started_at?: string | null }).trial_started_at);
 
-  return capsForPlan(plan, status, trialEndsAt);
+  return capsForPlan(plan, status, trialEndsAt, trialUsed);
 }

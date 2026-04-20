@@ -87,7 +87,7 @@ const TOPICS = [
 const FAQ = [
   {
     q: "Do you offer a free trial?",
-    a: "Yes. All plans come with a 14-day free trial — no card required. You can cancel any time before it ends and you will not be charged.",
+    a: "Yes. Every new account is eligible for one 7-day free trial with full Experienced access — no card required. You can cancel any time before it ends and you will not be charged.",
   },
   {
     q: "Is RiskSent a broker or a signal provider?",

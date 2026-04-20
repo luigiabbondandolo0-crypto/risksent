@@ -202,7 +202,7 @@ export default function BillingPage() {
       if (res.ok) {
         window.location.reload();
       } else {
-        const d = (await res.json()) as { error?: string };
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
         alert(d.error ?? "Could not start trial");
       }
     } finally {
@@ -354,25 +354,35 @@ export default function BillingPage() {
             <Zap className="h-5 w-5 text-amber-400" />
             <p className="font-semibold text-amber-200">You&rsquo;re in demo mode</p>
           </div>
-          <p className="text-sm text-slate-400 font-mono mb-4">
-            Start your 7-day free trial to access all features with your real trading data.
-            No credit card required.
-          </p>
-          <button
-            type="button"
-            onClick={() => void startTrial()}
-            disabled={trialLoading}
-            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", boxShadow: "0 0 20px rgba(99,102,241,0.2)" }}
-          >
-            {trialLoading ? "Starting…" : "Start free trial"}
-            {!trialLoading && <ArrowRight className="h-4 w-4" />}
-          </button>
+
+          {sub?.trial_started_at ? (
+            <p className="text-sm text-slate-400 font-mono mb-4">
+              Your 7-day free trial has ended. Choose a plan below to unlock full access —
+              each account is eligible for one trial only.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-slate-400 font-mono mb-4">
+                Start your 7-day free trial to access all features with your real trading data.
+                No credit card required.
+              </p>
+              <button
+                type="button"
+                onClick={() => void startTrial()}
+                disabled={trialLoading}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", boxShadow: "0 0 20px rgba(99,102,241,0.2)" }}
+              >
+                {trialLoading ? "Starting…" : "Start free trial"}
+                {!trialLoading && <ArrowRight className="h-4 w-4" />}
+              </button>
+            </>
+          )}
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-white/[0.08]" />
             <span className="shrink-0 text-[11px] font-mono uppercase tracking-widest text-slate-500">
-              or choose a plan directly
+              {sub?.trial_started_at ? "choose a plan" : "or choose a plan directly"}
             </span>
             <div className="h-px flex-1 bg-white/[0.08]" />
           </div>

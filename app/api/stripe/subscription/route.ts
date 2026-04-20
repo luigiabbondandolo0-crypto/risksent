@@ -12,6 +12,7 @@ export type SubscriptionRow = {
   current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  trial_started_at: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -45,6 +46,7 @@ export async function GET() {
     current_period_start: null,
     current_period_end: null,
     cancel_at_period_end: false,
+    trial_started_at: null,
     created_at: null,
     updated_at: null,
   };
