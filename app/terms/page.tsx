@@ -28,6 +28,16 @@ export default function TermsPage() {
         Platform.
       </p>
 
+      <h3>1.1 Operator / Legal entity</h3>
+      <p>
+        RiskSent is currently operated from <strong>Italy</strong>. The formal
+        legal entity (company name, VAT / tax identification number and
+        registered office) is pending incorporation and will be published in
+        this section — and reflected on invoices — as soon as it is completed.
+        Until then, the operator can be reached at{" "}
+        <a href="mailto:support@risksent.com">support@risksent.com</a>.
+      </p>
+
       <h2>2. Who can use RiskSent</h2>
       <p>You may use the Platform only if you:</p>
       <ul>

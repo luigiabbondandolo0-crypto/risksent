@@ -20,9 +20,14 @@ export default function PrivacyPage() {
         <strong>RiskSent</strong> (the <strong>“Controller”</strong>,{" "}
         <strong>“we”</strong>, <strong>“our”</strong>) is the data controller
         for personal data processed through the RiskSent website, apps and
-        services (the <strong>“Platform”</strong>). For any privacy-related
-        request you can contact us at{" "}
-        <a href="mailto:support@risksent.com">support@risksent.com</a>.
+        services (the <strong>“Platform”</strong>). The Platform is operated
+        from <strong>Italy</strong>. The formal legal entity (company name,
+        VAT / tax identification number and registered office) is pending
+        incorporation and will be published here as soon as it is completed.
+        In the meantime, any privacy-related request, GDPR exercise of rights
+        or suspected breach can be sent to{" "}
+        <a href="mailto:support@risksent.com">support@risksent.com</a>; we
+        respond within the timeframes required by GDPR.
       </p>
 
       <h2>2. What we collect</h2>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, Instagram, Shield } from "lucide-react";
+import { openCookiePreferences } from "@/components/CookieConsent";
 
 function XLogo({ className }: { className?: string }) {
   return (
@@ -261,6 +262,13 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
             >
               Support
             </Link>
+            <button
+              type="button"
+              onClick={() => openCookiePreferences()}
+              className="transition-colors hover:text-slate-300"
+            >
+              Cookie preferences
+            </button>
             <span className="hidden text-slate-700 sm:inline">·</span>
             <span className="text-slate-600">v1.0</span>
           </div>

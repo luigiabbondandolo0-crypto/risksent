@@ -66,8 +66,9 @@ export default function CookiesPage() {
       <h2>3. Managing your preferences</h2>
       <p>
         You can accept or reject non-essential cookies from our cookie banner
-        when you first visit the site, and change your choice at any time by
-        clearing your cookies or contacting us. Most browsers also let you
+        when you first visit the site. You can change your choice at any time
+        by clicking <strong>Cookie preferences</strong> at the bottom of any
+        page, which re-opens the consent panel. Most browsers also let you
         block or delete cookies from their settings — consult your browser
         documentation for details.
       </p>
