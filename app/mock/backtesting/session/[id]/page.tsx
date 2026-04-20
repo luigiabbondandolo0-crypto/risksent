@@ -1,10 +1,7 @@
-import { SessionSummaryView } from "@/components/backtesting/SessionSummaryView";
-
-export default async function MockBacktestingSessionSummaryPage({
-  params
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  return <SessionSummaryView sessionId={id} basePath="/mock/backtesting" />;
+export default function ComingSoon() {
+  return (
+    <div className="flex h-[60vh] items-center justify-center">
+      <p className="font-mono text-sm text-slate-600">Backtesting — coming soon</p>
+    </div>
+  );
 }

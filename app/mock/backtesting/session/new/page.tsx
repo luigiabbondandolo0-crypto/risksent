@@ -1,16 +1,7 @@
-import { Suspense } from "react";
-import { BacktestingSessionNew } from "@/components/backtesting/BacktestingSessionNew";
-
-export default function MockBacktestingSessionNewPage() {
+export default function ComingSoon() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[30vh] items-center justify-center text-sm text-slate-500 font-mono">
-          Loading…
-        </div>
-      }
-    >
-      <BacktestingSessionNew basePath="/mock/backtesting" />
-    </Suspense>
+    <div className="flex h-[60vh] items-center justify-center">
+      <p className="font-mono text-sm text-slate-600">Backtesting — coming soon</p>
+    </div>
   );
 }

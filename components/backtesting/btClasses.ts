@@ -1,15 +1,10 @@
-/** Shared Tailwind / inline styles for backtesting module */
+/** Shared layout class strings used across app pages. */
 export const bt = {
-  page: "min-h-0 text-slate-100",
-  card:
-    "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 shadow-xl",
-  h1: "font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl",
-  sub: "mt-1 text-sm text-slate-500 font-mono",
-  label: "mb-1 block text-[11px] font-medium uppercase tracking-wider text-slate-500 font-mono",
-  input:
-    "w-full rounded-xl border border-white/[0.08] bg-[#0c0c0e] px-3 py-2.5 text-sm text-slate-100 outline-none ring-[#6366f1]/0 transition focus:border-[#6366f1]/40 focus:ring-2 focus:ring-[#6366f1]/20 font-mono",
-  btnPrimary:
-    "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#6366f1]/20 transition hover:opacity-95",
-  btnGhost:
-    "inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06]"
+  page:       "mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8",
+  h1:         "rs-page-title",
+  sub:        "rs-page-sub mt-1",
+  label:      "text-xs font-semibold text-slate-400 font-mono uppercase tracking-wider",
+  card:       "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5",
+  btnPrimary: "inline-flex items-center gap-1.5 rounded-xl bg-[#6366f1] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#4f46e5]",
+  btnGhost:   "inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white",
 } as const;

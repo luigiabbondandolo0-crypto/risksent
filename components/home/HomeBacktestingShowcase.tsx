@@ -1,16 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, LineChart, Plus } from "lucide-react";
-import { ReplayChart } from "@/components/backtesting/ReplayChart";
 import { bt } from "@/components/backtesting/btClasses";
-import {
-  buildHomeMockCandles,
-  HOME_MOCK_ENTRY,
-  HOME_MOCK_SL,
-  HOME_MOCK_TP
-} from "@/components/home/mockBtCandles";
 
 /** Dashboard-style preview only (e.g. `/backtest` marketing page). */
 export function HomeBacktestingDashboardPreview() {
@@ -115,7 +108,6 @@ export function HomeBacktestingDashboardPreview() {
 
 /** Full marketing block: session replay + dashboard preview (e.g. if reused elsewhere). */
 export function HomeBacktestingShowcase() {
-  const candles = useMemo(() => buildHomeMockCandles(), []);
   const [side, setSide] = useState<"BUY" | "SELL">("BUY");
 
   return (
@@ -157,14 +149,8 @@ export function HomeBacktestingShowcase() {
             </button>
           </div>
         </div>
-        <div className="h-[220px] w-full sm:h-[260px]">
-          <ReplayChart
-            candles={candles}
-            currentIndex={Math.max(0, candles.length - 1)}
-            entryPrice={HOME_MOCK_ENTRY}
-            stopLoss={side === "BUY" ? HOME_MOCK_SL : HOME_MOCK_TP}
-            takeProfit={side === "BUY" ? HOME_MOCK_TP : HOME_MOCK_SL}
-          />
+        <div className="h-[220px] w-full sm:h-[260px] rounded-xl bg-black/30 flex items-center justify-center border border-white/[0.04]">
+          <p className="font-mono text-xs text-slate-700">Chart replay</p>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
