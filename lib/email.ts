@@ -1,6 +1,18 @@
 import { Resend } from "resend";
 
-const FROM_EMAIL = "support@risksent.com";
+/**
+ * Sender address used on all transactional emails.
+ * Override via `RESEND_FROM_EMAIL` (e.g. `"RiskSent <info@risksent.com>"`).
+ * The domain MUST be verified in Resend → Domains.
+ */
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <info@risksent.com>";
+
+/**
+ * Where replies are routed. Keeps the "from" address brand-friendly while
+ * letting user replies land in the support inbox.
+ * Override via `RESEND_REPLY_TO`.
+ */
+const REPLY_TO = process.env.RESEND_REPLY_TO || "support@risksent.com";
 
 function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://risksent.com";
@@ -46,6 +58,7 @@ export async function sendTrialEndingEmail({
 
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
+      replyTo: REPLY_TO,
       to,
       subject,
       html: getTrialEndingEmailTemplate(displayName, trialEndsAt, daysLeft),
@@ -79,8 +92,9 @@ export async function sendWelcomeEmail({ to, userName }: WelcomeEmailParams): Pr
     const resend = new Resend(apiKey);
     const displayName = userName || to.split("@")[0];
     
-    const { data, error } = await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: FROM_EMAIL,
+      replyTo: REPLY_TO,
       to,
       subject: "Welcome to RiskSent! 🎉",
       html: getWelcomeEmailTemplate(displayName)
