@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getSubscriptionClient } from "./getSubscriptionClient";
-import type { SubscriptionInfo } from "./getSubscription";
+import type { SubscriptionInfo } from "./caps";
 
 type SubscriptionContextValue = {
   subscription: SubscriptionInfo | null;

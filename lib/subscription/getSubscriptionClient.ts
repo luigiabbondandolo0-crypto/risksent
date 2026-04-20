@@ -1,5 +1,5 @@
-import type { SubscriptionInfo, Plan, SubStatus } from "./getSubscription";
-import { capsForPlan } from "./getSubscription";
+import type { SubscriptionInfo, Plan, SubStatus } from "./caps";
+import { capsForPlan } from "./caps";
 
 export type { SubscriptionInfo, Plan, SubStatus };
 
