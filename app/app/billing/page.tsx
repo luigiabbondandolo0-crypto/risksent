@@ -232,13 +232,21 @@ export default function BillingPage() {
     }
   };
 
-  const plan = sub?.plan ?? "user";
+  const rawPlan = sub?.plan ?? "user";
+  const rawStatus = sub?.status ?? "active";
 
-  // Trial days remaining (hidden for admins — DB row may still say trial)
+  // A DB row can say trial/trialing but the window already closed (webhook
+  // or scheduled job hasn't flipped it yet). Treat that as demo for the UI.
+  const trialEndMs = sub?.current_period_end ? new Date(sub.current_period_end).getTime() : null;
+  const rawIsTrialing = rawPlan === "trial" || rawStatus === "trialing";
+  const trialExpired = rawIsTrialing && trialEndMs !== null && trialEndMs <= Date.now();
+
+  const plan = trialExpired ? "user" : rawPlan;
+  const isTrialingActive = rawIsTrialing && !trialExpired;
+  const hasUsedTrial = Boolean(sub?.trial_started_at) || trialExpired;
+
   const trialDaysLeft =
-    !isAdmin &&
-    sub?.current_period_end &&
-    (plan === "trial" || sub.status === "trialing")
+    !isAdmin && isTrialingActive && sub?.current_period_end
       ? Math.max(0, Math.ceil((new Date(sub.current_period_end).getTime() - Date.now()) / 86_400_000))
       : null;
 
@@ -324,8 +332,20 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Renewal / cancellation notice */}
-        {sub?.current_period_end && plan !== "trial" && sub.status !== "trialing" && (
+        {/* Trial expired notice */}
+        {trialExpired && !isAdmin && (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-500/20 bg-slate-500/[0.06] px-4 py-3 text-sm text-slate-300">
+            <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+            {sub?.current_period_end ? (
+              <>Your 7-day trial ended on {new Date(sub.current_period_end).toLocaleDateString()}. Pick a plan to restore full access.</>
+            ) : (
+              <>Your 7-day trial has ended. Pick a plan to restore full access.</>
+            )}
+          </div>
+        )}
+
+        {/* Renewal / cancellation notice (paid plans only) */}
+        {sub?.current_period_end && !isTrialingActive && !trialExpired && rawPlan !== "user" && (
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
             <Clock className="h-4 w-4 shrink-0 text-slate-500" />
             {sub.cancel_at_period_end
@@ -355,7 +375,7 @@ export default function BillingPage() {
             <p className="font-semibold text-amber-200">You&rsquo;re in demo mode</p>
           </div>
 
-          {sub?.trial_started_at ? (
+          {hasUsedTrial ? (
             <p className="text-sm text-slate-400 font-mono mb-4">
               Your 7-day free trial has ended. Choose a plan below to unlock full access —
               each account is eligible for one trial only.
@@ -382,7 +402,7 @@ export default function BillingPage() {
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-white/[0.08]" />
             <span className="shrink-0 text-[11px] font-mono uppercase tracking-widest text-slate-500">
-              {sub?.trial_started_at ? "choose a plan" : "or choose a plan directly"}
+              {hasUsedTrial ? "choose a plan" : "or choose a plan directly"}
             </span>
             <div className="h-px flex-1 bg-white/[0.08]" />
           </div>
@@ -407,8 +427,8 @@ export default function BillingPage() {
         </motion.div>
       )}
 
-      {/* Trial — upgrade grid */}
-      {(plan === "trial" || sub?.status === "trialing") && !isAdmin && (
+      {/* Trial — upgrade grid (only while trial is actually active) */}
+      {isTrialingActive && !isAdmin && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
