@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Activity,
   AlertCircle,
+  Mail,
   Search,
   Shield,
   TrendingUp,
@@ -219,13 +220,22 @@ export default function AdminPage() {
             Manage users, platform health, and monitoring.
           </p>
         </div>
-        <Link
-          href="/admin/live-monitoring"
-          className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-cyan-500/40 hover:bg-cyan-500/10"
-        >
-          <Activity className="h-4 w-4 text-cyan-400" />
-          Live Monitoring
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/trial-reminders"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10"
+          >
+            <Mail className="h-4 w-4 text-orange-400" />
+            Trial reminders
+          </Link>
+          <Link
+            href="/admin/live-monitoring"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-cyan-500/40 hover:bg-cyan-500/10"
+          >
+            <Activity className="h-4 w-4 text-cyan-400" />
+            Live Monitoring
+          </Link>
+        </div>
       </header>
 
       {stats != null && (

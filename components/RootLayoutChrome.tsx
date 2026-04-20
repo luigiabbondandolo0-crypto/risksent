@@ -9,6 +9,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { CommandPalette, useCommandPalette } from "@/components/ui/command-palette";
 import { Footer } from "@/components/Footer";
 import { CookieConsentBanner } from "@/components/CookieConsent";
+import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 
 /** Fills the viewport; sidebar stays put while only main scrolls. */
 function ShellViewportLock({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
           <MockSiteChrome>{children}</MockSiteChrome>
         </ShellViewportLock>
         <CookieConsentBanner />
+        <AnalyticsScripts />
       </>
     );
   }
@@ -46,6 +48,7 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
           <AppShell>{children}</AppShell>
         </ShellViewportLock>
         <CookieConsentBanner />
+        <AnalyticsScripts />
       </>
     );
   }
@@ -58,6 +61,7 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
       <AppShell>{children}</AppShell>
       <Footer variant="marketing" />
       <CookieConsentBanner />
+      <AnalyticsScripts />
     </>
   );
 }
