@@ -34,7 +34,7 @@ type Props = {
   onChartClick?: (price: number, time: number) => void;
 };
 
-function toBarData(c: Candle, isCurrent: boolean): CandlestickData {
+function toBarData(c: Candle): CandlestickData {
   const isBull = c.close >= c.open;
   return {
     time: c.time as UTCTimestamp,
@@ -42,8 +42,8 @@ function toBarData(c: Candle, isCurrent: boolean): CandlestickData {
     high: c.high,
     low: c.low,
     close: c.close,
-    color: isCurrent ? "#f59e0b" : isBull ? "#26a69a" : "#ef5350",
-    wickColor: isCurrent ? "#f59e0b" : isBull ? "#26a69a" : "#ef5350",
+    color: isBull ? "#26a69a" : "#ef5350",
+    wickColor: isBull ? "#26a69a" : "#ef5350",
     borderColor: "transparent"
   };
 }
@@ -119,40 +119,40 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
         width: w,
         height: h,
         layout: {
-          background: { type: ColorType.Solid, color: "#07070f" },
-          textColor: "#94a3b8",
+          background: { type: ColorType.Solid, color: "#131722" },
+          textColor: "#d1d4dc",
           fontFamily: "'JetBrains Mono', monospace"
         },
         grid: {
-          vertLines: { color: "rgba(148,163,184,0.06)", style: LineStyle.Solid },
-          horzLines: { color: "rgba(148,163,184,0.06)", style: LineStyle.Solid }
+          vertLines: { color: "rgba(42,46,57,0.8)", style: LineStyle.Solid },
+          horzLines: { color: "rgba(42,46,57,0.8)", style: LineStyle.Solid }
         },
         crosshair: {
           mode: 1,
           vertLine: {
-            color: "rgba(148,163,184,0.35)",
+            color: "rgba(224,227,235,0.4)",
             width: 1,
-            style: LineStyle.Dashed,
-            labelBackgroundColor: "#1e293b"
+            style: LineStyle.Solid,
+            labelBackgroundColor: "#2a2e39"
           },
           horzLine: {
-            color: "rgba(148,163,184,0.35)",
+            color: "rgba(224,227,235,0.4)",
             width: 1,
             style: LineStyle.Dashed,
-            labelBackgroundColor: "#1e293b"
+            labelBackgroundColor: "#2a2e39"
           }
         },
         rightPriceScale: {
-          borderColor: "rgba(148,163,184,0.08)",
-          scaleMargins: { top: 0.08, bottom: 0.08 },
-          textColor: "#64748b"
+          borderColor: "rgba(42,46,57,1)",
+          scaleMargins: { top: 0.1, bottom: 0.1 },
+          textColor: "#787b86"
         },
         leftPriceScale: { visible: false },
         timeScale: {
-          borderColor: "rgba(148,163,184,0.08)",
+          borderColor: "rgba(42,46,57,1)",
           timeVisible: true,
           secondsVisible: false,
-          rightOffset: 15,
+          rightOffset: 12,
           barSpacing: 8,
           minBarSpacing: 2,
           fixLeftEdge: false,
@@ -254,33 +254,23 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
       // Full rebuild (new TF, new candles, or stepped back)
       const data: CandlestickData[] = visible
         .filter(c => Number.isFinite(c.time) && Number.isFinite(c.open))
-        .map((c, i) => toBarData(c, i === currentIndex));
+        .map(c => toBarData(c));
       series.setData(data);
 
-      // On first load, show context
-      if (isNewDataset || prevIdx < 0) {
-        const from = Math.max(0, currentIndex - 100);
-        const to = currentIndex;
-        if (visible[from - (visible.length - candles.slice(0, from + 1).length)] && visible[to]) {
-          const fromCandle = candles[from];
-          const toCandle = candles[to];
-          if (fromCandle && toCandle) {
-            chart.timeScale().setVisibleRange({
-              from: fromCandle.time as UTCTimestamp,
-              to: toCandle.time as UTCTimestamp
-            });
-          }
-        }
+      // Scroll to show ~100 bars of context ending at currentIndex
+      const fromCandle = candles[Math.max(0, currentIndex - 100)];
+      const toCandle = candles[currentIndex];
+      if (fromCandle && toCandle) {
+        chart.timeScale().setVisibleRange({
+          from: fromCandle.time as UTCTimestamp,
+          to: toCandle.time as UTCTimestamp
+        });
       }
     } else if (isIncrementalForward) {
-      // Fast path: just update the previous current (remove orange) + add new
-      const prevCandle = candles[prevIdx];
-      if (prevCandle) {
-        series.update(toBarData(prevCandle, false));
-      }
+      // Fast path: add new candle only (no amber to undo)
       const curr = candles[currentIndex];
       if (curr) {
-        series.update(toBarData(curr, true));
+        series.update(toBarData(curr));
       }
       // Auto-scroll if current candle is beyond visible range
       try {
@@ -300,7 +290,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
       // Forward jump (played fast or loaded saved index)
       const data: CandlestickData[] = visible
         .filter(c => Number.isFinite(c.time) && Number.isFinite(c.open))
-        .map((c, i) => toBarData(c, i === currentIndex));
+        .map(c => toBarData(c));
       series.setData(data);
     }
   }, [candles, currentIndex]);

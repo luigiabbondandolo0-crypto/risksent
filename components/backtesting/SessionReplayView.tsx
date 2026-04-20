@@ -139,9 +139,11 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
       }
       const list = j.candles as Candle[];
       setCandles(list);
-      setCurrentIndex(0);
-      setLoadingCandles(false);
       try { localStorage.setItem(cacheKey, JSON.stringify(list)); } catch { /* ignore */ }
+      const idxRaw = localStorage.getItem(lsKeyIndex(sessionId, tf));
+      const savedIdx = idxRaw ? Math.min(Number(idxRaw), list.length - 1) : 0;
+      setCurrentIndex(Number.isFinite(savedIdx) && savedIdx >= 0 ? savedIdx : 0);
+      setLoadingCandles(false);
     },
     [sessionId]
   );
@@ -329,11 +331,11 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   // === TERMINAL LAYOUT ===
   return (
     <div
-      className="-mx-4 -my-6 sm:-mx-6 lg:-mx-8 lg:-my-8 flex flex-col overflow-hidden bg-[#07070f]"
+      className="-mx-4 -my-6 sm:-mx-6 lg:-mx-8 lg:-my-8 flex flex-col overflow-hidden bg-[#131722]"
       style={{ height: "calc(100dvh - 56px)" }}
     >
       {/* ── TOP INFO BAR ───────────────────────────────────────────── */}
-      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-white/[0.05] bg-[#0a0a12] px-3">
+      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-white/[0.05] bg-[#1e222d] px-3">
         {/* Back + Symbol */}
         <Link
           href={basePath}
@@ -419,7 +421,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           {/* Chart */}
           <div className="flex-1 min-h-0 relative">
             {loadingCandles && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#07070f]/80 backdrop-blur-sm">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#131722]/80 backdrop-blur-sm">
                 <div className="flex items-center gap-3 text-slate-500 font-mono text-xs">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#6366f1] animate-pulse" />
                   Loading candles…
@@ -436,7 +438,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
           </div>
 
           {/* ── BOTTOM CONTROLS BAR ─────────────────────────────── */}
-          <div className="flex h-11 shrink-0 items-center gap-2 border-t border-white/[0.05] bg-[#0a0a12] px-3">
+          <div className="flex h-11 shrink-0 items-center gap-2 border-t border-white/[0.05] bg-[#1e222d] px-3">
 
             {/* Timeframe tabs */}
             <div className="flex items-center gap-0.5">
@@ -538,7 +540,7 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
         </div>
 
         {/* ── RIGHT TRADING PANEL ──────────────────────────────────── */}
-        <aside className="w-60 xl:w-64 shrink-0 border-l border-white/[0.05] bg-[#09090f] flex flex-col overflow-y-auto">
+        <aside className="w-60 xl:w-64 shrink-0 border-l border-white/[0.05] bg-[#1a1d2e] flex flex-col overflow-y-auto">
 
           {/* Account */}
           <div className="border-b border-white/[0.05] px-4 py-3">
