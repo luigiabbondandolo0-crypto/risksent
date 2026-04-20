@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import {
   CandlestickSeries,
+  LineSeries,
   ColorType,
   createChart,
   LineStyle,
@@ -16,12 +17,26 @@ import {
 } from "lightweight-charts";
 import type { Candle } from "@/lib/backtesting/btTypes";
 
-export type DrawingTool = "cursor" | "hline";
+export type DrawingTool = "cursor" | "hline" | "trendline" | "eraser";
+
+export type IndicatorData = {
+  sma20?: Array<{ time: number; value: number }>;
+  sma50?: Array<{ time: number; value: number }>;
+  sma200?: Array<{ time: number; value: number }>;
+  ema20?: Array<{ time: number; value: number }>;
+  ema50?: Array<{ time: number; value: number }>;
+};
 
 export type ReplayChartHandle = {
   addHLine: (price: number, color?: string, title?: string) => void;
   clearHLines: () => void;
   scrollToIndex: (index: number, candles: Candle[]) => void;
+  addTrendLine: (
+    p1: { price: number; time: number },
+    p2: { price: number; time: number },
+    color?: string
+  ) => void;
+  clearUserDrawings: () => void;
 };
 
 type Props = {
@@ -32,6 +47,15 @@ type Props = {
   takeProfit?: number | null;
   tool?: DrawingTool;
   onChartClick?: (price: number, time: number) => void;
+  indicators?: IndicatorData;
+};
+
+const INDICATOR_COLORS: Record<keyof IndicatorData, string> = {
+  sma20: "#f59e0b",
+  sma50: "#3b82f6",
+  sma200: "#ef4444",
+  ema20: "#a855f7",
+  ema50: "#10b981"
 };
 
 function toBarData(c: Candle): CandlestickData {
@@ -56,7 +80,8 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
     stopLoss,
     takeProfit,
     tool = "cursor",
-    onChartClick
+    onChartClick,
+    indicators = {}
   },
   ref
 ) {
@@ -64,9 +89,17 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const tradeLinesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
-  const userLinesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
+  const userHLinesRef = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
+  const userTrendLinesRef = useRef<ISeriesApi<"Line">[]>([]);
+  const indicatorSeriesRef = useRef<Partial<Record<keyof IndicatorData, ISeriesApi<"Line">>>>({});
   const prevIndexRef = useRef(-1);
   const prevCandlesLenRef = useRef(0);
+  // Keep a stable reference to candles for use in imperative handle
+  const candlesRef = useRef<Candle[]>([]);
+  const currentIndexRef = useRef(0);
+
+  useEffect(() => { candlesRef.current = candles; }, [candles]);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
 
   useImperativeHandle(ref, () => ({
     addHLine(price, color = "#f59e0b", title = "") {
@@ -80,13 +113,13 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
         title,
         axisLabelVisible: true
       } as PriceLineOptions);
-      userLinesRef.current.push(line);
+      userHLinesRef.current.push(line);
     },
     clearHLines() {
       const s = seriesRef.current;
       if (!s) return;
-      for (const l of userLinesRef.current) s.removePriceLine(l);
-      userLinesRef.current = [];
+      for (const l of userHLinesRef.current) s.removePriceLine(l);
+      userHLinesRef.current = [];
     },
     scrollToIndex(index, cs) {
       const chart = chartRef.current;
@@ -98,6 +131,53 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
           from: cs[from].time as UTCTimestamp,
           to: cs[to].time as UTCTimestamp
         });
+      }
+    },
+    addTrendLine(p1, p2, color = "#f59e0b") {
+      const chart = chartRef.current;
+      const cs = candlesRef.current;
+      const idx = currentIndexRef.current;
+      if (!chart || cs.length === 0) return;
+
+      const slope =
+        p1.time !== p2.time ? (p2.price - p1.price) / (p2.time - p1.time) : 0;
+
+      // Extend line across all candles up to currentIndex
+      const lineData = cs
+        .slice(0, idx + 1)
+        .filter(c => Number.isFinite(c.time) && Number.isFinite(c.open))
+        .map(c => ({
+          time: c.time as UTCTimestamp,
+          value: p1.price + slope * (c.time - p1.time)
+        }));
+
+      if (lineData.length < 2) return;
+
+      const trendSeries = chart.addSeries(LineSeries, {
+        color,
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false
+      });
+      trendSeries.setData(lineData);
+      userTrendLinesRef.current.push(trendSeries);
+    },
+    clearUserDrawings() {
+      const chart = chartRef.current;
+      const s = seriesRef.current;
+      if (s) {
+        for (const l of userHLinesRef.current) {
+          try { s.removePriceLine(l); } catch { /* ignore */ }
+        }
+        userHLinesRef.current = [];
+      }
+      if (chart) {
+        for (const ts of userTrendLinesRef.current) {
+          try { chart.removeSeries(ts); } catch { /* ignore */ }
+        }
+        userTrendLinesRef.current = [];
       }
     }
   }));
@@ -158,7 +238,12 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
           fixLeftEdge: false,
           fixRightEdge: false
         },
-        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false
+        },
         handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true }
       });
 
@@ -195,10 +280,22 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
       chart?.remove();
       chartRef.current = null;
       seriesRef.current = null;
+      indicatorSeriesRef.current = {};
+      userTrendLinesRef.current = [];
+      userHLinesRef.current = [];
     };
   }, []);
 
-  // ── Click handler for drawing tools ─────────────────────────────
+  // ── Cursor style ─────────────────────────────────────────────────
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (tool === "cursor") el.style.cursor = "default";
+    else if (tool === "eraser") el.style.cursor = "cell";
+    else el.style.cursor = "crosshair";
+  }, [tool]);
+
+  // ── Click handler ────────────────────────────────────────────────
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -224,7 +321,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
           axisLabelColor: "#f59e0b",
           axisLabelTextColor: "#0f172a"
         } satisfies PriceLineOptions);
-        userLinesRef.current.push(line);
+        userHLinesRef.current.push(line);
       }
 
       onChartClick?.(price, param.time);
@@ -234,7 +331,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
     return () => { chart.unsubscribeClick(handler); };
   }, [tool, onChartClick]);
 
-  // ── Data update ──────────────────────────────────────────────────
+  // ── Candlestick data update ──────────────────────────────────────
   useEffect(() => {
     const series = seriesRef.current;
     const chart = chartRef.current;
@@ -247,17 +344,14 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
     prevCandlesLenRef.current = candles.length;
     prevIndexRef.current = currentIndex;
 
-    // Slice: only candles up to currentIndex (inclusive)
     const visible = candles.slice(0, currentIndex + 1);
 
     if (isNewDataset || currentIndex < prevIdx) {
-      // Full rebuild (new TF, new candles, or stepped back)
       const data: CandlestickData[] = visible
         .filter(c => Number.isFinite(c.time) && Number.isFinite(c.open))
         .map(c => toBarData(c));
       series.setData(data);
 
-      // Scroll to show ~100 bars of context ending at currentIndex
       const fromCandle = candles[Math.max(0, currentIndex - 100)];
       const toCandle = candles[currentIndex];
       if (fromCandle && toCandle) {
@@ -267,12 +361,10 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
         });
       }
     } else if (isIncrementalForward) {
-      // Fast path: add new candle only (no amber to undo)
       const curr = candles[currentIndex];
       if (curr) {
         series.update(toBarData(curr));
       }
-      // Auto-scroll if current candle is beyond visible range
       try {
         const vr = chart.timeScale().getVisibleRange();
         if (vr && curr) {
@@ -287,7 +379,6 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
         }
       } catch { /* noop */ }
     } else {
-      // Forward jump (played fast or loaded saved index)
       const data: CandlestickData[] = visible
         .filter(c => Number.isFinite(c.time) && Number.isFinite(c.open))
         .map(c => toBarData(c));
@@ -295,7 +386,47 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
     }
   }, [candles, currentIndex]);
 
-  // ── Trade lines (entry / SL / TP) ────────────────────────────────
+  // ── Indicator series ─────────────────────────────────────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const keys = Object.keys(INDICATOR_COLORS) as (keyof IndicatorData)[];
+
+    for (const key of keys) {
+      const data = indicators[key];
+      const existing = indicatorSeriesRef.current[key];
+
+      if (!data || data.length === 0) {
+        if (existing) {
+          try { chart.removeSeries(existing); } catch { /* ignore */ }
+          delete indicatorSeriesRef.current[key];
+        }
+        continue;
+      }
+
+      const lineData = data
+        .filter(p => Number.isFinite(p.time) && Number.isFinite(p.value))
+        .map(p => ({ time: p.time as UTCTimestamp, value: p.value }));
+
+      if (existing) {
+        existing.setData(lineData);
+      } else {
+        const s = chart.addSeries(LineSeries, {
+          color: INDICATOR_COLORS[key],
+          lineWidth: 1,
+          lineStyle: LineStyle.Solid,
+          priceLineVisible: false,
+          lastValueVisible: true,
+          crosshairMarkerVisible: false
+        });
+        s.setData(lineData);
+        indicatorSeriesRef.current[key] = s;
+      }
+    }
+  }, [indicators]);
+
+  // ── Trade price lines ────────────────────────────────────────────
   useEffect(() => {
     const series = seriesRef.current;
     if (!series) return;
@@ -304,34 +435,40 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(function ReplayC
     tradeLinesRef.current = [];
 
     if (entryPrice != null && Number.isFinite(entryPrice)) {
-      tradeLinesRef.current.push(series.createPriceLine({
-        price: entryPrice,
-        color: "#f59e0b",
-        lineWidth: 2,
-        lineStyle: LineStyle.Solid,
-        title: "Entry",
-        axisLabelVisible: true
-      } as PriceLineOptions));
+      tradeLinesRef.current.push(
+        series.createPriceLine({
+          price: entryPrice,
+          color: "#f59e0b",
+          lineWidth: 2,
+          lineStyle: LineStyle.Solid,
+          title: "Entry",
+          axisLabelVisible: true
+        } as PriceLineOptions)
+      );
     }
     if (stopLoss != null && Number.isFinite(stopLoss)) {
-      tradeLinesRef.current.push(series.createPriceLine({
-        price: stopLoss,
-        color: "#ef5350",
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        title: "SL",
-        axisLabelVisible: true
-      } as PriceLineOptions));
+      tradeLinesRef.current.push(
+        series.createPriceLine({
+          price: stopLoss,
+          color: "#ef5350",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          title: "SL",
+          axisLabelVisible: true
+        } as PriceLineOptions)
+      );
     }
     if (takeProfit != null && Number.isFinite(takeProfit)) {
-      tradeLinesRef.current.push(series.createPriceLine({
-        price: takeProfit,
-        color: "#26a69a",
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        title: "TP",
-        axisLabelVisible: true
-      } as PriceLineOptions));
+      tradeLinesRef.current.push(
+        series.createPriceLine({
+          price: takeProfit,
+          color: "#26a69a",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          title: "TP",
+          axisLabelVisible: true
+        } as PriceLineOptions)
+      );
     }
   }, [entryPrice, stopLoss, takeProfit]);
 

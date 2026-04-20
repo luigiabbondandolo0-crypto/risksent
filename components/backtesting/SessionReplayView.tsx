@@ -14,11 +14,17 @@ import {
   Target,
   Shield,
   Crosshair,
-  ChevronsRight
+  ChevronsRight,
+  MousePointer2,
+  Minus,
+  LineChart,
+  Eraser,
+  BarChart2,
+  ChevronDown
 } from "lucide-react";
 import type { BtTimeframe, BtTradeDirection, BtTradeRow, Candle } from "@/lib/backtesting/btTypes";
 import { checkSlTpHit, unrealizedPl } from "@/lib/backtesting/replayEngine";
-import { TradingViewChart, type TradingViewChartHandle } from "./TradingViewChart";
+import { ReplayChart, type ReplayChartHandle, type DrawingTool, type IndicatorData } from "./ReplayChart";
 import { TradeOpenModal } from "./TradeOpenModal";
 
 type SessionPayload = {
@@ -80,7 +86,17 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
   const [loadingCandles, setLoadingCandles] = useState(false);
   const [closingTrade, setClosingTrade] = useState(false);
   const entryIndexRef = useRef<number | null>(null);
-  const tvChartRef = useRef<TradingViewChartHandle>(null);
+  const chartRef = useRef<ReplayChartHandle>(null);
+  const [tool, setTool] = useState<DrawingTool>("cursor");
+  const [trendPending, setTrendPending] = useState<{ price: number; time: number } | null>(null);
+  const [showIndicatorPanel, setShowIndicatorPanel] = useState(false);
+  const [indicators, setIndicators] = useState({
+    sma20: false,
+    sma50: false,
+    sma200: false,
+    ema20: false,
+    ema50: false
+  });
 
   const currentCandle = candles[currentIndex] ?? null;
   const prevCandle = currentIndex > 0 ? (candles[currentIndex - 1] ?? null) : null;
@@ -302,19 +318,82 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
     return { diff, pct };
   }, [currentCandle, prevCandle]);
 
-  // Cap TV chart at current replay position; before candles load, cap at session start
-  const replayEndSec = useMemo(() => {
-    if (currentCandle) return currentCandle.time;
-    if (!session) return null;
-    const t = Date.parse(`${session.date_from}T00:00:00.000Z`);
-    return Number.isFinite(t) ? Math.floor(t / 1000) : null;
-  }, [currentCandle, session]);
+  // Precompute full indicator arrays (sliding window O(n)) — only when candles change
+  const allIndicatorArrays = useMemo(() => {
+    if (!candles.length) return {} as Record<keyof typeof indicators, Array<{ time: number; value: number }>>;
 
-  // Scroll TV chart to current replay position whenever index changes
+    const sma = (period: number) => {
+      const out: Array<{ time: number; value: number }> = [];
+      let sum = 0;
+      for (let i = 0; i < candles.length; i++) {
+        sum += candles[i].close;
+        if (i >= period) sum -= candles[i - period].close;
+        if (i >= period - 1) out.push({ time: candles[i].time, value: sum / period });
+      }
+      return out;
+    };
+
+    const ema = (period: number) => {
+      if (candles.length < period) return [] as Array<{ time: number; value: number }>;
+      const k = 2 / (period + 1);
+      let val = candles.slice(0, period).reduce((s, c) => s + c.close, 0) / period;
+      const out: Array<{ time: number; value: number }> = [{ time: candles[period - 1].time, value: val }];
+      for (let i = period; i < candles.length; i++) {
+        val = candles[i].close * k + val * (1 - k);
+        out.push({ time: candles[i].time, value: val });
+      }
+      return out;
+    };
+
+    return {
+      sma20: sma(20),
+      sma50: sma(50),
+      sma200: sma(200),
+      ema20: ema(20),
+      ema50: ema(50)
+    };
+  }, [candles]);
+
+  // Slice indicator data up to currentIndex + filter toggles
+  const activeIndicators = useMemo((): IndicatorData => {
+    const cutTime = currentCandle?.time ?? 0;
+    const slice = (arr: Array<{ time: number; value: number }>) =>
+      arr.filter(p => p.time <= cutTime);
+    return {
+      sma20: indicators.sma20 ? slice(allIndicatorArrays.sma20 ?? []) : undefined,
+      sma50: indicators.sma50 ? slice(allIndicatorArrays.sma50 ?? []) : undefined,
+      sma200: indicators.sma200 ? slice(allIndicatorArrays.sma200 ?? []) : undefined,
+      ema20: indicators.ema20 ? slice(allIndicatorArrays.ema20 ?? []) : undefined,
+      ema50: indicators.ema50 ? slice(allIndicatorArrays.ema50 ?? []) : undefined
+    };
+  }, [allIndicatorArrays, currentIndex, currentCandle, indicators]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onChartClick = useCallback((price: number, time: number) => {
+    if (tool === "trendline") {
+      if (!trendPending) {
+        setTrendPending({ price, time });
+      } else {
+        chartRef.current?.addTrendLine(trendPending, { price, time });
+        setTrendPending(null);
+      }
+    }
+  }, [tool, trendPending]);
+
+  const clearDrawings = useCallback(() => {
+    chartRef.current?.clearUserDrawings();
+    setTrendPending(null);
+  }, []);
+
+  // Close indicator panel on outside click
   useEffect(() => {
-    if (!currentCandle) return;
-    tvChartRef.current?.goToDate(currentCandle.time);
-  }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!showIndicatorPanel) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-indicator-panel]")) setShowIndicatorPanel(false);
+    };
+    window.addEventListener("mousedown", handler);
+    return () => window.removeEventListener("mousedown", handler);
+  }, [showIndicatorPanel]);
 
   // === LOADING STATE ===
   if (loadErr && !session) {
@@ -433,33 +512,162 @@ export function SessionReplayView({ sessionId, basePath }: Props) {
             </div>
           )}
 
-          {/* Chart */}
-          <div className="flex-1 min-h-0 relative">
-            {loadingCandles && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#131722]/80 backdrop-blur-sm">
-                <div className="flex items-center gap-3 text-slate-500 font-mono text-xs">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#6366f1] animate-pulse" />
-                  Loading candles…
+          {/* Chart + left toolbar */}
+          <div className="flex flex-1 min-h-0">
+
+            {/* ── LEFT DRAWING TOOLBAR ──────────────────────────── */}
+            <div className="w-10 shrink-0 flex flex-col items-center gap-0.5 py-2 bg-[#1e222d] border-r border-white/[0.05] z-10">
+              {/* Cursor */}
+              <button
+                type="button"
+                title="Cursor"
+                onClick={() => { setTool("cursor"); setTrendPending(null); }}
+                className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+                  tool === "cursor"
+                    ? "bg-[#6366f1]/30 text-[#818cf8]"
+                    : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-300"
+                }`}
+              >
+                <MousePointer2 className="h-3.5 w-3.5" />
+              </button>
+
+              <div className="h-px w-6 bg-white/[0.05] my-1" />
+
+              {/* Horizontal line */}
+              <button
+                type="button"
+                title="Horizontal Line"
+                onClick={() => { setTool("hline"); setTrendPending(null); }}
+                className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+                  tool === "hline"
+                    ? "bg-[#6366f1]/30 text-[#818cf8]"
+                    : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-300"
+                }`}
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Trend line */}
+              <button
+                type="button"
+                title="Trend Line"
+                onClick={() => { setTool("trendline"); setTrendPending(null); }}
+                className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+                  tool === "trendline"
+                    ? "bg-[#6366f1]/30 text-[#818cf8]"
+                    : "text-slate-500 hover:bg-white/[0.06] hover:text-slate-300"
+                }`}
+              >
+                <LineChart className="h-3.5 w-3.5" />
+              </button>
+
+              <div className="h-px w-6 bg-white/[0.05] my-1" />
+
+              {/* Eraser — clears all user drawings */}
+              <button
+                type="button"
+                title="Clear All Drawings"
+                onClick={clearDrawings}
+                className="flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-white/[0.06] hover:text-red-400 transition-colors"
+              >
+                <Eraser className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Chart area */}
+            <div className="flex-1 min-w-0 relative">
+              {loadingCandles && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#131722]/80 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 text-slate-500 font-mono text-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#6366f1] animate-pulse" />
+                    Loading candles…
+                  </div>
                 </div>
-              </div>
-            )}
-            {session && (
-              <TradingViewChart
-                ref={tvChartRef}
-                symbol={session.symbol}
-                timeframe={timeframe}
-                sessionDateFrom={session.date_from}
-                sessionDateTo={session.date_to}
+              )}
+
+              {/* Trend line pending hint */}
+              {trendPending && (
+                <div className="absolute top-2 left-2 z-10 rounded px-2 py-1 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[11px] font-mono pointer-events-none">
+                  Click second point to finish trend line
+                </div>
+              )}
+
+              <ReplayChart
+                ref={chartRef}
+                candles={candles}
+                currentIndex={currentIndex}
                 entryPrice={openTrade?.entry_price ?? null}
                 stopLoss={openTrade?.stop_loss ?? null}
                 takeProfit={openTrade?.take_profit ?? null}
-                replayVisibleEndSec={replayEndSec}
+                tool={tool}
+                onChartClick={onChartClick}
+                indicators={activeIndicators}
               />
-            )}
+            </div>
           </div>
 
           {/* ── BOTTOM CONTROLS BAR ─────────────────────────────── */}
-          <div className="flex h-11 shrink-0 items-center gap-2 border-t border-white/[0.05] bg-[#1e222d] px-3">
+          <div className="relative flex h-11 shrink-0 items-center gap-2 border-t border-white/[0.05] bg-[#1e222d] px-3">
+
+            {/* Indicators button + panel */}
+            <div className="relative" data-indicator-panel>
+              <button
+                type="button"
+                onClick={() => setShowIndicatorPanel(p => !p)}
+                className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] font-mono transition-colors ${
+                  showIndicatorPanel
+                    ? "bg-[#6366f1]/25 text-[#818cf8]"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                <BarChart2 className="h-3 w-3" />
+                <span className="hidden sm:block">Indicators</span>
+                <ChevronDown className={`h-3 w-3 transition-transform ${showIndicatorPanel ? "rotate-180" : ""}`} />
+              </button>
+
+              {showIndicatorPanel && (
+                <div className="absolute bottom-full mb-1 left-0 z-30 w-52 rounded-lg border border-white/[0.08] bg-[#1e222d] shadow-2xl p-3 space-y-1">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-slate-600 mb-2">
+                    Moving Averages
+                  </p>
+                  {([
+                    { key: "sma20" as const, label: "SMA 20", color: "#f59e0b" },
+                    { key: "sma50" as const, label: "SMA 50", color: "#3b82f6" },
+                    { key: "sma200" as const, label: "SMA 200", color: "#ef4444" },
+                    { key: "ema20" as const, label: "EMA 20", color: "#a855f7" },
+                    { key: "ema50" as const, label: "EMA 50", color: "#10b981" }
+                  ]).map(({ key, label, color }) => (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 cursor-pointer rounded px-1.5 py-1 hover:bg-white/[0.04] transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={indicators[key]}
+                        onChange={e =>
+                          setIndicators(prev => ({ ...prev, [key]: e.target.checked }))
+                        }
+                        className="hidden"
+                      />
+                      <div
+                        className="h-3 w-3 shrink-0 rounded-sm border transition-colors"
+                        style={
+                          indicators[key]
+                            ? { backgroundColor: color, borderColor: color }
+                            : { borderColor: "rgba(100,116,139,0.5)" }
+                        }
+                      />
+                      <span className="text-[11px] font-mono text-slate-300 flex-1">{label}</span>
+                      {indicators[key] && (
+                        <div className="h-px w-6 shrink-0" style={{ backgroundColor: color }} />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="h-4 w-px bg-white/[0.07]" />
 
             {/* Timeframe tabs */}
             <div className="flex items-center gap-0.5">
