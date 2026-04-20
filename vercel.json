@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/check-risk-all",
       "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/trial-reminder",
+      "schedule": "0 9 * * *"
     }
   ]
 }

@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Cookie, Settings, Shield, X } from "lucide-react";
+import { Check, Cookie, Settings, Shield, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "@/lib/toast";
 
 /* ------------------------------------------------------------------ */
 /*  Types + storage helpers                                            */
 /* ------------------------------------------------------------------ */
 
 const STORAGE_KEY = "risksent_cookie_consent_v1";
+const COOKIE_NAME = "risksent_consent";
 const CONSENT_VERSION = 1;
+/** 180 days — GDPR-common validity for stored consent. */
+const COOKIE_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 
 export type CookieConsent = {
   version: number;
@@ -29,11 +33,9 @@ const DEFAULT_REJECTED: CookieConsent = {
   marketing: false,
 };
 
-function readConsent(): CookieConsent | null {
-  if (typeof window === "undefined") return null;
+function parseConsent(raw: string | null | undefined): CookieConsent | null {
+  if (!raw) return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
     const parsed = JSON.parse(raw) as CookieConsent;
     if (!parsed || parsed.version !== CONSENT_VERSION) return null;
     return parsed;
@@ -42,9 +44,37 @@ function readConsent(): CookieConsent | null {
   }
 }
 
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(
+    new RegExp("(?:^|; )" + name.replace(/[.$?*|{}()[\]\\/+^]/g, "\\$&") + "=([^;]*)")
+  );
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function writeCookie(name: string, value: string, maxAgeSeconds: number) {
+  if (typeof document === "undefined") return;
+  // Purposefully NOT HttpOnly (this client sets it). Secure in prod so it only
+  // rides over HTTPS; Lax so it's sent on top-level navigations.
+  const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+}
+
+function readConsent(): CookieConsent | null {
+  if (typeof window === "undefined") return null;
+  // Prefer the cookie (authoritative, survives storage clears and is readable
+  // server-side); fall back to localStorage for users migrating from v0.
+  return (
+    parseConsent(readCookie(COOKIE_NAME)) ||
+    parseConsent(window.localStorage.getItem(STORAGE_KEY))
+  );
+}
+
 function writeConsent(consent: CookieConsent) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+  const serialized = JSON.stringify(consent);
+  window.localStorage.setItem(STORAGE_KEY, serialized);
+  writeCookie(COOKIE_NAME, serialized, COOKIE_MAX_AGE_SECONDS);
   window.dispatchEvent(new CustomEvent<CookieConsent>("cookie-consent:change", { detail: consent }));
 }
 
@@ -57,6 +87,18 @@ export function getCookieConsent(): CookieConsent {
 export function openCookiePreferences() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event("cookie-consent:open"));
+}
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.max(0, Math.round(diff / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
 /* ------------------------------------------------------------------ */
@@ -109,20 +151,25 @@ export function CookieConsentBanner() {
   const [modalOpen, setModalOpen] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const firstRenderRef = useRef(true);
 
-  const persist = useCallback((patch: Partial<CookieConsent>) => {
-    const next: CookieConsent = {
-      version: CONSENT_VERSION,
-      necessary: true,
-      analytics,
-      marketing,
-      timestamp: new Date().toISOString(),
-      ...patch,
-    };
-    writeConsent(next);
-    return next;
-  }, [analytics, marketing]);
+  const persist = useCallback(
+    (patch: Partial<CookieConsent>) => {
+      const next: CookieConsent = {
+        version: CONSENT_VERSION,
+        necessary: true,
+        analytics,
+        marketing,
+        timestamp: new Date().toISOString(),
+        ...patch,
+      };
+      writeConsent(next);
+      setSavedAt(next.timestamp);
+      return next;
+    },
+    [analytics, marketing]
+  );
 
   // Hydrate from storage on mount.
   useEffect(() => {
@@ -130,6 +177,7 @@ export function CookieConsentBanner() {
     if (existing) {
       setAnalytics(existing.analytics);
       setMarketing(existing.marketing);
+      setSavedAt(existing.timestamp || null);
       setBannerOpen(false);
     } else {
       setBannerOpen(true);
@@ -137,9 +185,18 @@ export function CookieConsentBanner() {
     setHydrated(true);
   }, []);
 
-  // Imperative "open preferences" from anywhere.
+  // Imperative "open preferences" from anywhere. When reopened, resync state
+  // from the persisted cookie so the toggles always match what's actually saved.
   useEffect(() => {
-    const handler = () => setModalOpen(true);
+    const handler = () => {
+      const existing = readConsent();
+      if (existing) {
+        setAnalytics(existing.analytics);
+        setMarketing(existing.marketing);
+        setSavedAt(existing.timestamp || null);
+      }
+      setModalOpen(true);
+    };
     window.addEventListener("cookie-consent:open", handler);
     return () => window.removeEventListener("cookie-consent:open", handler);
   }, []);
@@ -149,13 +206,25 @@ export function CookieConsentBanner() {
     firstRenderRef.current = false;
   }, []);
 
+  const toastSaved = useCallback((analyticsOn: boolean, marketingOn: boolean) => {
+    const on: string[] = ["Necessary"];
+    if (analyticsOn) on.push("Analytics");
+    if (marketingOn) on.push("Marketing");
+    const allOff = !analyticsOn && !marketingOn;
+    toast.success(
+      "Cookie preferences saved",
+      allOff ? "Only strictly necessary cookies are active." : `Active: ${on.join(", ")}.`
+    );
+  }, []);
+
   const acceptAll = useCallback(() => {
     setAnalytics(true);
     setMarketing(true);
     persist({ analytics: true, marketing: true });
     setBannerOpen(false);
     setModalOpen(false);
-  }, [persist]);
+    toastSaved(true, true);
+  }, [persist, toastSaved]);
 
   const rejectAll = useCallback(() => {
     setAnalytics(false);
@@ -163,13 +232,15 @@ export function CookieConsentBanner() {
     persist({ analytics: false, marketing: false });
     setBannerOpen(false);
     setModalOpen(false);
-  }, [persist]);
+    toastSaved(false, false);
+  }, [persist, toastSaved]);
 
   const saveChoices = useCallback(() => {
     persist({ analytics, marketing });
     setBannerOpen(false);
     setModalOpen(false);
-  }, [persist, analytics, marketing]);
+    toastSaved(analytics, marketing);
+  }, [persist, analytics, marketing, toastSaved]);
 
   const showBanner = hydrated && bannerOpen && !modalOpen;
 
@@ -323,7 +394,7 @@ export function CookieConsentBanner() {
               />
 
               <div className="flex items-start justify-between gap-4 px-6 pt-6">
-                <div>
+                <div className="min-w-0">
                   <p
                     className="text-[18px] font-bold text-white"
                     style={{ fontFamily: "var(--font-display)" }}
@@ -333,6 +404,19 @@ export function CookieConsentBanner() {
                   <p className="mt-1 text-[12.5px] text-slate-400">
                     Choose which cookies RiskSent can set on your device. You can change this at any time.
                   </p>
+                  {savedAt && (
+                    <div
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-mono font-semibold uppercase tracking-wider text-emerald-300"
+                      style={{
+                        borderColor: "rgba(16,185,129,0.35)",
+                        background: "rgba(16,185,129,0.08)",
+                      }}
+                      title={new Date(savedAt).toLocaleString()}
+                    >
+                      <Check className="h-3 w-3" />
+                      Saved {formatRelative(savedAt)}
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
