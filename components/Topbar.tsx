@@ -9,6 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { MarketingUserMenu } from "@/components/MarketingUserMenu";
+import { BrandLockup, BrandWordmark } from "@/components/Brand";
 
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
@@ -76,14 +77,13 @@ export function Topbar() {
           </button>
         )}
 
-        {/* Logo */}
-        <Link href={logoHref} className="shrink-0">
-          <span
-            className="text-base font-extrabold tracking-tight text-white"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            RiskSent
-          </span>
+        {/* Brand wordmark */}
+        <Link
+          href={logoHref}
+          className="shrink-0 transition-transform duration-200 hover:-translate-y-[1px]"
+          aria-label="RiskSent home"
+        >
+          <BrandWordmark className="text-[17px] sm:text-[19px]" />
         </Link>
 
         {/* Marketing nav — desktop */}
@@ -215,12 +215,7 @@ export function Topbar() {
               className="fixed inset-y-0 left-0 z-[70] flex w-[260px] flex-col border-r border-white/[0.07] bg-[#080809] px-4 py-6 lg:hidden"
             >
               <div className="mb-6 flex items-center justify-between">
-                <span
-                  className="text-base font-extrabold tracking-tight text-white"
-                  style={{ fontFamily: "'Syne', sans-serif" }}
-                >
-                  RiskSent
-                </span>
+                <BrandLockup size="sm" logoSize={28} />
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}

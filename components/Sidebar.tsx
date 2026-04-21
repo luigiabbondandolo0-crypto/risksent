@@ -11,6 +11,7 @@ import {
   isJournalChildNavActive,
 } from "@/components/navConfig";
 import { motion } from "framer-motion";
+import { BrandLockup } from "@/components/Brand";
 
 function navLinkClass(active: boolean) {
   return [
@@ -142,13 +143,12 @@ export function Sidebar({
 
   return (
     <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
-      <Link href="/app/dashboard" className="mb-8 flex items-center px-1">
-        <span
-          className="text-base font-extrabold tracking-tight text-white transition-opacity hover:opacity-80"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          RiskSent
-        </span>
+      <Link
+        href="/app/dashboard"
+        className="mb-8 flex items-center px-1 transition-opacity hover:opacity-90"
+        aria-label="RiskSent dashboard"
+      >
+        <BrandLockup size="sm" logoSize={30} />
       </Link>
 
       <div className="flex flex-col gap-8">

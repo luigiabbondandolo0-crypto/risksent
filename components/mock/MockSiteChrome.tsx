@@ -11,6 +11,7 @@ import {
 } from "@/components/mock/mockNavConfig";
 import { isJournalChildNavActive } from "@/components/navConfig";
 import { Footer } from "@/components/Footer";
+import { BrandLockup, BrandWordmark } from "@/components/Brand";
 
 function mockNavLinkActive(
   pathname: string | null,
@@ -192,16 +193,12 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
         className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] px-4 backdrop-blur-[20px] sm:px-6"
         style={{ background: "rgba(8,8,9,0.85)" }}
       >
-        <Link href="/mock/dashboard" className="flex items-center gap-2">
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-black text-white"
-            style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
-          >
-            RS
-          </span>
-          <span className="text-sm font-bold text-slate-100 font-[family-name:var(--font-display)]">
-            RiskSent
-          </span>
+        <Link
+          href="/mock/dashboard"
+          className="flex items-center transition-transform duration-200 hover:-translate-y-[1px]"
+          aria-label="RiskSent mock home"
+        >
+          <BrandWordmark variant="mock" className="text-[17px] sm:text-[19px]" />
         </Link>
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-slate-500">
@@ -218,11 +215,12 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
-          <Link href="/mock/dashboard" className="mb-8 flex items-center gap-2.5 px-1">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/25 to-amber-500/10 text-xs font-bold text-violet-200 ring-1 ring-violet-500/25">
-              RS
-            </span>
-            <span className="text-sm font-semibold tracking-tight text-slate-100">RiskSent</span>
+          <Link
+            href="/mock/dashboard"
+            className="mb-8 flex items-center px-1 transition-opacity hover:opacity-90"
+            aria-label="RiskSent mock dashboard"
+          >
+            <BrandLockup variant="mock" size="sm" logoSize={30} />
           </Link>
 
           <div className="flex flex-col gap-8">

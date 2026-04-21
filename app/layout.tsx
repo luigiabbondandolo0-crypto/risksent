@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 import { Toaster } from "@/components/ui/toaster";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700", "800", "900"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
+const syne = Syne({ subsets: ["latin"], variable: "--font-brand", weight: ["500", "600", "700", "800"] });
 
 const SITE_URL = "https://risksent.com";
 const SITE_NAME = "RiskSent";
@@ -82,7 +83,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${outfit.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`dark ${outfit.variable} ${jetbrainsMono.variable} ${syne.variable}`}>
       <body
         className={`${outfit.className} flex min-h-screen flex-col bg-background text-slate-100 antialiased`}
       >
