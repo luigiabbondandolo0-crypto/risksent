@@ -63,15 +63,15 @@ export function Topbar() {
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
     >
 
-      <div className="flex h-full w-full items-center justify-between gap-4 px-4">
+      <div className="flex h-full w-full items-center justify-between gap-4 pl-6 pr-4 sm:pl-8 sm:pr-6">
 
-        {/* Brand wordmark — always leftmost, flush to page edge */}
+        {/* Brand wordmark — slightly inset from the left edge */}
         <Link
           href={logoHref}
           className="shrink-0 transition-opacity duration-200 hover:opacity-80"
           aria-label="RiskSent home"
         >
-          <BrandWordmark className="text-[14px] sm:text-[15px]" />
+          <BrandWordmark className="text-[16px] sm:text-[18px]" />
         </Link>
 
         {/* Marketing nav — desktop */}

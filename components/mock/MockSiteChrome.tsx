@@ -191,7 +191,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
       </div>
 
       <div
-        className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] px-4 backdrop-blur-[20px]"
+        className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] pl-6 pr-4 backdrop-blur-[20px] sm:pl-8 sm:pr-6"
         style={{ background: "rgba(8,8,9,0.85)" }}
       >
         <Link
@@ -199,7 +199,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           className="flex items-center transition-opacity duration-200 hover:opacity-80"
           aria-label="RiskSent mock home"
         >
-          <BrandWordmark variant="mock" className="text-[14px] sm:text-[15px]" />
+          <BrandWordmark variant="mock" className="text-[16px] sm:text-[18px]" />
         </Link>
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-slate-500">
