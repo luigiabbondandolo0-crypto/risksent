@@ -198,7 +198,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
           className="flex items-center transition-transform duration-200 hover:-translate-y-[1px]"
           aria-label="RiskSent mock home"
         >
-          <BrandWordmark variant="mock" className="text-[17px] sm:text-[19px]" />
+          <BrandWordmark variant="live" className="text-[17px] sm:text-[19px]" />
         </Link>
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] text-slate-500">

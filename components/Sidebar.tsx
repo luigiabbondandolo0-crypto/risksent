@@ -151,11 +151,38 @@ export function Sidebar({
     <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
       <Link
         href="/app/dashboard"
-        className="mb-8 flex items-center justify-center px-1 py-1"
+        className="group mb-8 flex items-center justify-center px-1 py-2"
         aria-label="RiskSent dashboard"
       >
-        <BrandLogo treatment="bare" size={56} priority />
+        {/* Outer pulsing ring */}
+        <span className="relative flex items-center justify-center">
+          {/* Ring 1 — slow breathe */}
+          <span
+            className="absolute rounded-full"
+            style={{
+              inset: "-10px",
+              border: "1px solid rgba(45,212,191,0.18)",
+              animation: "sidebar-ring-breathe 3.6s ease-in-out infinite",
+            }}
+          />
+          {/* Ring 2 — offset phase */}
+          <span
+            className="absolute rounded-full"
+            style={{
+              inset: "-18px",
+              border: "1px solid rgba(45,212,191,0.07)",
+              animation: "sidebar-ring-breathe 3.6s ease-in-out 1.8s infinite",
+            }}
+          />
+          <BrandLogo treatment="bare" size={60} priority />
+        </span>
       </Link>
+      <style>{`
+        @keyframes sidebar-ring-breathe {
+          0%,100% { opacity:.4; transform:scale(.94); }
+          50%      { opacity:1; transform:scale(1.04); }
+        }
+      `}</style>
 
       <div className="flex flex-col gap-8">
         <Suspense fallback={<NavGroupFallback />}>

@@ -971,7 +971,7 @@ export default function HomePage() {
                       className="pb-4 px-3 text-center text-[13px] font-black tracking-tight"
                       style={{
                         fontFamily: "var(--font-display)",
-                        color: col.highlight ? "#fff" : "#475569",
+                        color: col.highlight ? "#fff" : "#94a3b8",
                       }}
                     >
                       {col.highlight && (
@@ -989,15 +989,15 @@ export default function HomePage() {
               </thead>
               <tbody>
                 {[
-                  { feature: "Backtesting",         rs: true,      fx: true,      tz: false },
-                  { feature: "Trading Journal",      rs: true,      fx: true,      tz: true },
-                  { feature: "Risk Manager",         rs: true,      fx: false,     tz: false },
-                  { feature: "Live Telegram Alerts", rs: true,      fx: false,     tz: false },
-                  { feature: "AI Coach",             rs: true,      fx: "Partial", tz: false },
-                  { feature: "Real-time Risk Blocks",rs: true,      fx: false,     tz: false },
-                  { feature: "Price",                rs: "€25–39/mo", fx: "€29/mo", tz: "€29/mo" },
-                  { feature: "Free Trial",           rs: "7 days",  fx: "Limited", tz: "7 days" },
-                  { feature: "All-in-one",           rs: true,      fx: false,     tz: "Partial" },
+                  { feature: "Backtesting",         rs: true,     fx: true,     tz: true  },
+                  { feature: "Trading Journal",      rs: true,     fx: false,    tz: true  },
+                  { feature: "Risk Manager",         rs: true,     fx: false,    tz: false },
+                  { feature: "Live Telegram Alerts", rs: true,     fx: false,    tz: false },
+                  { feature: "AI Coach",             rs: true,     fx: false,    tz: false },
+                  { feature: "Real-time Risk Blocks",rs: true,     fx: false,    tz: false },
+                  { feature: "Price",                rs: "$45/mo", fx: "$35/mo", tz: "$49/mo" },
+                  { feature: "Free Trial",           rs: "7 days", fx: "Limited",tz: "7 days" },
+                  { feature: "All-in-one",           rs: true,     fx: false,    tz: "Partial" },
                 ].map((row, ri) => (
                   <motion.tr
                     key={row.feature}
@@ -1007,12 +1007,12 @@ export default function HomePage() {
                     transition={{ duration: 0.45, delay: 0.06 * ri, ease: "easeOut" }}
                     className="group"
                   >
-                    <td className="py-3 pr-4 text-[13px] font-mono text-slate-400 border-t border-white/[0.04] group-hover:text-slate-200 transition-colors">
+                    <td className="py-3 pr-4 text-[13px] font-mono text-slate-300 border-t border-white/[0.06] group-hover:text-white transition-colors">
                       {row.feature}
                     </td>
                     {[row.rs, row.fx, row.tz].map((val, ci) => (
                       <td key={ci}
-                        className="py-3 px-3 text-center border-t border-white/[0.04]"
+                        className="py-3 px-3 text-center border-t border-white/[0.06]"
                         style={
                           ci === 0
                             ? {
@@ -1042,7 +1042,7 @@ export default function HomePage() {
                             Partial
                           </span>
                         ) : (
-                          <span className="text-[12px] font-mono" style={{ color: ci === 0 ? "#ff8c00" : "#475569" }}>
+                          <span className="text-[12px] font-mono" style={{ color: ci === 0 ? "#ff8c00" : "#94a3b8" }}>
                             {val as string}
                           </span>
                         )}
@@ -1193,7 +1193,6 @@ export default function HomePage() {
               { label: "Commission", value: "Up to 30%", color: "#ff8c00" },
               { label: "Cookie window", value: "60 days", color: "#6366f1" },
               { label: "Payout", value: "Monthly", color: "#00e676" },
-              { label: "Minimum", value: "€20", color: "#ff3c3c" },
             ].map((stat, i) => (
               <div
                 key={stat.label}
@@ -1218,18 +1217,18 @@ export default function HomePage() {
             viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.25 }}
             className="text-center"
           >
-            <Link
-              href="/app/affiliate"
-              className="inline-flex items-center gap-2.5 rounded-2xl px-8 py-4 text-[14px] font-black text-black transition-all hover:scale-[1.03]"
+            <button
+              type="button"
+              disabled
+              className="inline-flex cursor-not-allowed items-center gap-2.5 rounded-2xl px-8 py-4 text-[14px] font-black text-black opacity-80"
               style={{
                 background: "linear-gradient(135deg, #ff8c00, #ff3c3c)",
-                boxShadow: "0 0 40px rgba(255,140,0,0.22), 0 0 0 1px rgba(255,140,0,0.15)",
+                boxShadow: "0 0 40px rgba(255,140,0,0.18), 0 0 0 1px rgba(255,140,0,0.12)",
                 fontFamily: "var(--font-display)",
               }}
             >
-              Join the affiliate program
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+              Coming soon
+            </button>
             <p className="mt-4 text-[12px] text-slate-600" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
               Free to join. No minimum traffic required.
             </p>

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Gift, Users, DollarSign, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 const PREVIEW_CARDS = [
   {
@@ -41,9 +43,26 @@ const item = {
 };
 
 export default function AffiliatePage() {
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login?redirectedFrom=/app/affiliate");
+        return;
+      }
+      setAuthChecked(true);
+    };
+    checkAuth();
+  }, [router]);
+
+  if (!authChecked) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
