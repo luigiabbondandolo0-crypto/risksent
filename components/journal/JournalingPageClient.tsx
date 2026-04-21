@@ -23,6 +23,7 @@ import {
   TrendingDown,
   BarChart2,
   Search,
+  Sparkles,
 } from "lucide-react";
 import {
   format,
@@ -1388,6 +1389,9 @@ function TradesTab({
 
   const blockRealLinks = isMock && !mockUseAppRoutes;
 
+  // Derive AI coach route from basePath (e.g. `/app/journaling` → `/app/ai-coach`, `/mock/journal` → `/mock/ai-coach`).
+  const aiCoachHref = `/${basePath.split("/").filter(Boolean)[0] ?? "app"}/ai-coach`;
+
   const openTrade = (id: string) => {
     if (blockRealLinks) return;
     router.push(`${basePath}/trade/${id}`);
@@ -1414,9 +1418,25 @@ function TradesTab({
       className="space-y-5"
     >
       <div className={jn.card}>
-        <h2 className="font-display mb-4 text-base font-bold text-white">
-          All trades
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-base font-bold text-white">
+            All trades
+          </h2>
+          {blockRealLinks ? (
+            <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-[#6366f1]/30 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 px-4 py-2 font-mono text-xs font-semibold text-[#c7d2fe] opacity-60">
+              <Sparkles className="h-3.5 w-3.5 text-[#a855f7]" />
+              AI INSIGHTS
+            </span>
+          ) : (
+            <Link
+              href={aiCoachHref}
+              className="group inline-flex items-center gap-2 rounded-xl border border-[#6366f1]/40 bg-gradient-to-r from-[#6366f1]/20 to-[#a855f7]/20 px-4 py-2 font-mono text-xs font-semibold text-[#c7d2fe] shadow-[0_0_0_1px_rgba(99,102,241,0.15)] transition-all hover:border-[#6366f1]/70 hover:from-[#6366f1]/30 hover:to-[#a855f7]/30 hover:text-white"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#a855f7] transition-transform group-hover:rotate-12" />
+              AI INSIGHTS
+            </Link>
+          )}
+        </div>
         <div className="flex flex-col gap-4">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
