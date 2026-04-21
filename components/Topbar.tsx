@@ -63,9 +63,9 @@ export function Topbar() {
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
     >
 
-      <div className="flex h-full w-full items-center justify-between gap-4 pl-6 pr-4 sm:pl-8 sm:pr-6">
+      <div className="flex h-full w-full items-center justify-between gap-4 pl-10 pr-4 sm:pl-12 sm:pr-6 lg:pl-[58px]">
 
-        {/* Brand wordmark — slightly inset from the left edge */}
+        {/* Brand wordmark — on lg, the "/" lands roughly under the sidebar logo */}
         <Link
           href={logoHref}
           className="shrink-0 transition-opacity duration-200 hover:opacity-80"

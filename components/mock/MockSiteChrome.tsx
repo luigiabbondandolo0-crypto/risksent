@@ -191,7 +191,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
       </div>
 
       <div
-        className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] pl-6 pr-4 backdrop-blur-[20px] sm:pl-8 sm:pr-6"
+        className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] pl-10 pr-4 backdrop-blur-[20px] sm:pl-12 sm:pr-6 lg:pl-[58px]"
         style={{ background: "rgba(8,8,9,0.85)" }}
       >
         <Link
