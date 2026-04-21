@@ -18,7 +18,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { ReplayChart, type ReplayChartHandle, type CandleOhlc } from "@/components/backtesting/ReplayChart";
+import { ReplayChart, type ReplayChartHandle, type CandleOhlc, type ChartSettings, type ChartObject, DEFAULT_SETTINGS } from "@/components/backtesting/ReplayChart";
 import { DrawingToolbar, type DrawingTool } from "@/components/backtesting/DrawingToolbar";
 import { ChartContextMenu } from "@/components/backtesting/ChartContextMenu";
 import { TradePanel } from "@/components/backtesting/TradePanel";
@@ -35,6 +35,8 @@ type BottomTab = (typeof BOTTOM_TABS)[number];
 
 type ReplaySpeed = 1 | 2 | 5 | 10;
 const SPEEDS: ReplaySpeed[] = [1, 2, 5, 10];
+
+const SETTINGS_KEY = "bt_chart_settings";
 
 function lsKey(sessionId: string) {
   return `bt_replay_idx_${sessionId}`;
@@ -62,19 +64,37 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const [loadingOhlcv, setLoadingOhlcv] = useState(false);
   const [ohlcvErr, setOhlcvErr] = useState<string | null>(null);
   const [bottomTab, setBottomTab] = useState<BottomTab>("Trade");
-  const [tradePanel, setTradePanel] = useState<{ open: boolean; dir: "BUY" | "SELL" }>({ open: false, dir: "BUY" });
+  const [tradePanel, setTradePanel] = useState<{
+    open: boolean;
+    dir: "BUY" | "SELL";
+    presetSL?: number;
+    presetTP?: number;
+    presetLot?: number;
+  }>({ open: false, dir: "BUY" });
   const [closingTradeId, setClosingTradeId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
+  const [chartSettings, setChartSettings] = useState<ChartSettings>(DEFAULT_SETTINGS);
+  const [chartObjects, setChartObjects] = useState<ChartObject[]>([]);
 
   const chartRef = useRef<ReplayChartHandle>(null);
   const prevIndexRef = useRef(-1);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionRef = useRef<Session | null>(null);
 
-  // Keep session in ref for use in callbacks
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // ── Load settings from localStorage ─────────────────────────────────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) setChartSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+    } catch { /* */ }
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(chartSettings)); } catch { /* */ }
+  }, [chartSettings]);
 
   // ── Load session ─────────────────────────────────────────────────────────
   const loadSession = useCallback(async () => {
@@ -86,14 +106,13 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     return j.session;
   }, [id]);
 
-  // ── Load OHLCV (both preload context + session candles) ─────────────────
+  // ── Load OHLCV ───────────────────────────────────────────────────────────
   const loadOhlcv = useCallback(async (sess: Session, tf: BtTimeframe) => {
     setLoadingOhlcv(true);
     setOhlcvErr(null);
-    prevIndexRef.current = -1; // force full setData on next sync
+    prevIndexRef.current = -1;
 
     try {
-      // Fetch preload (historical context candles before session start)
       const preloadQ = new URLSearchParams({
         symbol: sess.symbol,
         timeframe: tf,
@@ -128,14 +147,12 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
       setPreloadCandles(pCandles);
       setSessionCandles(sCandles);
 
-      // Restore saved index from localStorage (only for initial TF = session TF)
       const saved = localStorage.getItem(lsKey(id));
       const idx = saved && tf === sess.timeframe
         ? Math.min(Number(saved), Math.max(0, sCandles.length - 1))
         : 0;
       setCurrentIndex(idx);
 
-      // Set chart data immediately
       const allCandles = [...pCandles, ...sCandles];
       chartRef.current?.setCandles(allCandles, pCandles.length + idx);
     } catch {
@@ -145,7 +162,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     }
   }, [id]);
 
-  // ── Initial load ─────────────────────────────────────────────────────────
   useEffect(() => {
     loadSession().then((sess) => {
       if (!sess) return;
@@ -155,7 +171,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     }).catch(console.error);
   }, [loadSession, loadOhlcv]);
 
-  // ── Sync chart when index changes ────────────────────────────────────────
   useEffect(() => {
     if (!sessionCandles.length) return;
     const prev = prevIndexRef.current;
@@ -173,11 +188,13 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const openTrade = trades.find((t) => t.status === "open") ?? null;
   useEffect(() => {
     if (openTrade) {
-      chartRef.current?.setTradeLines(
-        openTrade.entry_price,
-        openTrade.stop_loss ?? null,
-        openTrade.take_profit ?? null,
-      );
+      chartRef.current?.setTradeLines({
+        id: openTrade.id,
+        direction: openTrade.direction,
+        entry_price: openTrade.entry_price,
+        stop_loss: openTrade.stop_loss,
+        take_profit: openTrade.take_profit,
+      });
     } else {
       chartRef.current?.clearTradeLines();
     }
@@ -252,6 +269,14 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      // Ctrl+Z undo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        chartRef.current?.undo();
+        return;
+      }
+
       if (e.code === "Space" || e.code === "ArrowRight") { e.preventDefault(); stepForward(); }
       if (e.code === "ArrowLeft") { e.preventDefault(); stepBack(); }
       if (e.key.toLowerCase() === "b") { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); }
@@ -274,7 +299,26 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     void loadSession();
   }
 
-  // ── TF change ─────────────────────────────────────────────────────────────
+  async function closeTradeById(tradeId: string) {
+    const cur = sessionCandles[currentIndex];
+    if (!cur) return;
+    await closeTrade(tradeId, cur.close, new Date(cur.time * 1000).toISOString());
+  }
+
+  async function updateTradeSLTP(tradeId: string, sl: number | null, tp: number | null) {
+    const res = await fetch(`/api/backtesting/trades/${tradeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stop_loss: sl, take_profit: tp }),
+    });
+    if (res.ok) {
+      // Optimistic local update
+      setTrades((ts) => ts.map((t) => (t.id === tradeId ? { ...t, stop_loss: sl, take_profit: tp } : t)));
+    } else {
+      void loadSession();
+    }
+  }
+
   function handleTfChange(tf: BtTimeframe) {
     if (tf === timeframe || !session) return;
     setPlaying(false);
@@ -282,6 +326,13 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     setTimeframe(tf);
     void loadOhlcv(session, tf);
   }
+
+  const refreshObjects = useCallback(() => {
+    const list = chartRef.current?.listObjects() ?? [];
+    setChartObjects(list);
+  }, []);
+
+  const openTrades = trades.filter((t) => t.status === "open");
 
   const currentCandle = sessionCandles[currentIndex] ?? null;
   const displayCandle = hoveredCandle ?? (currentCandle ? currentCandle : null);
@@ -311,12 +362,10 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
         </Link>
         <div className="h-4 w-px bg-white/[0.07] shrink-0" />
 
-        {/* Symbol */}
         {session && (
           <span className="font-display text-sm font-bold text-white shrink-0">{session.symbol}</span>
         )}
 
-        {/* OHLCV */}
         {displayCandle && session && (
           <>
             <div className="h-4 w-px bg-white/[0.07] shrink-0" />
@@ -341,7 +390,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           </>
         )}
 
-        {/* Timeframe pills */}
         <div className="h-4 w-px bg-white/[0.07] shrink-0" />
         <div className="flex items-center gap-0.5">
           {TIMEFRAMES.map((tf) => (
@@ -362,7 +410,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           ))}
         </div>
 
-        {/* Right: balance + results */}
         <div className="ml-auto flex items-center gap-3 shrink-0">
           {session && (
             <div className="text-right">
@@ -386,14 +433,12 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
       {/* ── Chart area ──────────────────────────────────────────────────── */}
       <div className="relative flex min-h-0 flex-1 flex-row">
-        {/* Drawing toolbar */}
         <DrawingToolbar
           activeTool={activeTool}
           onToolChange={setActiveTool}
-          onClearAll={() => chartRef.current?.clearDrawings()}
+          onClearAll={() => { chartRef.current?.clearDrawings(); refreshObjects(); }}
         />
 
-        {/* Chart */}
         <div className="relative flex-1 min-w-0">
           {loadingOhlcv && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#080809]/80 backdrop-blur-sm">
@@ -412,10 +457,16 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             ref={chartRef}
             symbol={session?.symbol}
             activeTool={activeTool}
+            settings={chartSettings}
             onCrosshairMove={setHoveredCandle}
             onContextMenu={(price, x, y) => setCtxMenu({ price, x, y })}
-            onLongTool={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setActiveTool("cursor"); }}
-            onShortTool={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); setActiveTool("cursor"); }}
+            onToolComplete={() => setActiveTool("cursor")}
+            onPlacePosition={(dir, entry, sl, tp, lot) => {
+              setTradePanel({ open: true, dir, presetSL: sl, presetTP: tp, presetLot: lot });
+              setBottomTab("Trade");
+            }}
+            onUpdateTradeSLTP={(tradeId, sl, tp) => { void updateTradeSLTP(tradeId, sl, tp); }}
+            onObjectsChange={refreshObjects}
           />
         </div>
       </div>
@@ -425,9 +476,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
         className="flex shrink-0 flex-col border-t border-white/[0.06]"
         style={{ height: 220 }}
       >
-        {/* Replay controls row */}
         <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/[0.05] bg-[#080809] px-3">
-          {/* Transport */}
           <div className="flex items-center gap-0.5">
             <TBtn title="Reset" onClick={reset} disabled={atStart}>
               <SkipBack className="h-3.5 w-3.5" />
@@ -451,7 +500,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             </TBtn>
           </div>
 
-          {/* Speed */}
           <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-2">
             {SPEEDS.map((s) => (
               <button
@@ -467,7 +515,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             ))}
           </div>
 
-          {/* Progress bar + counter */}
           <div className="flex min-w-0 flex-1 items-center gap-2 border-l border-white/[0.06] pl-2">
             <div
               className="h-1 flex-1 min-w-0 cursor-pointer rounded-full"
@@ -478,18 +525,17 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             </span>
           </div>
 
-          {/* Candle date */}
           {currentCandle && (
             <span className="hidden shrink-0 font-mono text-[11px] text-slate-700 md:block border-l border-white/[0.06] pl-2">
               {new Date(currentCandle.time * 1000).toLocaleString(undefined, {
                 month: "short", day: "numeric", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
+                timeZone: chartSettings.timezone === "utc" ? "UTC" : undefined,
               })}
             </span>
           )}
         </div>
 
-        {/* Tab header */}
         <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[0.05] bg-[#0a0a12] px-3">
           {BOTTOM_TABS.map((tab) => (
             <button
@@ -501,9 +547,9 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
               }`}
             >
               {tab}
-              {tab === "Positions" && trades.filter((t) => t.status === "open").length > 0 && (
+              {tab === "Positions" && openTrades.length > 0 && (
                 <span className="ml-1.5 rounded-full bg-[#6366f1]/30 px-1.5 py-0.5 text-[9px] text-[#818cf8]">
-                  {trades.filter((t) => t.status === "open").length}
+                  {openTrades.length}
                 </span>
               )}
             </button>
@@ -529,7 +575,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
 
-        {/* Tab content */}
         <div className="relative flex-1 overflow-hidden">
           {bottomTab === "Trade" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
@@ -539,7 +584,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                   : "No candle loaded"}
               </p>
               <p className="font-mono text-[11px] text-slate-700">
-                B to buy · S to sell · Space / → for next candle
+                B to buy · S to sell · Space / → for next candle · Ctrl+Z to undo
               </p>
             </div>
           )}
@@ -554,7 +599,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             </div>
           )}
 
-          {/* Trade panel slide-up */}
           {session && (
             <TradePanel
               open={tradePanel.open}
@@ -562,6 +606,9 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
               currentCandle={currentCandle}
               symbol={session.symbol}
               sessionId={id}
+              presetSL={tradePanel.presetSL}
+              presetTP={tradePanel.presetTP}
+              presetLot={tradePanel.presetLot}
               onClose={() => setTradePanel((p) => ({ ...p, open: false }))}
               onTradeOpened={() => void loadSession()}
             />
@@ -576,10 +623,17 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           clientX={ctxMenu.x}
           clientY={ctxMenu.y}
           symbol={session?.symbol ?? ""}
+          objects={chartObjects}
+          openTrades={openTrades}
+          settings={chartSettings}
           onClose={() => setCtxMenu(null)}
           onBuy={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setCtxMenu(null); }}
           onSell={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); setCtxMenu(null); }}
           onResetView={() => { chartRef.current?.resetView(); setCtxMenu(null); }}
+          onFocusObject={(objId) => chartRef.current?.focusObject(objId)}
+          onRemoveObject={(objId) => { chartRef.current?.removeObject(objId); }}
+          onCloseTrade={(tradeId) => { void closeTradeById(tradeId); setCtxMenu(null); }}
+          onSettingsChange={setChartSettings}
         />
       )}
     </div>

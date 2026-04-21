@@ -7,7 +7,6 @@ import {
   Minus,
   Square,
   Type,
-  Magnet,
   Eraser,
   Trash2,
 } from "lucide-react";
@@ -21,7 +20,6 @@ export type DrawingTool =
   | "rectangle"
   | "fib"
   | "text"
-  | "magnet"
   | "eraser";
 
 type Props = {
@@ -50,17 +48,16 @@ type ToolDef = {
 const TOOL_GROUPS: (ToolDef | "sep")[] = [
   { id: "cursor",    label: "Cursor",          icon: <MousePointer2 className="h-4 w-4" /> },
   "sep",
-  { id: "long",     label: "Long Position",   icon: <TrendingUp className="h-4 w-4" />,   activeColor: "#26a69a" },
-  { id: "short",    label: "Short Position",  icon: <TrendingDown className="h-4 w-4" />,  activeColor: "#ef5350" },
+  { id: "long",      label: "Long Position",   icon: <TrendingUp className="h-4 w-4" />,   activeColor: "#26a69a" },
+  { id: "short",     label: "Short Position",  icon: <TrendingDown className="h-4 w-4" />, activeColor: "#ef5350" },
   "sep",
-  { id: "trendline", label: "Trend Line",     icon: <TrendingUp className="h-4 w-4" /> },
-  { id: "hline",     label: "Horiz. Line",    icon: <Minus className="h-4 w-4" /> },
-  { id: "rectangle", label: "Rectangle",      icon: <Square className="h-4 w-4" /> },
-  { id: "fib",       label: "Fibonacci",      icon: <FibIcon /> },
-  { id: "text",      label: "Text Label",     icon: <Type className="h-4 w-4" /> },
+  { id: "trendline", label: "Trend Line",      icon: <TrendingUp className="h-4 w-4" /> },
+  { id: "hline",     label: "Horiz. Line",     icon: <Minus className="h-4 w-4" /> },
+  { id: "rectangle", label: "Rectangle",       icon: <Square className="h-4 w-4" /> },
+  { id: "fib",       label: "Fibonacci",       icon: <FibIcon /> },
+  { id: "text",      label: "Text Label",      icon: <Type className="h-4 w-4" /> },
   "sep",
-  { id: "magnet",    label: "Snap to Price",  icon: <Magnet className="h-4 w-4" /> },
-  { id: "eraser",    label: "Eraser",         icon: <Eraser className="h-4 w-4" /> },
+  { id: "eraser",    label: "Eraser",          icon: <Eraser className="h-4 w-4" /> },
 ];
 
 export function DrawingToolbar({ activeTool, onToolChange, onClearAll }: Props) {

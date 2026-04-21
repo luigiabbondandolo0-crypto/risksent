@@ -12,11 +12,14 @@ type Props = {
   currentCandle: Candle | null;
   symbol: string;
   sessionId: string;
+  presetSL?: number;
+  presetTP?: number;
+  presetLot?: number;
   onClose: () => void;
   onTradeOpened: () => void;
 };
 
-export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, onClose, onTradeOpened }: Props) {
+export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, presetSL, presetTP, presetLot, onClose, onTradeOpened }: Props) {
   const [direction, setDirection] = useState<"BUY" | "SELL">(defaultDirection);
   const [lotSize, setLotSize] = useState("0.10");
   const [slInput, setSlInput] = useState("");
@@ -32,15 +35,23 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
     if (!open || !currentCandle) return;
     const price = currentCandle.close;
     const ps = pipStep(symbol);
-    if (defaultDirection === "BUY") {
+    if (presetSL != null) {
+      setSlInput(fmtPrice(symbol, presetSL));
+    } else if (defaultDirection === "BUY") {
       setSlInput(fmtPrice(symbol, price - ps * 20));
-      setTpInput(fmtPrice(symbol, price + ps * 40));
     } else {
       setSlInput(fmtPrice(symbol, price + ps * 20));
+    }
+    if (presetTP != null) {
+      setTpInput(fmtPrice(symbol, presetTP));
+    } else if (defaultDirection === "BUY") {
+      setTpInput(fmtPrice(symbol, price + ps * 40));
+    } else {
       setTpInput(fmtPrice(symbol, price - ps * 40));
     }
+    if (presetLot != null) setLotSize(String(presetLot));
     setErr("");
-  }, [open, defaultDirection, currentCandle, symbol]);
+  }, [open, defaultDirection, currentCandle, symbol, presetSL, presetTP, presetLot]);
 
   const entryPrice = currentCandle?.close ?? 0;
   const sl = parseFloat(slInput) || 0;
