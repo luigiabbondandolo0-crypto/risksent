@@ -927,9 +927,9 @@ export default function HomePage() {
       </section>
 
       {/* ─── COMPARISON ─── */}
-      <section className="px-6 lg:px-16 py-24 relative overflow-hidden" style={{ zIndex: 1 }}>
+      <section className="px-6 lg:px-16 py-24 relative overflow-hidden" style={{ zIndex: 1, background: "#080809" }}>
         <div className="pointer-events-none absolute inset-0"
-          style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0.04) 0%, transparent 65%)" }} />
+          style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0.06) 0%, transparent 65%)" }} />
         <div className="max-w-5xl mx-auto relative">
 
           {/* Header */}
@@ -971,7 +971,7 @@ export default function HomePage() {
                       className="pb-4 px-3 text-center text-[13px] font-black tracking-tight"
                       style={{
                         fontFamily: "var(--font-display)",
-                        color: col.highlight ? "#fff" : "#94a3b8",
+                        color: col.highlight ? "#fff" : "#e2e8f0",
                       }}
                     >
                       {col.highlight && (
@@ -1005,19 +1005,19 @@ export default function HomePage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.45, delay: 0.06 * ri, ease: "easeOut" }}
-                    className="group"
+                    className="group cursor-default"
                   >
-                    <td className="py-3 pr-4 text-[13px] font-mono text-slate-300 border-t border-white/[0.06] group-hover:text-white transition-colors">
+                    <td className="py-3 pr-4 text-[13px] font-mono text-slate-200 border-t border-white/[0.06] transition-colors group-hover:bg-white/[0.025] group-hover:text-white rounded-l-lg pl-3">
                       {row.feature}
                     </td>
                     {[row.rs, row.fx, row.tz].map((val, ci) => (
                       <td key={ci}
-                        className="py-3 px-3 text-center border-t border-white/[0.06]"
+                        className="py-3 px-3 text-center border-t border-white/[0.06] transition-colors group-hover:bg-white/[0.025]"
                         style={
                           ci === 0
                             ? {
-                                background: "rgba(255,60,60,0.04)",
-                                boxShadow: "inset 1px 0 0 rgba(255,60,60,0.15), inset -1px 0 0 rgba(255,60,60,0.15)",
+                                background: "rgba(255,60,60,0.06)",
+                                boxShadow: "inset 1px 0 0 rgba(255,60,60,0.18), inset -1px 0 0 rgba(255,60,60,0.18)",
                               }
                             : undefined
                         }
@@ -1033,7 +1033,7 @@ export default function HomePage() {
                           <span className="inline-flex items-center justify-center">
                             <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
                               <circle cx="8" cy="8" r="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-                              <path d="M6 10l4-4M10 10L6 6" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                              <path d="M6 10l4-4M10 10L6 6" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
                             </svg>
                           </span>
                         ) : val === "Partial" ? (
@@ -1042,7 +1042,7 @@ export default function HomePage() {
                             Partial
                           </span>
                         ) : (
-                          <span className="text-[12px] font-mono" style={{ color: ci === 0 ? "#ff8c00" : "#94a3b8" }}>
+                          <span className="text-[12px] font-mono" style={{ color: ci === 0 ? "#ff8c00" : "#cbd5e1" }}>
                             {val as string}
                           </span>
                         )}

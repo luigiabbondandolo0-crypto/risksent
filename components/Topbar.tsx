@@ -65,19 +65,7 @@ export function Topbar() {
 
       <div className="mx-auto flex h-full w-full max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
 
-        {/* Hamburger (app, mobile only) */}
-        {inApp && (
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white"
-            aria-label="Open menu"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-        )}
-
-        {/* Brand wordmark */}
+        {/* Brand wordmark — always leftmost */}
         <Link
           href={logoHref}
           className="shrink-0 transition-transform duration-200 hover:-translate-y-[1px]"
@@ -148,6 +136,17 @@ export function Topbar() {
               </Link>
             </>
           ) : null}
+          {/* Hamburger — app mobile, at far right so wordmark stays leftmost */}
+          {inApp && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white"
+              aria-label="Open menu"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
