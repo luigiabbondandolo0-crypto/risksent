@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ReplayChart, type ReplayChartHandle, type CandleOhlc } from "@/components/backtesting/ReplayChart";
 import { DrawingToolbar, type DrawingTool } from "@/components/backtesting/DrawingToolbar";
+import { ChartContextMenu } from "@/components/backtesting/ChartContextMenu";
 import { TradePanel } from "@/components/backtesting/TradePanel";
 import { OpenPositions } from "@/components/backtesting/OpenPositions";
 import { fmtPrice, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
@@ -65,6 +66,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const [closingTradeId, setClosingTradeId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
 
   const chartRef = useRef<ReplayChartHandle>(null);
   const prevIndexRef = useRef(-1);
@@ -388,7 +390,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
         <DrawingToolbar
           activeTool={activeTool}
           onToolChange={setActiveTool}
-          onClearAll={() => { /* future: clear chart drawings */ }}
+          onClearAll={() => chartRef.current?.clearDrawings()}
         />
 
         {/* Chart */}
@@ -409,7 +411,11 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           <ReplayChart
             ref={chartRef}
             symbol={session?.symbol}
+            activeTool={activeTool}
             onCrosshairMove={setHoveredCandle}
+            onContextMenu={(price, x, y) => setCtxMenu({ price, x, y })}
+            onLongTool={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setActiveTool("cursor"); }}
+            onShortTool={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); setActiveTool("cursor"); }}
           />
         </div>
       </div>
@@ -562,6 +568,20 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           )}
         </div>
       </div>
+
+      {/* ── Chart context menu ───────────────────────────────────────────── */}
+      {ctxMenu && (
+        <ChartContextMenu
+          price={ctxMenu.price}
+          clientX={ctxMenu.x}
+          clientY={ctxMenu.y}
+          symbol={session?.symbol ?? ""}
+          onClose={() => setCtxMenu(null)}
+          onBuy={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setCtxMenu(null); }}
+          onSell={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); setCtxMenu(null); }}
+          onResetView={() => { chartRef.current?.resetView(); setCtxMenu(null); }}
+        />
+      )}
     </div>
   );
 }
