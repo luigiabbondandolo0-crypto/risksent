@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import type { JournalTradeRow } from "@/lib/journal/journalTypes";
 import { jn } from "@/lib/journal/jnClasses";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
@@ -104,15 +104,27 @@ export function JournalTradesPageClient({
 
   const shellClass = embedded ? "scroll-mt-28 space-y-6 border-t border-white/[0.06] pt-8" : `${jn.page} space-y-6`;
 
+  // Derive AI coach route from linkBase (e.g. `/app/journaling` → `/app/ai-coach`, `/mock/journal` → `/mock/ai-coach`).
+  const aiCoachHref = `/${linkBase.split("/").filter(Boolean)[0] ?? "app"}/ai-coach`;
+
   return (
     <div className={shellClass} id={embedded ? "journal-trades" : undefined}>
-      <div>
-        {embedded ? (
-          <h2 className={jn.h1}>Trades</h2>
-        ) : (
-          <h1 className={jn.h1}>Trades</h1>
-        )}
-        <p className={jn.sub}>Filter, review, and drill into every execution.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          {embedded ? (
+            <h2 className={jn.h1}>Trades</h2>
+          ) : (
+            <h1 className={jn.h1}>Trades</h1>
+          )}
+          <p className={jn.sub}>Filter, review, and drill into every execution.</p>
+        </div>
+        <Link
+          href={aiCoachHref}
+          className="group inline-flex items-center gap-2 rounded-xl border border-[#6366f1]/40 bg-gradient-to-r from-[#6366f1]/20 to-[#a855f7]/20 px-4 py-2 font-mono text-xs font-semibold text-[#c7d2fe] shadow-[0_0_0_1px_rgba(99,102,241,0.15)] transition-all hover:border-[#6366f1]/70 hover:from-[#6366f1]/30 hover:to-[#a855f7]/30 hover:text-white"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-[#a855f7] transition-transform group-hover:rotate-12" />
+          AI INSIGHTS
+        </Link>
       </div>
 
       {useSeed && (
