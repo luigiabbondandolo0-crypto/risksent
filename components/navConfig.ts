@@ -35,8 +35,8 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
-  { href: "/app/billing", label: "Billing", icon: CreditCard },
   { href: "/app/affiliate", label: "Affiliate", icon: Gift, badge: "Soon" },
+  { href: "/app/billing", label: "Billing", icon: CreditCard },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];

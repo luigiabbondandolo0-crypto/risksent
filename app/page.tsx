@@ -1075,6 +1075,168 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── AFFILIATE ─── */}
+      <section className="px-6 lg:px-16 py-28 relative overflow-hidden" style={{ zIndex: 1 }}>
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse 70% 55% at 50% 50%, rgba(255,140,0,0.055) 0%, transparent 70%)" }} />
+        {/* Subtle grid */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.018]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }} />
+
+        <div className="relative max-w-5xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.65 }}
+            className="mb-16 text-center"
+          >
+            <p className="text-[11px] font-mono uppercase tracking-[0.3em] mb-4"
+              style={{ color: "#ff8c00" }}>
+              Affiliate Program
+            </p>
+            <h2
+              className="text-[clamp(34px,5.5vw,72px)] font-black leading-[0.92] tracking-[-0.03em] text-white"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Share RiskSent.<br />
+              <span style={{ color: "#ff8c00" }}>Get paid.</span>
+            </h2>
+            <p className="mt-5 text-slate-500 max-w-lg mx-auto text-[14px] leading-relaxed"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              Recommend RiskSent to other traders and earn a recurring commission on every subscription they pay. No cap.
+            </p>
+          </motion.div>
+
+          {/* Steps row */}
+          <div className="mb-14 grid gap-4 sm:grid-cols-3">
+            {[
+              {
+                n: "01",
+                title: "Get your link",
+                body: "Sign up for the program and receive a unique referral URL tied to your account.",
+                color: "#ff3c3c",
+                delay: 0.1,
+              },
+              {
+                n: "02",
+                title: "Share & refer",
+                body: "Post it anywhere — Twitter, Discord, Telegram, your trading community. We track every click.",
+                color: "#ff8c00",
+                delay: 0.22,
+              },
+              {
+                n: "03",
+                title: "Earn monthly",
+                body: "Collect a percentage of every recurring payment from traders you refer. For as long as they subscribe.",
+                color: "#00e676",
+                delay: 0.34,
+              },
+            ].map((step) => (
+              <motion.div
+                key={step.n}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: step.delay }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className="relative rounded-2xl border p-6"
+                style={{
+                  background: "rgba(14,14,18,0.9)",
+                  borderColor: "rgba(255,255,255,0.07)",
+                  boxShadow: `0 0 40px ${step.color}10`,
+                }}
+              >
+                {/* Step number */}
+                <span
+                  className="mb-4 block text-[11px] font-mono font-bold tracking-[0.2em]"
+                  style={{ color: step.color }}
+                >
+                  {step.n}
+                </span>
+                {/* Glowing dot */}
+                <div
+                  className="mb-3 h-2 w-2 rounded-full"
+                  style={{ background: step.color, boxShadow: `0 0 10px ${step.color}` }}
+                />
+                <h3 className="mb-2 text-[17px] font-black tracking-tight text-white"
+                  style={{ fontFamily: "var(--font-display)" }}>
+                  {step.title}
+                </h3>
+                <p className="text-[13px] leading-relaxed text-slate-500"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  {step.body}
+                </p>
+                {/* Bottom accent line */}
+                <div
+                  className="absolute bottom-0 left-0 h-[2px] rounded-b-2xl"
+                  style={{
+                    width: "40%",
+                    background: `linear-gradient(90deg, ${step.color}, transparent)`,
+                  }}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Stats strip */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.15 }}
+            className="mb-12 flex flex-wrap justify-center gap-px overflow-hidden rounded-2xl border"
+            style={{ borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            {[
+              { label: "Commission", value: "Up to 30%", color: "#ff8c00" },
+              { label: "Cookie window", value: "60 days", color: "#6366f1" },
+              { label: "Payout", value: "Monthly", color: "#00e676" },
+              { label: "Minimum", value: "€20", color: "#ff3c3c" },
+            ].map((stat, i) => (
+              <div
+                key={stat.label}
+                className="flex flex-1 min-w-[130px] flex-col items-center justify-center px-6 py-5"
+                style={{
+                  background: i % 2 === 0 ? "rgba(14,14,18,0.95)" : "rgba(18,18,24,0.95)",
+                }}
+              >
+                <span className="text-[22px] font-black tracking-tight" style={{ color: stat.color, fontFamily: "var(--font-display)" }}>
+                  {stat.value}
+                </span>
+                <span className="mt-1 text-[11px] font-mono uppercase tracking-[0.15em] text-slate-600">
+                  {stat.label}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.25 }}
+            className="text-center"
+          >
+            <Link
+              href="/app/affiliate"
+              className="inline-flex items-center gap-2.5 rounded-2xl px-8 py-4 text-[14px] font-black text-black transition-all hover:scale-[1.03]"
+              style={{
+                background: "linear-gradient(135deg, #ff8c00, #ff3c3c)",
+                boxShadow: "0 0 40px rgba(255,140,0,0.22), 0 0 0 1px rgba(255,140,0,0.15)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Join the affiliate program
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="mt-4 text-[12px] text-slate-600" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              Free to join. No minimum traffic required.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ─── FINAL CTA ─── */}
       <section className="final-cta px-6 lg:px-16 py-40 relative overflow-hidden" style={{ zIndex: 1 }}>
         <div
