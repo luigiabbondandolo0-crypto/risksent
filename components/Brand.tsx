@@ -3,41 +3,38 @@ import Image from "next/image";
 type Variant = "live" | "mock";
 
 type WordmarkProps = {
-  /** Visual tone — live uses red/orange, mock uses violet. */
+  /** Visual tone — live uses red accent, mock uses violet accent. */
   variant?: Variant;
   /** Extra classes applied to the outer span (controls font size, etc.). */
   className?: string;
-  /** Hide the pulsing risk dot (useful on very tight spaces). */
+  /** Deprecated — kept for backwards compat. No-op in the mono variant. */
   hideDot?: boolean;
-  /** Apply the diagonal highlight sweep. */
+  /** Deprecated — kept for backwards compat. No-op in the mono variant. */
   shine?: boolean;
 };
 
 /**
- * Animated RISKSENT wordmark used in the topbar / mobile drawer.
+ * RISK/SENT terminal-style wordmark.
  *
- * - "RISK" flows through a red → orange gradient (violet in mock)
- * - "SENT" is a clean white/silver gradient for contrast
- * - Small pulsing dot evokes a live risk heartbeat
- * - Optional periodic shine sweep across the letters
- *
- * Animations respect `prefers-reduced-motion` via globals.css.
+ * - Monospace (JetBrains Mono), uppercase, wide tracking
+ * - Solid white letters, red `/` separator (violet in mock)
+ * - Zero animations — clean, trading-terminal aesthetic
  */
 export function BrandWordmark({
   variant = "live",
   className = "",
-  hideDot = false,
-  shine = true,
 }: WordmarkProps) {
   return (
     <span
-      className={`rs-wordmark ${shine ? "rs-wordmark-shine" : ""} ${className}`}
+      className={`rs-wordmark ${className}`}
       data-variant={variant}
       aria-label="RiskSent"
     >
       <span className="rs-wordmark-risk">RISK</span>
+      <span className="rs-wordmark-sep" aria-hidden>
+        /
+      </span>
       <span className="rs-wordmark-sent">SENT</span>
-      {!hideDot && <span className="rs-wordmark-dot" aria-hidden />}
     </span>
   );
 }

@@ -573,105 +573,43 @@ aside.lg\:flex {
   .terminal-cursor::after,
   .notif-in,
   .rs-candle-scroll,
-  .partners-marquee,
-  .rs-wordmark-risk,
-  .rs-wordmark-sent,
-  .rs-wordmark-dot,
-  .rs-wordmark-shine::after {
+  .partners-marquee {
     animation: none !important;
     transition: none !important;
   }
 }
 
-/* ── RiskSent wordmark (topbar + sidebar brand) ── */
+/* ── RiskSent wordmark (topbar + sidebar brand)
+   Mono-terminal style: RISK / SENT, uppercase, wide tracking,
+   solid white with red accent separator. No animations. ── */
 .rs-wordmark {
-  font-family: var(--font-brand), "Syne", "Outfit", sans-serif;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
   line-height: 1;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0;
   position: relative;
   white-space: nowrap;
+  color: #f1f5f9;
 }
 
-.rs-wordmark-risk {
-  background: linear-gradient(120deg, #ff3c3c 0%, #ff6347 35%, #ff8c00 70%, #ff3c3c 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: rs-brand-gradient 6s linear infinite;
-}
-
+.rs-wordmark-risk,
 .rs-wordmark-sent {
   color: #f8fafc;
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
-.rs-wordmark-dot {
+.rs-wordmark-sep {
   display: inline-block;
-  width: 0.32em;
-  height: 0.32em;
-  margin-left: 0.28em;
-  border-radius: 999px;
-  background: #ff3c3c;
-  box-shadow:
-    0 0 6px rgba(255, 60, 60, 0.8),
-    0 0 14px rgba(255, 60, 60, 0.45);
-  animation: rs-brand-pulse 1.6s ease-in-out infinite;
-  transform-origin: center;
-  align-self: center;
-}
-
-.rs-wordmark-shine {
-  position: relative;
-  overflow: hidden;
-}
-.rs-wordmark-shine::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.5) 50%,
-    transparent 80%
-  );
-  transform: translateX(-120%);
-  animation: rs-brand-sweep 5.5s ease-in-out infinite;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-@keyframes rs-brand-gradient {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 220% 50%; }
-}
-
-@keyframes rs-brand-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow:
-      0 0 6px rgba(255, 60, 60, 0.8),
-      0 0 14px rgba(255, 60, 60, 0.45);
-  }
-  50% {
-    transform: scale(1.35);
-    box-shadow:
-      0 0 10px rgba(255, 60, 60, 1),
-      0 0 22px rgba(255, 140, 0, 0.65);
-  }
-}
-
-@keyframes rs-brand-sweep {
-  0%   { transform: translateX(-120%); }
-  60%  { transform: translateX(220%); }
-  100% { transform: translateX(220%); }
+  padding: 0 0.18em;
+  color: #ff3c3c;
+  font-weight: 400;
+  transform: translateY(-0.02em);
+  text-shadow:
+    0 0 8px rgba(255, 60, 60, 0.65),
+    0 0 18px rgba(255, 60, 60, 0.25);
 }
 
 /* ── Bare logo mark: no background, cinematic teal halo ── */
@@ -730,17 +668,10 @@ aside.lg\:flex {
   }
 }
 
-/* Mock chrome uses a violet-ish accent, keep wordmark consistent but
-   slightly shifted so users can feel the "demo" vibe. */
-.rs-wordmark[data-variant="mock"] .rs-wordmark-risk {
-  background: linear-gradient(120deg, #a855f7 0%, #c084fc 35%, #ff8c00 70%, #a855f7 100%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-.rs-wordmark[data-variant="mock"] .rs-wordmark-dot {
-  background: #a855f7;
-  box-shadow:
-    0 0 6px rgba(168, 85, 247, 0.8),
-    0 0 14px rgba(168, 85, 247, 0.45);
+/* Mock chrome: swap the `/` accent to violet so the demo feels distinct. */
+.rs-wordmark[data-variant="mock"] .rs-wordmark-sep {
+  color: #a855f7;
+  text-shadow:
+    0 0 8px rgba(168, 85, 247, 0.65),
+    0 0 18px rgba(168, 85, 247, 0.25);
 }
