@@ -63,7 +63,7 @@ export function Topbar() {
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
     >
 
-      <div className="mx-auto flex h-full w-full max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+      <div className={`mx-auto flex h-full w-full max-w-[1800px] items-center justify-between gap-4 px-4 sm:px-6 ${inApp ? "" : "lg:px-10"}`}>
 
         {/* Brand wordmark — always leftmost */}
         <Link
