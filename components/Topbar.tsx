@@ -17,6 +17,7 @@ const marketingNav = [
   { href: "/live-alerts", label: "Live Alerts" },
   { href: "/ai-coach", label: "AI Coach" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/info", label: "Info" },
 ];
 
 export function Topbar() {

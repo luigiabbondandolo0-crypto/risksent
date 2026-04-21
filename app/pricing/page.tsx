@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Zap, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, X as XIcon, Zap, ChevronDown } from "lucide-react";
 import { useRefreshSubscription, useSubscription } from "@/lib/subscription/SubscriptionContext";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
@@ -383,8 +383,12 @@ export default function PricingPage() {
                   <ul className="mt-6 space-y-2.5">
                     {plan.features.map((f) => (
                       <li key={f.text} className="flex items-start gap-2.5">
-                        <Check className="h-4 w-4 shrink-0 mt-0.5"
-                          style={{ color: f.included ? (isHighlight ? "#ff3c3c" : "#00e676") : "#334155" }} />
+                        {f.included ? (
+                          <Check className="h-4 w-4 shrink-0 mt-0.5"
+                            style={{ color: isHighlight ? "#ff3c3c" : "#00e676" }} />
+                        ) : (
+                          <XIcon className="h-4 w-4 shrink-0 mt-0.5" style={{ color: "#334155" }} />
+                        )}
                         <span className={`text-sm ${f.included ? "text-slate-300" : "text-slate-600 line-through"}`}
                           style={{ fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", fontSize: "13px" }}>
                           {f.text}

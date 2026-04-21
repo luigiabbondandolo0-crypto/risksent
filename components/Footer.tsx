@@ -35,7 +35,7 @@ const RESOURCES_LINKS: LinkItem[] = [
   { href: "/contact", label: "Contact us" },
   { href: "/changelog", label: "Changelog" },
   { href: "/support#faq", label: "FAQ" },
-  { href: "https://status.risksent.com", label: "System status", external: true },
+  { href: "/status", label: "System status" },
 ];
 
 const COMPANY_LINKS: LinkItem[] = [
@@ -155,18 +155,10 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-12 lg:gap-12">
           {/* Brand */}
           <div className="col-span-2 sm:col-span-3 lg:col-span-4">
-            <Link href="/" className="inline-flex items-center gap-2.5">
+            <Link href="/" className="inline-flex items-center">
               <span
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-black text-white"
-                style={{
-                  background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
-                }}
-              >
-                RS
-              </span>
-              <span
-                className="text-lg font-extrabold tracking-tight text-white"
-                style={{ fontFamily: "var(--font-display)" }}
+                className="text-xl font-black tracking-tight text-white"
+                style={{ fontFamily: "'Syne', var(--font-display, sans-serif)" }}
               >
                 RiskSent
               </span>

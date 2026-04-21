@@ -926,6 +926,155 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ─── COMPARISON ─── */}
+      <section className="px-6 lg:px-16 py-24 relative overflow-hidden" style={{ zIndex: 1 }}>
+        <div className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,60,60,0.04) 0%, transparent 65%)" }} />
+        <div className="max-w-5xl mx-auto relative">
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.7 }}
+            className="mb-14 text-center"
+          >
+            <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-3">Why switch</p>
+            <h2
+              className="text-[clamp(32px,5vw,64px)] font-black leading-[0.95] tracking-[-0.03em] text-white"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Why traders switch<br />
+              <span className="text-slate-500">to RiskSent</span>
+            </h2>
+          </motion.div>
+
+          {/* Table — horizontal scroll on mobile */}
+          <div className="overflow-x-auto">
+            <motion.table
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="w-full min-w-[640px] border-collapse"
+            >
+              <thead>
+                <tr>
+                  <th className="text-left pb-4 pr-4 text-[12px] font-mono uppercase tracking-[0.18em] text-slate-500 font-normal w-[36%]">
+                    Feature
+                  </th>
+                  {[
+                    { name: "RiskSent", highlight: true },
+                    { name: "FXReplay", highlight: false },
+                    { name: "Tradezella", highlight: false },
+                  ].map((col) => (
+                    <th key={col.name}
+                      className="pb-4 px-3 text-center text-[13px] font-black tracking-tight"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        color: col.highlight ? "#fff" : "#475569",
+                      }}
+                    >
+                      {col.highlight && (
+                        <span
+                          className="block mb-1 text-[9px] font-mono font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full mx-auto w-fit"
+                          style={{ color: "#ff3c3c", background: "rgba(255,60,60,0.12)", border: "1px solid rgba(255,60,60,0.25)" }}
+                        >
+                          You're here
+                        </span>
+                      )}
+                      {col.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: "Backtesting",         rs: true,      fx: true,      tz: false },
+                  { feature: "Trading Journal",      rs: true,      fx: true,      tz: true },
+                  { feature: "Risk Manager",         rs: true,      fx: false,     tz: false },
+                  { feature: "Live Telegram Alerts", rs: true,      fx: false,     tz: false },
+                  { feature: "AI Coach",             rs: true,      fx: "Partial", tz: false },
+                  { feature: "Real-time Risk Blocks",rs: true,      fx: false,     tz: false },
+                  { feature: "Price",                rs: "€25–39/mo", fx: "€29/mo", tz: "€29/mo" },
+                  { feature: "Free Trial",           rs: "7 days",  fx: "Limited", tz: "7 days" },
+                  { feature: "All-in-one",           rs: true,      fx: false,     tz: "Partial" },
+                ].map((row, ri) => (
+                  <motion.tr
+                    key={row.feature}
+                    initial={{ opacity: 0, x: -12 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.45, delay: 0.06 * ri, ease: "easeOut" }}
+                    className="group"
+                  >
+                    <td className="py-3 pr-4 text-[13px] font-mono text-slate-400 border-t border-white/[0.04] group-hover:text-slate-200 transition-colors">
+                      {row.feature}
+                    </td>
+                    {[row.rs, row.fx, row.tz].map((val, ci) => (
+                      <td key={ci}
+                        className="py-3 px-3 text-center border-t border-white/[0.04]"
+                        style={
+                          ci === 0
+                            ? {
+                                background: "rgba(255,60,60,0.04)",
+                                boxShadow: "inset 1px 0 0 rgba(255,60,60,0.15), inset -1px 0 0 rgba(255,60,60,0.15)",
+                              }
+                            : undefined
+                        }
+                      >
+                        {val === true ? (
+                          <span className="inline-flex items-center justify-center">
+                            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="7" fill="rgba(0,230,118,0.12)" stroke="rgba(0,230,118,0.3)" strokeWidth="1"/>
+                              <path d="M5 8l2 2 4-4" stroke="#00e676" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
+                        ) : val === false ? (
+                          <span className="inline-flex items-center justify-center">
+                            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="7" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+                              <path d="M6 10l4-4M10 10L6 6" stroke="#334155" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
+                          </span>
+                        ) : val === "Partial" ? (
+                          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full"
+                            style={{ color: "#ff8c00", background: "rgba(255,140,0,0.1)" }}>
+                            Partial
+                          </span>
+                        ) : (
+                          <span className="text-[12px] font-mono" style={{ color: ci === 0 ? "#ff8c00" : "#475569" }}>
+                            {val as string}
+                          </span>
+                        )}
+                      </td>
+                    ))}
+                  </motion.tr>
+                ))}
+              </tbody>
+            </motion.table>
+          </div>
+
+          {/* Below table CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-10 text-center"
+          >
+            <p className="text-slate-500 font-mono text-[13px] mb-6">
+              One subscription. Everything included.
+            </p>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-bold text-black transition-all hover:scale-[1.03]"
+              style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)", boxShadow: "0 0 32px rgba(255,60,60,0.25)" }}
+            >
+              See pricing
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ─── FINAL CTA ─── */}
       <section className="final-cta px-6 lg:px-16 py-40 relative overflow-hidden" style={{ zIndex: 1 }}>
         <div

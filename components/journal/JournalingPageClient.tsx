@@ -941,7 +941,7 @@ function CalendarTab({
   }, [isMock, allTrades]);
 
   const blockRealLinks = isMock && !mockUseAppRoutes;
-  const tradeLinkBase = blockRealLinks ? "/mock/journal/trade" : "/app/journaling/trade";
+  const tradeLinkBase = blockRealLinks ? "/mock/journaling/trade" : "/app/journaling/trade";
 
   const start = startOfMonth(month);
   const end = endOfMonth(month);
@@ -1389,7 +1389,7 @@ function TradesTab({
 
   const blockRealLinks = isMock && !mockUseAppRoutes;
 
-  // Derive AI coach route from basePath (e.g. `/app/journaling` → `/app/ai-coach`, `/mock/journal` → `/mock/ai-coach`).
+  // Derive AI coach route from basePath (e.g. `/app/journaling` → `/app/ai-coach`, `/mock/journaling` → `/mock/ai-coach`).
   const aiCoachHref = `/${basePath.split("/").filter(Boolean)[0] ?? "app"}/ai-coach`;
 
   const openTrade = (id: string) => {
@@ -1879,7 +1879,7 @@ export function JournalingPageClient({
     }
   };
 
-  const journalTradeBase = blockRealLinks ? "/mock/journal" : "/app/journaling";
+  const journalTradeBase = blockRealLinks ? "/mock/journaling" : "/app/journaling";
 
   const load = useCallback(async () => {
     if (isMock) {
@@ -2111,7 +2111,7 @@ export function JournalingPageClient({
         {/* Right actions */}
         <div className="flex items-center gap-2">
           <Link
-            href={blockRealLinks ? "#" : "/app/journaling/settings"}
+            href={blockRealLinks ? "/mock/journaling/settings" : "/app/journaling/settings"}
             className={jn.btnGhost}
             style={{ padding: "6px 10px" }}
           >
@@ -2189,7 +2189,7 @@ export function JournalingPageClient({
               rules={rules}
               updateSession={updateSession}
               onFlushSessionSave={flushSessionSave}
-              settingsHref="/app/journaling/settings"
+              settingsHref={blockRealLinks ? "/mock/journaling/settings" : "/app/journaling/settings"}
               onBiasChange={(b) => updateSession({ bias: b })}
               onKeyLevelsChange={(v) => updateSession({ key_levels: v })}
               onWatchlistChange={(tags) => updateSession({ watchlist: tags })}

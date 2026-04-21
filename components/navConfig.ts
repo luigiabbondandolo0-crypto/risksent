@@ -12,6 +12,7 @@ import {
   Bell,
   ArrowLeft,
   Users,
+  Gift,
 } from "lucide-react";
 
 export type NavChild = {
@@ -34,6 +35,7 @@ export const primaryNavItems: readonly NavItem[] = [
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/app/ai-coach", label: "AI Coach", icon: Sparkles },
   { href: "/app/billing", label: "Billing", icon: CreditCard },
+  { href: "/app/affiliate", label: "Affiliate", icon: Gift },
 ];
 
 export const accountNavItems: readonly NavItem[] = [];
@@ -76,9 +78,7 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
   }
   if (href === "/mock/journaling") {
     return (
-      pathname === "/mock/journal" ||
       pathname === "/mock/journaling" ||
-      pathname.startsWith("/mock/journal/") ||
       pathname.startsWith("/mock/journaling/")
     );
   }
@@ -91,12 +91,10 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Canonical journal list path for matching sidebar child links (/mock/journal and /mock/journaling both → mock canonical). */
+/** Canonical journal list path for matching sidebar child links. */
 export function journalListNormalizedPath(pathname: string | null): string | null {
   if (pathname === "/app/journaling") return "/app/journaling";
-  if (pathname === "/mock/journal" || pathname === "/mock/journaling") {
-    return "/mock/journaling";
-  }
+  if (pathname === "/mock/journaling") return "/mock/journaling";
   return null;
 }
 
@@ -119,11 +117,7 @@ export function isJournalChildNavActive(
 ): boolean {
   const listNorm = journalListNormalizedPath(pathname);
   if (!listNorm) return false;
-  if (
-    pathname !== "/app/journaling" &&
-    pathname !== "/mock/journal" &&
-    pathname !== "/mock/journaling"
-  ) {
+  if (pathname !== "/app/journaling" && pathname !== "/mock/journaling") {
     return false;
   }
   let childPath: string;
@@ -132,7 +126,6 @@ export function isJournalChildNavActive(
   } catch {
     return false;
   }
-  if (childPath === "/mock/journal") childPath = "/mock/journaling";
   if (childPath !== listNorm) return false;
   const expected = journalSubTabFromHref(childHref);
   const raw = searchParams.get("tab");

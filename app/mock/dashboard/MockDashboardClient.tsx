@@ -482,7 +482,7 @@ export function MockDashboardClient() {
             return dayData ? (
               <Link
                 key={dateStr}
-                href={`/mock/journal?date=${dateStr}`}
+                href={`/mock/journaling?date=${dateStr}`}
                 className={`${cellClass} transition-colors hover:ring-2 hover:ring-cyan-500/50`}
               >
                 {content}

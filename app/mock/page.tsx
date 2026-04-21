@@ -1,17 +1,21 @@
 import Link from "next/link";
 import {
   LayoutDashboard,
-  TrendingUp,
+  BookOpen,
   ShieldAlert,
   FlaskConical,
+  Sparkles,
+  CreditCard,
   ArrowRight,
 } from "lucide-react";
 
 const cards = [
   { href: "/mock/dashboard", title: "Dashboard", desc: "Complete account overview and KPI metrics.", icon: LayoutDashboard },
   { href: "/mock/backtesting", title: "Backtesting", desc: "FX Replay-style experience: replay and scenarios.", icon: FlaskConical },
-  { href: "/mock/journal", title: "Journal", desc: "Complete trading journal experience in TradeZella style.", icon: TrendingUp },
+  { href: "/mock/journaling", title: "Journal", desc: "Complete trading journal experience in TradeZella style.", icon: BookOpen },
   { href: "/mock/risk-manager", title: "Risk Manager", desc: "Live monitoring and live risk alerts.", icon: ShieldAlert },
+  { href: "/mock/ai-coach", title: "AI Coach", desc: "Weekly performance report and coaching chat.", icon: Sparkles },
+  { href: "/mock/billing", title: "Billing", desc: "Subscription plans and trial status (demo).", icon: CreditCard },
 ] as const;
 
 export default function MockHubPage() {
@@ -20,7 +24,7 @@ export default function MockHubPage() {
       <header>
         <h1 className="rs-page-title">Mock preview</h1>
         <p className="rs-page-sub">
-          Demo version with the same 4 sections as live: Dashboard, Backtesting, Journal, and Risk Sentinel.
+          Demo version with the same sections as live: Dashboard, Backtesting, Journal, Risk Manager, AI Coach, Billing.
         </p>
       </header>
 

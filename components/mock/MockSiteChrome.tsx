@@ -31,15 +31,13 @@ function mockNavLinkActive(
   if (pathOnly === "/mock/dashboard") {
     return pathname === "/mock" || pathname === "/mock/dashboard";
   }
-  if (pathOnly === "/mock/journaling" || pathOnly === "/mock/journal") {
+  if (pathOnly === "/mock/journaling") {
     const base =
-      pathname === "/mock/journal" ||
       pathname === "/mock/journaling" ||
-      pathname.startsWith("/mock/journal/") ||
       pathname.startsWith("/mock/journaling/");
     if (!base) return false;
     if (queryTab == null) {
-      return pathname === "/mock/journal" || pathname === "/mock/journaling";
+      return pathname === "/mock/journaling";
     }
     if (!searchParams) return false;
     return isJournalChildNavActive(pathname, searchParams, href);
