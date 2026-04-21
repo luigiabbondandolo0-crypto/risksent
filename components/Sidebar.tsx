@@ -11,7 +11,7 @@ import {
   isJournalChildNavActive,
 } from "@/components/navConfig";
 import { motion } from "framer-motion";
-import { BrandLockup } from "@/components/Brand";
+import { BrandLogo } from "@/components/Brand";
 
 function navLinkClass(active: boolean) {
   return [
@@ -145,10 +145,10 @@ export function Sidebar({
     <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/60 px-4 py-7 backdrop-blur-sm lg:flex">
       <Link
         href="/app/dashboard"
-        className="mb-8 flex items-center px-1 transition-opacity hover:opacity-90"
+        className="mb-8 flex items-center justify-center px-1 py-1"
         aria-label="RiskSent dashboard"
       >
-        <BrandLockup size="sm" logoSize={30} />
+        <BrandLogo treatment="bare" size={56} priority />
       </Link>
 
       <div className="flex flex-col gap-8">

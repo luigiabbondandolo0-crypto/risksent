@@ -11,7 +11,7 @@ import {
 } from "@/components/mock/mockNavConfig";
 import { isJournalChildNavActive } from "@/components/navConfig";
 import { Footer } from "@/components/Footer";
-import { BrandLockup, BrandWordmark } from "@/components/Brand";
+import { BrandLogo, BrandWordmark } from "@/components/Brand";
 
 function mockNavLinkActive(
   pathname: string | null,
@@ -217,10 +217,10 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
         <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-800/50 bg-slate-950/50 px-4 py-7 backdrop-blur-sm lg:flex">
           <Link
             href="/mock/dashboard"
-            className="mb-8 flex items-center px-1 transition-opacity hover:opacity-90"
+            className="mb-8 flex items-center justify-center px-1 py-1"
             aria-label="RiskSent mock dashboard"
           >
-            <BrandLockup variant="mock" size="sm" logoSize={30} />
+            <BrandLogo treatment="bare" size={56} priority />
           </Link>
 
           <div className="flex flex-col gap-8">

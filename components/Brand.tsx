@@ -47,6 +47,14 @@ type LogoMarkProps = {
   className?: string;
   priority?: boolean;
   alt?: string;
+  /**
+   * Visual treatment:
+   * - "tile": logo sits inside a subtle rounded tile with ring (compact, chrome-like)
+   * - "bare": transparent, no chrome — pairs the logo with a soft teal halo so it
+   *   still reads well against dark backgrounds. Use this when the logo is the
+   *   only brand element shown.
+   */
+  treatment?: "tile" | "bare";
 };
 
 /**
@@ -58,7 +66,26 @@ export function BrandLogo({
   className = "",
   priority = false,
   alt = "RiskSent",
+  treatment = "tile",
 }: LogoMarkProps) {
+  if (treatment === "bare") {
+    return (
+      <span
+        className={`rs-logo-bare relative inline-flex shrink-0 items-center justify-center ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src="/logo.png"
+          alt={alt}
+          width={size}
+          height={size}
+          priority={priority}
+          className="relative h-full w-full object-contain"
+        />
+      </span>
+    );
+  }
+
   return (
     <span
       className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-white/[0.08] ${className}`}

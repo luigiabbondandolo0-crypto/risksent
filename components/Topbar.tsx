@@ -9,7 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { MarketingUserMenu } from "@/components/MarketingUserMenu";
-import { BrandLockup, BrandWordmark } from "@/components/Brand";
+import { BrandLogo, BrandWordmark } from "@/components/Brand";
 
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
@@ -215,7 +215,7 @@ export function Topbar() {
               className="fixed inset-y-0 left-0 z-[70] flex w-[260px] flex-col border-r border-white/[0.07] bg-[#080809] px-4 py-6 lg:hidden"
             >
               <div className="mb-6 flex items-center justify-between">
-                <BrandLockup size="sm" logoSize={28} />
+                <BrandLogo treatment="bare" size={44} />
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}

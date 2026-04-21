@@ -674,6 +674,62 @@ aside.lg\:flex {
   100% { transform: translateX(220%); }
 }
 
+/* ── Bare logo mark: no background, cinematic teal halo ── */
+.rs-logo-bare {
+  isolation: isolate;
+}
+.rs-logo-bare img {
+  filter:
+    drop-shadow(0 0 6px rgba(45, 212, 191, 0.55))
+    drop-shadow(0 0 18px rgba(20, 184, 166, 0.35))
+    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+  animation: rs-logo-glow 4.5s ease-in-out infinite;
+  transition: transform 250ms ease;
+}
+.rs-logo-bare:hover img {
+  transform: scale(1.05);
+}
+.rs-logo-bare::before {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  border-radius: 999px;
+  background:
+    radial-gradient(closest-side, rgba(45, 212, 191, 0.35), rgba(45, 212, 191, 0.08) 60%, transparent 75%);
+  filter: blur(8px);
+  opacity: 0.9;
+  z-index: -1;
+  animation: rs-logo-halo 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes rs-logo-glow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 6px rgba(45, 212, 191, 0.55))
+      drop-shadow(0 0 18px rgba(20, 184, 166, 0.35))
+      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 10px rgba(94, 234, 212, 0.8))
+      drop-shadow(0 0 28px rgba(20, 184, 166, 0.55))
+      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+  }
+}
+
+@keyframes rs-logo-halo {
+  0%, 100% { opacity: 0.7; transform: scale(0.96); }
+  50%      { opacity: 1;   transform: scale(1.05); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rs-logo-bare img,
+  .rs-logo-bare::before {
+    animation: none !important;
+  }
+}
+
 /* Mock chrome uses a violet-ish accent, keep wordmark consistent but
    slightly shifted so users can feel the "demo" vibe. */
 .rs-wordmark[data-variant="mock"] .rs-wordmark-risk {
