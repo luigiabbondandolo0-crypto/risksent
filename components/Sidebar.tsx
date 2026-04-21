@@ -39,7 +39,7 @@ function NavGroupInner({
         {title}
       </span>
       <nav className="flex flex-col gap-0.5">
-        {items.map(({ href, label, icon: Icon, children }, i) => {
+        {items.map(({ href, label, icon: Icon, children, badge }, i) => {
           const active = isNavActive(pathname, href);
           return (
             <motion.div
@@ -55,6 +55,12 @@ function NavGroupInner({
                   }`}
                 />
                 <span className="truncate">{label}</span>
+                {badge && !active && (
+                  <span className="ml-auto rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                    style={{ background: "rgba(255,140,0,0.12)", color: "#ff8c00" }}>
+                    {badge}
+                  </span>
+                )}
                 {active && (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#6366f1]" />
                 )}

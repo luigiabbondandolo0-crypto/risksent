@@ -118,13 +118,10 @@ export async function sendWelcomeEmail({ to, userName }: WelcomeEmailParams): Pr
  * Modern, responsive welcome email template
  */
 function getWelcomeEmailTemplate(userName: string): string {
-  const logoUrl = process.env.NEXT_PUBLIC_SITE_URL 
-    ? `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`
-    : "https://risksent.com/logo.png";
-  
-  const dashboardUrl = process.env.NEXT_PUBLIC_SITE_URL 
-    ? `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
-    : "https://risksent.com/dashboard";
+  const base = siteUrl();
+  const dashboardUrl = `${base}/app/dashboard`;
+  const backtestingUrl = `${base}/app/backtesting`;
+  const telegramUrl = `${base}/app/risk-manager`;
 
   return `
 <!DOCTYPE html>
@@ -132,219 +129,89 @@ function getWelcomeEmailTemplate(userName: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Welcome to RiskSent</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #e2e8f0;
-      background-color: #0f172a;
-      padding: 0;
-      margin: 0;
-    }
-    .email-container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #1e293b;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-    }
-    .email-header {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      padding: 40px 30px;
-      text-align: center;
-    }
-    .logo {
-      max-width: 120px;
-      height: auto;
-      margin-bottom: 20px;
-      border-radius: 8px;
-    }
-    .email-header h1 {
-      color: #ffffff;
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    .email-body {
-      padding: 40px 30px;
-    }
-    .greeting {
-      font-size: 20px;
-      color: #f1f5f9;
-      margin-bottom: 20px;
-      font-weight: 600;
-    }
-    .content {
-      color: #cbd5e1;
-      font-size: 16px;
-      margin-bottom: 30px;
-    }
-    .content p {
-      margin-bottom: 15px;
-    }
-    .features {
-      background-color: #0f172a;
-      border-radius: 8px;
-      padding: 25px;
-      margin: 30px 0;
-      border-left: 4px solid #10b981;
-    }
-    .features h3 {
-      color: #10b981;
-      font-size: 18px;
-      margin-bottom: 15px;
-      font-weight: 600;
-    }
-    .features ul {
-      list-style: none;
-      padding: 0;
-    }
-    .features li {
-      color: #cbd5e1;
-      padding: 8px 0;
-      padding-left: 25px;
-      position: relative;
-      font-size: 15px;
-    }
-    .features li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: #10b981;
-      font-weight: bold;
-      font-size: 18px;
-    }
-    .cta-button {
-      display: inline-block;
-      background-color: #10b981;
-      color: #0f172a !important;
-      text-decoration: none;
-      padding: 14px 32px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 16px;
-      text-align: center;
-      margin: 20px 0;
-      transition: background-color 0.3s ease;
-    }
-    .cta-button:hover {
-      background-color: #059669;
-    }
-    .email-footer {
-      background-color: #0f172a;
-      padding: 30px;
-      text-align: center;
-      border-top: 1px solid #1e293b;
-    }
-    .email-footer p {
-      color: #64748b;
-      font-size: 14px;
-      margin: 5px 0;
-    }
-    .email-footer a {
-      color: #10b981;
-      text-decoration: none;
-    }
-    .email-footer a:hover {
-      text-decoration: underline;
-    }
-    .divider {
-      height: 1px;
-      background-color: #334155;
-      margin: 30px 0;
-    }
-    @media only screen and (max-width: 600px) {
-      .email-container {
-        margin: 0;
-        border-radius: 0;
-      }
-      .email-header {
-        padding: 30px 20px;
-      }
-      .email-header h1 {
-        font-size: 24px;
-      }
-      .email-body {
-        padding: 30px 20px;
-      }
-      .greeting {
-        font-size: 18px;
-      }
-      .content {
-        font-size: 15px;
-      }
-      .features {
-        padding: 20px;
-      }
-      .cta-button {
-        display: block;
-        width: 100%;
-        padding: 16px;
-      }
-    }
+    body { margin:0; padding:0; background:#080809; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+    .wrap { padding:20px; background:#080809; }
+    .card { max-width:600px; margin:0 auto; background:#0e0e12; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); }
+    .hero { padding:40px 32px 32px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .wordmark { font-size:24px; font-weight:900; letter-spacing:-0.02em; color:#fff; margin-bottom:20px; display:block; }
+    .hero-badge { display:inline-block; padding:5px 14px; border-radius:99px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#ff8c00; background:rgba(255,140,0,0.1); border:1px solid rgba(255,140,0,0.25); margin-bottom:16px; }
+    .hero h1 { color:#fff; font-size:28px; font-weight:900; margin:0 0 10px; letter-spacing:-0.025em; }
+    .hero p { color:#64748b; font-size:14px; margin:0; }
+    .body { padding:32px; }
+    .greeting { font-size:16px; font-weight:600; color:#f1f5f9; margin-bottom:12px; }
+    .intro { color:#94a3b8; font-size:14px; margin-bottom:28px; }
+    .steps-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#334155; margin-bottom:14px; }
+    .step { display:flex; align-items:flex-start; gap:14px; margin-bottom:14px; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); text-decoration:none; color:inherit; }
+    .step-num { min-width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+    .step-body { flex:1; }
+    .step-title { font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:3px; }
+    .step-desc { font-size:12px; color:#64748b; margin:0; }
+    .divider { height:1px; background:rgba(255,255,255,0.06); margin:24px 0; }
+    .cta-wrap { text-align:center; margin:24px 0 0; }
+    .cta { display:inline-block; background:linear-gradient(135deg,#ff3c3c,#ff8c00); color:#000!important; text-decoration:none; padding:14px 32px; border-radius:10px; font-weight:800; font-size:15px; letter-spacing:-0.01em; }
+    .footer { padding:20px 32px; text-align:center; border-top:1px solid rgba(255,255,255,0.06); }
+    .footer p { color:#334155; font-size:12px; margin:4px 0; }
+    .footer a { color:#475569; text-decoration:none; }
+    @media (max-width:600px){ .hero{padding:28px 20px 24px} .body{padding:24px 20px} .footer{padding:16px 20px} .hero h1{font-size:24px} }
   </style>
 </head>
 <body>
-  <div style="padding: 20px; background-color: #0f172a;">
-    <div class="email-container">
-      <div class="email-header">
-        <img src="${logoUrl}" alt="RiskSent Logo" class="logo" />
-        <h1>Welcome to RiskSent!</h1>
+  <div class="wrap">
+    <div class="card">
+      <div class="hero">
+        <span class="wordmark">RiskSent</span>
+        <div class="hero-badge">Trial activated</div>
+        <h1>Welcome, ${userName}</h1>
+        <p>Your 7-day free trial is now active. Let&apos;s get you set up.</p>
       </div>
-      
-      <div class="email-body">
-        <div class="greeting">Hi ${userName},</div>
-        
-        <div class="content">
-          <p>We're thrilled to have you join RiskSent, your trusted trading risk management dashboard.</p>
-          
-          <p>RiskSent helps you monitor your trading accounts, set risk rules, and get real-time alerts to protect your capital.</p>
-        </div>
+      <div class="body">
+        <div class="greeting">Here&apos;s how to get the most from your trial:</div>
 
-        <div class="features">
-          <h3>What you can do:</h3>
-          <ul>
-            <li>Connect your trading accounts securely (when broker linking is enabled)</li>
-            <li>Set custom risk rules and daily loss limits</li>
-            <li>Monitor trades and account performance in real-time</li>
-            <li>Receive instant alerts via Telegram</li>
-            <li>Simulate trading challenges (FTMO/Simplified)</li>
-            <li>Get AI-powered insights on your trading</li>
-          </ul>
-        </div>
+        <p class="steps-label">3 steps to start</p>
 
-        <div style="text-align: center;">
-          <a href="${dashboardUrl}" class="cta-button">Go to Dashboard</a>
-        </div>
+        <a href="${dashboardUrl}" class="step" style="display:flex">
+          <div class="step-num" style="background:rgba(255,60,60,0.12);color:#ff3c3c;">1</div>
+          <div class="step-body">
+            <div class="step-title">Start your trial &amp; explore the dashboard</div>
+            <p class="step-desc">Get a full overview of your risk exposure, open trades, and account health at a glance.</p>
+          </div>
+        </a>
+
+        <a href="${backtestingUrl}" class="step" style="display:flex">
+          <div class="step-num" style="background:rgba(99,102,241,0.12);color:#6366f1;">2</div>
+          <div class="step-body">
+            <div class="step-title">Try backtesting a strategy</div>
+            <p class="step-desc">Replay historical candles bar-by-bar, place trades, and measure your edge — no capital at risk.</p>
+          </div>
+        </a>
+
+        <a href="${telegramUrl}" class="step" style="display:flex">
+          <div class="step-num" style="background:rgba(0,230,118,0.1);color:#00e676;">3</div>
+          <div class="step-body">
+            <div class="step-title">Connect Telegram alerts</div>
+            <p class="step-desc">Get instant notifications when a risk rule is triggered — wherever you are.</p>
+          </div>
+        </a>
 
         <div class="divider"></div>
 
-        <div class="content">
-          <p style="font-size: 14px; color: #94a3b8;">
-            <strong>Need help?</strong> Our support team is here for you. Just reply to this email or contact us at support@risksent.com
-          </p>
+        <div class="cta-wrap">
+          <a href="${dashboardUrl}" class="cta">Open my dashboard</a>
         </div>
+
+        <p style="font-size:12px;color:#334155;text-align:center;margin-top:16px;">
+          Questions? Reply to this email or write to <a href="mailto:support@risksent.com" style="color:#475569;">support@risksent.com</a>
+        </p>
       </div>
-      
-      <div class="email-footer">
-        <p><strong>RiskSent</strong> – Trading Risk Dashboard</p>
-        <p>Privacy first: Your investor passwords are encrypted at rest.</p>
+      <div class="footer">
         <p>
-          <a href="${dashboardUrl}">Dashboard</a> • 
-          <a href="https://risksent.com">Website</a>
+          <a href="${dashboardUrl}">Dashboard</a> &nbsp;•&nbsp;
+          <a href="${base}/pricing">Pricing</a> &nbsp;•&nbsp;
+          <a href="mailto:support@risksent.com">Support</a>
         </p>
-        <p style="margin-top: 20px; font-size: 12px; color: #475569;">
-          This email was sent to you because you created an account on RiskSent.
-        </p>
+        <p style="margin-top:10px;">You received this because you created a RiskSent account.</p>
       </div>
     </div>
   </div>
