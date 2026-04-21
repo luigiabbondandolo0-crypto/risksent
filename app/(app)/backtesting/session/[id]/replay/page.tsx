@@ -18,9 +18,10 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { ReplayChart, type ReplayChartHandle, type CandleOhlc, type ChartSettings, type ChartObject, DEFAULT_SETTINGS } from "@/components/backtesting/ReplayChart";
+import { ReplayChart, type ReplayChartHandle, type CandleOhlc, type ChartSettings, type ChartObject, type PersistedState, DEFAULT_SETTINGS } from "@/components/backtesting/ReplayChart";
 import { DrawingToolbar, type DrawingTool } from "@/components/backtesting/DrawingToolbar";
 import { ChartContextMenu } from "@/components/backtesting/ChartContextMenu";
+import { DrawingContextMenu } from "@/components/backtesting/DrawingContextMenu";
 import { TradePanel } from "@/components/backtesting/TradePanel";
 import { OpenPositions } from "@/components/backtesting/OpenPositions";
 import { fmtPrice, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
@@ -40,6 +41,10 @@ const SETTINGS_KEY = "bt_chart_settings";
 
 function lsKey(sessionId: string) {
   return `bt_replay_idx_${sessionId}`;
+}
+
+function drawingsKey(sessionId: string) {
+  return `bt_drawings_${sessionId}`;
 }
 
 function ChevLeft() {
@@ -75,6 +80,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
+  const [drawingMenu, setDrawingMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [chartSettings, setChartSettings] = useState<ChartSettings>(DEFAULT_SETTINGS);
   const [chartObjects, setChartObjects] = useState<ChartObject[]>([]);
 
@@ -82,6 +88,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const prevIndexRef = useRef(-1);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionRef = useRef<Session | null>(null);
+  const drawingsLoadedRef = useRef(false);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
 
@@ -299,12 +306,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     void loadSession();
   }
 
-  async function closeTradeById(tradeId: string) {
-    const cur = sessionCandles[currentIndex];
-    if (!cur) return;
-    await closeTrade(tradeId, cur.close, new Date(cur.time * 1000).toISOString());
-  }
-
   async function updateTradeSLTP(tradeId: string, sl: number | null, tp: number | null) {
     const res = await fetch(`/api/backtesting/trades/${tradeId}`, {
       method: "PATCH",
@@ -331,6 +332,30 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     const list = chartRef.current?.listObjects() ?? [];
     setChartObjects(list);
   }, []);
+
+  // Persist drawings (throttled by the ReplayChart onStateChange callback)
+  const saveDrawings = useCallback(() => {
+    if (!drawingsLoadedRef.current) return; // avoid clobbering before first load
+    const st = chartRef.current?.getState();
+    if (!st) return;
+    try { localStorage.setItem(drawingsKey(id), JSON.stringify(st)); } catch { /* */ }
+  }, [id]);
+
+  // Load drawings once after session candles are ready
+  useEffect(() => {
+    if (drawingsLoadedRef.current) return;
+    if (!sessionCandles.length) return;
+    if (!chartRef.current) return;
+    try {
+      const raw = localStorage.getItem(drawingsKey(id));
+      if (raw) {
+        const st = JSON.parse(raw) as PersistedState;
+        chartRef.current.setState(st);
+        refreshObjects();
+      }
+    } catch { /* */ }
+    drawingsLoadedRef.current = true;
+  }, [sessionCandles, id, refreshObjects]);
 
   const openTrades = trades.filter((t) => t.status === "open");
 
@@ -459,7 +484,8 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             activeTool={activeTool}
             settings={chartSettings}
             onCrosshairMove={setHoveredCandle}
-            onContextMenu={(price, x, y) => setCtxMenu({ price, x, y })}
+            onContextMenu={(price, x, y) => { setDrawingMenu(null); setCtxMenu({ price, x, y }); }}
+            onDrawingContextMenu={(objId, x, y) => { setCtxMenu(null); setDrawingMenu({ id: objId, x, y }); }}
             onToolComplete={() => setActiveTool("cursor")}
             onPlacePosition={(dir, entry, sl, tp, lot) => {
               setTradePanel({ open: true, dir, presetSL: sl, presetTP: tp, presetLot: lot });
@@ -467,6 +493,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             }}
             onUpdateTradeSLTP={(tradeId, sl, tp) => { void updateTradeSLTP(tradeId, sl, tp); }}
             onObjectsChange={refreshObjects}
+            onStateChange={saveDrawings}
           />
         </div>
       </div>
@@ -530,7 +557,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
               {new Date(currentCandle.time * 1000).toLocaleString(undefined, {
                 month: "short", day: "numeric", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
-                timeZone: chartSettings.timezone === "utc" ? "UTC" : undefined,
+                timeZone: chartSettings.timezone && chartSettings.timezone !== "local" ? chartSettings.timezone : undefined,
               })}
             </span>
           )}
@@ -624,7 +651,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           clientY={ctxMenu.y}
           symbol={session?.symbol ?? ""}
           objects={chartObjects}
-          openTrades={openTrades}
           settings={chartSettings}
           onClose={() => setCtxMenu(null)}
           onBuy={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setCtxMenu(null); }}
@@ -632,8 +658,18 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           onResetView={() => { chartRef.current?.resetView(); setCtxMenu(null); }}
           onFocusObject={(objId) => chartRef.current?.focusObject(objId)}
           onRemoveObject={(objId) => { chartRef.current?.removeObject(objId); }}
-          onCloseTrade={(tradeId) => { void closeTradeById(tradeId); setCtxMenu(null); }}
           onSettingsChange={setChartSettings}
+        />
+      )}
+
+      {/* ── Drawing right-click menu ─────────────────────────────────────── */}
+      {drawingMenu && (
+        <DrawingContextMenu
+          clientX={drawingMenu.x}
+          clientY={drawingMenu.y}
+          onClose={() => setDrawingMenu(null)}
+          onRemove={() => { chartRef.current?.removeObject(drawingMenu.id); setDrawingMenu(null); }}
+          onFocus={() => { chartRef.current?.focusObject(drawingMenu.id); setDrawingMenu(null); }}
         />
       )}
     </div>
