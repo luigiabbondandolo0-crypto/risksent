@@ -20,7 +20,14 @@ export type StatsForRisk = {
 export type RiskLevel = "lieve" | "medio" | "alto";
 
 export type RiskFinding = {
-  type: "daily_loss" | "max_drawdown" | "current_exposure" | "max_risk_per_trade" | "revenge_trading";
+  type:
+    | "daily_loss"
+    | "max_drawdown"
+    | "current_exposure"
+    | "max_risk_per_trade"
+    | "revenge_trading"
+    | "consecutive_losses"
+    | "overtrading";
   level: RiskLevel;
   message: string;
   advice: string;

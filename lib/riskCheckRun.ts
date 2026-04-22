@@ -27,6 +27,8 @@ const FINDING_TYPE_TO_ALERT: Record<FindingType, string> = {
   current_exposure: "position_size",
   max_risk_per_trade: "position_size",
   revenge_trading: "revenge_trading",
+  consecutive_losses: "consecutive_losses",
+  overtrading: "overtrading",
 };
 
 function buildAlertData(
@@ -81,6 +83,27 @@ function buildAlertData(
         tradesCount: rules.revenge_threshold_trades,
         minutes: 30,
       };
+    case "consecutive_losses":
+      return {
+        count: stats.consecutiveLossesAtEnd,
+        totalLoss: Math.abs(
+          stats.dailyStats
+            .slice(-stats.consecutiveLossesAtEnd)
+            .reduce((s, d) => s + d.profit, 0)
+        ).toFixed(0),
+      };
+    case "overtrading": {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayTrades = stats.dailyStats.find((d) => d.date === todayStr);
+      const avgTrades =
+        stats.dailyStats.length > 0
+          ? Math.round(stats.dailyStats.reduce((s) => s + 1, 0) / stats.dailyStats.length)
+          : 5;
+      return {
+        tradesCount: todayTrades ? 1 : 0,
+        avgTrades,
+      };
+    }
   }
 }
 
