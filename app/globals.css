@@ -612,40 +612,136 @@ aside.lg\:flex {
     0 0 18px rgba(255, 60, 60, 0.25);
 }
 
-/* ── Bare logo mark: niente alone circolare; luce indigo/cyan compatta sull’SVG ── */
+/* ── Logo R (PNG): varianti colore + luccichio mascherato ── */
+.rs-logo-r-img[data-variant="live"] {
+  filter:
+    brightness(1.05)
+    saturate(1.03)
+    drop-shadow(0 0 5px rgba(99, 102, 241, 0.4))
+    drop-shadow(0 0 10px rgba(34, 211, 238, 0.14));
+}
+.rs-logo-r-img[data-variant="mock"] {
+  filter:
+    brightness(1.06)
+    saturate(1.1)
+    drop-shadow(0 0 6px rgba(139, 92, 246, 0.45))
+    drop-shadow(0 0 12px rgba(167, 139, 250, 0.2));
+}
+
+.rs-logo-r-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: url("/brand/risk-sent-r.png");
+  mask-image: url("/brand/risk-sent-r.png");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.rs-logo-r-shine-bar {
+  position: absolute;
+  top: -8%;
+  bottom: -8%;
+  width: 42%;
+  left: -48%;
+  transform: skewX(-12deg);
+  background: linear-gradient(
+    95deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 38%,
+    rgba(230, 220, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.06) 62%,
+    transparent 100%
+  );
+  animation: rs-logo-r-shimmer 4.5s ease-in-out infinite;
+}
+
+@keyframes rs-logo-r-shimmer {
+  0%,
+  72% {
+    transform: translateX(0) skewX(-12deg);
+    opacity: 0;
+  }
+  74% {
+    opacity: 0.75;
+  }
+  88% {
+    transform: translateX(260%) skewX(-12deg);
+    opacity: 0.45;
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateX(260%) skewX(-12deg);
+  }
+}
+
+/* Bare: glow leggero sull’immagine (no alone circolare) */
 .rs-logo-bare {
   isolation: isolate;
 }
-.rs-logo-bare .rs-logo-mark-svg {
-  filter:
-    drop-shadow(0 0 5px rgba(99, 102, 241, 0.45))
-    drop-shadow(0 0 12px rgba(34, 211, 238, 0.22))
-    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
+.rs-logo-bare .rs-logo-r-img {
   animation: rs-logo-glow 3.8s ease-in-out infinite;
   transition: transform 220ms ease;
 }
-.rs-logo-bare:hover .rs-logo-mark-svg {
+.rs-logo-bare:hover .rs-logo-r-img {
   transform: scale(1.04);
+}
+.rs-logo-bare .rs-logo-r-img[data-variant="live"] {
+  animation: rs-logo-glow 3.8s ease-in-out infinite;
+}
+.rs-logo-bare .rs-logo-r-img[data-variant="mock"] {
+  animation: rs-logo-glow-mock 3.8s ease-in-out infinite;
 }
 
 @keyframes rs-logo-glow {
   0%,
   100% {
     filter:
+      brightness(1.05)
+      saturate(1.03)
       drop-shadow(0 0 5px rgba(99, 102, 241, 0.45))
-      drop-shadow(0 0 12px rgba(34, 211, 238, 0.2))
-      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
+      drop-shadow(0 0 12px rgba(34, 211, 238, 0.18));
   }
   50% {
     filter:
-      drop-shadow(0 0 8px rgba(129, 140, 248, 0.6))
-      drop-shadow(0 0 18px rgba(34, 211, 238, 0.4))
-      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
+      brightness(1.08)
+      saturate(1.05)
+      drop-shadow(0 0 8px rgba(129, 140, 248, 0.55))
+      drop-shadow(0 0 18px rgba(34, 211, 238, 0.28));
+  }
+}
+
+@keyframes rs-logo-glow-mock {
+  0%,
+  100% {
+    filter:
+      brightness(1.06)
+      saturate(1.1)
+      drop-shadow(0 0 6px rgba(139, 92, 246, 0.5))
+      drop-shadow(0 0 14px rgba(167, 139, 250, 0.22));
+  }
+  50% {
+    filter:
+      brightness(1.1)
+      saturate(1.12)
+      drop-shadow(0 0 9px rgba(167, 139, 250, 0.65))
+      drop-shadow(0 0 20px rgba(192, 132, 252, 0.32));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rs-logo-bare .rs-logo-mark-svg {
+  .rs-logo-r-shine,
+  .rs-logo-r-shine-bar {
+    animation: none !important;
+    display: none;
+  }
+  .rs-logo-bare .rs-logo-r-img {
     animation: none !important;
   }
 }

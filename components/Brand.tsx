@@ -42,7 +42,7 @@ export function BrandWordmark({
 type LogoMarkProps = {
   size?: number;
   className?: string;
-  /** Kept for API compatibility; SVG loads instantly. */
+  /** Kept for API compatibility; asset è in cache. */
   priority?: boolean;
   alt?: string;
   /** Live = indigo/cyan; mock = violet (demo chrome). */
@@ -54,7 +54,7 @@ type LogoMarkProps = {
 };
 
 /**
- * RiskSent logo mark (vector “R”). Sidebar, topbar, mock shell.
+ * RiskSent logo mark (R stilizzata, PNG con sfondo trasparente). Sidebar, topbar, mock shell.
  */
 export function BrandLogo({
   size = 28,
