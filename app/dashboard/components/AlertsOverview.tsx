@@ -36,17 +36,26 @@ export function AlertsOverview({
       setLoading(false);
       return;
     }
-    (async () => {
+
+    let cancelled = false;
+    const load = async (initial: boolean) => {
       try {
         const res = await fetch("/api/alerts", { cache: "no-store" });
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = await res.json();
           setAlerts(data.alerts ?? []);
         }
       } finally {
-        setLoading(false);
+        if (initial && !cancelled) setLoading(false);
       }
-    })();
+    };
+
+    void load(true);
+    const id = window.setInterval(() => void load(false), 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, [onRefresh, demoItems]);
 
   return (

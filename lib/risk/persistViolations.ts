@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { RiskNotificationsRow, RiskRulesDTO, RiskViolationCandidate, LiveStatsForRisk } from "./riskTypes";
+import type { RiskNotificationsRow, RiskRulesDTO, RiskViolationCandidate, LiveStatsForRisk, RiskRuleType } from "./riskTypes";
 import {
   buildViolationCandidates,
   formatLimitForTelegram,
@@ -9,6 +9,26 @@ import {
 import { ruleTypeToLabel, sendSmartTelegramAlert } from "./telegramRisk";
 
 const DEDUPE_MINUTES = 30;
+
+function solutionForRule(ruleType: RiskRuleType): string {
+  switch (ruleType) {
+    case "daily_dd":
+      return "Stop trading today and review your daily loss limit. Resume tomorrow.";
+    case "exposure":
+      return "Reduce open exposure — close or downsize positions to respect the portfolio limit.";
+    case "risk_per_trade":
+      return "Close or downsize the largest open position to respect the per-trade risk limit.";
+    case "revenge":
+    case "revenge_trading":
+      return "Step away from the charts. Revenge trading locked in — take a break before reopening.";
+    case "consecutive_losses":
+      return "Pause trading after consecutive losses. Review the last setups before taking the next trade.";
+    case "overtrading":
+      return "You're trading above your average pace. Slow down and focus on quality setups.";
+    default:
+      return "Review Risk Manager and adjust your current risk.";
+  }
+}
 
 export type TelegramAlertContext = {
   todayTrades: number;
@@ -153,6 +173,22 @@ export async function persistRiskViolations(params: {
       broker_server: brokerServer
     });
     if (!error) inserted += 1;
+
+    // Mirror into `alert` table so the Dashboard Live Alerts panel and the Topbar
+    // bell share the same source of truth as the Risk Manager violation history.
+    try {
+      await supabase.from("alert").insert({
+        user_id: userId,
+        message: c.message,
+        severity: c.severity === "danger" ? "high" : "medium",
+        solution: solutionForRule(c.rule_type),
+        rule_type: c.rule_type,
+        account_id: journalAccountId,
+        account_nickname: accountNickname
+      });
+    } catch (e) {
+      console.error("[persistRiskViolations] alert mirror failed", e);
+    }
   }
 
   return { inserted, candidates };

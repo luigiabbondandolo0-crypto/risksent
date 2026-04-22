@@ -54,18 +54,50 @@ export function AppHeaderBar({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
+  const fetchAlerts = async () => {
+    try {
+      const res = await fetch("/api/alerts", { cache: "no-store" });
+      if (res.ok) {
+        const j = (await res.json()) as { alerts?: AlertRow[] };
+        setAlerts(j.alerts ?? []);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // Initial load + live polling so the bell stays in sync with the server.
   useEffect(() => {
+    void fetchAlerts();
+    const id = window.setInterval(() => void fetchAlerts(), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // When the dropdown opens: refresh, then mark all unread as read so the badge
+  // doesn't get stuck on stale counts.
+  useEffect(() => {
+    if (!bellOpen) return;
+    let cancelled = false;
     void (async () => {
+      await fetchAlerts();
+      const hasUnread = alerts.some((a) => !a.read);
+      if (!hasUnread) return;
       try {
-        const res = await fetch("/api/alerts", { cache: "no-store" });
-        if (res.ok) {
-          const j = (await res.json()) as { alerts?: AlertRow[] };
-          setAlerts(j.alerts ?? []);
+        const res = await fetch("/api/alerts/read-all", {
+          method: "POST",
+          cache: "no-store"
+        });
+        if (!cancelled && res.ok) {
+          setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
         }
       } catch {
         /* ignore */
       }
     })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bellOpen]);
 
   const unread = alerts.filter((a) => !a.read).length;
