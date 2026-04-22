@@ -5,6 +5,17 @@ import { X } from "lucide-react";
 
 type AlertRow = { read: boolean | null; severity: string };
 
+const HIGH_SEVERITY_RULES = new Set([
+  "daily_dd",
+  "daily_drawdown",
+  "daily_loss",
+  "max_dd",
+  "max_drawdown",
+  "consecutive_losses",
+  "revenge",
+  "revenge_trading"
+]);
+
 type AccountHealthCardProps = {
   winRate: number | null;
   highestDdPct: number | null;
@@ -40,9 +51,17 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
   const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/alerts", { cache: "no-store" })
+    fetch("/api/risk/violations?limit=50", { cache: "no-store" })
       .then((r) => r.json())
-      .then((d) => setAlerts(d.alerts ?? []))
+      .then((d) => {
+        const v = (d.violations ?? []) as { rule_type?: string }[];
+        setAlerts(
+          v.map((x) => ({
+            read: false,
+            severity: HIGH_SEVERITY_RULES.has(String(x.rule_type ?? "").toLowerCase()) ? "high" : "medium"
+          }))
+        );
+      })
       .catch(() => setAlerts([]));
   }, []);
 
