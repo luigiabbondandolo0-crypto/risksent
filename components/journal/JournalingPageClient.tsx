@@ -164,18 +164,27 @@ type JournalSessionPatch =
   | Partial<JournalSession>
   | ((prev: Partial<JournalSession>) => Partial<JournalSession>);
 
-function fmtDayPl(pl: number): string {
+function currencySymbol(code: string): string {
+  const map: Record<string, string> = {
+    USD: "$", EUR: "€", GBP: "£", JPY: "¥",
+    CHF: "Fr", CAD: "C$", AUD: "A$", NZD: "NZ$",
+  };
+  return map[code.toUpperCase()] ?? code;
+}
+
+function fmtDayPl(pl: number, currency?: string): string {
   const abs = Math.abs(pl);
   const sign = pl >= 0 ? "+" : "-";
+  const sym = currency ? currencySymbol(currency) : "";
   if (abs >= 1000) {
     const k = abs / 1000;
     const kStr =
       k % 1 === 0
         ? k.toFixed(0)
         : k.toFixed(2).replace(/\.?0+$/, "");
-    return `${sign}${kStr}k`;
+    return `${sign}${sym}${kStr}k`;
   }
-  return `${sign}${Math.round(abs)}`;
+  return `${sign}${sym}${Math.round(abs)}`;
 }
 
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
@@ -934,10 +943,12 @@ function TodayTab({
 
 function CalendarTab({
   allTrades,
+  currency,
   isMock = false,
   mockUseAppRoutes = false,
 }: {
   allTrades: JournalTradeRow[];
+  currency?: string;
   isMock?: boolean;
   mockUseAppRoutes?: boolean;
 }) {
@@ -1189,10 +1200,10 @@ function CalendarTab({
               >
                 {/* Day number — top right */}
                 <span
-                  className="absolute top-1 right-1.5 text-[9px] font-mono leading-none"
+                  className="absolute top-1 right-1.5 text-[11px] font-mono leading-none"
                   style={{
                     color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#4ADE80" : "#F87171") : "#475569",
-                    fontWeight: today ? 700 : 400,
+                    fontWeight: today ? 700 : 500,
                   }}
                 >
                   {format(day, "d")}
@@ -1201,15 +1212,15 @@ function CalendarTab({
                 {stats && (
                   <div className="flex flex-col items-center gap-0">
                     <span
-                      className="text-[9px] font-mono font-bold leading-tight"
+                      className="text-[11px] font-mono font-bold leading-tight"
                       style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
                     >
-                      {fmtDayPl(stats.pl)}
+                      {fmtDayPl(stats.pl, currency)}
                     </span>
-                    <span className="mt-0.5 text-[7px] font-mono leading-tight text-slate-500">
+                    <span className="mt-0.5 text-[9px] font-mono leading-tight text-slate-400">
                       {stats.count}t
                     </span>
-                    <span className="text-[7px] font-mono leading-tight text-slate-500">
+                    <span className="text-[9px] font-mono leading-tight text-slate-400">
                       {stats.count > 0 ? `${Math.round((stats.wins / stats.count) * 100)}%wr` : "—"}
                     </span>
                   </div>
@@ -2224,6 +2235,11 @@ export function JournalingPageClient({
             <CalendarTab
               key="calendar"
               allTrades={allTrades}
+              currency={
+                selectedAccountId === "all"
+                  ? (accounts[0]?.currency ?? "USD")
+                  : (accounts.find((a) => a.id === selectedAccountId)?.currency ?? "USD")
+              }
               isMock={isMock}
               mockUseAppRoutes={mockUseAppRoutes}
             />

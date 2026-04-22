@@ -68,18 +68,27 @@ type DayStat = { date: string; profit: number; trades: number; wins: number };
 
 type RuleStatus = "safe" | "watch" | "high";
 
-function fmtDayPl(pl: number): string {
+function currencySymbol(code: string): string {
+  const map: Record<string, string> = {
+    USD: "$", EUR: "€", GBP: "£", JPY: "¥",
+    CHF: "Fr", CAD: "C$", AUD: "A$", NZD: "NZ$",
+  };
+  return map[code.toUpperCase()] ?? code;
+}
+
+function fmtDayPl(pl: number, currency?: string): string {
   const abs = Math.abs(pl);
   const sign = pl >= 0 ? "+" : "-";
+  const sym = currency ? currencySymbol(currency) : "";
   if (abs >= 1000) {
     const k = abs / 1000;
     const kStr =
       k % 1 === 0
         ? k.toFixed(0)
         : k.toFixed(2).replace(/\.?0+$/, "");
-    return `${sign}${kStr}k`;
+    return `${sign}${sym}${kStr}k`;
   }
-  return `${sign}${Math.round(abs)}`;
+  return `${sign}${sym}${Math.round(abs)}`;
 }
 
 function getRuleStatus(current: number | null, limit: number): RuleStatus {
@@ -232,6 +241,9 @@ export default function DashboardPage() {
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [syncing] = useState(false);
+  const [calJournalTrades, setCalJournalTrades] = useState<
+    { close_time: string | null; pl: number | null; commission: number | null; swap: number | null; status: string }[]
+  >([]);
   const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(true);
@@ -269,6 +281,30 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, [isSubDemo]);
+
+  // Fetch journal trades for calendar — same source as journal page for data consistency
+  useEffect(() => {
+    if (isSubDemo) return;
+    let cancelled = false;
+    const accountParam =
+      selectedGlobalId && selectedGlobalId !== "all"
+        ? `&account_id=${encodeURIComponent(selectedGlobalId)}`
+        : "";
+    // Fetch up to 2 pages to cover ~200 trades
+    Promise.all([
+      fetch(`/api/journal/trades?pageSize=100&status=closed${accountParam}`),
+      fetch(`/api/journal/trades?pageSize=100&page=2&status=closed${accountParam}`),
+    ])
+      .then(async ([r1, r2]) => {
+        const j1 = r1.ok ? await r1.json() : { trades: [] };
+        const j2 = r2.ok ? await r2.json() : { trades: [] };
+        if (!cancelled) {
+          setCalJournalTrades([...(j1.trades ?? []), ...(j2.trades ?? [])]);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isSubDemo, selectedGlobalId]);
 
   const hasAnyBrokerMeta = useMemo(
     () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
@@ -523,6 +559,22 @@ export default function DashboardPage() {
   const daysInMonth = lastDay.getDate();
   const startWeekday = firstDay.getDay();
   const dailyByDate = new Map<string, DayStat>(dailyStats.map((d) => [d.date, d]));
+
+  // Build calendar daily stats directly from journal trades (same source as journal calendar)
+  const dashCalDailyByDate = useMemo(() => {
+    const map = new Map<string, { profit: number; trades: number; wins: number }>();
+    for (const t of calJournalTrades) {
+      if (!t.close_time || t.status !== "closed") continue;
+      const d = t.close_time.slice(0, 10);
+      const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+      const entry = map.get(d) ?? { profit: 0, trades: 0, wins: 0 };
+      entry.profit += net;
+      entry.trades += 1;
+      if (net > 0) entry.wins += 1;
+      map.set(d, entry);
+    }
+    return map;
+  }, [calJournalTrades]);
   const now = new Date();
 
   const monthLabel = firstDay.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
@@ -901,30 +953,32 @@ export default function DashboardPage() {
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const day = i + 1;
                 const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                const dayData = dailyByDate.get(dateStr);
+                const dayData = dashCalDailyByDate.get(dateStr);
                 const isFuture = new Date(year, month, day) > now;
-                const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
+                const isProfit = dayData ? dayData.profit >= 0 : false;
                 const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
-                const cellClass = `min-h-[64px] rounded-lg border relative ${
-                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
-                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
-                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
+                const cellClass = `min-h-[64px] rounded-xl border relative transition-all ${
+                  isFuture ? "border-slate-800/50 bg-slate-900/30" :
+                  dayData ? (isProfit
+                    ? `border-emerald-500/30 bg-emerald-500/10`
+                    : `border-red-500/30 bg-red-500/10`)
+                  : "border-white/[0.04] bg-transparent"
                 }`;
                 const content = (
                   <div className="relative w-full h-full min-h-[64px] flex flex-col items-center justify-center p-1">
                     {/* Day number — top right */}
-                    <span className={`absolute top-1 right-1.5 text-[9px] font-mono leading-none ${dayData ? (pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400") : "text-slate-500"}`}>
+                    <span className={`absolute top-1 right-1.5 text-[11px] font-mono leading-none font-medium ${dayData ? (isProfit ? "text-emerald-400" : "text-red-400") : "text-slate-600"}`}>
                       {day}
                     </span>
                     {dayData ? (
                       <div className="flex flex-col items-center gap-0">
-                        <span className={`text-[9px] font-mono font-bold leading-tight ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                          {fmtDayPl(dayData.profit)}
+                        <span className={`text-[11px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
+                          {fmtDayPl(dayData.profit, currency)}
                         </span>
-                        <span className="mt-0.5 text-[7px] font-mono leading-tight text-slate-400">
+                        <span className="mt-0.5 text-[9px] font-mono leading-tight text-slate-400">
                           {dayData.trades}t
                         </span>
-                        <span className="text-[7px] font-mono leading-tight text-slate-400">
+                        <span className="text-[9px] font-mono leading-tight text-slate-400">
                           {winPct != null ? `${winPct.toFixed(0)}%wr` : "—"}
                         </span>
                       </div>
