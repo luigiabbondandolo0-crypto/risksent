@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { jn } from "@/lib/journal/jnClasses";
 
@@ -21,7 +22,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   const submit = async () => {
     setErr(null);
@@ -57,8 +58,8 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div
         className={`relative w-full max-w-md ${jn.card} max-h-[90vh] overflow-y-auto`}
         style={{ background: "rgba(8,8,9,0.95)" }}
@@ -162,6 +163,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
