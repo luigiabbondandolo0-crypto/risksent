@@ -78,15 +78,12 @@ type AlertsOverviewProps = {
   hasLinkedAccount?: boolean;
   /** When set, skip fetch and show these rows (subscription demo). */
   demoItems?: AlertRow[] | null;
-  /** Journal account id from the global account switcher; violations are scoped like Risk Manager. */
-  selectedAccountId?: "all" | string;
 };
 
 export function AlertsOverview({
   onRefresh,
   hasLinkedAccount = true,
-  demoItems = null,
-  selectedAccountId = "all"
+  demoItems = null
 }: AlertsOverviewProps) {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,11 +98,7 @@ export function AlertsOverview({
     let cancelled = false;
     const load = async (initial: boolean) => {
       try {
-        const params = new URLSearchParams({ limit: "30" });
-        if (selectedAccountId !== "all") {
-          params.set("account_id", selectedAccountId);
-        }
-        const res = await fetch(`/api/risk/violations?${params.toString()}`, { cache: "no-store" });
+        const res = await fetch("/api/risk/violations?limit=30", { cache: "no-store" });
         if (res.ok && !cancelled) {
           const data = (await res.json()) as { violations?: ApiViolation[] };
           const rows = (data.violations ?? []).map(mapViolationToAlertRow);
@@ -122,7 +115,7 @@ export function AlertsOverview({
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [onRefresh, demoItems, selectedAccountId]);
+  }, [onRefresh, demoItems]);
 
   return (
     <DashboardAlertsSection
