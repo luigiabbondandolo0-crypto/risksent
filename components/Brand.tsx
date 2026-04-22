@@ -48,7 +48,7 @@ type LogoMarkProps = {
   /** Live = indigo/cyan; mock = violet (demo chrome). */
   variant?: Variant;
   /**
-   * "tile" = rounded tile + ring; "bare" = mark + soft indigo glow on dark UIs
+   * "tile" = pannello con angolo tenue + ring; "bare" = solo mark (luce su hover via CSS)
    */
   treatment?: "tile" | "bare";
 };
@@ -66,11 +66,6 @@ export function BrandLogo({
 }: LogoMarkProps) {
   const mark = <RiskSentLogoMark size={size} variant={variant} aria-hidden />;
 
-  const glow =
-    variant === "mock"
-      ? "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)"
-      : "radial-gradient(circle, rgba(99,102,241,0.5) 0%, transparent 70%)";
-
   if (treatment === "bare") {
     return (
       <span
@@ -78,11 +73,6 @@ export function BrandLogo({
         style={{ width: size, height: size }}
         aria-label={alt}
       >
-        <span
-          className="absolute inset-0 -z-10 scale-110 opacity-35 blur-md"
-          style={{ background: glow }}
-          aria-hidden
-        />
         {mark}
       </span>
     );
@@ -90,12 +80,12 @@ export function BrandLogo({
 
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-white/[0.08] ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm ring-1 ring-white/[0.1] ${className}`}
       style={{
         width: size,
         height: size,
         background:
-          "radial-gradient(120% 120% at 10% 10%, rgba(99,102,241,0.1), transparent 55%), #0b0b14",
+          "linear-gradient(128deg, rgba(99,102,241,0.14) 0%, rgba(12,10,20,0.4) 42%, #0b0b14 100%)",
       }}
       aria-label={alt}
     >

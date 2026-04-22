@@ -612,58 +612,40 @@ aside.lg\:flex {
     0 0 18px rgba(255, 60, 60, 0.25);
 }
 
-/* ── Bare logo mark: no background, cinematic teal halo ── */
+/* ── Bare logo mark: niente alone circolare; luce indigo/cyan compatta sull’SVG ── */
 .rs-logo-bare {
   isolation: isolate;
 }
-.rs-logo-bare img {
+.rs-logo-bare .rs-logo-mark-svg {
   filter:
-    drop-shadow(0 0 6px rgba(45, 212, 191, 0.55))
-    drop-shadow(0 0 18px rgba(20, 184, 166, 0.35))
-    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
-  animation: rs-logo-glow 4.5s ease-in-out infinite;
-  transition: transform 250ms ease;
+    drop-shadow(0 0 5px rgba(99, 102, 241, 0.45))
+    drop-shadow(0 0 12px rgba(34, 211, 238, 0.22))
+    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
+  animation: rs-logo-glow 3.8s ease-in-out infinite;
+  transition: transform 220ms ease;
 }
-.rs-logo-bare:hover img {
-  transform: scale(1.05);
-}
-.rs-logo-bare::before {
-  content: "";
-  position: absolute;
-  inset: -22%;
-  border-radius: 999px;
-  background:
-    radial-gradient(closest-side, rgba(45, 212, 191, 0.35), rgba(45, 212, 191, 0.08) 60%, transparent 75%);
-  filter: blur(8px);
-  opacity: 0.9;
-  z-index: -1;
-  animation: rs-logo-halo 4.5s ease-in-out infinite;
-  pointer-events: none;
+.rs-logo-bare:hover .rs-logo-mark-svg {
+  transform: scale(1.04);
 }
 
 @keyframes rs-logo-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter:
-      drop-shadow(0 0 6px rgba(45, 212, 191, 0.55))
-      drop-shadow(0 0 18px rgba(20, 184, 166, 0.35))
-      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+      drop-shadow(0 0 5px rgba(99, 102, 241, 0.45))
+      drop-shadow(0 0 12px rgba(34, 211, 238, 0.2))
+      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
   }
   50% {
     filter:
-      drop-shadow(0 0 10px rgba(94, 234, 212, 0.8))
-      drop-shadow(0 0 28px rgba(20, 184, 166, 0.55))
-      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+      drop-shadow(0 0 8px rgba(129, 140, 248, 0.6))
+      drop-shadow(0 0 18px rgba(34, 211, 238, 0.4))
+      drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
   }
 }
 
-@keyframes rs-logo-halo {
-  0%, 100% { opacity: 0.7; transform: scale(0.96); }
-  50%      { opacity: 1;   transform: scale(1.05); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .rs-logo-bare img,
-  .rs-logo-bare::before {
+  .rs-logo-bare .rs-logo-mark-svg {
     animation: none !important;
   }
 }
