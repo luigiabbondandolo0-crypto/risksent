@@ -159,38 +159,24 @@ export type NotifySettingsLike = {
   notify_risk_per_trade?: boolean | null;
 };
 
-const NOTIFY_DEFAULTS: Required<
-  Pick<
-    NotifySettingsLike,
-    | "notify_daily_dd"
-    | "notify_max_dd"
-    | "notify_position_size"
-    | "notify_consecutive_losses"
-    | "notify_weekly_loss"
-    | "notify_overtrading"
-    | "notify_revenge"
-    | "notify_exposure"
-    | "notify_risk_per_trade"
-  >
-> = {
-  notify_daily_dd: true,
-  notify_max_dd: true,
-  notify_position_size: true,
-  notify_consecutive_losses: true,
-  notify_weekly_loss: true,
-  notify_overtrading: true,
-  notify_revenge: true,
-  notify_exposure: true,
-  notify_risk_per_trade: true
-};
-
-/**
- * Merge DB row with defaults so a partial row still respects per-rule toggles.
- * Replaces the old `!notif || notifyFlagForRule` pattern (missing row must NOT
- * mean "allow all" in a way that bypasses user intent after PATCH).
- */
+/** Match `/api/risk/notifications` `shape()`: never spread-merge DB rows; use `x !== false` and legacy position-size fallbacks. */
 export function effectiveNotifySettings(row: NotifySettingsLike | null | undefined): NotifySettingsLike {
-  return { ...NOTIFY_DEFAULTS, ...(row ?? {}) };
+  const r = row ?? {};
+  const positionSizeOn =
+    r.notify_position_size != null
+      ? r.notify_position_size !== false
+      : (r.notify_risk_per_trade !== false) && (r.notify_exposure !== false);
+  return {
+    notify_daily_dd: r.notify_daily_dd !== false,
+    notify_max_dd: r.notify_max_dd !== false,
+    notify_position_size: positionSizeOn,
+    notify_consecutive_losses: r.notify_consecutive_losses !== false,
+    notify_weekly_loss: r.notify_weekly_loss !== false,
+    notify_overtrading: r.notify_overtrading !== false,
+    notify_revenge: r.notify_revenge !== false,
+    notify_exposure: r.notify_exposure !== false,
+    notify_risk_per_trade: r.notify_risk_per_trade !== false
+  };
 }
 
 /**
@@ -202,11 +188,8 @@ export function effectiveNotifySettings(row: NotifySettingsLike | null | undefin
 export function notifyFlagForRule(ruleType: string, settings: NotifySettingsLike): boolean {
   const t = ruleType.toLowerCase();
 
-  // Position Size = per-trade risk + portfolio exposure (merged toggle).
-  // Falls back to the legacy pair if the new flag hasn't been migrated yet.
-  const positionSize =
-    settings.notify_position_size ??
-    ((settings.notify_risk_per_trade ?? true) && (settings.notify_exposure ?? true));
+  // `effectiveNotifySettings` already merged `notify_position_size` with legacy flags.
+  const positionSize = settings.notify_position_size !== false;
 
   switch (t) {
     case "daily_dd":
