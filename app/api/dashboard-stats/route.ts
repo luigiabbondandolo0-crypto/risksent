@@ -5,7 +5,8 @@ import {
   computeCurrentExposurePct,
   consecutiveLossesAtEndFromClosed,
   maxOpenPositionRiskPct,
-  parseOpenPositions
+  parseOpenPositions,
+  todayAndAvgTradesFromClosed
 } from "@/lib/risk/dashboardMetrics";
 import { runDashboardRiskViolationSideEffect } from "@/lib/risk/persistViolations";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
     }
 
     const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders);
+    const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders);
 
     const {
       winRate,
@@ -143,7 +145,9 @@ export async function GET(req: NextRequest) {
         dailyDdPct,
         currentExposurePct,
         maxOpenRiskPct,
-        consecutiveLossesAtEnd
+        consecutiveLossesAtEnd,
+        todayTrades,
+        avgTradesPerDay
       },
       journalAccountId: journalCtx?.id ?? null,
       accountNickname: journalCtx?.nickname ?? accountLabelFromRow(account),

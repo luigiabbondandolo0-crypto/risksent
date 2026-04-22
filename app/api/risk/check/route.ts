@@ -98,7 +98,9 @@ export async function POST(request: Request) {
     dailyDdPct: snap.dailyDdPct,
     currentExposurePct: snap.currentExposurePct,
     maxOpenRiskPct: snap.maxOpenRiskPct,
-    consecutiveLossesAtEnd: snap.consecutiveLossesAtEnd
+    consecutiveLossesAtEnd: snap.consecutiveLossesAtEnd,
+    todayTrades: snap.todayTrades,
+    avgTradesPerDay: snap.avgTradesPerDay
   };
 
   let telegramAlertContext: TelegramAlertContext | undefined;

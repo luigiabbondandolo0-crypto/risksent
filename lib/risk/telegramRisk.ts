@@ -203,9 +203,14 @@ export function ruleTypeToLabel(ruleType: string): string {
     case "exposure":
       return "Max exposure";
     case "revenge":
+    case "revenge_trading":
       return "Revenge trading";
     case "risk_per_trade":
       return "Risk per trade";
+    case "consecutive_losses":
+      return "Consecutive losses";
+    case "overtrading":
+      return "Overtrading";
     default:
       return ruleType;
   }

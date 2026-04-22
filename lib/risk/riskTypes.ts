@@ -1,4 +1,11 @@
-export type RiskRuleType = "daily_dd" | "exposure" | "revenge" | "risk_per_trade";
+export type RiskRuleType =
+  | "daily_dd"
+  | "exposure"
+  | "revenge"
+  | "risk_per_trade"
+  | "consecutive_losses"
+  | "overtrading"
+  | "revenge_trading";
 
 export type RiskRulesDTO = {
   daily_loss_pct: number;
@@ -47,4 +54,8 @@ export type LiveStatsForRisk = {
   currentExposurePct: number | null;
   maxOpenRiskPct: number | null;
   consecutiveLossesAtEnd: number;
+  /** Trades closed today (UTC). Optional: if omitted, overtrading check is skipped. */
+  todayTrades?: number | null;
+  /** Average trades per active day over the prior window (excluding today). Optional. */
+  avgTradesPerDay?: number | null;
 };

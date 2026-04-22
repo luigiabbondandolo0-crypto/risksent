@@ -82,19 +82,62 @@ export function buildViolationCandidates(rules: RiskRulesDTO, live: LiveStatsFor
   if (thr > 0 && consec > 0) {
     if (consec >= thr) {
       out.push({
-        rule_type: "revenge",
+        rule_type: "revenge_trading",
         value_at_violation: consec,
         limit_value: thr,
-        message: `${consec} consecutive losses reached threshold ${thr}.`,
+        message: `${consec} consecutive losses reached threshold ${thr}. Possible revenge trading.`,
         severity: "danger"
       });
     } else if (thr > 1 && consec >= thr - 1) {
       out.push({
-        rule_type: "revenge",
+        rule_type: "revenge_trading",
         value_at_violation: consec,
         limit_value: thr,
         message: `${consec} consecutive losses approaching threshold ${thr}.`,
         severity: "watch"
+      });
+    }
+  }
+
+  // --- Consecutive losses (softer signal, independent of user's revenge threshold) ---
+  // Emitted only when BELOW the revenge threshold to avoid double-counting with revenge_trading.
+  const CONSEC_WATCH = 3;
+  const CONSEC_DANGER = 5;
+  if (consec >= CONSEC_WATCH && (thr <= 0 || consec < thr)) {
+    const severity = consec >= CONSEC_DANGER ? "danger" : "watch";
+    out.push({
+      rule_type: "consecutive_losses",
+      value_at_violation: consec,
+      limit_value: CONSEC_WATCH,
+      message:
+        severity === "danger"
+          ? `${consec} consecutive losses reached — take a break before the next trade.`
+          : `${consec} consecutive losses — consider slowing down.`,
+      severity
+    });
+  }
+
+  // --- Overtrading (today's trades vs recent average) ---
+  const todayTrades = live.todayTrades ?? null;
+  const avgTrades = live.avgTradesPerDay ?? null;
+  if (todayTrades != null && todayTrades >= 5) {
+    const baseline = avgTrades != null && avgTrades > 0 ? avgTrades : null;
+    const ratio = baseline != null ? todayTrades / baseline : null;
+    const isDanger = ratio != null ? ratio >= 2 : todayTrades >= 15;
+    const isWatch = ratio != null ? ratio >= 1.5 : todayTrades >= 10;
+    if (isDanger || isWatch) {
+      const severity = isDanger ? "danger" : "watch";
+      const limitValue = baseline != null ? baseline : 5;
+      const baselineLabel = baseline != null ? `avg ${baseline.toFixed(1)}/day` : "no baseline";
+      out.push({
+        rule_type: "overtrading",
+        value_at_violation: todayTrades,
+        limit_value: limitValue,
+        message:
+          severity === "danger"
+            ? `Overtrading: ${todayTrades} trades today exceed usual pace (${baselineLabel}).`
+            : `Trade pace today (${todayTrades}) above usual (${baselineLabel}).`,
+        severity
       });
     }
   }
@@ -117,9 +160,13 @@ export function notifyFlagForRule(
     case "exposure":
       return settings.notify_exposure;
     case "revenge":
+    case "revenge_trading":
+    case "consecutive_losses":
       return settings.notify_revenge;
     case "risk_per_trade":
       return settings.notify_risk_per_trade;
+    case "overtrading":
+      return settings.notify_revenge;
     default:
       return false;
   }
@@ -133,6 +180,9 @@ export function formatValueForTelegram(ruleType: RiskRuleType, value: number): s
     case "risk_per_trade":
       return `${value.toFixed(1)}%`;
     case "revenge":
+    case "revenge_trading":
+    case "consecutive_losses":
+    case "overtrading":
       return String(Math.round(value));
     default:
       return String(value);
@@ -147,7 +197,11 @@ export function formatLimitForTelegram(ruleType: RiskRuleType, limit: number): s
     case "risk_per_trade":
       return `${limit.toFixed(1)}%`;
     case "revenge":
+    case "revenge_trading":
+    case "consecutive_losses":
       return String(Math.round(limit));
+    case "overtrading":
+      return `~${limit.toFixed(1)}/day`;
     default:
       return String(limit);
   }

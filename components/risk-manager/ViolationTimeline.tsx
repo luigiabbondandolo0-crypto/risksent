@@ -21,9 +21,14 @@ function badge(ruleType: string): string {
     case "exposure":
       return "Exposure";
     case "revenge":
+    case "revenge_trading":
       return "Revenge";
     case "risk_per_trade":
       return "Risk / trade";
+    case "consecutive_losses":
+      return "Consec. losses";
+    case "overtrading":
+      return "Overtrading";
     default:
       return ruleType;
   }

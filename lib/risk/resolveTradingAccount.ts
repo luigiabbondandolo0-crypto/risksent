@@ -11,7 +11,8 @@ import {
   computeCurrentExposurePct,
   consecutiveLossesAtEndFromClosed,
   maxOpenPositionRiskPct,
-  parseOpenPositions
+  parseOpenPositions,
+  todayAndAvgTradesFromClosed
 } from "@/lib/risk/dashboardMetrics";
 
 export async function resolveTradingAccountForUser(
@@ -52,6 +53,8 @@ export type RiskLiveSnapshot = {
   currentExposurePct: number | null;
   maxOpenRiskPct: number | null;
   consecutiveLossesAtEnd: number;
+  todayTrades: number;
+  avgTradesPerDay: number | null;
   account: TradingAccountRow;
 };
 
@@ -81,12 +84,15 @@ export async function fetchRiskLiveSnapshot(account: TradingAccountRow): Promise
 
   const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders);
   const { dailyDdPct } = buildRealStats(balance, equity, closedOrders);
+  const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders);
 
   return {
     dailyDdPct,
     currentExposurePct,
     maxOpenRiskPct,
     consecutiveLossesAtEnd,
+    todayTrades,
+    avgTradesPerDay,
     account
   };
 }

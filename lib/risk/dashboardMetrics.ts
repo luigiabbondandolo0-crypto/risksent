@@ -17,6 +17,45 @@ export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number 
   return n;
 }
 
+/**
+ * Count trades closed today (UTC) and average trades/active-day over the prior window.
+ * Used for overtrading detection. Excludes today from the average.
+ */
+export function todayAndAvgTradesFromClosed(
+  orders: ClosedOrder[],
+  lookbackDays = 30
+): { todayTrades: number; avgTradesPerDay: number | null } {
+  const valid = orders.filter(
+    (o): o is { closeTime: string; profit: number } =>
+      o != null && typeof o.closeTime === "string" && typeof o.profit === "number"
+  );
+  if (valid.length === 0) return { todayTrades: 0, avgTradesPerDay: null };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cutoff = Date.now() - lookbackDays * 24 * 60 * 60 * 1000;
+
+  let todayTrades = 0;
+  const dayCounts = new Map<string, number>();
+  for (const o of valid) {
+    const ts = new Date(o.closeTime).getTime();
+    if (Number.isNaN(ts)) continue;
+    const day = o.closeTime.slice(0, 10);
+    if (day === todayStr) {
+      todayTrades += 1;
+      continue;
+    }
+    if (ts < cutoff) continue;
+    dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1);
+  }
+
+  if (dayCounts.size === 0) {
+    return { todayTrades, avgTradesPerDay: null };
+  }
+  const totalPrev = Array.from(dayCounts.values()).reduce((s, n) => s + n, 0);
+  const avgTradesPerDay = totalPrev / dayCounts.size;
+  return { todayTrades, avgTradesPerDay };
+}
+
 export type RawOpenPosition = {
   symbol?: string;
   volume?: number;
