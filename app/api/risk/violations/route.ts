@@ -27,3 +27,20 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ violations: data ?? [] });
 }
+
+export async function DELETE(req: NextRequest) {
+  const auth = await requireRouteUser(req);
+  if (auth instanceof NextResponse) return auth;
+  const { supabase, user } = auth;
+
+  const { error } = await supabase
+    .from("risk_violations")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

@@ -4,10 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   Crosshair,
   Flame,
   Layers,
   ShieldAlert,
+  Trash2,
   TrendingDown
 } from "lucide-react";
 import { LiveGauge } from "./LiveGauge";
@@ -96,6 +99,8 @@ export function RiskManagerPageClient({
   });
 
   const [violations, setViolations] = useState<ViolationItem[]>([]);
+  const [violationPage, setViolationPage] = useState(1);
+  const [clearingViolations, setClearingViolations] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [tg, setTg] = useState<TelegramSettings>({
     telegram_chat_id: null,
@@ -137,11 +142,44 @@ export function RiskManagerPageClient({
 
   const loadViolations = useCallback(async () => {
     if (demoData) return;
-    const res = await authFetch("/api/risk/violations?limit=30");
+    const res = await authFetch("/api/risk/violations?limit=100");
     if (!res.ok) return;
     const j = (await res.json()) as { violations: ViolationItem[] };
     setViolations(j.violations ?? []);
   }, [demoData]);
+
+  const VIOLATIONS_PER_PAGE = 10;
+  const totalViolationPages = Math.max(1, Math.ceil(violations.length / VIOLATIONS_PER_PAGE));
+  const currentViolationPage = Math.min(violationPage, totalViolationPages);
+  const pagedViolations = useMemo(() => {
+    const start = (currentViolationPage - 1) * VIOLATIONS_PER_PAGE;
+    return violations.slice(start, start + VIOLATIONS_PER_PAGE);
+  }, [violations, currentViolationPage]);
+
+  const clearViolations = useCallback(async () => {
+    if (demoData) {
+      setViolations([]);
+      setViolationPage(1);
+      return;
+    }
+    if (violations.length === 0) return;
+    if (typeof window !== "undefined") {
+      const ok = window.confirm(
+        "Clear all violation history? This cannot be undone."
+      );
+      if (!ok) return;
+    }
+    setClearingViolations(true);
+    try {
+      const res = await authFetch("/api/risk/violations", { method: "DELETE" });
+      if (res.ok) {
+        setViolations([]);
+        setViolationPage(1);
+      }
+    } finally {
+      setClearingViolations(false);
+    }
+  }, [demoData, violations.length]);
 
   useEffect(() => {
     if (demoData) {
@@ -226,7 +264,7 @@ export function RiskManagerPageClient({
       try {
         const [nRes, vRes] = await Promise.all([
           authFetch("/api/risk/notifications"),
-          authFetch("/api/risk/violations?limit=30")
+          authFetch("/api/risk/violations?limit=100")
         ]);
         if (nRes.ok) {
           const n = (await nRes.json()) as TelegramSettings;
@@ -791,11 +829,77 @@ export function RiskManagerPageClient({
         animate="show"
         className="rs-card mb-8 scroll-mt-28 p-6 sm:p-8"
       >
-        <div className="mb-6 flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-[#ff3c3c]" />
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Violation history</h2>
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 text-[#ff3c3c]" />
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Violation history</h2>
+          </div>
+          {violations.length > 0 ? (
+            <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-400">
+              {violations.length} total
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void clearViolations()}
+            disabled={clearingViolations || violations.length === 0}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-slate-300 transition hover:border-[#ff3c3c]/40 hover:bg-[#ff3c3c]/10 hover:text-[#ff7070] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03] disabled:hover:text-slate-300"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {clearingViolations ? "Clearing…" : "Clear all"}
+          </button>
         </div>
-        <ViolationTimeline violations={violations} />
+        <ViolationTimeline violations={pagedViolations} />
+        {totalViolationPages > 1 ? (
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-4">
+            <span className="text-[11px] font-[family-name:var(--font-mono)] text-slate-500">
+              Page {currentViolationPage} of {totalViolationPages}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setViolationPage((p) => Math.max(1, p - 1))}
+                disabled={currentViolationPage <= 1}
+                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03]"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Prev
+              </button>
+              {Array.from({ length: totalViolationPages }).map((_, idx) => {
+                const pageNum = idx + 1;
+                const isActive = pageNum === currentViolationPage;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setViolationPage(pageNum)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={
+                      isActive
+                        ? "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-2 text-xs font-[family-name:var(--font-mono)] font-semibold text-[#ff7070]"
+                        : "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03] px-2 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06]"
+                    }
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() =>
+                  setViolationPage((p) => Math.min(totalViolationPages, p + 1))
+                }
+                disabled={currentViolationPage >= totalViolationPages}
+                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03]"
+                aria-label="Next page"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : null}
       </motion.section>
 
       <motion.section
