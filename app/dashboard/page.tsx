@@ -985,7 +985,7 @@ export default function DashboardPage() {
                 <div key={d} className="text-[10px] font-mono text-slate-500 font-medium py-1">{d}</div>
               ))}
               {Array.from({ length: startWeekday }, (_, i) => (
-                <div key={`pad-${i}`} className="min-h-[64px]" />
+                <div key={`pad-s-${i}`} className="min-h-[64px]" />
               ))}
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const day = i + 1;
@@ -1034,6 +1034,10 @@ export default function DashboardPage() {
                   <div key={dateStr} className={cellClass}>{content}</div>
                 );
               })}
+              {/* Trailing pads — always reach 42 cells (6 rows) for fixed height */}
+              {Array.from({ length: Math.max(0, 42 - startWeekday - daysInMonth) }, (_, i) => (
+                <div key={`pad-e-${i}`} className="min-h-[64px]" />
+              ))}
             </div>
           </section>
 
