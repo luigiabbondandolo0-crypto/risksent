@@ -34,48 +34,17 @@ function badge(ruleType: string): string {
   }
 }
 
-type Severity = "high" | "medium";
+const RED_RULE_TYPES = new Set([
+  "daily_dd",
+  "max_dd",
+  "max_drawdown",
+  "consecutive_losses",
+  "revenge",
+  "revenge_trading"
+]);
 
-function severityOf(message: string, ruleType: string): Severity {
-  const t = `${message} ${ruleType}`.toLowerCase();
-  if (
-    t.includes("exceed") ||
-    t.includes("reached") ||
-    t.includes("far above") ||
-    t.includes("far below")
-  ) {
-    return "high";
-  }
-  return "medium";
-}
-
-function dotColor(severity: Severity): string {
-  return severity === "high" ? "#ff3c3c" : "#ff8c00";
-}
-
-function SeverityIcon({ severity }: { severity: Severity }) {
-  if (severity === "high") {
-    return (
-      <span
-        role="img"
-        aria-label="High severity"
-        title="High severity"
-        className="text-sm leading-none"
-      >
-        🚨
-      </span>
-    );
-  }
-  return (
-    <span
-      role="img"
-      aria-label="Medium severity"
-      title="Medium severity"
-      className="text-sm leading-none"
-    >
-      ⚠️
-    </span>
-  );
+function dotColor(ruleType: string): string {
+  return RED_RULE_TYPES.has(ruleType) ? "#ff3c3c" : "#ff8c00";
 }
 
 export function ViolationTimeline({ violations }: { violations: ViolationItem[] }) {
@@ -104,8 +73,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
       {/* Mobile card layout */}
       <ul className="flex flex-col gap-3 sm:hidden">
         {violations.map((v, i) => {
-          const severity = severityOf(v.message, v.rule_type);
-          const color = dotColor(severity);
+          const color = dotColor(v.rule_type);
           return (
             <motion.li
               key={v.id}
@@ -116,7 +84,10 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
               style={{ borderLeftColor: color, borderLeftWidth: 3 }}
             >
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <SeverityIcon severity={severity} />
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+                />
                 {v.account_nickname ? (
                   <span className="rounded-full border border-[#6366f1]/30 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-indigo-200/95">
                     {v.account_nickname}
@@ -143,8 +114,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
       {/* Desktop timeline layout */}
       <ul className="hidden sm:block space-y-0">
         {violations.map((v, i) => {
-          const severity = severityOf(v.message, v.rule_type);
-          const color = dotColor(severity);
+          const color = dotColor(v.rule_type);
           return (
             <motion.li
               key={v.id}
@@ -164,7 +134,6 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <SeverityIcon severity={severity} />
                   {v.account_nickname ? (
                     <span className="rounded-full border border-[#6366f1]/30 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-medium text-indigo-200/95">
                       {v.account_nickname}
