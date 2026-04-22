@@ -36,6 +36,8 @@ function badge(ruleType: string): string {
 
 const RED_RULE_TYPES = new Set([
   "daily_dd",
+  "daily_drawdown",
+  "daily_loss",
   "max_dd",
   "max_drawdown",
   "consecutive_losses",
