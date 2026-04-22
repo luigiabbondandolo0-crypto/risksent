@@ -168,18 +168,28 @@ export async function sendSmartTelegramAlert({
     if (!result.ok) return { ok: false, reason: result.description };
 
     if (supabase && userId) {
+      const valueAtViolation =
+        Number(
+          data.currentDD ??
+            data.positionSize ??
+            data.count ??
+            data.tradesCount ??
+            data.currentLoss ??
+            0
+        ) || 0;
+      const limitValue =
+        Number(data.limitDD ?? data.limit ?? data.avgTrades ?? data.threshold ?? 0) || 0;
+      const nickname = data.accountNickname != null ? String(data.accountNickname) : null;
       await supabase
         .from("risk_violations")
         .insert({
           user_id: userId,
           rule_type: alertType,
-          value_at_violation: String(
-            data.currentDD ?? data.positionSize ?? data.count ?? data.tradesCount ?? data.currentLoss ?? ""
-          ),
-          limit_value: String(data.limitDD ?? data.limit ?? ""),
+          value_at_violation: valueAtViolation,
+          limit_value: limitValue,
           message: message,
           notified_telegram: true,
-          account_nickname: String(data.accountNickname ?? ""),
+          account_nickname: nickname,
         })
         .then(({ error }) => {
           if (error) console.error("[sendSmartTelegramAlert] Failed to save violation:", error.message);

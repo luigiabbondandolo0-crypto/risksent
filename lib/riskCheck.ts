@@ -15,6 +15,10 @@ export type StatsForRisk = {
   dailyStats: { date: string; profit: number }[];
   highestDdPct: number | null;
   consecutiveLossesAtEnd: number;
+  /** Trades closed today (UTC). Optional: if omitted, overtrading check is skipped. */
+  todayTrades?: number;
+  /** Average trades per active day over the prior window (excluding today). Optional. */
+  avgTradesPerDay?: number | null;
 };
 
 export type RiskLevel = "lieve" | "medio" | "alto";
@@ -184,6 +188,56 @@ export function getRiskFindings(
       advice: getRevengeAdvice("lieve", consecutiveLossesAtEnd, threshold),
       severity: "medium"
     });
+  }
+
+  // --- Consecutive losses (softer signal, below revenge threshold to avoid duplication) ---
+  const CONSEC_WATCH = 3;
+  const CONSEC_DANGER = 5;
+  if (
+    consecutiveLossesAtEnd >= CONSEC_WATCH &&
+    (threshold <= 0 || consecutiveLossesAtEnd < threshold)
+  ) {
+    const level: RiskLevel = consecutiveLossesAtEnd >= CONSEC_DANGER ? "alto" : "medio";
+    findings.push({
+      type: "consecutive_losses",
+      level,
+      message:
+        level === "alto"
+          ? `${consecutiveLossesAtEnd} consecutive losses reached — take a break before the next trade.`
+          : `${consecutiveLossesAtEnd} consecutive losses — consider slowing down.`,
+      advice:
+        level === "alto"
+          ? "Pause trading now and review the last trades before placing another one. Streaks often worsen without a deliberate reset."
+          : "Slow down: take at least a 30-minute break and reduce position size on the next entry.",
+      severity: level === "alto" ? "high" : "medium"
+    });
+  }
+
+  // --- Overtrading (today's trades vs recent average) ---
+  const todayTrades = stats.todayTrades ?? null;
+  const avgTrades = stats.avgTradesPerDay ?? null;
+  if (todayTrades != null && todayTrades >= 5) {
+    const baseline = avgTrades != null && avgTrades > 0 ? avgTrades : null;
+    const ratio = baseline != null ? todayTrades / baseline : null;
+    const isDanger = ratio != null ? ratio >= 2 : todayTrades >= 15;
+    const isWatch = ratio != null ? ratio >= 1.5 : todayTrades >= 10;
+    if (isDanger || isWatch) {
+      const level: RiskLevel = isDanger ? "alto" : "medio";
+      const baselineLabel = baseline != null ? `avg ${baseline.toFixed(1)}/day` : "no baseline";
+      findings.push({
+        type: "overtrading",
+        level,
+        message:
+          level === "alto"
+            ? `Overtrading: ${todayTrades} trades today exceed usual pace (${baselineLabel}).`
+            : `Trade pace today (${todayTrades}) above usual (${baselineLabel}).`,
+        advice:
+          level === "alto"
+            ? "Stop opening new positions for the rest of the session. Overtrading inflates commissions and reduces edge."
+            : "Slow the pace: set a hard cap on new trades today and review the setup quality before each entry.",
+        severity: level === "alto" ? "high" : "medium"
+      });
+    }
   }
 
   return findings;

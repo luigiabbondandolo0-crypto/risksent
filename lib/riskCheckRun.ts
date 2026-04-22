@@ -142,7 +142,9 @@ function buildStatsForRisk(balance: number, orders: ClosedOrder[]): StatsForRisk
       initialBalance: balance,
       dailyStats: [],
       highestDdPct: null,
-      consecutiveLossesAtEnd: 0
+      consecutiveLossesAtEnd: 0,
+      todayTrades: 0,
+      avgTradesPerDay: null
     };
   }
   const totalProfit = valid.reduce((s, o) => s + o.profit, 0);
@@ -184,11 +186,34 @@ function buildStatsForRisk(balance: number, orders: ClosedOrder[]): StatsForRisk
     else break;
   }
 
+  // Today's trade count (UTC) and average trades/day over prior 30 days (excluding today).
+  const LOOKBACK_DAYS = 30;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cutoff = Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+  const dayCounts = new Map<string, number>();
+  let todayTrades = 0;
+  for (const o of sorted) {
+    const day = o.closeTime.slice(0, 10);
+    if (day === todayStr) {
+      todayTrades += 1;
+      continue;
+    }
+    const ts = new Date(o.closeTime).getTime();
+    if (Number.isNaN(ts) || ts < cutoff) continue;
+    dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1);
+  }
+  const avgTradesPerDay =
+    dayCounts.size > 0
+      ? Array.from(dayCounts.values()).reduce((s, n) => s + n, 0) / dayCounts.size
+      : null;
+
   return {
     initialBalance: initialBalance > 0 ? initialBalance : balance,
     dailyStats,
     highestDdPct,
-    consecutiveLossesAtEnd
+    consecutiveLossesAtEnd,
+    todayTrades,
+    avgTradesPerDay
   };
 }
 
