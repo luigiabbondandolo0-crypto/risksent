@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, FlaskConical } from "lucide-react";
+import { Plus, FlaskConical, Lock, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { CreateStrategyModal } from "@/components/backtesting/CreateStrategyModal";
 import { CreateSessionModal } from "@/components/backtesting/CreateSessionModal";
 import { StrategyCard } from "@/components/backtesting/StrategyCard";
+import { buildDemoBacktestingSeed } from "@/lib/demo/demoBacktestingSeed";
 import type { Strategy, Session } from "@/lib/backtesting/types";
 
 type StrategiesResponse = { strategies: Strategy[] };
@@ -14,6 +16,9 @@ type SessionsResponse = { sessions: Session[] };
 
 export default function BacktestingPage() {
   const sub = useSubscription();
+  const isDemoMode = Boolean(sub?.isDemoMode);
+  const subLoaded = sub !== null && sub !== undefined;
+
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +27,30 @@ export default function BacktestingPage() {
   const [createSessionForStrategy, setCreateSessionForStrategy] = useState<string | undefined>();
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
 
+  // Load demo seed when in demo mode
+  useEffect(() => {
+    if (!subLoaded || !isDemoMode) return;
+    const seed = buildDemoBacktestingSeed();
+    const now = new Date().toISOString();
+    setStrategies(
+      seed.strategies.map((s) => ({
+        ...s,
+        created_at: s.created_at ?? now,
+        updated_at: now,
+      })) as unknown as Strategy[]
+    );
+    setSessions(
+      seed.sessions.map((s) => ({
+        ...s,
+        created_at: s.created_at ?? now,
+        updated_at: now,
+      })) as unknown as Session[]
+    );
+    setLoading(false);
+  }, [subLoaded, isDemoMode]);
+
   const load = useCallback(async () => {
+    if (!subLoaded || isDemoMode) return;
     setLoading(true);
     const [strRes, sessRes] = await Promise.all([
       fetch("/api/backtesting/strategies"),
@@ -37,7 +65,7 @@ export default function BacktestingPage() {
       setSessions(j.sessions ?? []);
     }
     setLoading(false);
-  }, []);
+  }, [subLoaded, isDemoMode]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -66,19 +94,6 @@ export default function BacktestingPage() {
     setEditingStrategy(null);
   }
 
-  // Subscription gate
-  const canAccess = sub?.canAccessBacktesting ?? true;
-  if (!canAccess) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="max-w-md text-center">
-          <p className="font-display text-xl font-bold text-white">Backtesting is a paid feature</p>
-          <p className="mt-2 font-mono text-sm text-slate-500">Start your free trial to access strategy backtesting.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -92,18 +107,57 @@ export default function BacktestingPage() {
           <h1 className="rs-page-title">Backtesting Lab</h1>
           <p className="rs-page-sub">Test your strategies on real historical data.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreateStrategy(true)}
-          className="flex items-center gap-2 self-start rounded-xl bg-[#6366f1] px-4 py-2.5 font-mono text-sm font-semibold text-white transition-all hover:bg-[#4f46e5] sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          New Strategy
-        </button>
+        {!isDemoMode && (
+          <button
+            type="button"
+            onClick={() => setShowCreateStrategy(true)}
+            className="flex items-center gap-2 self-start rounded-xl bg-[#6366f1] px-4 py-2.5 font-mono text-sm font-semibold text-white transition-all hover:bg-[#4f46e5] sm:self-auto"
+          >
+            <Plus className="h-4 w-4" />
+            New Strategy
+          </button>
+        )}
       </motion.div>
 
-      {/* Empty state */}
-      {!loading && strategies.length === 0 && (
+      {/* Demo locked banner */}
+      {isDemoMode && (
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
+          style={{
+            borderColor: "rgba(99,102,241,0.3)",
+            background: "linear-gradient(90deg, rgba(99,102,241,0.08) 0%, rgba(129,140,248,0.05) 100%)",
+          }}
+        >
+          <div className="flex items-center gap-2 font-mono text-sm">
+            <Lock className="h-4 w-4 shrink-0 text-[#818cf8]" />
+            <span className="font-semibold text-slate-200">Backtesting is a paid feature.</span>
+            <span className="hidden text-slate-500 sm:inline">Start a free trial to run your own sessions.</span>
+          </div>
+          <Link
+            href="/pricing"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-bold text-white transition-all hover:scale-[1.03]"
+            style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)" }}
+          >
+            Start free trial
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </motion.div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="rs-card h-24 animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state - real users only */}
+      {!loading && !isDemoMode && strategies.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,22 +183,13 @@ export default function BacktestingPage() {
         </motion.div>
       )}
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="space-y-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="rs-card h-24 animate-pulse" />
-          ))}
-        </div>
-      )}
-
       {/* Strategy list */}
       {!loading && strategies.length > 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="space-y-4"
+          className={`space-y-4 ${isDemoMode ? "pointer-events-none select-none opacity-50 blur-[1.5px]" : ""}`}
         >
           {strategies.map((strategy) => (
             <StrategyCard
@@ -160,18 +205,22 @@ export default function BacktestingPage() {
         </motion.div>
       )}
 
-      {/* Modals */}
-      <CreateStrategyModal
-        open={showCreateStrategy}
-        onClose={() => setShowCreateStrategy(false)}
-        onCreated={() => void load()}
-      />
-      <CreateSessionModal
-        open={showCreateSession}
-        onClose={() => { setShowCreateSession(false); setCreateSessionForStrategy(undefined); }}
-        strategies={strategies}
-        defaultStrategyId={createSessionForStrategy}
-      />
+      {/* Modals - real users only */}
+      {!isDemoMode && (
+        <>
+          <CreateStrategyModal
+            open={showCreateStrategy}
+            onClose={() => setShowCreateStrategy(false)}
+            onCreated={() => void load()}
+          />
+          <CreateSessionModal
+            open={showCreateSession}
+            onClose={() => { setShowCreateSession(false); setCreateSessionForStrategy(undefined); }}
+            strategies={strategies}
+            defaultStrategyId={createSessionForStrategy}
+          />
+        </>
+      )}
     </div>
   );
 }
