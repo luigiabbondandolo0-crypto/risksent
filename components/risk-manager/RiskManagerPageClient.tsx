@@ -15,6 +15,7 @@ import { RuleCard } from "./RuleCard";
 import { TelegramSetup, type TelegramSettings } from "./TelegramSetup";
 import { ViolationTimeline, type ViolationItem } from "./ViolationTimeline";
 import { authFetch } from "@/lib/api/authFetch";
+import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
@@ -70,6 +71,7 @@ export function RiskManagerPageClient({
   subscriptionDemo?: boolean;
 }) {
   const demoData = isMock || subscriptionDemo;
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const previewChrome = isMock && !subscriptionDemo;
   const { interceptAction, modalOpen, actionLabel, closeModal } = useDemoAction();
   const [rules, setRules] = useState<Rules>({
@@ -94,6 +96,7 @@ export function RiskManagerPageClient({
   });
 
   const [violations, setViolations] = useState<ViolationItem[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [tg, setTg] = useState<TelegramSettings>({
     telegram_chat_id: null,
     telegram_enabled: false,
@@ -432,6 +435,46 @@ export function RiskManagerPageClient({
     const t = window.setInterval(() => void loadViolations(), 60_000);
     return () => window.clearInterval(t);
   }, [demoData, loadViolations]);
+
+  useEffect(() => {
+    if (demoData) return;
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, [demoData, supabase]);
+
+  useEffect(() => {
+    if (demoData || !userId) return;
+    const channel = supabase
+      .channel("risk_violations_realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "risk_violations",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const raw = payload.new as Record<string, unknown>;
+          const item: ViolationItem = {
+            id: String(raw.id ?? ""),
+            rule_type: String(raw.rule_type ?? ""),
+            value_at_violation: Number(raw.value_at_violation ?? 0),
+            limit_value: Number(raw.limit_value ?? 0),
+            message: String(raw.message ?? ""),
+            created_at: String(raw.created_at ?? new Date().toISOString()),
+            account_nickname: raw.account_nickname != null ? String(raw.account_nickname) : null,
+          };
+          setViolations((prev) => [item, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [demoData, supabase, userId]);
 
   const saveRules = async () => {
     if (previewChrome) return;
