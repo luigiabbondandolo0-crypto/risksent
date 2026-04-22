@@ -4,6 +4,7 @@ import {
   buildViolationCandidates,
   formatLimitForTelegram,
   formatValueForTelegram,
+  effectiveNotifySettings,
   notifyFlagForRule
 } from "./violationEngine";
 import { ruleTypeToLabel, sendSmartTelegramAlert } from "./telegramRisk";
@@ -166,11 +167,13 @@ export async function persistRiskViolations(params: {
   }
 
   const notif = await loadNotificationsDefaults(supabase, userId);
+  const effectiveNotif = effectiveNotifySettings(notif);
   console.log("[persistRiskViolations] notif loaded", {
     userId: userId.slice(0, 8) + "...",
     hasRow: !!notif,
     telegram_enabled: notif?.telegram_enabled ?? null,
     notify_daily_dd: notif?.notify_daily_dd ?? null,
+    effective_daily_dd: effectiveNotif.notify_daily_dd,
     notify_max_dd: (notif as { notify_max_dd?: boolean | null } | null)?.notify_max_dd ?? null,
     notify_position_size: (notif as { notify_position_size?: boolean | null } | null)?.notify_position_size ?? null,
     notify_consecutive_losses: notif?.notify_consecutive_losses ?? null,
@@ -196,7 +199,7 @@ export async function persistRiskViolations(params: {
     // User turned off notifications for this rule → don't persist anything.
     // This suppresses the Telegram message, the violation history entry, AND the
     // Dashboard / Topbar alert mirror. A disabled rule is fully silent.
-    const allowed = !notif || notifyFlagForRule(c.rule_type, notif);
+    const allowed = notifyFlagForRule(c.rule_type, effectiveNotif);
     console.log("[persistRiskViolations] gate", {
       rule_type: c.rule_type,
       allowed,

@@ -5,6 +5,7 @@ import {
   resolveTradingAccountForUser,
   tradingAccountLabel
 } from "@/lib/risk/resolveTradingAccount";
+import { buildLiveStatsFromJournal } from "@/lib/risk/liveStatsFromJournal";
 import {
   persistRiskViolations,
   type TelegramAlertContext
@@ -84,7 +85,11 @@ export async function POST(request: Request) {
   }
 
   const snap = await fetchRiskLiveSnapshot(account);
-  if (!snap) {
+  const journalLive =
+    !snap && journalCtx?.id
+      ? await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id)
+      : null;
+  if (!snap && !journalLive) {
     return NextResponse.json({ error: "Failed to load account data" }, { status: 502 });
   }
 
@@ -94,14 +99,23 @@ export async function POST(request: Request) {
     journalCtx?.id ?? null
   );
 
-  const live = {
-    dailyDdPct: snap.dailyDdPct,
-    currentExposurePct: snap.currentExposurePct,
-    maxOpenRiskPct: snap.maxOpenRiskPct,
-    consecutiveLossesAtEnd: snap.consecutiveLossesAtEnd,
-    todayTrades: snap.todayTrades,
-    avgTradesPerDay: snap.avgTradesPerDay
-  };
+  const live = snap
+    ? {
+        dailyDdPct: snap.dailyDdPct,
+        currentExposurePct: snap.currentExposurePct,
+        maxOpenRiskPct: snap.maxOpenRiskPct,
+        consecutiveLossesAtEnd: snap.consecutiveLossesAtEnd,
+        todayTrades: snap.todayTrades,
+        avgTradesPerDay: snap.avgTradesPerDay
+      }
+    : {
+        dailyDdPct: journalLive!.dailyDdPct,
+        currentExposurePct: journalLive!.currentExposurePct,
+        maxOpenRiskPct: journalLive!.maxOpenRiskPct,
+        consecutiveLossesAtEnd: journalLive!.consecutiveLossesAtEnd,
+        todayTrades: journalLive!.todayTrades,
+        avgTradesPerDay: journalLive!.avgTradesPerDay
+      };
 
   let telegramAlertContext: TelegramAlertContext | undefined;
   if (journalCtx?.id) {
@@ -128,7 +142,7 @@ export async function POST(request: Request) {
     rules,
     live,
     journalAccountId: journalCtx?.id ?? null,
-    accountNickname: journalCtx?.nickname ?? tradingAccountLabel(snap.account),
+    accountNickname: journalCtx?.nickname ?? tradingAccountLabel(snap?.account ?? account),
     brokerServer: journalCtx?.broker_server ?? null,
     telegramAlertContext
   });

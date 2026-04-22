@@ -159,6 +159,40 @@ export type NotifySettingsLike = {
   notify_risk_per_trade?: boolean | null;
 };
 
+const NOTIFY_DEFAULTS: Required<
+  Pick<
+    NotifySettingsLike,
+    | "notify_daily_dd"
+    | "notify_max_dd"
+    | "notify_position_size"
+    | "notify_consecutive_losses"
+    | "notify_weekly_loss"
+    | "notify_overtrading"
+    | "notify_revenge"
+    | "notify_exposure"
+    | "notify_risk_per_trade"
+  >
+> = {
+  notify_daily_dd: true,
+  notify_max_dd: true,
+  notify_position_size: true,
+  notify_consecutive_losses: true,
+  notify_weekly_loss: true,
+  notify_overtrading: true,
+  notify_revenge: true,
+  notify_exposure: true,
+  notify_risk_per_trade: true
+};
+
+/**
+ * Merge DB row with defaults so a partial row still respects per-rule toggles.
+ * Replaces the old `!notif || notifyFlagForRule` pattern (missing row must NOT
+ * mean "allow all" in a way that bypasses user intent after PATCH).
+ */
+export function effectiveNotifySettings(row: NotifySettingsLike | null | undefined): NotifySettingsLike {
+  return { ...NOTIFY_DEFAULTS, ...(row ?? {}) };
+}
+
 /**
  * Decide whether a rule type should surface an alert for the current user.
  *

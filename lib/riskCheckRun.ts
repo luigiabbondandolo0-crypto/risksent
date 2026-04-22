@@ -9,7 +9,7 @@ import { sendSmartTelegramAlert } from "./telegram/sendSmartTelegramAlert";
 import { createSupabaseAdmin } from "./supabaseAdmin";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
-import { notifyFlagForRule, type NotifySettingsLike } from "@/lib/risk/violationEngine";
+import { effectiveNotifySettings, notifyFlagForRule, type NotifySettingsLike } from "@/lib/risk/violationEngine";
 import {
   getAccountSummary,
   getClosedOrders,
@@ -401,17 +401,31 @@ export async function runRiskCheckForAccount(params: {
     .eq("user_id", userId)
     .maybeSingle();
   const notif = (notifRow ?? null) as NotifySettingsLike | null;
+  const effectiveNotif = effectiveNotifySettings(notif);
+  const rn = notifRow as
+    | { telegram_enabled?: boolean | null; telegram_chat_id?: string | null }
+    | null
+    | undefined;
+  /** Match Risk Manager: if a risk_notifications row exists, do not fall back to app_user when disabled. */
+  const telegramSendChatId =
+    rn && rn.telegram_enabled && rn.telegram_chat_id?.trim()
+      ? String(rn.telegram_chat_id).trim()
+      : !rn
+        ? userChatId
+        : null;
   console.log("[riskCheckRun] notif loaded", {
     userId: userId.slice(0, 8) + "...",
     hasRow: !!notif,
     notify_daily_dd: notif?.notify_daily_dd ?? null,
+    effective_daily_dd: effectiveNotif.notify_daily_dd,
     notify_max_dd: notif?.notify_max_dd ?? null,
     notify_position_size: notif?.notify_position_size ?? null,
     notify_consecutive_losses: notif?.notify_consecutive_losses ?? null,
     notify_weekly_loss: notif?.notify_weekly_loss ?? null,
     notify_overtrading: notif?.notify_overtrading ?? null,
     notify_revenge: notif?.notify_revenge ?? null,
-    findingsCount: findings.length
+    findingsCount: findings.length,
+    telegramTarget: telegramSendChatId ? "set" : "none"
   });
   if (findings.length === 0) {
     // Gate logs only run inside the loop — when there is nothing to evaluate, expect no
@@ -422,7 +436,7 @@ export async function runRiskCheckForAccount(params: {
   }
 
   for (const f of findings) {
-    const allowed = !notif || notifyFlagForRule(f.type, notif);
+    const allowed = notifyFlagForRule(f.type, effectiveNotif);
     console.log("[riskCheckRun] gate", { rule_type: f.type, allowed, hasNotif: !!notif });
     if (!allowed) {
       continue;
@@ -453,11 +467,11 @@ export async function runRiskCheckForAccount(params: {
       .select("id")
       .single();
 
-    if (alertRow && userChatId) {
+    if (alertRow && telegramSendChatId) {
       const alertType = FINDING_TYPE_TO_ALERT[f.type];
       const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
       await sendSmartTelegramAlert({
-        chatId: userChatId,
+        chatId: telegramSendChatId,
         alertType,
         data: alertData,
         fallbackMessage: `⚠️ Risk alert: ${f.message}`,

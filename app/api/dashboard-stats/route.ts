@@ -9,6 +9,7 @@ import {
   todayAndAvgTradesFromClosed
 } from "@/lib/risk/dashboardMetrics";
 import { runDashboardRiskViolationSideEffect } from "@/lib/risk/persistViolations";
+import { buildLiveStatsFromJournal } from "@/lib/risk/liveStatsFromJournal";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
@@ -112,9 +113,30 @@ export async function GET(req: NextRequest) {
 
     if (!summaryResult.ok || !summaryResult.summary) {
       const errMsg = summaryResult.error ?? "Account summary unavailable";
-      console.warn("[api/dashboard-stats] summary not ok (returning 200 + degraded body)", errMsg);
-      // Do not 502: trading provider is often stubbed/disabled; clients like Risk Manager use
-      // `if (!res.ok) return` and would break. Same JSON shape as success + `error` for UI.
+      console.warn("[api/dashboard-stats] summary not ok; degraded KPI + optional journal risk side effect", errMsg);
+      // Still run persistRiskViolations from journal so violation history, alert table,
+      // dashboard live alerts, and headbar stay aligned when the broker API is off.
+      const journalCtx = await resolveJournalAccountForTradingRow(supabase, user.id, account);
+      if (journalCtx?.id) {
+        const fromJournal = await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id);
+        if (fromJournal) {
+          const rules: RiskRulesDTO = await loadMergedRiskRules(
+            supabase,
+            user.id,
+            journalCtx.id
+          );
+          void runDashboardRiskViolationSideEffect({
+            userId: user.id,
+            supabase,
+            rules,
+            live: fromJournal,
+            journalAccountId: journalCtx.id,
+            accountNickname: journalCtx.nickname,
+            brokerServer: journalCtx.broker_server
+          });
+        }
+      }
+      // Do not 502: same JSON shape as success + `error` for UI.
       return NextResponse.json(degradedBody(errMsg));
     }
     const summary = summaryResult.summary;
