@@ -444,7 +444,7 @@ export function RiskManagerPageClient({
   }, [demoData, supabase]);
 
   useEffect(() => {
-    if (demoData || !userId) return;
+    if (!userId) return;
     const channel = supabase
       .channel("risk_violations_realtime")
       .on(
@@ -474,7 +474,7 @@ export function RiskManagerPageClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [demoData, supabase, userId]);
+  }, [supabase, userId]);
 
   const saveRules = async () => {
     if (previewChrome) return;
