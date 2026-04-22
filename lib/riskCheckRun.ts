@@ -401,9 +401,23 @@ export async function runRiskCheckForAccount(params: {
     .eq("user_id", userId)
     .maybeSingle();
   const notif = (notifRow ?? null) as NotifySettingsLike | null;
+  console.log("[riskCheckRun] notif loaded", {
+    userId: userId.slice(0, 8) + "...",
+    hasRow: !!notif,
+    notify_daily_dd: notif?.notify_daily_dd ?? null,
+    notify_max_dd: notif?.notify_max_dd ?? null,
+    notify_position_size: notif?.notify_position_size ?? null,
+    notify_consecutive_losses: notif?.notify_consecutive_losses ?? null,
+    notify_weekly_loss: notif?.notify_weekly_loss ?? null,
+    notify_overtrading: notif?.notify_overtrading ?? null,
+    notify_revenge: notif?.notify_revenge ?? null,
+    findingsCount: findings.length
+  });
 
   for (const f of findings) {
-    if (notif && !notifyFlagForRule(f.type, notif)) {
+    const allowed = !notif || notifyFlagForRule(f.type, notif);
+    console.log("[riskCheckRun] gate", { rule_type: f.type, allowed, hasNotif: !!notif });
+    if (!allowed) {
       continue;
     }
 

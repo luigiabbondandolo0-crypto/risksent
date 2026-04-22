@@ -122,6 +122,19 @@ export async function persistRiskViolations(params: {
   }
 
   const notif = await loadNotificationsDefaults(supabase, userId);
+  console.log("[persistRiskViolations] notif loaded", {
+    userId: userId.slice(0, 8) + "...",
+    hasRow: !!notif,
+    telegram_enabled: notif?.telegram_enabled ?? null,
+    notify_daily_dd: notif?.notify_daily_dd ?? null,
+    notify_max_dd: (notif as { notify_max_dd?: boolean | null } | null)?.notify_max_dd ?? null,
+    notify_position_size: (notif as { notify_position_size?: boolean | null } | null)?.notify_position_size ?? null,
+    notify_consecutive_losses: notif?.notify_consecutive_losses ?? null,
+    notify_weekly_loss: (notif as { notify_weekly_loss?: boolean | null } | null)?.notify_weekly_loss ?? null,
+    notify_overtrading: (notif as { notify_overtrading?: boolean | null } | null)?.notify_overtrading ?? null,
+    notify_revenge: notif?.notify_revenge ?? null,
+    candidatesCount: candidates.length
+  });
 
   let enrich: TelegramAlertContext = {
     todayTrades: 0,
@@ -139,7 +152,13 @@ export async function persistRiskViolations(params: {
     // User turned off notifications for this rule → don't persist anything.
     // This suppresses the Telegram message, the violation history entry, AND the
     // Dashboard / Topbar alert mirror. A disabled rule is fully silent.
-    if (notif && !notifyFlagForRule(c.rule_type, notif)) {
+    const allowed = !notif || notifyFlagForRule(c.rule_type, notif);
+    console.log("[persistRiskViolations] gate", {
+      rule_type: c.rule_type,
+      allowed,
+      hasNotif: !!notif
+    });
+    if (!allowed) {
       continue;
     }
 
