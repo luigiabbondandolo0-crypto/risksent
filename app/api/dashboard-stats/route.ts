@@ -26,6 +26,41 @@ function accountLabelFromRow(a: TradingAccountRow): string {
   return `${a.broker_type ?? "MT"} ${tail}`;
 }
 
+function degradedBody(error: string) {
+  const t = new Date().toISOString();
+  return {
+    balance: 0,
+    equity: 0,
+    currency: "USD",
+    winRate: null,
+    maxDd: null,
+    highestDdPct: null,
+    peakDdDate: null,
+    maxDdDollars: null,
+    dailyDdPct: null,
+    currentExposurePct: null,
+    maxOpenRiskPct: null,
+    consecutiveLossesAtEnd: 0,
+    avgRiskReward: null,
+    avgWin: null,
+    avgLoss: null,
+    avgWinPct: null,
+    avgLossPct: null,
+    winsCount: 0,
+    lossesCount: 0,
+    drawsCount: 0,
+    profitFactor: null,
+    balancePct: null,
+    equityPct: null,
+    equityCurve: [],
+    dailyStats: [],
+    totalProfit: null,
+    initialBalance: null,
+    error,
+    updatedAt: t
+  };
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireRouteUser(req);
   if (auth instanceof NextResponse) return auth;
@@ -76,10 +111,11 @@ export async function GET(req: NextRequest) {
     ]);
 
     if (!summaryResult.ok || !summaryResult.summary) {
-      return NextResponse.json(
-        { error: summaryResult.error ?? "AccountSummary failed", balance: 0, equity: 0, winRate: null, maxDd: null, equityCurve: [] },
-        { status: 502 }
-      );
+      const errMsg = summaryResult.error ?? "Account summary unavailable";
+      console.warn("[api/dashboard-stats] summary not ok (returning 200 + degraded body)", errMsg);
+      // Do not 502: trading provider is often stubbed/disabled; clients like Risk Manager use
+      // `if (!res.ok) return` and would break. Same JSON shape as success + `error` for UI.
+      return NextResponse.json(degradedBody(errMsg));
     }
     const summary = summaryResult.summary;
     const balance = Number(summary.balance) ?? 0;
