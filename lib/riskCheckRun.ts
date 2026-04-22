@@ -9,6 +9,7 @@ import { sendSmartTelegramAlert } from "./telegram/sendSmartTelegramAlert";
 import { createSupabaseAdmin } from "./supabaseAdmin";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
+import { notifyFlagForRule, type NotifySettingsLike } from "@/lib/risk/violationEngine";
 import {
   getAccountSummary,
   getClosedOrders,
@@ -392,7 +393,20 @@ export async function runRiskCheckForAccount(params: {
     .maybeSingle();
   const userChatId = appUser?.telegram_chat_id?.trim() ?? null;
 
+  // Load per-rule notification preferences once. Findings whose rule is toggled off
+  // must not produce an alert row, a Telegram message, or anything downstream.
+  const { data: notifRow } = await supabase
+    .from("risk_notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const notif = (notifRow ?? null) as NotifySettingsLike | null;
+
   for (const f of findings) {
+    if (notif && !notifyFlagForRule(f.type, notif)) {
+      continue;
+    }
+
     let recentQ = supabase
       .from("alert")
       .select("id")

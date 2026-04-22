@@ -106,11 +106,12 @@ export function RiskManagerPageClient({
     telegram_chat_id: null,
     telegram_enabled: false,
     notify_daily_dd: true,
-    notify_exposure: true,
-    notify_revenge: true,
-    notify_risk_per_trade: true,
+    notify_max_dd: true,
+    notify_position_size: true,
     notify_consecutive_losses: true,
-    notify_overtrading: true
+    notify_weekly_loss: true,
+    notify_overtrading: true,
+    notify_revenge: true
   });
   const [chatDraft, setChatDraft] = useState("");
 
@@ -240,11 +241,12 @@ export function RiskManagerPageClient({
         telegram_chat_id: "****1234",
         telegram_enabled: true,
         notify_daily_dd: true,
-        notify_exposure: true,
-        notify_revenge: true,
-        notify_risk_per_trade: true,
+        notify_max_dd: true,
+        notify_position_size: true,
         notify_consecutive_losses: true,
-        notify_overtrading: true
+        notify_weekly_loss: true,
+        notify_overtrading: true,
+        notify_revenge: true
       });
       setChatDraft("****1234");
       if (subscriptionDemo) {
@@ -277,11 +279,12 @@ export function RiskManagerPageClient({
               telegram_chat_id: n.telegram_chat_id,
               telegram_enabled: n.telegram_enabled,
               notify_daily_dd: n.notify_daily_dd,
-              notify_exposure: n.notify_exposure,
-              notify_revenge: n.notify_revenge,
-              notify_risk_per_trade: n.notify_risk_per_trade,
+              notify_max_dd: n.notify_max_dd ?? true,
+              notify_position_size: n.notify_position_size ?? true,
               notify_consecutive_losses: n.notify_consecutive_losses ?? true,
-              notify_overtrading: n.notify_overtrading ?? true
+              notify_weekly_loss: n.notify_weekly_loss ?? true,
+              notify_overtrading: n.notify_overtrading ?? true,
+              notify_revenge: n.notify_revenge
             });
             setChatDraft(n.telegram_chat_id ?? "");
           }
@@ -584,11 +587,12 @@ export function RiskManagerPageClient({
       telegram_chat_id: data.telegram_chat_id,
       telegram_enabled: data.telegram_enabled,
       notify_daily_dd: data.notify_daily_dd,
-      notify_exposure: data.notify_exposure,
-      notify_revenge: data.notify_revenge,
-      notify_risk_per_trade: data.notify_risk_per_trade,
+      notify_max_dd: data.notify_max_dd ?? true,
+      notify_position_size: data.notify_position_size ?? true,
       notify_consecutive_losses: data.notify_consecutive_losses ?? true,
-      notify_overtrading: data.notify_overtrading ?? true
+      notify_weekly_loss: data.notify_weekly_loss ?? true,
+      notify_overtrading: data.notify_overtrading ?? true,
+      notify_revenge: data.notify_revenge
     });
     if (patch.telegram_chat_id !== undefined) setChatDraft(data.telegram_chat_id ?? "");
   };

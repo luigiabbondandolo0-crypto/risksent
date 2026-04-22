@@ -145,33 +145,69 @@ export function buildViolationCandidates(rules: RiskRulesDTO, live: LiveStatsFor
   return out;
 }
 
-export function notifyFlagForRule(
-  ruleType: RiskRuleType,
-  settings: {
-    notify_daily_dd: boolean;
-    notify_exposure: boolean;
-    notify_revenge: boolean;
-    notify_risk_per_trade: boolean;
-    notify_consecutive_losses?: boolean;
-    notify_overtrading?: boolean;
-  }
-): boolean {
-  switch (ruleType) {
+export type NotifySettingsLike = {
+  notify_daily_dd?: boolean | null;
+  notify_max_dd?: boolean | null;
+  notify_position_size?: boolean | null;
+  notify_consecutive_losses?: boolean | null;
+  notify_weekly_loss?: boolean | null;
+  notify_overtrading?: boolean | null;
+  notify_revenge?: boolean | null;
+  /** @deprecated legacy — merged into notify_position_size */
+  notify_exposure?: boolean | null;
+  /** @deprecated legacy — merged into notify_position_size */
+  notify_risk_per_trade?: boolean | null;
+};
+
+/**
+ * Decide whether a rule type should surface an alert for the current user.
+ *
+ * Accepts every alias the system produces (engine rule_type, legacy finding type,
+ * Telegram alertType) so callers don't have to normalise.
+ */
+export function notifyFlagForRule(ruleType: string, settings: NotifySettingsLike): boolean {
+  const t = ruleType.toLowerCase();
+
+  // Position Size = per-trade risk + portfolio exposure (merged toggle).
+  // Falls back to the legacy pair if the new flag hasn't been migrated yet.
+  const positionSize =
+    settings.notify_position_size ??
+    ((settings.notify_risk_per_trade ?? true) && (settings.notify_exposure ?? true));
+
+  switch (t) {
     case "daily_dd":
-      return settings.notify_daily_dd;
+    case "daily_drawdown":
+    case "daily_loss":
+      return settings.notify_daily_dd !== false;
+
+    case "max_dd":
+    case "max_drawdown":
+      return settings.notify_max_dd !== false;
+
+    case "risk_per_trade":
+    case "position_size":
     case "exposure":
-      return settings.notify_exposure;
+    case "current_exposure":
+    case "max_risk_per_trade":
+      return positionSize !== false;
+
+    case "consecutive_losses":
+      return settings.notify_consecutive_losses !== false;
+
+    case "weekly_loss":
+    case "weekly_dd":
+    case "weekly_drawdown":
+      return settings.notify_weekly_loss !== false;
+
+    case "overtrading":
+      return settings.notify_overtrading !== false;
+
     case "revenge":
     case "revenge_trading":
-      return settings.notify_revenge;
-    case "risk_per_trade":
-      return settings.notify_risk_per_trade;
-    case "consecutive_losses":
-      return settings.notify_consecutive_losses ?? settings.notify_revenge;
-    case "overtrading":
-      return settings.notify_overtrading ?? settings.notify_revenge;
+      return settings.notify_revenge !== false;
+
     default:
-      return false;
+      return true;
   }
 }
 

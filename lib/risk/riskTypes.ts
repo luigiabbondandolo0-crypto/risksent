@@ -20,11 +20,16 @@ export type RiskNotificationsRow = {
   telegram_chat_id: string | null;
   telegram_enabled: boolean;
   notify_daily_dd: boolean;
-  notify_exposure: boolean;
-  notify_revenge: boolean;
-  notify_risk_per_trade: boolean;
+  notify_max_dd: boolean;
+  notify_position_size: boolean;
   notify_consecutive_losses: boolean;
+  notify_weekly_loss: boolean;
   notify_overtrading: boolean;
+  notify_revenge: boolean;
+  /** @deprecated kept for backward compat — merged into notify_position_size */
+  notify_exposure: boolean;
+  /** @deprecated kept for backward compat — merged into notify_position_size */
+  notify_risk_per_trade: boolean;
   created_at: string;
   updated_at: string;
 };

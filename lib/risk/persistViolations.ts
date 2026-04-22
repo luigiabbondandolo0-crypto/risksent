@@ -136,15 +136,18 @@ export async function persistRiskViolations(params: {
 
   let inserted = 0;
   for (const c of candidates) {
+    // User turned off notifications for this rule → don't persist anything.
+    // This suppresses the Telegram message, the violation history entry, AND the
+    // Dashboard / Topbar alert mirror. A disabled rule is fully silent.
+    if (notif && !notifyFlagForRule(c.rule_type, notif)) {
+      continue;
+    }
+
     const skip = await shouldSkipDedupe(supabase, userId, c.rule_type, c.message, journalAccountId);
     if (skip) continue;
 
     let notified = false;
-    if (
-      notif?.telegram_enabled &&
-      notif.telegram_chat_id &&
-      notifyFlagForRule(c.rule_type, notif)
-    ) {
+    if (notif?.telegram_enabled && notif.telegram_chat_id) {
       const send = await sendSmartTelegramAlert({
         chatId: notif.telegram_chat_id,
         ruleType: c.rule_type,

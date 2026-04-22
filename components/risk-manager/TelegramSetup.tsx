@@ -6,11 +6,12 @@ export type TelegramSettings = {
   telegram_chat_id: string | null;
   telegram_enabled: boolean;
   notify_daily_dd: boolean;
-  notify_exposure: boolean;
-  notify_revenge: boolean;
-  notify_risk_per_trade: boolean;
+  notify_max_dd: boolean;
+  notify_position_size: boolean;
   notify_consecutive_losses: boolean;
+  notify_weekly_loss: boolean;
   notify_overtrading: boolean;
+  notify_revenge: boolean;
 };
 
 type Props = {
@@ -142,31 +143,25 @@ export function TelegramSetup({
       <div className="space-y-2">
         <p className="rs-kpi-label">Per rule</p>
         <ToggleRow
-          label="Daily DD alerts"
+          label="Daily DD"
           on={settings.notify_daily_dd}
           disabled={!settings.telegram_enabled && !isMock}
           onToggle={() => onSaveField({ notify_daily_dd: !settings.notify_daily_dd })}
         />
         <ToggleRow
-          label="Exposure alerts"
-          on={settings.notify_exposure}
+          label="Max DD"
+          on={settings.notify_max_dd}
           disabled={!settings.telegram_enabled && !isMock}
-          onToggle={() => onSaveField({ notify_exposure: !settings.notify_exposure })}
+          onToggle={() => onSaveField({ notify_max_dd: !settings.notify_max_dd })}
         />
         <ToggleRow
-          label="Risk per trade alerts"
-          on={settings.notify_risk_per_trade}
+          label="Position Size"
+          on={settings.notify_position_size}
           disabled={!settings.telegram_enabled && !isMock}
-          onToggle={() => onSaveField({ notify_risk_per_trade: !settings.notify_risk_per_trade })}
+          onToggle={() => onSaveField({ notify_position_size: !settings.notify_position_size })}
         />
         <ToggleRow
-          label="Revenge trading alerts"
-          on={settings.notify_revenge}
-          disabled={!settings.telegram_enabled && !isMock}
-          onToggle={() => onSaveField({ notify_revenge: !settings.notify_revenge })}
-        />
-        <ToggleRow
-          label="Consecutive losses alerts"
+          label="Consec Losses"
           on={settings.notify_consecutive_losses}
           disabled={!settings.telegram_enabled && !isMock}
           onToggle={() =>
@@ -174,10 +169,22 @@ export function TelegramSetup({
           }
         />
         <ToggleRow
-          label="Overtrading alerts"
+          label="Weekly Loss"
+          on={settings.notify_weekly_loss}
+          disabled={!settings.telegram_enabled && !isMock}
+          onToggle={() => onSaveField({ notify_weekly_loss: !settings.notify_weekly_loss })}
+        />
+        <ToggleRow
+          label="Overtrading"
           on={settings.notify_overtrading}
           disabled={!settings.telegram_enabled && !isMock}
           onToggle={() => onSaveField({ notify_overtrading: !settings.notify_overtrading })}
+        />
+        <ToggleRow
+          label="Revenge Trading"
+          on={settings.notify_revenge}
+          disabled={!settings.telegram_enabled && !isMock}
+          onToggle={() => onSaveField({ notify_revenge: !settings.notify_revenge })}
         />
       </div>
     </div>
