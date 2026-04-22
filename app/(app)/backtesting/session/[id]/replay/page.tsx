@@ -373,11 +373,29 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div
-      className="-mx-4 -my-6 flex flex-col overflow-hidden sm:-mx-6 lg:-mx-8 lg:-my-8"
-      style={{ height: "calc(100dvh - 56px)", background: "#080809" }}
+      className="relative -mx-4 -my-6 flex flex-col overflow-hidden sm:-mx-6 lg:-mx-8 lg:-my-8"
+      style={{ height: "calc(100dvh - 56px)", background: "#070710" }}
     >
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute -top-32 left-1/4 h-80 w-80 rounded-full opacity-[0.07] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute bottom-0 right-0 h-64 w-64 rounded-full opacity-[0.05] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute top-1/2 left-0 h-48 w-48 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
-      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-[#0a0a12] px-3">
+      <div
+        className="flex h-12 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-[#0D0D18]/95 px-3 backdrop-blur-xl"
+        style={{ boxShadow: "0 0 24px rgba(99,102,241,0.07)" }}
+      >
         <Link
           href="/app/backtesting"
           className="flex items-center gap-1 shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
@@ -426,9 +444,14 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
               onClick={() => handleTfChange(tf)}
               className={`rounded px-2 py-1 font-mono text-[11px] transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
                 tf === timeframe
-                  ? "bg-[#ff3c3c]/20 text-[#ff3c3c] ring-1 ring-[#ff3c3c]/30"
+                  ? "text-white"
                   : "text-slate-600 hover:bg-white/[0.07] hover:text-slate-300"
               }`}
+              style={
+                tf === timeframe
+                  ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }
+                  : undefined
+              }
             >
               {TIMEFRAME_LABELS[tf]}
             </button>
@@ -466,7 +489,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
         <div className="relative flex-1 min-w-0">
           {loadingOhlcv && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#080809]/80 backdrop-blur-sm">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#070710]/80 backdrop-blur-sm">
               <div className="flex items-center gap-3 font-mono text-sm text-slate-500">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#6366f1]" />
                 Loading candles…
@@ -500,10 +523,10 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
       {/* ── Bottom panel ─────────────────────────────────────────────────── */}
       <div
-        className="flex shrink-0 flex-col border-t border-white/[0.06]"
-        style={{ height: 220 }}
+        className="flex shrink-0 flex-col border-t border-white/[0.08] bg-[#0D0D18]/90 backdrop-blur-xl"
+        style={{ height: 220, boxShadow: "0 -8px 32px rgba(0,0,0,0.35)" }}
       >
-        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/[0.05] bg-[#080809] px-3">
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-[#0D0D18]/80 px-3">
           <div className="flex items-center gap-0.5">
             <TBtn title="Reset" onClick={reset} disabled={atStart}>
               <SkipBack className="h-3.5 w-3.5" />
@@ -534,8 +557,13 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                 type="button"
                 onClick={() => setSpeed(s)}
                 className={`rounded px-2 py-0.5 font-mono text-[11px] transition-colors ${
-                  s === speed ? "bg-[#6366f1]/20 text-[#818cf8]" : "text-slate-700 hover:text-slate-400"
+                  s === speed ? "text-white" : "text-slate-700 hover:text-slate-400"
                 }`}
+                style={
+                  s === speed
+                    ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 10px rgba(99,102,241,0.18)" }
+                    : undefined
+                }
               >
                 {s}×
               </button>
@@ -563,15 +591,20 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           )}
         </div>
 
-        <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[0.05] bg-[#0a0a12] px-3">
+        <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[0.06] bg-[#0D0D18]/80 px-3">
           {BOTTOM_TABS.map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setBottomTab(tab)}
               className={`rounded-lg px-3 py-1 font-mono text-[11px] transition-colors ${
-                tab === bottomTab ? "bg-white/[0.06] text-slate-200" : "text-slate-600 hover:text-slate-400"
+                tab === bottomTab ? "text-white" : "text-slate-600 hover:text-slate-400"
               }`}
+              style={
+                tab === bottomTab
+                  ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }
+                  : undefined
+              }
             >
               {tab}
               {tab === "Positions" && openTrades.length > 0 && (
@@ -672,6 +705,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           onFocus={() => { chartRef.current?.focusObject(drawingMenu.id); setDrawingMenu(null); }}
         />
       )}
+      </div>
     </div>
   );
 }
