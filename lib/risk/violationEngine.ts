@@ -152,6 +152,8 @@ export function notifyFlagForRule(
     notify_exposure: boolean;
     notify_revenge: boolean;
     notify_risk_per_trade: boolean;
+    notify_consecutive_losses?: boolean;
+    notify_overtrading?: boolean;
   }
 ): boolean {
   switch (ruleType) {
@@ -161,12 +163,13 @@ export function notifyFlagForRule(
       return settings.notify_exposure;
     case "revenge":
     case "revenge_trading":
-    case "consecutive_losses":
       return settings.notify_revenge;
     case "risk_per_trade":
       return settings.notify_risk_per_trade;
+    case "consecutive_losses":
+      return settings.notify_consecutive_losses ?? settings.notify_revenge;
     case "overtrading":
-      return settings.notify_revenge;
+      return settings.notify_overtrading ?? settings.notify_revenge;
     default:
       return false;
   }

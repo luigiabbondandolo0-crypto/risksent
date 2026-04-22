@@ -23,6 +23,8 @@ export type RiskNotificationsRow = {
   notify_exposure: boolean;
   notify_revenge: boolean;
   notify_risk_per_trade: boolean;
+  notify_consecutive_losses: boolean;
+  notify_overtrading: boolean;
   created_at: string;
   updated_at: string;
 };
