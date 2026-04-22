@@ -22,12 +22,23 @@ export function StrategyCard({ strategy, sessions, onNewSession, onDeleteStrateg
   const sessionCount = sessions.length;
 
   return (
-    <div className="rs-card overflow-hidden">
+    <div
+      className="rs-card relative overflow-hidden"
+      style={{
+        background: "rgba(99,102,241,0.04)",
+        borderColor: "rgba(99,102,241,0.2)",
+        boxShadow: "0 0 24px rgba(99,102,241,0.08)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+        style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+      />
       {/* Header */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+        className="relative z-10 flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#6366f1]/15">
           <Layers className="h-4 w-4 text-[#818cf8]" />
@@ -72,9 +83,9 @@ export function StrategyCard({ strategy, sessions, onNewSession, onDeleteStrateg
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="border-t border-white/[0.05] px-4 pb-3 pt-2">
+            <div className="relative z-10 border-t border-white/[0.05] px-4 pb-3 pt-2">
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <p className="font-mono text-sm text-slate-600">No sessions yet</p>

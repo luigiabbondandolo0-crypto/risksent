@@ -1,9 +1,10 @@
 /** Journaling module — matches backtesting glass / RiskSent tokens */
 export const jn = {
-  page: "min-h-0 text-slate-100",
+  page: "relative min-h-0 text-slate-100",
   card:
-    "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 shadow-xl backdrop-blur-sm",
-  cardSm: "rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 backdrop-blur-sm",
+    "relative overflow-hidden rounded-2xl border border-[rgba(99,102,241,0.2)] bg-[rgba(99,102,241,0.04)] p-5 shadow-[0_0_24px_rgba(99,102,241,0.08)] backdrop-blur-xl",
+  cardSm:
+    "relative overflow-hidden rounded-xl border border-[rgba(99,102,241,0.18)] bg-[rgba(99,102,241,0.04)] p-4 shadow-[0_0_20px_rgba(99,102,241,0.07)] backdrop-blur-xl",
   h1: "font-display text-2xl font-extrabold tracking-tight text-white sm:text-3xl",
   sub: "mt-1 text-sm text-slate-500 font-mono",
   label:

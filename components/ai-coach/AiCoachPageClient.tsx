@@ -154,6 +154,15 @@ const headerBgTone: Record<SectionTone, string> = {
     "bg-gradient-to-br from-slate-600/15 via-slate-800/30 to-transparent",
 };
 
+const sectionBlobColor: Record<SectionTone, string> = {
+  default: "#6366f1",
+  critical: "#f87171",
+  insight: "#38bdf8",
+  challenge: "#a78bfa",
+  rules: "#4ade80",
+  context: "#64748b",
+};
+
 const CARD_HOVER = {
   hover: { scale: 1.02 },
   tap: { scale: 0.99 },
@@ -197,14 +206,18 @@ function CoachSection({
         y: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
       }}
       className={[
-        "scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] sm:scroll-mt-28",
+        "relative scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:scroll-mt-28",
         sectionToneClass[tone],
         className,
       ].join(" ")}
     >
       <div
+        className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+        style={{ background: `radial-gradient(circle, ${sectionBlobColor[tone]}, transparent)` }}
+      />
+      <div
         className={[
-          "relative border-b border-white/10 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5",
+          "relative z-10 border-b border-white/10 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5",
           headerBgTone[tone],
         ].join(" ")}
       >
@@ -235,7 +248,7 @@ function CoachSection({
           </div>
         </div>
       </div>
-      <div className="p-4 sm:p-5 md:p-6">{children}</div>
+      <div className="relative z-10 p-4 sm:p-5 md:p-6">{children}</div>
     </motion.section>
   );
 }
@@ -250,7 +263,7 @@ function ReportJumpNav({
     <motion.nav
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto pb-1 sm:mx-0 sm:flex-wrap"
       aria-label="Report sections"
     >
@@ -481,8 +494,8 @@ function ChallengeCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        opacity: { delay: index * 0.1, duration: 0.3 },
-        y: { delay: index * 0.1, duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+        opacity: { delay: index * 0.1, duration: 0.35 },
+        y: { delay: index * 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] },
         scale: HOVER_SCALE_TRANSITION,
       }}
       whileHover={CARD_HOVER.hover}
@@ -578,7 +591,7 @@ function AdaptationCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{
         opacity: { delay: index * 0.08, duration: 0.28 },
-        y: { delay: index * 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+        y: { delay: index * 0.08, duration: 0.35, ease: [0.22, 1, 0.36, 1] },
         scale: HOVER_SCALE_TRANSITION,
       }}
       whileHover={CARD_HOVER.hover}
@@ -668,7 +681,7 @@ function ChatBubble({
     <motion.article
       initial={{ opacity: 0, y: 12, x: -6 }}
       animate={{ opacity: 1, y: 0, x: 0 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="flex w-full justify-start"
     >
       <div className="flex w-full max-w-[min(96%,40rem)] gap-3 sm:gap-4">
@@ -1201,7 +1214,7 @@ function ChatTab({
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="flex w-full min-h-0 flex-col"
     >
       <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
@@ -1543,7 +1556,21 @@ export function AiCoachPageClient({
   const tradeCount = useMemo(() => reportRow?.trades_analyzed ?? 0, [reportRow]);
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="relative space-y-5 sm:space-y-6">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -1552,7 +1579,17 @@ export function AiCoachPageClient({
         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="min-w-0">
-          <h1 className="rs-page-title">AI Coach</h1>
+          <h1
+            className="rs-page-title"
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            AI Coach
+          </h1>
           <p className="rs-page-sub">
             Behavioral analysis — no excuses, only data.
           </p>
@@ -1677,7 +1714,8 @@ export function AiCoachPageClient({
               {tab === id && (
                 <motion.span
                   layoutId="coach-tab-pill"
-                  className="absolute inset-0 rounded-lg bg-white/[0.08] shadow-sm shadow-black/20"
+                  className="absolute inset-0 rounded-lg"
+                  style={{ background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }}
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
@@ -1709,7 +1747,7 @@ export function AiCoachPageClient({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
               <ReportTab
                 report={report}
@@ -1727,7 +1765,7 @@ export function AiCoachPageClient({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="min-h-0"
             >
               <ChatTab

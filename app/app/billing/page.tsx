@@ -57,7 +57,7 @@ const DIRECT_PLANS = [
 
 const planGridContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
 };
 
 const planGridItem = {
@@ -65,7 +65,7 @@ const planGridItem = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
 };
 
@@ -92,13 +92,26 @@ function PlanChoiceGrid({
             key={p.id}
             variants={planGridItem}
             whileHover={{ y: -4, transition: { type: "spring", stiffness: 420, damping: 26 } }}
-            className={`flex flex-col rounded-2xl border p-5 backdrop-blur-sm ${
+            className="relative flex flex-col overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+            style={
               p.highlight
-                ? "border-[#6366f1]/30 bg-[#6366f1]/[0.06]"
-                : "border-white/[0.08] bg-white/[0.03]"
-            }`}
+                ? {
+                    background: "rgba(99,102,241,0.05)",
+                    borderColor: "rgba(99,102,241,0.22)",
+                    boxShadow: "0 0 24px rgba(99,102,241,0.09)",
+                  }
+                : {
+                    background: "rgba(99,102,241,0.04)",
+                    borderColor: "rgba(99,102,241,0.18)",
+                    boxShadow: "0 0 20px rgba(99,102,241,0.07)",
+                  }
+            }
           >
-            <div className="mb-1 flex flex-wrap items-center gap-2">
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+              style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+            />
+            <div className="relative z-10 mb-1 flex flex-wrap items-center gap-2">
               <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white">
                 {p.name}
               </p>
@@ -108,6 +121,7 @@ function PlanChoiceGrid({
                 </span>
               )}
             </div>
+            <div className="relative z-10 flex flex-1 flex-col">
             <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
               €{p.price}
               <span className="text-sm font-normal text-slate-500">/mo</span>
@@ -133,6 +147,7 @@ function PlanChoiceGrid({
               {loading ? "Loading…" : buttonLabel}
               {!loading && <ArrowRight className="h-4 w-4" />}
             </button>
+            </div>
           </motion.div>
         );
       })}
@@ -262,11 +277,34 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-16">
+    <div className="relative mx-auto max-w-2xl space-y-6 pb-16">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
       <header>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white flex items-center gap-2">
-          <CreditCard className="h-6 w-6 text-amber-400" />
-          Billing
+        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+          <CreditCard className="h-6 w-6 shrink-0 text-amber-400" />
+          <span
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Billing
+          </span>
         </h1>
         <p className="mt-1 text-sm font-mono text-slate-500">
           Manage your subscription and payment details.
@@ -281,11 +319,22 @@ export default function BillingPage() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6"
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl"
+        style={{
+          background: "rgba(99,102,241,0.04)",
+          borderColor: "rgba(99,102,241,0.2)",
+          boxShadow: "0 0 24px rgba(99,102,241,0.08)",
+        }}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div className="relative z-10">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
+            <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">
               Current plan
             </p>
             <div className="mt-2 flex items-center gap-2">
@@ -360,6 +409,7 @@ export default function BillingPage() {
             Payment failed. Please update your payment method.
           </div>
         )}
+        </div>
       </motion.div>
 
       {/* Demo — start trial CTA + direct subscribe */}
@@ -367,9 +417,15 @@ export default function BillingPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] p-6 backdrop-blur-sm"
+          transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-6 backdrop-blur-xl"
+          style={{ boxShadow: "0 0 28px rgba(245,158,11,0.12)" }}
         >
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+            style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }}
+          />
+          <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-5 w-5 text-amber-400" />
             <p className="font-semibold text-amber-200">You&rsquo;re in demo mode</p>
@@ -424,6 +480,7 @@ export default function BillingPage() {
               Full plan comparison →
             </Link>
           </p>
+          </div>
         </motion.div>
       )}
 
@@ -432,7 +489,7 @@ export default function BillingPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="space-y-4"
         >
           {trialDaysLeft !== null && (
@@ -447,7 +504,20 @@ export default function BillingPage() {
             </motion.div>
           )}
 
-          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 backdrop-blur-sm">
+          <div
+            className="relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl"
+            style={{
+              background: "rgba(99,102,241,0.04)",
+              borderColor: "rgba(99,102,241,0.2)",
+              boxShadow: "0 0 24px rgba(99,102,241,0.08)",
+            }}
+          >
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+              style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+            />
+            <div className="relative z-10">
+            <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Upgrade</p>
             <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-1">
               Choose a plan
             </h2>
@@ -472,6 +542,7 @@ export default function BillingPage() {
                 Full plan comparison →
               </Link>
             </p>
+            </div>
           </div>
         </motion.div>
       )}
@@ -481,9 +552,19 @@ export default function BillingPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6"
+          transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl"
+          style={{
+            background: "rgba(167,139,250,0.04)",
+            borderColor: "rgba(167,139,250,0.2)",
+            boxShadow: "0 0 24px rgba(167,139,250,0.08)",
+          }}
         >
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+            style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+          />
+          <div className="relative z-10">
           <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-4">
             Upgrade to Experienced
           </h2>
@@ -496,6 +577,7 @@ export default function BillingPage() {
             loading={upgradeLoading === "experienced"}
             highlight
           />
+          </div>
         </motion.div>
       )}
 
@@ -504,9 +586,15 @@ export default function BillingPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-[#6366f1]/20 bg-[#6366f1]/[0.04] p-6"
+          transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="relative overflow-hidden rounded-2xl border border-[#6366f1]/20 bg-[#6366f1]/[0.04] p-6 backdrop-blur-xl"
+          style={{ boxShadow: "0 0 28px rgba(99,102,241,0.12)" }}
         >
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+            style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+          />
+          <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle className="h-5 w-5 text-[#6366f1]" />
             <p className="font-semibold text-slate-200">
@@ -516,6 +604,7 @@ export default function BillingPage() {
           <p className="text-sm text-slate-400 font-mono">
             Unlimited AI Coach, Risk Manager, priority support, advanced analytics, and everything else.
           </p>
+          </div>
         </motion.div>
       )}
 
@@ -545,13 +634,26 @@ function UpgradeCard({
 }) {
   return (
     <div
-      className={`rounded-xl border p-5 transition-all ${
+      className="relative overflow-hidden rounded-xl border p-5 backdrop-blur-xl transition-all"
+      style={
         highlight
-          ? "border-[#6366f1]/30 bg-[#6366f1]/[0.05]"
-          : "border-white/[0.07] bg-white/[0.02]"
-      }`}
+          ? {
+              background: "rgba(99,102,241,0.05)",
+              borderColor: "rgba(99,102,241,0.22)",
+              boxShadow: "0 0 24px rgba(99,102,241,0.09)",
+            }
+          : {
+              background: "rgba(99,102,241,0.04)",
+              borderColor: "rgba(99,102,241,0.18)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.07)",
+            }
+      }
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+        style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+      />
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <p className="font-semibold text-white">{name}</p>

@@ -5,9 +5,15 @@ import { motion } from "framer-motion";
 import type { RiskGaugeStatus } from "@/lib/risk/riskTypes";
 
 const borderFor: Record<RiskGaugeStatus, string> = {
-  safe: "rgba(0,230,118,0.45)",
-  watch: "rgba(255,140,0,0.5)",
-  danger: "rgba(255,60,60,0.55)"
+  safe: "rgba(74,222,128,0.45)",
+  watch: "rgba(245,158,11,0.5)",
+  danger: "rgba(248,113,113,0.55)"
+};
+
+const blobFor: Record<RiskGaugeStatus, string> = {
+  safe: "#4ade80",
+  watch: "#f59e0b",
+  danger: "#f87171"
 };
 
 export type RuleCardProps = {
@@ -26,16 +32,20 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
       layout
       whileHover={{ scale: 1.015 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
-      className="relative overflow-hidden rounded-2xl bg-white/[0.02] p-5"
+      className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
       style={{
-        boxShadow: `0 0 0 1px ${borderFor[status]}, 0 8px 32px -12px rgba(0,0,0,0.55)`,
-        transition: "box-shadow 0.3s ease"
+        boxShadow: `0 0 0 1px ${borderFor[status]}, 0 0 24px ${status === "danger" ? "rgba(248,113,113,0.09)" : status === "watch" ? "rgba(245,158,11,0.09)" : "rgba(74,222,128,0.09)"}, 0 8px 32px -12px rgba(0,0,0,0.55)`,
+        transition: "box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1)"
       }}
     >
-      <div className="flex items-start gap-3">
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+        style={{ background: `radial-gradient(circle, ${blobFor[status]}, transparent)` }}
+      />
+      <div className="relative z-10 flex items-start gap-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-black/30"
-          style={{ color: borderFor[status] }}
+          style={{ color: blobFor[status] }}
         >
           <Icon className="h-5 w-5" />
         </div>
@@ -66,7 +76,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
             <motion.span
               className="h-2 w-2 rounded-full"
               style={{
-                background: status === "safe" ? "#00e676" : status === "watch" ? "#ff8c00" : "#ff3c3c"
+                background: status === "safe" ? "#4ade80" : status === "watch" ? "#f59e0b" : "#f87171"
               }}
               animate={status !== "safe" ? {
                 opacity: [1, 0.3, 1],
@@ -77,7 +87,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
             <p className="rs-kpi-label">
               <span
                 style={{
-                  color: status === "safe" ? "#00e676" : status === "watch" ? "#ff8c00" : "#ff3c3c"
+                  color: status === "safe" ? "#4ade80" : status === "watch" ? "#f59e0b" : "#f87171"
                 }}
               >
                 {status === "safe" ? "Safe" : status === "watch" ? "Watch" : "High risk"}

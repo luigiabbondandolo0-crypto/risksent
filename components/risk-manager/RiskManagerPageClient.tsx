@@ -57,7 +57,7 @@ const sectionVariants = {
   show: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] as const }
+    transition: { delay: i * 0.06, duration: 0.35, ease: [0.22, 1, 0.36, 1] as const }
   })
 };
 
@@ -642,7 +642,21 @@ export function RiskManagerPageClient({
   const revDisplay = `${live.consecutiveLossesAtEnd}`;
 
   return (
-    <div className="min-h-0 text-slate-100">
+    <div className="relative min-h-0 text-slate-100">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -669,7 +683,17 @@ export function RiskManagerPageClient({
 
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="rs-page-title font-[family-name:var(--font-display)]">Risk Manager</h1>
+          <h1
+            className="rs-page-title font-[family-name:var(--font-display)]"
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Risk Manager
+          </h1>
           <p className="rs-page-sub">Set your rules. Monitor your limits. Stay protected.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -724,10 +748,15 @@ export function RiskManagerPageClient({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        className="rs-card-accent relative z-0 mb-8 p-6 sm:p-8"
+        className="rs-card-accent relative z-0 mb-8 overflow-hidden p-6 sm:p-8"
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)" }}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
         <div className="relative z-10">
+          <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Rule limits</p>
           <p className="rs-kpi-label mb-1">Your rules</p>
           {!previewChrome && rulesScopeLabel ? (
             <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-cyan-300/90">
@@ -784,16 +813,28 @@ export function RiskManagerPageClient({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        className="rs-card mb-8 p-6 sm:p-8"
+        className="rs-card relative mb-8 overflow-hidden p-6 sm:p-8"
+        style={{
+          background: "rgba(56,189,248,0.04)",
+          borderColor: "rgba(56,189,248,0.2)",
+          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+        }}
       >
-        <div className="mb-6 flex items-center gap-2">
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <p className="relative z-10 mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">
+          Live data
+        </p>
+        <div className="relative z-10 mb-6 flex items-center gap-2">
           <Activity className="h-5 w-5 text-[#6366f1]" />
           <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Live monitor</h2>
         </div>
-        <p className="rs-page-sub mb-6 !mt-0 text-xs">
+        <p className="relative z-10 rs-page-sub mb-6 !mt-0 text-xs">
           Compared to your rule limits · refreshes every 30s from dashboard stats.
         </p>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="relative z-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <LiveGauge
             label="Daily DD"
             value={live.dailyDdPct}
@@ -839,9 +880,19 @@ export function RiskManagerPageClient({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        className="rs-card mb-8 scroll-mt-28 p-6 sm:p-8"
+        className="rs-card relative mb-8 scroll-mt-28 overflow-hidden p-6 sm:p-8"
+        style={{
+          background: "rgba(248,113,113,0.04)",
+          borderColor: "rgba(248,113,113,0.2)",
+          boxShadow: "0 0 24px rgba(248,113,113,0.08)",
+        }}
       >
-        <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #f87171, transparent)" }}
+        />
+        <p className="relative z-10 mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">History</p>
+        <div className="relative z-10 mb-6 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-[#ff3c3c]" />
             <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Violation history</h2>
@@ -861,6 +912,7 @@ export function RiskManagerPageClient({
             {clearingViolations ? "Clearing…" : "Clear all"}
           </button>
         </div>
+        <div className="relative z-10">
         <ViolationTimeline violations={pagedViolations} />
         {totalViolationPages > 1 ? (
           <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-4">
@@ -889,8 +941,17 @@ export function RiskManagerPageClient({
                     aria-current={isActive ? "page" : undefined}
                     className={
                       isActive
-                        ? "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-[#ff3c3c]/40 bg-[#ff3c3c]/10 px-2 text-xs font-[family-name:var(--font-mono)] font-semibold text-[#ff7070]"
+                        ? "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md px-2 text-xs font-[family-name:var(--font-mono)] font-semibold text-white"
                         : "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03] px-2 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06]"
+                    }
+                    style={
+                      isActive
+                        ? {
+                            background: "rgba(99,102,241,0.15)",
+                            boxShadow: "0 0 12px rgba(99,102,241,0.2)",
+                            border: "1px solid rgba(99,102,241,0.3)",
+                          }
+                        : undefined
                     }
                   >
                     {pageNum}
@@ -912,6 +973,7 @@ export function RiskManagerPageClient({
             </div>
           </div>
         ) : null}
+        </div>
       </motion.section>
 
       <motion.section
@@ -919,9 +981,20 @@ export function RiskManagerPageClient({
         variants={sectionVariants}
         initial="hidden"
         animate="show"
-        className="rs-card p-6 sm:p-8"
+        className="rs-card relative overflow-hidden p-6 sm:p-8"
+        style={{
+          background: "rgba(167,139,250,0.04)",
+          borderColor: "rgba(167,139,250,0.2)",
+          boxShadow: "0 0 24px rgba(167,139,250,0.08)",
+        }}
       >
-        <h2 className="mb-6 font-[family-name:var(--font-display)] text-lg font-bold text-white">Telegram alerts</h2>
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+        />
+        <p className="relative z-10 mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Notifications</p>
+        <h2 className="relative z-10 mb-6 font-[family-name:var(--font-display)] text-lg font-bold text-white">Telegram alerts</h2>
+        <div className="relative z-10">
         <TelegramSetup
           settings={tg}
           chatIdDraft={chatDraft}
@@ -933,6 +1006,7 @@ export function RiskManagerPageClient({
             previewChrome ? undefined : !chatDraft.trim() ? "Enter a chat ID first" : undefined
           }
         />
+        </div>
       </motion.section>
 
       {!demoData && (

@@ -65,7 +65,8 @@ type ProfileData = {
 const inputClass =
   "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
 
-const glassCard = "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 backdrop-blur-sm";
+const glassCard =
+  "relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -296,7 +297,21 @@ export default function ProfilePage() {
     : "—";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 pb-16">
+    <div className="relative mx-auto max-w-2xl space-y-8 pb-16">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
       <motion.header
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -313,8 +328,17 @@ export default function ProfilePage() {
             <Pencil className="h-3.5 w-3.5" />
           </button>
         </div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-          {profile.fullName || "Your profile"}
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">
+          <span
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            {profile.fullName || "Your profile"}
+          </span>
         </h1>
         <p className="mt-1 font-[family-name:var(--font-mono)] text-sm text-slate-500">{profile.email}</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
@@ -347,7 +371,18 @@ export default function ProfilePage() {
         animate="show"
         onSubmit={handlePersonal}
         className={glassCard}
+        style={{
+          background: "rgba(99,102,241,0.04)",
+          borderColor: "rgba(99,102,241,0.2)",
+          boxShadow: "0 0 24px rgba(99,102,241,0.08)",
+        }}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Profile</p>
         <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           Personal info
         </h2>
@@ -403,6 +438,7 @@ export default function ProfilePage() {
         >
           {saving ? "Saving…" : "Save"}
         </motion.button>
+        </div>
       </motion.form>
 
       <motion.form
@@ -412,7 +448,18 @@ export default function ProfilePage() {
         animate="show"
         onSubmit={handleChangePassword}
         className={glassCard}
+        style={{
+          background: "rgba(167,139,250,0.04)",
+          borderColor: "rgba(167,139,250,0.2)",
+          boxShadow: "0 0 24px rgba(167,139,250,0.08)",
+        }}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+        />
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Account</p>
         <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           Security
         </h2>
@@ -472,6 +519,7 @@ export default function ProfilePage() {
         >
           {passwordLoading ? "Updating…" : "Update password"}
         </motion.button>
+        </div>
       </motion.form>
 
       <motion.form
@@ -481,7 +529,18 @@ export default function ProfilePage() {
         animate="show"
         onSubmit={handlePrefs}
         className={glassCard}
+        style={{
+          background: "rgba(56,189,248,0.04)",
+          borderColor: "rgba(56,189,248,0.2)",
+          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+        }}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Display</p>
         <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
           Preferences
         </h2>
@@ -529,9 +588,27 @@ export default function ProfilePage() {
         >
           {prefSaving ? "Saving…" : "Save preferences"}
         </motion.button>
+        </div>
       </motion.form>
 
-      <motion.section custom={3} variants={cardVariants} initial="hidden" animate="show" className={glassCard}>
+      <motion.section
+        custom={3}
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className={glassCard}
+        style={{
+          background: "rgba(56,189,248,0.04)",
+          borderColor: "rgba(56,189,248,0.2)",
+          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Brokers</p>
         <div className="mb-4 flex items-center justify-between gap-2">
           <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
             Connected accounts
@@ -583,9 +660,27 @@ export default function ProfilePage() {
             ))
           )}
         </ul>
+        </div>
       </motion.section>
 
-      <motion.section custom={4} variants={cardVariants} initial="hidden" animate="show" className={glassCard}>
+      <motion.section
+        custom={4}
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className={glassCard}
+        style={{
+          background: "rgba(248,113,113,0.04)",
+          borderColor: "rgba(248,113,113,0.2)",
+          boxShadow: "0 0 24px rgba(248,113,113,0.08)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #f87171, transparent)" }}
+        />
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Irreversible</p>
         <h2 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg font-semibold text-red-400">
           <AlertTriangle className="h-5 w-5" />
           Danger zone
@@ -600,6 +695,7 @@ export default function ProfilePage() {
         >
           Delete account
         </button>
+        </div>
       </motion.section>
 
       <p className="text-center text-xs font-mono text-slate-600">

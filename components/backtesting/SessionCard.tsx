@@ -22,7 +22,19 @@ export function SessionCard({ session, onDelete }: Props) {
   const isProfit = pl >= 0;
 
   return (
-    <div className="group flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 transition-colors hover:border-white/[0.09] hover:bg-white/[0.035]">
+    <div
+      className="group relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-xl transition-colors"
+      style={{
+        background: "rgba(56,189,248,0.04)",
+        borderColor: "rgba(56,189,248,0.2)",
+        boxShadow: "0 0 20px rgba(56,189,248,0.07)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl"
+        style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+      />
+      <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
       {/* Symbol + TF */}
       <div className="flex flex-col gap-0.5 w-24 shrink-0">
         <span className="font-display text-sm font-bold text-white leading-none">{session.symbol}</span>
@@ -79,6 +91,7 @@ export function SessionCard({ session, onDelete }: Props) {
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
+      </div>
       </div>
     </div>
   );

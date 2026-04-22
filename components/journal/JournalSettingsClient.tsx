@@ -68,6 +68,13 @@ function StrategyManager() {
     return <p className="text-sm text-slate-600 font-mono">Loading…</p>;
   }
 
+  const strategyRowStyle = {
+    background: "rgba(167,139,250,0.04)",
+    borderColor: "rgba(167,139,250,0.2)",
+    boxShadow: "0 0 22px rgba(167,139,250,0.08)",
+  };
+  const strategyBlob = "#a78bfa";
+
   return (
     <div className="space-y-3">
       <AnimatePresence>
@@ -77,22 +84,29 @@ function StrategyManager() {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 8, height: 0 }}
-            className="flex items-center justify-between rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3"
+            className="relative flex items-center justify-between overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-xl"
+            style={strategyRowStyle}
           >
-            <div>
-              <p className="text-sm font-medium text-slate-200">{s.name}</p>
-              {s.description && (
-                <p className="mt-0.5 text-xs text-slate-500">{s.description}</p>
-              )}
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl"
+              style={{ background: `radial-gradient(circle, ${strategyBlob}, transparent)` }}
+            />
+            <div className="relative z-10 flex min-w-0 flex-1 items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-slate-200">{s.name}</p>
+                {s.description && (
+                  <p className="mt-0.5 text-xs text-slate-500">{s.description}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                className="shrink-0 rounded-lg p-1.5 text-slate-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                onClick={() => void remove(s.id)}
+                aria-label="Delete"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <button
-              type="button"
-              className="rounded-lg p-1.5 text-slate-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-              onClick={() => void remove(s.id)}
-              aria-label="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
           </motion.div>
         ))}
       </AnimatePresence>
@@ -154,6 +168,34 @@ function OrderedListManager({
   const [loading, setLoading] = useState(true);
   const [newText, setNewText] = useState("");
   const [adding, setAdding] = useState(false);
+
+  const rowGlassDef =
+    fetchUrl.includes("checklist")
+      ? {
+          background: "rgba(56,189,248,0.04)",
+          borderColor: "rgba(56,189,248,0.2)",
+          boxShadow: "0 0 20px rgba(56,189,248,0.07)",
+          blob: "#38bdf8",
+        }
+      : fetchUrl.includes("rules")
+        ? {
+            background: "rgba(245,158,11,0.04)",
+            borderColor: "rgba(245,158,11,0.2)",
+            boxShadow: "0 0 22px rgba(245,158,11,0.07)",
+            blob: "#f59e0b",
+          }
+        : {
+            background: "rgba(99,102,241,0.04)",
+            borderColor: "rgba(99,102,241,0.2)",
+            boxShadow: "0 0 20px rgba(99,102,241,0.07)",
+            blob: "#6366f1",
+          };
+  const rowBlob = rowGlassDef.blob;
+  const rowCardStyle = {
+    background: rowGlassDef.background,
+    borderColor: rowGlassDef.borderColor,
+    boxShadow: rowGlassDef.boxShadow,
+  };
 
   const load = useCallback(async () => {
     const res = await fetch(fetchUrl);
@@ -221,10 +263,15 @@ function OrderedListManager({
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 8, height: 0 }}
-            className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3"
+            className="relative flex items-center gap-2 overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-xl"
+            style={rowCardStyle}
           >
+            <div
+              className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl"
+              style={{ background: `radial-gradient(circle, ${rowBlob}, transparent)` }}
+            />
             {/* Reorder */}
-            <div className="flex flex-col gap-0.5">
+            <div className="relative z-10 flex flex-col gap-0.5">
               <button
                 type="button"
                 className="rounded p-0.5 text-slate-700 hover:text-slate-400 transition-colors disabled:opacity-30"
@@ -245,11 +292,11 @@ function OrderedListManager({
               </button>
             </div>
 
-            <span className="flex-1 text-sm text-slate-200">{item.text}</span>
+            <span className="relative z-10 flex-1 text-sm text-slate-200">{item.text}</span>
 
             <button
               type="button"
-              className="rounded-lg p-1.5 text-slate-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+              className="relative z-10 rounded-lg p-1.5 text-slate-600 hover:bg-red-500/10 hover:text-red-400 transition-colors"
               onClick={() => void remove(item.id)}
               aria-label="Delete"
             >
@@ -302,18 +349,42 @@ export function JournalSettingsClient() {
 
   return (
     <div className={`${jn.page} space-y-6`}>
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03]">
             <Settings2 className="h-4 w-4 text-slate-400" />
           </div>
           <div>
-            <h1 className={jn.h1}>Journal Settings</h1>
+            <h1
+              className={jn.h1}
+              style={{
+                background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Journal Settings
+            </h1>
             <p className={jn.sub}>
               Manage your strategies, pre-trade checklist, and trading rules.
             </p>
@@ -322,7 +393,10 @@ export function JournalSettingsClient() {
       </motion.div>
 
       {/* Tab switcher */}
-      <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
+      <div
+        className="flex w-fit items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1 backdrop-blur-sm"
+        style={{ boxShadow: "0 0 20px rgba(99,102,241,0.06)" }}
+      >
         {tabs.map(({ id, label }) => (
           <motion.button
             key={id}
@@ -334,7 +408,8 @@ export function JournalSettingsClient() {
             {tab === id && (
               <motion.span
                 layoutId="settings-tab-pill"
-                className="absolute inset-0 rounded-lg bg-white/[0.06]"
+                className="absolute inset-0 rounded-lg"
+                style={{ background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }}
                 transition={{ type: "spring", damping: 28, stiffness: 380 }}
               />
             )}
@@ -348,12 +423,20 @@ export function JournalSettingsClient() {
         key={tab}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className={`${jn.card} max-w-2xl`}
       >
+        <div
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div className="relative z-10">
         <AnimatePresence mode="wait">
           {tab === "strategies" && (
             <motion.div key="strategies" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">
+                Playbook
+              </p>
               <h2 className="mb-4 text-sm font-semibold text-white">
                 Trading Strategies
               </h2>
@@ -367,6 +450,9 @@ export function JournalSettingsClient() {
 
           {tab === "checklist" && (
             <motion.div key="checklist" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">
+                Pre-trade
+              </p>
               <h2 className="mb-4 text-sm font-semibold text-white">
                 Pre-trade Checklist
               </h2>
@@ -386,6 +472,9 @@ export function JournalSettingsClient() {
 
           {tab === "rules" && (
             <motion.div key="rules" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">
+                Discipline
+              </p>
               <h2 className="mb-4 text-sm font-semibold text-white">
                 Trading Rules
               </h2>
@@ -403,6 +492,7 @@ export function JournalSettingsClient() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </motion.div>
     </div>
   );
