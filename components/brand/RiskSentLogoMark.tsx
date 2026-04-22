@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 type Variant = "live" | "mock";
 
@@ -18,7 +18,7 @@ const MARK_SRC = "/brand/risk-sent-r.png";
  * R stilizzata (PNG, sfondo rimosso). Luccichio leggero sulla silhouette (vedi globals.css).
  */
 export function RiskSentLogoMark({
-  size = 32,
+  size = 38,
   className = "",
   variant = "live",
   "aria-hidden": ariaHidden = true,
@@ -27,15 +27,12 @@ export function RiskSentLogoMark({
   const reduce = useReducedMotion();
 
   return (
-    <motion.div
+    <div
       className={`rs-logo-r-stack rs-logo-mark-svg relative inline-block ${className}`}
       style={{ width: size, height: size }}
       aria-hidden={ariaHidden}
       role={ariaHidden ? undefined : "img"}
       aria-label={ariaHidden ? undefined : title}
-      initial={false}
-      animate={reduce ? undefined : { y: [0, -0.5, 0] }}
-      transition={reduce ? undefined : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
     >
       {!ariaHidden ? <span className="sr-only">{title}</span> : null}
       <img
@@ -52,6 +49,6 @@ export function RiskSentLogoMark({
           <span className="rs-logo-r-shine-bar" />
         </span>
       ) : null}
-    </motion.div>
+    </div>
   );
 }

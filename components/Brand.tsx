@@ -57,7 +57,7 @@ type LogoMarkProps = {
  * RiskSent logo mark (R stilizzata, PNG con sfondo trasparente). Sidebar, topbar, mock shell.
  */
 export function BrandLogo({
-  size = 28,
+  size = 36,
   className = "",
   priority: _priority = false,
   alt = "RiskSent",
@@ -120,7 +120,7 @@ export function BrandLockup({
   size = "md",
   className = "",
   withLogo = true,
-  logoSize = 30,
+  logoSize = 38,
   hideDot = false,
   shine = true,
 }: BrandLockupProps) {
