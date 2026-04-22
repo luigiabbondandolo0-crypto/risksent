@@ -33,7 +33,11 @@ export default function RiskManagerPage() {
   }, [sub?.isDemoMode]);
 
   if (sub?.isDemoMode) {
-    return <RiskManagerPageClient subscriptionDemo />;
+    return (
+      <div className="pointer-events-none select-none opacity-50 blur-[1.5px]">
+        <RiskManagerPageClient subscriptionDemo />
+      </div>
+    );
   }
 
   if (accounts === null) {

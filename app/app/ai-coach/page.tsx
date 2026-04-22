@@ -12,11 +12,13 @@ export default function AiCoachPage() {
 
   if (sub?.isDemoMode) {
     return (
-      <AiCoachPageClient
-        isMock
-        mockReport={buildDemoCoachReportRow()}
-        mockMessages={buildDemoCoachMessages()}
-      />
+      <div className="pointer-events-none select-none opacity-50 blur-[1.5px]">
+        <AiCoachPageClient
+          isMock
+          mockReport={buildDemoCoachReportRow()}
+          mockMessages={buildDemoCoachMessages()}
+        />
+      </div>
     );
   }
 

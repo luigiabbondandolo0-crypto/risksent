@@ -564,7 +564,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
+    <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in${isSubDemo ? " pointer-events-none select-none opacity-50 blur-[1.5px]" : ""}`}>
       {!onboardingDone && !bannerDismissed && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3 text-sm">
           <span className="text-slate-300">
