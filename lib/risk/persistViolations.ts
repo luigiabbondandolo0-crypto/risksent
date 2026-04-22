@@ -89,6 +89,34 @@ async function shouldSkipDedupe(
   return (data?.length ?? 0) > 0;
 }
 
+/**
+ * Dedupe the alert mirror independently from risk_violations. This is critical
+ * because older risk_violations rows can exist without a matching alert row
+ * (the mirror was added later) — if we tied the alert insert to the violations
+ * dedupe, the dashboard / bell would stay empty even for legitimate new
+ * violations whenever the history already contained a similar row.
+ */
+async function shouldSkipAlertDedupe(
+  supabase: SupabaseClient,
+  userId: string,
+  ruleType: string,
+  message: string,
+  journalAccountId: string | null
+): Promise<boolean> {
+  const since = new Date(Date.now() - DEDUPE_MINUTES * 60 * 1000).toISOString();
+  let q = supabase
+    .from("alert")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("rule_type", ruleType)
+    .eq("message", message)
+    .gte("alert_date", since)
+    .limit(1);
+  q = journalAccountId ? q.eq("account_id", journalAccountId) : q.is("account_id", null);
+  const { data } = await q;
+  return (data?.length ?? 0) > 0;
+}
+
 async function loadNotificationsDefaults(supabase: SupabaseClient, userId: string): Promise<RiskNotificationsRow | null> {
   const { data } = await supabase.from("risk_notifications").select("*").eq("user_id", userId).maybeSingle();
   return data as RiskNotificationsRow | null;
@@ -162,44 +190,66 @@ export async function persistRiskViolations(params: {
       continue;
     }
 
-    const skip = await shouldSkipDedupe(supabase, userId, c.rule_type, c.message, journalAccountId);
-    if (skip) continue;
+    // --- Risk Manager violation history (+ Telegram tied to new violations) ---
+    const skipHistory = await shouldSkipDedupe(
+      supabase,
+      userId,
+      c.rule_type,
+      c.message,
+      journalAccountId
+    );
 
     let notified = false;
-    if (notif?.telegram_enabled && notif.telegram_chat_id) {
-      const send = await sendSmartTelegramAlert({
-        chatId: notif.telegram_chat_id,
-        ruleType: c.rule_type,
-        ruleLabel: ruleTypeToLabel(c.rule_type),
-        current: formatValueForTelegram(c.rule_type, c.value_at_violation),
-        limit: formatLimitForTelegram(c.rule_type, c.limit_value),
-        accountNickname,
-        brokerServer: brokerServer?.trim() ?? "",
-        currency: enrich.currency,
-        todayTrades: enrich.todayTrades,
-        todayPl: enrich.todayPl,
-        consecutiveLosses: live.consecutiveLossesAtEnd
+    if (!skipHistory) {
+      if (notif?.telegram_enabled && notif.telegram_chat_id) {
+        const send = await sendSmartTelegramAlert({
+          chatId: notif.telegram_chat_id,
+          ruleType: c.rule_type,
+          ruleLabel: ruleTypeToLabel(c.rule_type),
+          current: formatValueForTelegram(c.rule_type, c.value_at_violation),
+          limit: formatLimitForTelegram(c.rule_type, c.limit_value),
+          accountNickname,
+          brokerServer: brokerServer?.trim() ?? "",
+          currency: enrich.currency,
+          todayTrades: enrich.todayTrades,
+          todayPl: enrich.todayPl,
+          consecutiveLosses: live.consecutiveLossesAtEnd
+        });
+        notified = send.ok;
+      }
+
+      const { error: histErr } = await supabase.from("risk_violations").insert({
+        user_id: userId,
+        rule_type: c.rule_type,
+        value_at_violation: c.value_at_violation,
+        limit_value: c.limit_value,
+        message: c.message,
+        notified_telegram: notified,
+        account_id: journalAccountId,
+        account_nickname: accountNickname,
+        broker_server: brokerServer
       });
-      notified = send.ok;
+      if (histErr) {
+        console.error("[persistRiskViolations] risk_violations insert failed", histErr);
+      } else {
+        inserted += 1;
+      }
     }
 
-    const { error } = await supabase.from("risk_violations").insert({
-      user_id: userId,
-      rule_type: c.rule_type,
-      value_at_violation: c.value_at_violation,
-      limit_value: c.limit_value,
-      message: c.message,
-      notified_telegram: notified,
-      account_id: journalAccountId,
-      account_nickname: accountNickname,
-      broker_server: brokerServer
-    });
-    if (!error) inserted += 1;
-
-    // Mirror into `alert` table so the Dashboard Live Alerts panel and the Topbar
-    // bell share the same source of truth as the Risk Manager violation history.
-    try {
-      await supabase.from("alert").insert({
+    // --- Dashboard Live Alerts + Topbar bell mirror ---
+    // Dedupe against the alert table directly. This is decoupled from the
+    // risk_violations dedupe on purpose: an existing violation row (e.g. created
+    // before the mirror existed, or created on a different cycle) must NOT
+    // prevent the dashboard / bell from surfacing the alert.
+    const skipAlert = await shouldSkipAlertDedupe(
+      supabase,
+      userId,
+      c.rule_type,
+      c.message,
+      journalAccountId
+    );
+    if (!skipAlert) {
+      const { error: alertErr } = await supabase.from("alert").insert({
         user_id: userId,
         message: c.message,
         severity: c.severity === "danger" ? "high" : "medium",
@@ -208,8 +258,9 @@ export async function persistRiskViolations(params: {
         account_id: journalAccountId,
         account_nickname: accountNickname
       });
-    } catch (e) {
-      console.error("[persistRiskViolations] alert mirror failed", e);
+      if (alertErr) {
+        console.error("[persistRiskViolations] alert mirror failed", alertErr);
+      }
     }
   }
 

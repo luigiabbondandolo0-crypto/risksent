@@ -68,10 +68,27 @@ export function AppHeaderBar({
   };
 
   // Initial load + live polling so the bell stays in sync with the server.
+  // On mount we also run a one-shot backfill from risk_violations into the
+  // alert table, so older violations that pre-date the dual-write mirror
+  // still show up in the bell / dashboard.
   useEffect(() => {
-    void fetchAlerts();
+    let cancelled = false;
+    void (async () => {
+      try {
+        await fetch("/api/alerts/sync-from-violations", {
+          method: "POST",
+          cache: "no-store"
+        });
+      } catch {
+        /* non-fatal */
+      }
+      if (!cancelled) void fetchAlerts();
+    })();
     const id = window.setInterval(() => void fetchAlerts(), 30_000);
-    return () => window.clearInterval(id);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   // When the dropdown opens: refresh, then mark all unread as read so the badge
