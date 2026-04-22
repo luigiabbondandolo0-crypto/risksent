@@ -413,6 +413,13 @@ export async function runRiskCheckForAccount(params: {
     notify_revenge: notif?.notify_revenge ?? null,
     findingsCount: findings.length
   });
+  if (findings.length === 0) {
+    // Gate logs only run inside the loop — when there is nothing to evaluate, expect no
+    // "[riskCheckRun] gate" lines. Common on cron when all accounts are within limits.
+    console.log(
+      "[riskCheckRun] no findings — skip gate / alert / telegram (getRiskFindings empty)"
+    );
+  }
 
   for (const f of findings) {
     const allowed = !notif || notifyFlagForRule(f.type, notif);

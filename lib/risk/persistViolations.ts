@@ -145,7 +145,23 @@ export async function persistRiskViolations(params: {
     telegramAlertContext: contextOverride
   } = params;
   const candidates = buildViolationCandidates(rules, live);
+  // This path runs only from GET /api/dashboard-stats and POST /api/risk/check — never from
+  // /api/cron/check-risk-all (that uses runRiskCheckForAccount in riskCheckRun.ts only).
+  console.log("[persistRiskViolations] entry", {
+    userId: userId.slice(0, 8) + "...",
+    journalAccountId: journalAccountId?.slice(0, 8) ?? null,
+    candidatesCount: candidates.length,
+    liveSnapshot: {
+      dailyDdPct: live.dailyDdPct,
+      currentExposurePct: live.currentExposurePct,
+      maxOpenRiskPct: live.maxOpenRiskPct,
+      consecutiveLossesAtEnd: live.consecutiveLossesAtEnd,
+      todayTrades: live.todayTrades ?? null,
+      avgTradesPerDay: live.avgTradesPerDay ?? null
+    }
+  });
   if (candidates.length === 0) {
+    console.log("[persistRiskViolations] exit: zero candidates (no rule near breach — no notif / gate logs)");
     return { inserted: 0, candidates: [] };
   }
 
