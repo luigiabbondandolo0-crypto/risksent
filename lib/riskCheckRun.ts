@@ -5,7 +5,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRiskFindings, type OpenPositionForRisk, type RiskFinding, type RiskRules, type StatsForRisk } from "./riskCheck";
-import { sendAlertToTelegram } from "./telegramAlert";
+import { sendSmartTelegramAlert } from "./telegram/sendSmartTelegramAlert";
+import { createSupabaseAdmin } from "./supabaseAdmin";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import {
@@ -17,6 +18,71 @@ import {
 } from "./tradingApi";
 const DEFAULT_CONTRACT_SIZE = 100_000;
 const DEDUPE_HOURS = 12;
+
+type FindingType = RiskFinding["type"];
+
+const FINDING_TYPE_TO_ALERT: Record<FindingType, string> = {
+  daily_loss: "daily_drawdown",
+  max_drawdown: "max_drawdown",
+  current_exposure: "position_size",
+  max_risk_per_trade: "position_size",
+  revenge_trading: "revenge_trading",
+};
+
+function buildAlertData(
+  type: FindingType,
+  ctx: {
+    balance: number;
+    equity: number;
+    rules: RiskRules;
+    stats: StatsForRisk;
+    openPositions: OpenPositionForRisk[];
+    currentExposurePct: number | null;
+  }
+): Record<string, unknown> {
+  const { balance, rules, stats, openPositions, currentExposurePct } = ctx;
+  switch (type) {
+    case "daily_loss": {
+      const worstDayPct =
+        stats.dailyStats.length > 0 && stats.initialBalance > 0
+          ? Math.min(...stats.dailyStats.map((d) => (d.profit / stats.initialBalance) * 100))
+          : 0;
+      return {
+        currentDD: Math.abs(worstDayPct).toFixed(2),
+        limitDD: rules.daily_loss_pct,
+        balance: balance.toFixed(0),
+      };
+    }
+    case "max_drawdown":
+      return {
+        currentDD: (stats.highestDdPct ?? 0).toFixed(2),
+        limitDD: rules.max_exposure_pct,
+        balance: balance.toFixed(0),
+      };
+    case "current_exposure":
+      return {
+        positionSize: (currentExposurePct ?? 0).toFixed(2),
+        limit: rules.max_exposure_pct,
+        symbol: "portfolio",
+      };
+    case "max_risk_per_trade": {
+      const worst = openPositions.reduce<OpenPositionForRisk | null>(
+        (max, p) => (p.riskPct != null && (max?.riskPct ?? 0) < p.riskPct ? p : max),
+        null
+      );
+      return {
+        positionSize: (worst?.riskPct ?? 0).toFixed(2),
+        limit: rules.max_risk_per_trade_pct,
+        symbol: worst?.symbol ?? "open position",
+      };
+    }
+    case "revenge_trading":
+      return {
+        tradesCount: rules.revenge_threshold_trades,
+        minutes: 30,
+      };
+  }
+}
 
 type ClosedOrder = { closeTime?: string; profit?: number };
 
@@ -269,6 +335,15 @@ export async function runRiskCheckForAccount(params: {
 
   const dedupeSince = new Date(Date.now() - DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
 
+  // Fetch user's Telegram chat ID once for the whole loop
+  const adminDb = createSupabaseAdmin();
+  const { data: appUser } = await adminDb
+    .from("app_user")
+    .select("telegram_chat_id")
+    .eq("id", userId)
+    .maybeSingle();
+  const userChatId = appUser?.telegram_chat_id?.trim() ?? null;
+
   for (const f of findings) {
     let recentQ = supabase
       .from("alert")
@@ -295,13 +370,14 @@ export async function runRiskCheckForAccount(params: {
       .select("id")
       .single();
 
-    if (alertRow) {
-      const levelLabel = { lieve: "MILD", medio: "MEDIUM", alto: "HIGH" }[f.level] ?? f.level.toUpperCase();
-      await sendAlertToTelegram({
-        user_id: userId,
-        message: `[${levelLabel}] ${f.message}`,
-        severity: f.severity,
-        solution: f.advice
+    if (alertRow && userChatId) {
+      const alertType = FINDING_TYPE_TO_ALERT[f.type];
+      const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
+      await sendSmartTelegramAlert({
+        chatId: userChatId,
+        alertType,
+        data: alertData,
+        fallbackMessage: `⚠️ Risk alert: ${f.message}`,
       });
     }
   }
