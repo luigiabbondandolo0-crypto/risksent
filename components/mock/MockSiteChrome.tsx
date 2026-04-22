@@ -171,7 +171,6 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-      <style>{`@keyframes sidebar-ring-breathe{0%,100%{opacity:.4;transform:scale(.94)}50%{opacity:1;transform:scale(1.04)}}`}</style>
       <div className="shrink-0 border-b border-violet-500/30 bg-gradient-to-r from-violet-950/90 via-slate-950 to-amber-950/30 px-4 py-2.5 text-center sm:text-left">
         <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-2 sm:flex-row sm:px-2">
           <div className="flex items-center gap-2 text-xs text-violet-100/95 sm:text-sm">
@@ -221,25 +220,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
             className="group mb-8 flex items-center justify-center px-1 py-2"
             aria-label="RiskSent mock dashboard"
           >
-            <span className="relative flex items-center justify-center">
-              <span
-                className="absolute rounded-full"
-                style={{
-                  inset: "-10px",
-                  border: "1px solid rgba(45,212,191,0.18)",
-                  animation: "sidebar-ring-breathe 3.6s ease-in-out infinite",
-                }}
-              />
-              <span
-                className="absolute rounded-full"
-                style={{
-                  inset: "-18px",
-                  border: "1px solid rgba(45,212,191,0.07)",
-                  animation: "sidebar-ring-breathe 3.6s ease-in-out 1.8s infinite",
-                }}
-              />
-              <BrandLogo treatment="bare" size={88} priority variant="mock" />
-            </span>
+            <BrandLogo treatment="bare" size={88} priority variant="mock" />
           </Link>
 
           <div className="flex flex-col gap-8">
