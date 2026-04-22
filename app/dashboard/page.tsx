@@ -282,29 +282,33 @@ export default function DashboardPage() {
       .catch(() => {});
   }, [isSubDemo]);
 
-  // Fetch journal trades for calendar — same source as journal page for data consistency
+  // Fetch journal trades for calendar — same source as journal page (no account filter = all user trades)
   useEffect(() => {
     if (isSubDemo) return;
     let cancelled = false;
-    const accountParam =
-      selectedGlobalId && selectedGlobalId !== "all"
-        ? `&account_id=${encodeURIComponent(selectedGlobalId)}`
-        : "";
-    // Fetch up to 2 pages to cover ~200 trades
+    // Fetch 3 pages to cover up to 300 closed trades (API max per page = 100)
     Promise.all([
-      fetch(`/api/journal/trades?pageSize=100&status=closed${accountParam}`),
-      fetch(`/api/journal/trades?pageSize=100&page=2&status=closed${accountParam}`),
+      fetch("/api/journal/trades?pageSize=100&status=closed"),
+      fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
+      fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
     ])
-      .then(async ([r1, r2]) => {
-        const j1 = r1.ok ? await r1.json() : { trades: [] };
-        const j2 = r2.ok ? await r2.json() : { trades: [] };
+      .then(async ([r1, r2, r3]) => {
+        const [j1, j2, j3] = await Promise.all([
+          r1.ok ? r1.json() : { trades: [] },
+          r2.ok ? r2.json() : { trades: [] },
+          r3.ok ? r3.json() : { trades: [] },
+        ]);
         if (!cancelled) {
-          setCalJournalTrades([...(j1.trades ?? []), ...(j2.trades ?? [])]);
+          setCalJournalTrades([
+            ...(j1.trades ?? []),
+            ...(j2.trades ?? []),
+            ...(j3.trades ?? []),
+          ]);
         }
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [isSubDemo, selectedGlobalId]);
+  }, [isSubDemo]);
 
   const hasAnyBrokerMeta = useMemo(
     () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
@@ -972,14 +976,14 @@ export default function DashboardPage() {
                     </span>
                     {dayData ? (
                       <div className="flex flex-col items-center gap-0">
-                        <span className={`text-[11px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`text-[15px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
                           {fmtDayPl(dayData.profit, currency)}
                         </span>
-                        <span className="mt-0.5 text-[9px] font-mono leading-tight text-slate-400">
-                          {dayData.trades}t
+                        <span className="mt-0.5 text-[13px] font-mono leading-tight text-slate-400">
+                          {dayData.trades === 1 ? "1 trade" : `${dayData.trades} trades`}
                         </span>
-                        <span className="text-[9px] font-mono leading-tight text-slate-400">
-                          {winPct != null ? `${winPct.toFixed(0)}%wr` : "—"}
+                        <span className="text-[11px] font-mono leading-tight text-slate-400">
+                          {winPct != null ? `WR${winPct.toFixed(0)}%` : "—"}
                         </span>
                       </div>
                     ) : null}

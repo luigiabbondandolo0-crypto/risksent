@@ -1212,16 +1212,16 @@ function CalendarTab({
                 {stats && (
                   <div className="flex flex-col items-center gap-0">
                     <span
-                      className="text-[11px] font-mono font-bold leading-tight"
+                      className="text-[15px] font-mono font-bold leading-tight"
                       style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
                     >
                       {fmtDayPl(stats.pl, currency)}
                     </span>
-                    <span className="mt-0.5 text-[9px] font-mono leading-tight text-slate-400">
-                      {stats.count}t
+                    <span className="mt-0.5 text-[13px] font-mono leading-tight text-slate-400">
+                      {stats.count === 1 ? "1 trade" : `${stats.count} trades`}
                     </span>
-                    <span className="text-[9px] font-mono leading-tight text-slate-400">
-                      {stats.count > 0 ? `${Math.round((stats.wins / stats.count) * 100)}%wr` : "—"}
+                    <span className="text-[11px] font-mono leading-tight text-slate-400">
+                      {stats.count > 0 ? `WR${Math.round((stats.wins / stats.count) * 100)}%` : "—"}
                     </span>
                   </div>
                 )}
