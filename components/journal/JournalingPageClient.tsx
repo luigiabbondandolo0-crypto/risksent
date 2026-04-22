@@ -475,7 +475,8 @@ function TodayTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.25 }}
-      className="relative rounded-2xl bg-[#080809] p-4 lg:p-6"
+      className="relative rounded-2xl p-4 lg:p-6"
+      style={{ background: "rgba(7,7,16,0.85)", border: "1px solid rgba(99,102,241,0.1)" }}
     >
       <Link
         {...settingsLinkProps}
@@ -510,12 +511,14 @@ function TodayTab({
 
           {/* Pre-trade checklist */}
           <div
-            className={`${jn.cardSm} space-y-3`}
+            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
             style={{
-              background: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(99,102,241,0.04)",
+              borderColor: "rgba(99,102,241,0.2)",
+              boxShadow: "0 0 24px rgba(99,102,241,0.08)",
             }}
           >
+            <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-25 blur-2xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-white">
                 Pre-trade checklist
@@ -614,12 +617,14 @@ function TodayTab({
 
           {/* Today&apos;s rules */}
           <div
-            className={`${jn.cardSm} space-y-3`}
+            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
             style={{
-              background: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(245,158,11,0.03)",
+              borderColor: "rgba(245,158,11,0.18)",
+              boxShadow: "0 0 22px rgba(245,158,11,0.07)",
             }}
           >
+            <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold text-white">
                 Today&apos;s rules
@@ -689,12 +694,14 @@ function TodayTab({
 
           {/* Bias + key levels + watchlist */}
           <div
-            className={`${jn.cardSm} space-y-3`}
+            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
             style={{
-              background: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(56,189,248,0.03)",
+              borderColor: "rgba(56,189,248,0.18)",
+              boxShadow: "0 0 22px rgba(56,189,248,0.07)",
             }}
           >
+            <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }} />
             <p className={jn.label}>Market bias</p>
             <div className="flex gap-1.5">
               <BiasButton
@@ -790,12 +797,14 @@ function TodayTab({
           transition={{ duration: 0.35, delay: 0.1 }}
         >
           <div
-            className={`${jn.card} flex flex-col gap-4`}
+            className={`${jn.card} relative flex flex-col gap-4 overflow-hidden`}
             style={{
-              background: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(167,139,250,0.03)",
+              borderColor: "rgba(167,139,250,0.18)",
+              boxShadow: "0 0 28px rgba(167,139,250,0.08)",
             }}
           >
+            <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-white">Session notes</h2>
               <SavedIndicator saving={saving} saved={saved} />
@@ -887,12 +896,14 @@ function TodayTab({
           transition={{ duration: 0.35, delay: 0.2 }}
         >
           <div
-            className={`${jn.card} flex flex-col`}
+            className={`${jn.card} relative flex flex-col overflow-hidden`}
             style={{
-              background: "rgba(255,255,255,0.02)",
-              borderColor: "rgba(255,255,255,0.07)",
+              background: "rgba(74,222,128,0.03)",
+              borderColor: "rgba(74,222,128,0.18)",
+              boxShadow: "0 0 24px rgba(74,222,128,0.07)",
             }}
           >
+            <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white">
                 Today&apos;s Trades
@@ -1032,7 +1043,11 @@ function CalendarTab({
       transition={{ duration: 0.25 }}
       className="space-y-5"
     >
-      <div className={jn.card}>
+      <div
+        className={`${jn.card} relative overflow-hidden`}
+        style={{ borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 0 40px rgba(99,102,241,0.06)" }}
+      >
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-[0.08] blur-3xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
         {/* Month navigation */}
         <div className="mb-3 flex items-center justify-between">
           <button
@@ -1069,11 +1084,15 @@ function CalendarTab({
               label: "Total Trades",
               value: monthTrades.length.toString(),
               color: "#94a3b8",
+              glowColor: "rgba(148,163,184,0.12)",
+              borderColor: "rgba(148,163,184,0.2)",
             },
             {
               label: "Win Rate",
               value: monthTrades.length > 0 ? `${monthWinRate}%` : "—",
               color: "#38BDF8",
+              glowColor: "rgba(56,189,248,0.08)",
+              borderColor: "rgba(56,189,248,0.22)",
             },
             {
               label: "Total P&L",
@@ -1082,6 +1101,8 @@ function CalendarTab({
                   ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
                   : "—",
               color: monthPl >= 0 ? "#4ADE80" : "#F87171",
+              glowColor: monthPl >= 0 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
+              borderColor: monthPl >= 0 ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)",
             },
             {
               label: "Best Day",
@@ -1115,15 +1136,23 @@ function CalendarTab({
                 return `+${best.toFixed(0)}`;
               })(),
               color: "#4ADE80",
+              glowColor: "rgba(74,222,128,0.08)",
+              borderColor: "rgba(74,222,128,0.22)",
             },
-          ].map(({ label, value, color }, ki) => (
+          ].map(({ label, value, color, glowColor, borderColor }, ki) => (
             <motion.div
               key={label}
-              className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm"
+              className="relative overflow-hidden rounded-xl p-3 backdrop-blur-sm"
+              style={{
+                background: glowColor,
+                border: `1px solid ${borderColor}`,
+                boxShadow: `0 0 16px ${glowColor}`,
+              }}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: ki * 0.07 }}
+              transition={{ duration: 0.35, delay: ki * 0.07, ease: [0.22,1,0.36,1] }}
             >
+              <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-30 blur-xl" style={{ background: `radial-gradient(circle, ${color}, transparent)` }} />
               <p className={jn.label}>{label}</p>
               <p
                 className="mt-0.5 font-display text-lg font-bold"
@@ -1436,7 +1465,7 @@ function TradesTab({
     }`;
 
   const statCard =
-    "rounded-xl border border-white/[0.07] p-3 shadow-xl backdrop-blur-sm";
+    "relative overflow-hidden rounded-xl p-3 backdrop-blur-sm";
   const statCardBg = { background: "rgba(255,255,255,0.02)" } as const;
 
   return (
@@ -1448,7 +1477,11 @@ function TradesTab({
       transition={{ duration: 0.25 }}
       className="space-y-5"
     >
-      <div className={jn.card}>
+      <div
+        className={`${jn.card} relative overflow-hidden`}
+        style={{ borderColor: "rgba(99,102,241,0.14)", boxShadow: "0 0 30px rgba(99,102,241,0.05)" }}
+      >
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-[0.07] blur-3xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-base font-bold text-white">
             All trades
@@ -1549,48 +1582,45 @@ function TradesTab({
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className={statCard} style={statCardBg}>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-            Total trades
-          </p>
-          <p
-            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
-          >
-            {stats.count}
-          </p>
+        <div
+          className={statCard}
+          style={{ background: "rgba(148,163,184,0.05)", border: "1px solid rgba(148,163,184,0.18)", boxShadow: "0 0 16px rgba(148,163,184,0.06)" }}
+        >
+          <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: "radial-gradient(circle, #94a3b8, transparent)" }} />
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Total trades</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white">{stats.count}</p>
         </div>
-        <div className={statCard} style={statCardBg}>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-            Win rate
-          </p>
-          <p
-            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
-          >
+        <div
+          className={statCard}
+          style={{ background: "rgba(56,189,248,0.05)", border: "1px solid rgba(56,189,248,0.2)", boxShadow: "0 0 16px rgba(56,189,248,0.07)" }}
+        >
+          <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }} />
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Win rate</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold" style={{ color: "#38bdf8" }}>
             {stats.closedCount === 0 ? "—" : `${stats.winRate.toFixed(0)}%`}
           </p>
         </div>
-        <div className={statCard} style={statCardBg}>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-            Total P&amp;L
-          </p>
-          <p
-            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold"
-            style={{
-              color: stats.totalPl >= 0 ? "#00e676" : "#ff3c3c",
-            }}
-          >
-            {stats.count === 0 && stats.totalPl === 0
-              ? "—"
-              : `${stats.totalPl >= 0 ? "+" : ""}${stats.totalPl.toFixed(2)}`}
+        <div
+          className={statCard}
+          style={{
+            background: stats.totalPl >= 0 ? "rgba(74,222,128,0.05)" : "rgba(248,113,113,0.05)",
+            border: `1px solid ${stats.totalPl >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
+            boxShadow: `0 0 16px ${stats.totalPl >= 0 ? "rgba(74,222,128,0.07)" : "rgba(248,113,113,0.07)"}`,
+          }}
+        >
+          <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: `radial-gradient(circle, ${stats.totalPl >= 0 ? "#4ade80" : "#f87171"}, transparent)` }} />
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Total P&amp;L</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold" style={{ color: stats.totalPl >= 0 ? "#4ade80" : "#f87171" }}>
+            {stats.count === 0 && stats.totalPl === 0 ? "—" : `${stats.totalPl >= 0 ? "+" : ""}${stats.totalPl.toFixed(2)}`}
           </p>
         </div>
-        <div className={statCard} style={statCardBg}>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
-            Avg R:R
-          </p>
-          <p
-            className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white"
-          >
+        <div
+          className={statCard}
+          style={{ background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.18)", boxShadow: "0 0 16px rgba(167,139,250,0.06)" }}
+        >
+          <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }} />
+          <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Avg R:R</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold" style={{ color: "#a78bfa" }}>
             {stats.avgRr == null ? "—" : stats.avgRr.toFixed(2)}
           </p>
         </div>
@@ -2102,7 +2132,13 @@ export function JournalingPageClient({
   }
 
   return (
-    <div className={`${jn.page} space-y-6`}>
+    <div className={`${jn.page} relative space-y-6`}>
+      {/* Ambient page glow */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
+        <div className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl" style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }} />
+        <div className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
+      </div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -2111,7 +2147,17 @@ export function JournalingPageClient({
         className="flex flex-wrap items-center gap-4"
       >
         {/* Title */}
-        <h1 className={jn.h1}>Journal</h1>
+        <h1
+          className={jn.h1}
+          style={{
+            background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          Journal
+        </h1>
 
         {/* Account selector — center */}
         <div className="flex flex-1 justify-center">
@@ -2177,7 +2223,7 @@ export function JournalingPageClient({
 
       {/* Tab switcher */}
       {!loading && (
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 w-fit">
+        <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1 w-fit backdrop-blur-sm" style={{ boxShadow: "0 0 20px rgba(99,102,241,0.06)" }}>
           {(
             [
               { id: "today" as const, label: "Today", Icon: Sun },
@@ -2195,7 +2241,8 @@ export function JournalingPageClient({
               {tab === tid && (
                 <motion.span
                   layoutId="journal-tab-pill"
-                  className="absolute inset-0 rounded-lg bg-white/[0.06]"
+                  className="absolute inset-0 rounded-lg"
+                  style={{ background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }}
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
