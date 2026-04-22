@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { sendSmartTelegramAlert } from "@/lib/telegram/sendSmartTelegramAlert";
+import { effectiveNotifySettings, notifyFlagForRule, type NotifySettingsLike } from "@/lib/risk/violationEngine";
 
 const CONNECTED_MESSAGE =
   "✅ RiskSent Alerts — Connected!\n\nYour Telegram is now linked to RiskSent. You'll receive real-time alerts when your risk rules are triggered.\n\nStay disciplined. 🎯";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
 
     const { data, error: dbError } = await supabase
       .from("risk_notifications")
-      .select("telegram_chat_id")
+      .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -41,6 +42,17 @@ export async function POST(request: Request) {
     }
 
     if (body.alertType && body.data) {
+      const effective = effectiveNotifySettings((data ?? null) as NotifySettingsLike | null);
+      if (!notifyFlagForRule(String(body.alertType), effective)) {
+        return NextResponse.json(
+          {
+            error:
+              "This rule is turned off in Telegram alerts (Risk Manager). Enable it to run a test, or use a different alert type."
+          },
+          { status: 403 }
+        );
+      }
+
       const result = await sendSmartTelegramAlert({
         chatId,
         alertType: body.alertType,
