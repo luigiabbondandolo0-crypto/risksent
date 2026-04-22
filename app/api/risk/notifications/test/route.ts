@@ -46,6 +46,8 @@ export async function POST(request: Request) {
         alertType: body.alertType,
         data: body.data,
         fallbackMessage: `⚠️ Test alert [${body.alertType}] from RiskSent.`,
+        supabase,
+        userId: user.id,
       });
 
       if (!result.ok) {

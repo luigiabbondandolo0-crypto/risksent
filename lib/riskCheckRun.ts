@@ -378,6 +378,8 @@ export async function runRiskCheckForAccount(params: {
         alertType,
         data: alertData,
         fallbackMessage: `⚠️ Risk alert: ${f.message}`,
+        supabase,
+        userId,
       });
     }
   }

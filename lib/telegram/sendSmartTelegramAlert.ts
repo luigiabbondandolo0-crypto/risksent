@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -117,11 +118,15 @@ export async function sendSmartTelegramAlert({
   alertType,
   data,
   fallbackMessage,
+  supabase,
+  userId,
 }: {
   chatId: string;
   alertType: string;
   data: Record<string, unknown>;
   fallbackMessage?: string;
+  supabase?: SupabaseClient;
+  userId?: string;
 }): Promise<{ ok: boolean; reason?: string }> {
   const severity = detectSeverity(alertType, data);
   const staticFallback = buildFallback(alertType, data, severity);
@@ -161,6 +166,26 @@ export async function sendSmartTelegramAlert({
 
     const result = (await res.json().catch(() => ({}))) as { ok: boolean; description?: string };
     if (!result.ok) return { ok: false, reason: result.description };
+
+    if (supabase && userId) {
+      await supabase
+        .from("risk_violations")
+        .insert({
+          user_id: userId,
+          rule_type: alertType,
+          value_at_violation: String(
+            data.currentDD ?? data.positionSize ?? data.count ?? data.tradesCount ?? data.currentLoss ?? ""
+          ),
+          limit_value: String(data.limitDD ?? data.limit ?? ""),
+          message: message,
+          notified_telegram: true,
+          account_nickname: String(data.accountNickname ?? ""),
+        })
+        .then(({ error }) => {
+          if (error) console.error("[sendSmartTelegramAlert] Failed to save violation:", error.message);
+        });
+    }
+
     return { ok: true };
   } catch (err) {
     return { ok: false, reason: String(err) };
