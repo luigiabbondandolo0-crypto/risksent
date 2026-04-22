@@ -762,10 +762,7 @@ export function RiskManagerPageClient({
         animate="show"
         className="rs-card p-6 sm:p-8"
       >
-        <h2 className="mb-2 font-[family-name:var(--font-display)] text-lg font-bold text-white">Telegram alerts</h2>
-        <p className="rs-page-sub mb-6 !mt-0 text-xs">
-          Optional push alerts when limits are approached or breached (requires TELEGRAM_BOT_TOKEN on the server).
-        </p>
+        <h2 className="mb-6 font-[family-name:var(--font-display)] text-lg font-bold text-white">Telegram alerts</h2>
         <TelegramSetup
           settings={tg}
           chatIdDraft={chatDraft}
