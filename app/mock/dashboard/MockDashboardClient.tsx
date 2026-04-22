@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { motion } from "framer-motion";
 import { DdExposureCard } from "@/app/dashboard/components/DdExposureCard";
 import { RiskRewardTableModal } from "@/app/dashboard/components/RiskRewardTableModal";
 import { WinsLossesGauge } from "@/app/dashboard/components/WinsLossesGauge";
@@ -135,17 +136,50 @@ export function MockDashboardClient() {
   const now = new Date();
   const monthLabel = firstDay.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
-  const healthScore = 69;
+  const ruleItems = [
+    { label: "Daily loss" as const, value: `${riskRules.daily_loss_pct}% limit`, status: getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct) },
+    { label: "Risk / trade" as const, value: `${riskRules.max_risk_per_trade_pct}% limit`, status: "safe" as RuleStatus },
+    { label: "Exposure" as const, value: `${riskRules.max_exposure_pct}% limit`, status: getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct) },
+    { label: "Revenge" as const, value: `${riskRules.revenge_threshold_trades} losses`, status: "safe" as RuleStatus },
+  ];
 
   return (
-    <div className="space-y-6 lg:space-y-8 animate-fade-in">
+    <div className="relative space-y-6 lg:space-y-8 animate-fade-in">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+        />
+        <div
+          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
+        />
+        <div
+          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+        />
+      </div>
+
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="rs-page-title">Dashboard</h1>
-          <p className="rs-page-sub">
-            Risk, performance, and activity — mock data. Stessa struttura della dashboard live.
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="rs-page-title"
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Dashboard
+          </motion.h1>
+          <p className="mt-1.5 rs-page-sub">
+            Risk, performance, and activity — same layout as the live app, mock data.
           </p>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-1 text-xs font-mono text-slate-600">
             Last updated{" "}
             {new Date(stats.updatedAt ?? Date.now()).toLocaleTimeString(undefined, {
               hour: "2-digit",
@@ -155,7 +189,7 @@ export function MockDashboardClient() {
           </p>
         </div>
         <div className="w-full sm:max-w-[min(100%,20rem)] shrink-0">
-          <label htmlFor="mock-dash-account" className="rs-section-title mb-2 block">
+          <label htmlFor="mock-dash-account" className="mb-2 block text-[11px] font-mono uppercase tracking-[0.1em] text-slate-500">
             Trading account
           </label>
           <select id="mock-dash-account" className="rs-input" value={MOCK_UUID} disabled>
@@ -164,60 +198,68 @@ export function MockDashboardClient() {
         </div>
       </header>
 
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+      <section
+        className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
+        style={{
+          background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+          borderColor: "rgba(99,102,241,0.2)",
+          boxShadow: "0 0 40px -10px rgba(99,102,241,0.15), 0 8px 32px -8px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute -top-12 right-12 h-24 w-32 rounded-full opacity-20 blur-3xl"
+          style={{ background: "#6366f1" }}
+        />
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-base font-semibold tracking-tight text-slate-100">Active risk rules</h3>
-          <span className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-500">Edit (mock)</span>
+          <div className="flex items-center gap-2.5">
+            <span className="h-1 w-5 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
+            <h3 className="text-sm font-mono font-semibold uppercase tracking-[0.1em] text-slate-300">Active risk rules</h3>
+          </div>
+          <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-mono text-slate-500">
+            Edit (mock)
+          </span>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-            <div className="rs-kpi-label">Daily loss</div>
-            <div className="mt-2 inline-flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${
-                getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct) === "watch"
-                  ? "bg-orange-400 animate-pulse"
-                  : getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct) === "high"
-                  ? "bg-red-400"
-                  : "bg-emerald-400"
-              }`} />
-              <span className={`${ruleStatusPill(getRuleStatus(stats.dailyDdPct, riskRules.daily_loss_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
-                {riskRules.daily_loss_pct}% limit
-              </span>
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-            <div className="rs-kpi-label">Risk / trade</div>
-            <div className="mt-2 inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
-                {riskRules.max_risk_per_trade_pct}% limit
-              </span>
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-            <div className="rs-kpi-label">Exposure</div>
-            <div className="mt-2 inline-flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${
-                getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct) === "watch"
-                  ? "bg-orange-400 animate-pulse"
-                  : getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct) === "high"
-                  ? "bg-red-400"
-                  : "bg-emerald-400"
-              }`} />
-              <span className={`${ruleStatusPill(getRuleStatus(stats.currentExposurePct, riskRules.max_exposure_pct))} rounded-full border px-2 py-0.5 text-xs font-semibold rs-mono`}>
-                {riskRules.max_exposure_pct}% limit
-              </span>
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3">
-            <div className="rs-kpi-label">Revenge</div>
-            <div className="mt-2 inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 rs-mono">
-                {riskRules.revenge_threshold_trades} losses
-              </span>
-            </div>
-          </div>
+          {ruleItems.map(({ label, value, status }, i) => (
+            <motion.div
+              key={label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -2, transition: { duration: 0.15, ease: [0.22, 1, 0.36, 1] } }}
+              className="relative overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-xl"
+              style={{
+                borderColor:
+                  status === "high"
+                    ? "rgba(248,113,113,0.3)"
+                    : status === "watch"
+                      ? "rgba(251,146,60,0.3)"
+                      : "rgba(74,222,128,0.18)",
+                background:
+                  status === "high"
+                    ? "rgba(248,113,113,0.06)"
+                    : status === "watch"
+                      ? "rgba(251,146,60,0.06)"
+                      : "rgba(74,222,128,0.04)",
+              }}
+            >
+              <div className="rs-kpi-label">{label}</div>
+              <div className="mt-2 inline-flex items-center gap-2">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    status === "watch"
+                      ? "animate-pulse bg-orange-400"
+                      : status === "high"
+                        ? "bg-red-400"
+                        : "bg-emerald-400"
+                  }`}
+                />
+                <span className={`${ruleStatusPill(status)} rounded-full border px-2 py-0.5 text-xs font-mono font-semibold`}>
+                  {value}
+                </span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -238,36 +280,86 @@ export function MockDashboardClient() {
       />
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(99,102,241,0.09) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(99,102,241,0.22)",
+            boxShadow: "0 0 32px -8px rgba(99,102,241,0.14), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-25 blur-2xl"
+            style={{ background: "#6366f1" }}
+          />
           <div className="rs-kpi-label">Balance</div>
-          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+          <div className="mt-1 font-display text-2xl font-bold text-white">
             <AnimatedNumber value={stats.balancePct} suffix="%" />
           </div>
-          <div className={`mt-1 text-sm font-semibold rs-mono ${
-            (stats.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}>
+          <div
+            className={`mt-1 font-mono text-sm font-semibold ${
+              (stats.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
             {stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
           </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(56,189,248,0.2)",
+            boxShadow: "0 0 32px -8px rgba(56,189,248,0.12), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-20 blur-2xl"
+            style={{ background: "#38bdf8" }}
+          />
           <div className="rs-kpi-label">Equity</div>
-          <div className="mt-1 text-2xl font-bold text-white rs-mono">
+          <div className="mt-1 font-display text-2xl font-bold text-white">
             <AnimatedNumber value={stats.equityPct} suffix="%" />
           </div>
-          <div className={`mt-1 text-sm font-semibold rs-mono ${
-            (stats.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}>
+          <div
+            className={`mt-1 font-mono text-sm font-semibold ${
+              (stats.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
             {stats.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(74,222,128,0.18)",
+            boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl"
+            style={{ background: "#4ade80" }}
+          />
           <div className="flex items-center justify-between">
             <span className="rs-kpi-label">Win rate & avg R:R</span>
             <button
               type="button"
               onClick={() => setRrTableOpen(true)}
-              className="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-cyan-400"
+              className="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-700/50 hover:text-[#6366f1]"
               aria-label="Info"
             >
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -281,11 +373,11 @@ export function MockDashboardClient() {
           </div>
           <div className="mt-1 flex items-start justify-between gap-3">
             <div>
-              <div className="text-2xl font-bold text-white">
+              <div className="font-display text-2xl font-bold text-white">
                 <AnimatedNumber value={stats.winRate} decimals={1} suffix="%" />
               </div>
               {winRateTrend != null && (
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 font-mono text-xs text-slate-400">
                   {winRateTrend.diff >= 0 ? (
                     <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span>
                   ) : (
@@ -295,46 +387,91 @@ export function MockDashboardClient() {
                 </p>
               )}
               <div className="mt-2 border-t border-slate-700/50 pt-2">
-                <span className="text-xs text-slate-500">Avg R:R </span>
-                <span className="text-lg font-bold text-white">
+                <span className="font-mono text-xs text-slate-500">Avg R:R </span>
+                <span className="font-display text-lg font-bold text-white">
                   <AnimatedNumber value={stats.avgRiskReward} />
                 </span>
               </div>
             </div>
             <WinsLossesGauge wins={stats.winsCount} losses={stats.lossesCount} draws={stats.drawsCount} />
           </div>
-        </div>
+        </motion.div>
         <RiskRewardTableModal open={rrTableOpen} onClose={() => setRrTableOpen(false)} />
       </section>
 
       <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(74,222,128,0.18)",
+            boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl"
+            style={{ background: "#4ade80" }}
+          />
           <div className="rs-kpi-label">Avg win</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-emerald-400">
+          <div className="mt-1 font-display text-2xl font-bold text-emerald-400">
             <AnimatedNumber value={stats.avgWin} suffix={` ${currency}`} />
           </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {stats.avgWinPct.toFixed(2)}%
-          </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+          <div className="mt-1 font-mono text-xs text-slate-500">{stats.avgWinPct.toFixed(2)}%</div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(248,113,113,0.2)",
+            boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl"
+            style={{ background: "#f87171" }}
+          />
           <div className="rs-kpi-label">Avg loss</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+          <div className="mt-1 font-display text-2xl font-bold text-red-400">
             <AnimatedNumber value={stats.avgLoss} suffix={` ${currency}`} forceNegative />
           </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {stats.avgLossPct.toFixed(2)}%
-          </div>
-        </div>
-        <div className="rs-card-accent p-5 shadow-rs-soft transition-transform duration-200 hover:scale-[1.02]">
+          <div className="mt-1 font-mono text-xs text-slate-500">{stats.avgLossPct.toFixed(2)}%</div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -3, transition: { duration: 0.15 } }}
+          className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+            borderColor: "rgba(248,113,113,0.2)",
+            boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl"
+            style={{ background: "#f87171" }}
+          />
           <div className="rs-kpi-label">Max drawdown</div>
-          <div className="mt-1 text-2xl font-bold rs-mono text-red-400">
+          <div className="mt-1 font-display text-2xl font-bold text-red-400">
             <AnimatedNumber value={-(Math.abs(stats.highestDdPct ?? 0))} suffix="%" />
           </div>
-          <div className="mt-1 text-xs text-slate-500 rs-mono">
-            {new Date(stats.peakDdDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          <div className="mt-1 font-mono text-xs text-slate-500">
+            {new Date(stats.peakDdDate).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
           </div>
-        </div>
+        </motion.div>
       </section>
 
       <DdExposureCard
@@ -345,10 +482,24 @@ export function MockDashboardClient() {
         isMock
       />
 
-      <section className="rs-card w-full p-5 sm:p-6 shadow-rs-soft">
-        <div className="mb-1 text-base font-semibold tracking-tight text-slate-100">Equity growth</div>
-        <p className="mb-4 text-xs text-slate-500 leading-relaxed">
-          % from start and balance in {currency}. Use the brush below the chart to zoom or pan.
+      <section
+        className="relative w-full overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
+        style={{
+          background: "linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.01) 100%)",
+          borderColor: "rgba(99,102,241,0.15)",
+          boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute -top-16 right-16 h-32 w-48 rounded-full opacity-[0.07] blur-3xl"
+          style={{ background: "#6366f1" }}
+        />
+        <div className="mb-1 flex items-center gap-2">
+          <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
+          <span className="text-sm font-mono font-semibold uppercase tracking-[0.1em] text-slate-300">Equity growth</span>
+        </div>
+        <p className="mb-4 mt-1 pl-6 text-xs font-mono text-slate-600 leading-relaxed">
+          % from start · balance in {currency} · drag brush to zoom
         </p>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -364,44 +515,44 @@ export function MockDashboardClient() {
               margin={{ top: 8, right: 8, left: 8, bottom: 8 }}
             >
               <defs>
-                <linearGradient id="mockLiveEquityGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ff3c3c" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="#ff3c3c" stopOpacity={0.02} />
+                <linearGradient id="mockEquityGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="displayDate" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={{ stroke: "#475569" }} />
+              <XAxis
+                dataKey="displayDate"
+                tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }}
+                axisLine={{ stroke: "#475569" }}
+              />
               <YAxis
                 tickFormatter={(v: number) => `${v}%`}
-                tick={{ fill: "#94a3b8", fontSize: 10 }}
+                tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "var(--font-mono)" }}
                 axisLine={{ stroke: "#475569" }}
               />
               <Tooltip
-                cursor={{ stroke: "#ff8c00", strokeOpacity: 0.5 }}
+                cursor={{ stroke: "#a78bfa", strokeOpacity: 0.5 }}
                 content={({ active, payload }) => {
                   if (!active || !payload || !payload[0]?.payload) return null;
                   const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
                   return (
-                    <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(255,60,60,0.15)]">
-                      <p className="text-[11px] text-slate-400">{row.displayDate}</p>
-                      <p className="text-sm font-semibold text-slate-100 rs-mono">
-                        {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+                    <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(99,102,241,0.15)]">
+                      <p className="text-[11px] font-mono text-slate-400">{row.displayDate}</p>
+                      <p className="text-sm font-semibold text-slate-100 font-mono">
+                        {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}{" "}
+                        {currency}
                       </p>
                     </div>
                   );
                 }}
               />
-              <ReferenceLine
-                y={-riskRules.daily_loss_pct}
-                stroke="#ef4444"
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-              />
+              <ReferenceLine y={-riskRules.daily_loss_pct} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} />
               <Area
                 type="monotone"
                 dataKey="pctFromStart"
-                stroke="#ff3c3c"
+                stroke="#6366f1"
                 strokeWidth={2.5}
-                fill="url(#mockLiveEquityGrad)"
+                fill="url(#mockEquityGrad)"
                 isAnimationActive
                 animationDuration={900}
                 animationEasing="ease-out"
@@ -412,24 +563,36 @@ export function MockDashboardClient() {
         </div>
       </section>
 
-      <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+      <section
+        className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+          borderColor: "rgba(99,102,241,0.15)",
+          boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)",
+        }}
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-base font-semibold capitalize tracking-tight text-slate-100">{monthLabel}</div>
-            <div className="mt-0.5 text-xs text-slate-500">Days with activity — tap a day to open trades (mock)</div>
+            <div className="flex items-center gap-2">
+              <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
+              <span className="text-sm font-mono font-semibold uppercase tracking-[0.1em] text-slate-300 capitalize">
+                {monthLabel}
+              </span>
+            </div>
+            <div className="mt-1 pl-6 text-xs font-mono text-slate-600">Tap a day to open trades (mock)</div>
           </div>
           <div className="flex gap-1.5">
             <button
               type="button"
               onClick={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1))}
-              className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-mono text-slate-400 transition-all hover:border-indigo-500/30 hover:text-slate-200"
             >
               ←
             </button>
             <button
               type="button"
               onClick={() => setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + 1))}
-              className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-mono text-slate-400 transition-all hover:border-indigo-500/30 hover:text-slate-200"
             >
               →
             </button>
@@ -437,7 +600,7 @@ export function MockDashboardClient() {
         </div>
         <div className="grid grid-cols-7 gap-1 text-center">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d} className="py-1 text-[10px] font-medium text-slate-500">
+            <div key={d} className="py-1 text-[10px] font-mono font-medium text-slate-500">
               {d}
             </div>
           ))}
@@ -483,7 +646,7 @@ export function MockDashboardClient() {
               <Link
                 key={dateStr}
                 href={`/mock/journaling?date=${dateStr}`}
-                className={`${cellClass} transition-colors hover:ring-2 hover:ring-cyan-500/50`}
+                className={`${cellClass} transition-colors hover:ring-2 hover:ring-[#6366f1]/50`}
               >
                 {content}
               </Link>
@@ -497,7 +660,10 @@ export function MockDashboardClient() {
       </section>
 
       <section>
-        <h2 className="rs-section-title mb-3 text-slate-400">Quick actions</h2>
+        <div className="mb-3 flex items-center gap-2">
+          <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
+          <h2 className="text-sm font-mono font-semibold uppercase tracking-[0.1em] text-slate-400">Quick actions</h2>
+        </div>
         <MockQuickActions />
       </section>
     </div>

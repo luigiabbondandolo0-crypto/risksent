@@ -238,7 +238,7 @@ export function MockSiteChrome({ children }: { children: React.ReactNode }) {
                   animation: "sidebar-ring-breathe 3.6s ease-in-out 1.8s infinite",
                 }}
               />
-              <BrandLogo treatment="bare" size={60} priority />
+              <BrandLogo treatment="bare" size={60} priority variant="mock" />
             </span>
           </Link>
 

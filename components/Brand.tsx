@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RiskSentLogoMark } from "@/components/brand/RiskSentLogoMark";
 
 type Variant = "live" | "mock";
 
@@ -42,43 +42,48 @@ export function BrandWordmark({
 type LogoMarkProps = {
   size?: number;
   className?: string;
+  /** Kept for API compatibility; SVG loads instantly. */
   priority?: boolean;
   alt?: string;
+  /** Live = indigo/cyan; mock = violet (demo chrome). */
+  variant?: Variant;
   /**
-   * Visual treatment:
-   * - "tile": logo sits inside a subtle rounded tile with ring (compact, chrome-like)
-   * - "bare": transparent, no chrome — pairs the logo with a soft teal halo so it
-   *   still reads well against dark backgrounds. Use this when the logo is the
-   *   only brand element shown.
+   * "tile" = rounded tile + ring; "bare" = mark + soft indigo glow on dark UIs
    */
   treatment?: "tile" | "bare";
 };
 
 /**
- * RiskSent logo mark (the stylized "R"). Used in the sidebar and
- * anywhere a compact square logo fits better than the wordmark.
+ * RiskSent logo mark (vector “R”). Sidebar, topbar, mock shell.
  */
 export function BrandLogo({
   size = 28,
   className = "",
-  priority = false,
+  priority: _priority = false,
   alt = "RiskSent",
+  variant = "live",
   treatment = "tile",
 }: LogoMarkProps) {
+  const mark = <RiskSentLogoMark size={size} variant={variant} aria-hidden />;
+
+  const glow =
+    variant === "mock"
+      ? "radial-gradient(circle, rgba(139,92,246,0.4) 0%, transparent 70%)"
+      : "radial-gradient(circle, rgba(99,102,241,0.5) 0%, transparent 70%)";
+
   if (treatment === "bare") {
     return (
       <span
         className={`rs-logo-bare relative inline-flex shrink-0 items-center justify-center ${className}`}
         style={{ width: size, height: size }}
+        aria-label={alt}
       >
-        <Image
-          src="/logo.png"
-          alt={alt}
-          width={size}
-          height={size}
-          priority={priority}
-          className="relative h-full w-full object-contain"
+        <span
+          className="absolute inset-0 -z-10 scale-110 opacity-35 blur-md"
+          style={{ background: glow }}
+          aria-hidden
         />
+        {mark}
       </span>
     );
   }
@@ -90,17 +95,11 @@ export function BrandLogo({
         width: size,
         height: size,
         background:
-          "radial-gradient(120% 120% at 10% 10%, rgba(255,255,255,0.08), transparent 55%), #0b0f12",
+          "radial-gradient(120% 120% at 10% 10%, rgba(99,102,241,0.1), transparent 55%), #0b0b14",
       }}
+      aria-label={alt}
     >
-      <Image
-        src="/logo.png"
-        alt={alt}
-        width={size}
-        height={size}
-        priority={priority}
-        className="h-full w-full object-contain"
-      />
+      <span className="flex h-full w-full items-center justify-center p-[2px]">{mark}</span>
     </span>
   );
 }
@@ -137,7 +136,7 @@ export function BrandLockup({
 }: BrandLockupProps) {
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      {withLogo && <BrandLogo size={logoSize} />}
+      {withLogo && <BrandLogo size={logoSize} variant={variant} />}
       <BrandWordmark
         variant={variant}
         className={WORDMARK_SIZE[size]}
