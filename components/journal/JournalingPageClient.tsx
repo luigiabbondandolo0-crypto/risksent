@@ -164,6 +164,20 @@ type JournalSessionPatch =
   | Partial<JournalSession>
   | ((prev: Partial<JournalSession>) => Partial<JournalSession>);
 
+function fmtDayPl(pl: number): string {
+  const abs = Math.abs(pl);
+  const sign = pl >= 0 ? "+" : "-";
+  if (abs >= 1000) {
+    const k = abs / 1000;
+    const kStr =
+      k % 1 === 0
+        ? k.toFixed(0)
+        : k.toFixed(2).replace(/\.?0+$/, "");
+    return `${sign}${kStr}k`;
+  }
+  return `${sign}${Math.round(abs)}`;
+}
+
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
     (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
@@ -985,14 +999,15 @@ function CalendarTab({
       : "—";
 
   const dayStats = useMemo(() => {
-    const map: Record<string, { pl: number; count: number }> = {};
+    const map: Record<string, { pl: number; count: number; wins: number }> = {};
     allTrades.forEach((t) => {
       if (!t.close_time || t.status !== "closed") return;
       const d = t.close_time.slice(0, 10);
-      if (!map[d]) map[d] = { pl: 0, count: 0 };
-      map[d].pl +=
-        (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+      if (!map[d]) map[d] = { pl: 0, count: 0, wins: 0 };
+      const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+      map[d].pl += net;
       map[d].count++;
+      if (net > 0) map[d].wins++;
     });
     return map;
   }, [allTrades]);
@@ -1008,7 +1023,7 @@ function CalendarTab({
     >
       <div className={jn.card}>
         {/* Month navigation */}
-        <div className="mb-5 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
             className={jn.btnGhost}
@@ -1037,7 +1052,7 @@ function CalendarTab({
         </div>
 
         {/* Month KPIs (same style as below — grouped with calendar) */}
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             {
               label: "Total Trades",
@@ -1093,14 +1108,14 @@ function CalendarTab({
           ].map(({ label, value, color }, ki) => (
             <motion.div
               key={label}
-              className={jn.cardSm}
+              className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: ki * 0.07 }}
             >
               <p className={jn.label}>{label}</p>
               <p
-                className="mt-1 font-display text-xl font-bold"
+                className="mt-0.5 font-display text-lg font-bold"
                 style={{ color }}
               >
                 {value}
@@ -1110,7 +1125,7 @@ function CalendarTab({
         </div>
 
         {/* Day headers */}
-        <div className="mb-1 grid grid-cols-7 gap-1">
+        <div className="mb-1 grid grid-cols-7 gap-0.5">
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
             <div
               key={d}
@@ -1129,7 +1144,7 @@ function CalendarTab({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -24 }}
           transition={{ duration: 0.22, ease: "easeInOut" }}
-          className="grid grid-cols-7 gap-1"
+          className="grid grid-cols-7 gap-0.5"
         >
           {cells.map((day, i) => {
             if (!day) {
@@ -1152,7 +1167,7 @@ function CalendarTab({
                 onClick={() =>
                   setSelectedDay(isSelected ? null : ds)
                 }
-                className="flex aspect-square flex-col items-center justify-center rounded-xl border text-center transition-all"
+                className="relative flex aspect-square flex-col items-center justify-center rounded-xl border text-center transition-all"
                 style={{
                   borderColor: isSelected
                     ? "rgba(99,102,241,0.5)"
@@ -1172,8 +1187,9 @@ function CalendarTab({
                       : "transparent",
                 }}
               >
+                {/* Day number — top right */}
                 <span
-                  className="text-xs font-mono"
+                  className="absolute top-1 right-1.5 text-[9px] font-mono leading-none"
                   style={{
                     color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#4ADE80" : "#F87171") : "#475569",
                     fontWeight: today ? 700 : 400,
@@ -1181,17 +1197,20 @@ function CalendarTab({
                 >
                   {format(day, "d")}
                 </span>
+                {/* Center: P&L, trades count, winrate */}
                 {stats && (
-                  <div className="mt-0.5 flex flex-col items-center gap-0">
+                  <div className="flex flex-col items-center gap-0">
                     <span
-                      className="text-[9px] font-mono leading-tight"
+                      className="text-[9px] font-mono font-bold leading-tight"
                       style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
                     >
-                      {stats.pl >= 0 ? "+" : ""}
-                      {stats.pl.toFixed(0)}
+                      {fmtDayPl(stats.pl)}
                     </span>
-                    <span className="text-[8px] font-mono leading-tight text-slate-500">
-                      {stats.count} {stats.count === 1 ? "trade" : "trades"}
+                    <span className="mt-0.5 text-[7px] font-mono leading-tight text-slate-500">
+                      {stats.count}t
+                    </span>
+                    <span className="text-[7px] font-mono leading-tight text-slate-500">
+                      {stats.count > 0 ? `${Math.round((stats.wins / stats.count) * 100)}%wr` : "—"}
                     </span>
                   </div>
                 )}

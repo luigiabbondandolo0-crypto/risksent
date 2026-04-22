@@ -6,10 +6,7 @@ import {
   useRefreshSubscription,
   useSubscription,
 } from "@/lib/subscription/SubscriptionContext";
-import {
-  buildDemoAlertRows,
-  buildDemoDashboardStats,
-} from "@/lib/demo/demoDashboardSeed";
+import { buildDemoDashboardStats } from "@/lib/demo/demoDashboardSeed";
 import {
   DEMO_JOURNAL_ACCOUNT_PUBLIC,
   DEMO_METAAPI_ACCOUNT_ID,
@@ -29,7 +26,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DdExposureCard } from "./components/DdExposureCard";
-import { AlertsOverview } from "./components/AlertsOverview";
 import { RulesEditPopup, type RiskRules } from "./components/RulesEditPopup";
 import { RiskRewardTableModal } from "./components/RiskRewardTableModal";
 import { WinsLossesGauge } from "./components/WinsLossesGauge";
@@ -71,6 +67,20 @@ type Stats = {
 type DayStat = { date: string; profit: number; trades: number; wins: number };
 
 type RuleStatus = "safe" | "watch" | "high";
+
+function fmtDayPl(pl: number): string {
+  const abs = Math.abs(pl);
+  const sign = pl >= 0 ? "+" : "-";
+  if (abs >= 1000) {
+    const k = abs / 1000;
+    const kStr =
+      k % 1 === 0
+        ? k.toFixed(0)
+        : k.toFixed(2).replace(/\.?0+$/, "");
+    return `${sign}${kStr}k`;
+  }
+  return `${sign}${Math.round(abs)}`;
+}
 
 function getRuleStatus(current: number | null, limit: number): RuleStatus {
   if (current == null || limit <= 0) return "safe";
@@ -199,11 +209,6 @@ export default function DashboardPage() {
   const sub = useSubscription();
   const refreshSubscription = useRefreshSubscription();
   const isSubDemo = Boolean(sub?.isDemoMode);
-
-  const demoAlertRows = useMemo(
-    () => (isSubDemo ? buildDemoAlertRows() : null),
-    [isSubDemo]
-  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -730,11 +735,6 @@ export default function DashboardPage() {
             />
           )}
 
-          <AlertsOverview
-            hasLinkedAccount={!noLinkedAccount}
-            demoItems={demoAlertRows}
-          />
-
           {/* KPI row 1 */}
           <section className="grid gap-4 md:grid-cols-3 sm:gap-5">
             <motion.div
@@ -875,6 +875,77 @@ export default function DashboardPage() {
             </motion.div>
           </section>
 
+          {/* Calendar */}
+          <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-base font-semibold font-display tracking-tight text-slate-100 capitalize">
+                  {monthLabel}
+                </div>
+                <div className="mt-0.5 text-xs font-mono text-slate-500">
+                  Days with activity — tap a day to open trades
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">←</button>
+                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">→</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-[10px] font-mono text-slate-500 font-medium py-1">{d}</div>
+              ))}
+              {Array.from({ length: startWeekday }, (_, i) => (
+                <div key={`pad-${i}`} className="min-h-[64px]" />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                const dayData = dailyByDate.get(dateStr);
+                const isFuture = new Date(year, month, day) > now;
+                const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
+                const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
+                const cellClass = `min-h-[64px] rounded-lg border relative ${
+                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
+                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
+                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
+                }`;
+                const content = (
+                  <div className="relative w-full h-full min-h-[64px] flex flex-col items-center justify-center p-1">
+                    {/* Day number — top right */}
+                    <span className={`absolute top-1 right-1.5 text-[9px] font-mono leading-none ${dayData ? (pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400") : "text-slate-500"}`}>
+                      {day}
+                    </span>
+                    {dayData ? (
+                      <div className="flex flex-col items-center gap-0">
+                        <span className={`text-[9px] font-mono font-bold leading-tight ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {fmtDayPl(dayData.profit)}
+                        </span>
+                        <span className="mt-0.5 text-[7px] font-mono leading-tight text-slate-400">
+                          {dayData.trades}t
+                        </span>
+                        <span className="text-[7px] font-mono leading-tight text-slate-400">
+                          {winPct != null ? `${winPct.toFixed(0)}%wr` : "—"}
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+                return dayData ? (
+                  <Link
+                    key={dateStr}
+                    href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
+                    className={`${cellClass} hover:ring-2 hover:ring-[#6366f1]/50 transition-colors`}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={dateStr} className={cellClass}>{content}</div>
+                );
+              })}
+            </div>
+          </section>
+
           <DdExposureCard
             dailyDdPct={noLinkedAccount ? 0 : stats?.dailyDdPct ?? null}
             dailyLimitPct={rulesConfigured && riskRules ? riskRules.daily_loss_pct : 0}
@@ -942,71 +1013,6 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             )}
-          </section>
-
-          {/* Calendar */}
-          <section className="rs-card p-5 sm:p-6 shadow-rs-soft">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <div className="text-base font-semibold font-display tracking-tight text-slate-100 capitalize">
-                  {monthLabel}
-                </div>
-                <div className="mt-0.5 text-xs font-mono text-slate-500">
-                  Days with activity — tap a day to open trades
-                </div>
-              </div>
-              <div className="flex gap-1.5">
-                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">←</button>
-                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-600/80 px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors hover:bg-slate-800">→</button>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-center">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="text-[10px] font-mono text-slate-500 font-medium py-1">{d}</div>
-              ))}
-              {Array.from({ length: startWeekday }, (_, i) => (
-                <div key={`pad-${i}`} className="min-h-[64px]" />
-              ))}
-              {Array.from({ length: daysInMonth }, (_, i) => {
-                const day = i + 1;
-                const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                const dayData = dailyByDate.get(dateStr);
-                const isFuture = new Date(year, month, day) > now;
-                const pct = dayData && stats?.initialBalance ? (dayData.profit / stats.initialBalance) * 100 : null;
-                const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
-                const cellClass = `min-h-[64px] rounded-lg border flex flex-col items-center justify-center p-1 ${
-                  isFuture ? "border-slate-800/50 bg-slate-900/30 text-slate-600" :
-                  dayData ? (pct != null && pct >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-red-500/30 bg-red-500/10") :
-                  "border-slate-700/50 bg-slate-800/30 text-slate-500"
-                }`;
-                const content = (
-                  <>
-                    <span className="text-xs font-mono font-medium text-slate-300">{day}</span>
-                    {dayData && (
-                      <>
-                        <span className={`text-xs font-semibold font-mono ${pct != null && pct >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                          {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : "—"}
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {dayData.trades} trade{dayData.trades !== 1 ? "s" : ""}{winPct != null ? ` · ${winPct.toFixed(0)}% win` : ""}
-                        </span>
-                      </>
-                    )}
-                  </>
-                );
-                return dayData ? (
-                  <Link
-                    key={dateStr}
-                    href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
-                    className={`${cellClass} hover:ring-2 hover:ring-[#6366f1]/50 transition-colors`}
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <div key={dateStr} className={cellClass}>{content}</div>
-                );
-              })}
-            </div>
           </section>
 
         </>
