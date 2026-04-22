@@ -756,9 +756,9 @@ export default function DashboardPage() {
                     key={label}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06, duration: 0.3, ease: "easeOut" }}
-                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="relative overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-sm transition-all duration-200"
+                    transition={{ delay: i * 0.06, duration: 0.35, ease: [0.22,1,0.36,1] }}
+                    whileHover={{ y: -3, transition: { duration: 0.15, ease: [0.22,1,0.36,1] } }}
+                    className="relative overflow-hidden rounded-xl border px-4 py-3 backdrop-blur-xl"
                     style={{
                       borderColor: status === "high" ? "rgba(248,113,113,0.3)" : status === "watch" ? "rgba(251,146,60,0.3)" : "rgba(74,222,128,0.18)",
                       background: status === "high" ? "rgba(248,113,113,0.06)" : status === "watch" ? "rgba(251,146,60,0.06)" : "rgba(74,222,128,0.04)",
@@ -1025,7 +1025,7 @@ export default function DashboardPage() {
                 return dayData ? (
                   <Link
                     key={dateStr}
-                    href={`/trades?date=${dateStr}${linkMetaUuid ? `&uuid=${encodeURIComponent(linkMetaUuid)}` : ""}`}
+                    href={`/app/journaling?tab=trades&from=${dateStr}&to=${dateStr}`}
                     className={`${cellClass} hover:ring-2 hover:ring-[#6366f1]/50 transition-colors`}
                   >
                     {content}

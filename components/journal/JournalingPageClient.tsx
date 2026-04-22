@@ -1350,11 +1350,12 @@ function TradesTab({
   basePath: string;
 }) {
   const router = useRouter();
+  const searchParamsTrades = useSearchParams();
   const [symbolQ, setSymbolQ] = useState("");
   const [dir, setDir] = useState<DirFilter>("ALL");
   const [status, setStatus] = useState<StatusFilter>("ALL");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(() => searchParamsTrades.get("from") ?? "");
+  const [toDate, setToDate] = useState(() => searchParamsTrades.get("to") ?? "");
   const [page, setPage] = useState(0);
 
   const filtersActive =
