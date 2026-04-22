@@ -19,6 +19,8 @@ const HIGH_SEVERITY_RULES = new Set([
 type AccountHealthCardProps = {
   winRate: number | null;
   highestDdPct: number | null;
+  /** Scope alerts to the selected journal account (same as Live alerts). */
+  selectedAccountId?: "all" | string;
 };
 
 function healthColor(score: number): string {
@@ -46,12 +48,20 @@ function computeHealthScore(
   return Math.round(Math.min(100, Math.max(0, wrScore + ddScore + alertScore)));
 }
 
-export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardProps) {
+export function AccountHealthCard({
+  winRate,
+  highestDdPct,
+  selectedAccountId = "all"
+}: AccountHealthCardProps) {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
-    fetch("/api/risk/violations?limit=50", { cache: "no-store" })
+    const params = new URLSearchParams({ limit: "50" });
+    if (selectedAccountId !== "all") {
+      params.set("account_id", selectedAccountId);
+    }
+    fetch(`/api/risk/violations?${params.toString()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         const v = (d.violations ?? []) as { rule_type?: string }[];
@@ -63,7 +73,7 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
         );
       })
       .catch(() => setAlerts([]));
-  }, []);
+  }, [selectedAccountId]);
 
   const unread = alerts.filter((a) => !a.read);
   const score = computeHealthScore(winRate, highestDdPct, unread);

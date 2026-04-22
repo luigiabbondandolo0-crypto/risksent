@@ -733,6 +733,7 @@ export default function DashboardPage() {
           <AlertsOverview
             hasLinkedAccount={!noLinkedAccount}
             demoItems={demoAlertRows}
+            selectedAccountId={isSubDemo ? "demo-account" : selectedGlobalId}
           />
 
           {/* KPI row 1 */}

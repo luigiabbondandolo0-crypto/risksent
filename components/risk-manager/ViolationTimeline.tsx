@@ -10,6 +10,7 @@ export type ViolationItem = {
   limit_value: number;
   message: string;
   created_at: string;
+  account_id?: string | null;
   account_nickname?: string | null;
   broker_server?: string | null;
 };

@@ -145,11 +145,15 @@ export function RiskManagerPageClient({
 
   const loadViolations = useCallback(async () => {
     if (demoData) return;
-    const res = await authFetch("/api/risk/violations?limit=100");
+    const params = new URLSearchParams({ limit: "100" });
+    if (selectedGlobalId !== "all") {
+      params.set("account_id", selectedGlobalId);
+    }
+    const res = await authFetch(`/api/risk/violations?${params.toString()}`);
     if (!res.ok) return;
     const j = (await res.json()) as { violations: ViolationItem[] };
     setViolations(j.violations ?? []);
-  }, [demoData]);
+  }, [demoData, selectedGlobalId]);
 
   const VIOLATIONS_PER_PAGE = 10;
   const totalViolationPages = Math.max(1, Math.ceil(violations.length / VIOLATIONS_PER_PAGE));
@@ -174,7 +178,14 @@ export function RiskManagerPageClient({
     }
     setClearingViolations(true);
     try {
-      const res = await authFetch("/api/risk/violations", { method: "DELETE" });
+      const res = await authFetch("/api/risk/violations", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body:
+          selectedGlobalId !== "all"
+            ? JSON.stringify({ account_id: selectedGlobalId })
+            : undefined
+      });
       if (res.ok) {
         setViolations([]);
         setViolationPage(1);
@@ -182,7 +193,7 @@ export function RiskManagerPageClient({
     } finally {
       setClearingViolations(false);
     }
-  }, [demoData, violations.length]);
+  }, [demoData, violations.length, selectedGlobalId]);
 
   useEffect(() => {
     if (demoData) {
@@ -268,10 +279,7 @@ export function RiskManagerPageClient({
     (async () => {
       setLoading(true);
       try {
-        const [nRes, vRes] = await Promise.all([
-          authFetch("/api/risk/notifications"),
-          authFetch("/api/risk/violations?limit=100")
-        ]);
+        const nRes = await authFetch("/api/risk/notifications");
         if (nRes.ok) {
           const n = (await nRes.json()) as TelegramSettings;
           if (!cancelled) {
@@ -289,10 +297,6 @@ export function RiskManagerPageClient({
             setChatDraft(n.telegram_chat_id ?? "");
           }
         }
-        if (vRes.ok) {
-          const v = (await vRes.json()) as { violations: ViolationItem[] };
-          if (!cancelled) setViolations(v.violations ?? []);
-        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -301,6 +305,11 @@ export function RiskManagerPageClient({
       cancelled = true;
     };
   }, [demoData, subscriptionDemo]);
+
+  useEffect(() => {
+    if (demoData) return;
+    void loadViolations();
+  }, [demoData, loadViolations]);
 
   useEffect(() => {
     if (demoData) return;
@@ -493,7 +502,7 @@ export function RiskManagerPageClient({
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel("risk_violations_realtime")
+      .channel(`risk_violations_realtime_${userId}`)
       .on(
         "postgres_changes",
         {
@@ -504,6 +513,10 @@ export function RiskManagerPageClient({
         },
         (payload) => {
           const raw = payload.new as Record<string, unknown>;
+          const aid = raw.account_id != null ? String(raw.account_id) : null;
+          if (selectedGlobalId !== "all" && aid !== selectedGlobalId) {
+            return;
+          }
           const item: ViolationItem = {
             id: String(raw.id ?? ""),
             rule_type: String(raw.rule_type ?? ""),
@@ -511,6 +524,7 @@ export function RiskManagerPageClient({
             limit_value: Number(raw.limit_value ?? 0),
             message: String(raw.message ?? ""),
             created_at: String(raw.created_at ?? new Date().toISOString()),
+            account_id: aid,
             account_nickname: raw.account_nickname != null ? String(raw.account_nickname) : null,
           };
           setViolations((prev) => [item, ...prev]);
@@ -521,7 +535,7 @@ export function RiskManagerPageClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, userId]);
+  }, [supabase, userId, selectedGlobalId]);
 
   const saveRules = async () => {
     if (previewChrome) return;
