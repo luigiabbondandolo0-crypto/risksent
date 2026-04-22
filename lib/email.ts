@@ -1,4 +1,11 @@
 import { Resend } from "resend";
+import {
+  emailCtaButton,
+  emailCtaSubLink,
+  emailDocumentFooter,
+  emailDocumentOpen,
+  emailSiteBase,
+} from "./emailBrandHtml";
 
 /**
  * Sender address used on all transactional emails.
@@ -15,7 +22,7 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <info@risksent.com
 const REPLY_TO = process.env.RESEND_REPLY_TO || "support@risksent.com";
 
 function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://risksent.com";
+  return emailSiteBase();
 }
 
 export interface WelcomeEmailParams {
@@ -91,13 +98,13 @@ export async function sendWelcomeEmail({ to, userName }: WelcomeEmailParams): Pr
   try {
     const resend = new Resend(apiKey);
     const displayName = userName || to.split("@")[0];
-    
+
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       replyTo: REPLY_TO,
       to,
-      subject: "Welcome to RiskSent! 🎉",
-      html: getWelcomeEmailTemplate(displayName)
+      subject: "Welcome to RiskSent — your trial is active",
+      html: getWelcomeEmailTemplate(displayName),
     });
 
     if (error) {
@@ -114,123 +121,76 @@ export async function sendWelcomeEmail({ to, userName }: WelcomeEmailParams): Pr
   }
 }
 
-/**
- * Modern, responsive welcome email template
- */
 function getWelcomeEmailTemplate(userName: string): string {
   const base = siteUrl();
   const dashboardUrl = `${base}/app/dashboard`;
   const backtestingUrl = `${base}/app/backtesting`;
   const telegramUrl = `${base}/app/risk-manager`;
 
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to RiskSent</title>
-  <style>
-    body { margin:0; padding:0; background:#080809; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
-    .wrap { padding:20px; background:#080809; }
-    .card { max-width:600px; margin:0 auto; background:#0e0e12; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.07); }
-    .hero { padding:40px 32px 32px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.06); }
-    .wordmark { font-size:24px; font-weight:900; letter-spacing:-0.02em; color:#fff; margin-bottom:20px; display:block; }
-    .hero-badge { display:inline-block; padding:5px 14px; border-radius:99px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#ff8c00; background:rgba(255,140,0,0.1); border:1px solid rgba(255,140,0,0.25); margin-bottom:16px; }
-    .hero h1 { color:#fff; font-size:28px; font-weight:900; margin:0 0 10px; letter-spacing:-0.025em; }
-    .hero p { color:#64748b; font-size:14px; margin:0; }
-    .body { padding:32px; }
-    .greeting { font-size:16px; font-weight:600; color:#f1f5f9; margin-bottom:12px; }
-    .intro { color:#94a3b8; font-size:14px; margin-bottom:28px; }
-    .steps-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#334155; margin-bottom:14px; }
-    .step { display:flex; align-items:flex-start; gap:14px; margin-bottom:14px; padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); text-decoration:none; color:inherit; }
-    .step-num { min-width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
-    .step-body { flex:1; }
-    .step-title { font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:3px; }
-    .step-desc { font-size:12px; color:#64748b; margin:0; }
-    .divider { height:1px; background:rgba(255,255,255,0.06); margin:24px 0; }
-    .cta-wrap { text-align:center; margin:24px 0 0; }
-    .cta { display:inline-block; background:linear-gradient(135deg,#ff3c3c,#ff8c00); color:#000!important; text-decoration:none; padding:14px 32px; border-radius:10px; font-weight:800; font-size:15px; letter-spacing:-0.01em; }
-    .footer { padding:20px 32px; text-align:center; border-top:1px solid rgba(255,255,255,0.06); }
-    .footer p { color:#334155; font-size:12px; margin:4px 0; }
-    .footer a { color:#475569; text-decoration:none; }
-    @media (max-width:600px){ .hero{padding:28px 20px 24px} .body{padding:24px 20px} .footer{padding:16px 20px} .hero h1{font-size:24px} }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <div class="hero">
-        <span class="wordmark">RiskSent</span>
-        <div class="hero-badge">Trial activated</div>
-        <h1>Welcome, ${userName}</h1>
-        <p>Your 7-day free trial is now active. Let&apos;s get you set up.</p>
-      </div>
-      <div class="body">
-        <div class="greeting">Here&apos;s how to get the most from your trial:</div>
+  const main = `
+      <div class="body-pad">
+        <div class="hero-section">
+          <span class="badge">Trial active</span>
+          <h1 class="h1" style="margin-top:20px;">Welcome, ${escapeAttrText(userName)}</h1>
+          <p style="margin:0; font-size:14px; color:#94a3b8;">Your 7-day free trial is on. Here&apos;s how to get the most from it.</p>
+        </div>
 
         <p class="steps-label">3 steps to start</p>
 
-        <a href="${dashboardUrl}" class="step" style="display:flex">
-          <div class="step-num" style="background:rgba(255,60,60,0.12);color:#ff3c3c;">1</div>
-          <div class="step-body">
-            <div class="step-title">Start your trial &amp; explore the dashboard</div>
-            <p class="step-desc">Get a full overview of your risk exposure, open trades, and account health at a glance.</p>
+        <a href="${dashboardUrl}" class="step" style="display:block">
+          <div class="step-inner" style="display:flex">
+            <div class="step-num">1</div>
+            <div>
+              <div class="step-title">Open the dashboard</div>
+              <p class="step-desc">See risk exposure, open trades, and account health in one place.</p>
+            </div>
           </div>
         </a>
 
-        <a href="${backtestingUrl}" class="step" style="display:flex">
-          <div class="step-num" style="background:rgba(99,102,241,0.12);color:#6366f1;">2</div>
-          <div class="step-body">
-            <div class="step-title">Try backtesting a strategy</div>
-            <p class="step-desc">Replay historical candles bar-by-bar, place trades, and measure your edge — no capital at risk.</p>
+        <a href="${backtestingUrl}" class="step" style="display:block">
+          <div class="step-inner" style="display:flex">
+            <div class="step-num" style="background:rgba(34,211,238,0.1);color:#22d3ee">2</div>
+            <div>
+              <div class="step-title">Run a backtest</div>
+              <p class="step-desc">Replay history bar-by-bar and measure your edge with no risk.</p>
+            </div>
           </div>
         </a>
 
-        <a href="${telegramUrl}" class="step" style="display:flex">
-          <div class="step-num" style="background:rgba(0,230,118,0.1);color:#00e676;">3</div>
-          <div class="step-body">
-            <div class="step-title">Connect Telegram alerts</div>
-            <p class="step-desc">Get instant notifications when a risk rule is triggered — wherever you are.</p>
+        <a href="${telegramUrl}" class="step" style="display:block">
+          <div class="step-inner" style="display:flex">
+            <div class="step-num" style="background:rgba(74,222,128,0.1);color:#4ade80">3</div>
+            <div>
+              <div class="step-title">Connect Telegram</div>
+              <p class="step-desc">Get instant alerts when a risk rule fires.</p>
+            </div>
           </div>
         </a>
 
-        <div class="divider"></div>
+        <div style="height:1px; background:rgba(255,255,255,0.06); margin:28px 0;"></div>
 
-        <div class="cta-wrap">
-          <a href="${dashboardUrl}" class="cta">Open my dashboard</a>
+        <div style="text-align:center; margin:8px 0 0;">
+          ${emailCtaButton(dashboardUrl, "Open my dashboard")}
         </div>
+        <p style="font-size:12px; color:#64748b; text-align:center; margin:16px 0 0;">
+          Questions? Reply to this email or <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>
+        </p>
+      </div>
+  `;
 
-        <p style="font-size:12px;color:#334155;text-align:center;margin-top:16px;">
-          Questions? Reply to this email or write to <a href="mailto:support@risksent.com" style="color:#475569;">support@risksent.com</a>
-        </p>
-      </div>
-      <div class="footer">
-        <p>
-          <a href="${dashboardUrl}">Dashboard</a> &nbsp;•&nbsp;
-          <a href="${base}/pricing">Pricing</a> &nbsp;•&nbsp;
-          <a href="mailto:support@risksent.com">Support</a>
-        </p>
-        <p style="margin-top:10px;">You received this because you created a RiskSent account.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
+  return (
+    emailDocumentOpen({
+      documentTitle: "Welcome to RiskSent",
+      preheader: "Your trial is live — set up the dashboard, backtesting, and Telegram.",
+      subhead: "Get started",
+    }) +
+    main +
+    emailDocumentFooter("You received this because you created a RiskSent account.")
+  );
 }
 
-/**
- * "Trial ends soon" reminder template.
- * Re-uses the same visual language as the welcome email for brand consistency.
- */
-function getTrialEndingEmailTemplate(
-  userName: string,
-  trialEndsAt: string,
-  daysLeft: number
-): string {
+function getTrialEndingEmailTemplate(userName: string, trialEndsAt: string, daysLeft: number): string {
   const base = siteUrl();
-  const logoUrl = `${base}/logo.png`;
   const pricingUrl = `${base}/pricing`;
   const billingUrl = `${base}/app/billing`;
 
@@ -244,102 +204,101 @@ function getTrialEndingEmailTemplate(
     daysLeft <= 0
       ? "Your free trial ends today"
       : daysLeft === 1
-      ? "Your free trial ends tomorrow"
-      : `Your free trial ends in ${daysLeft} days`;
+        ? "Your free trial ends tomorrow"
+        : `Your free trial ends in ${daysLeft} days`;
 
   const sub =
     daysLeft <= 0
       ? "After today, your workspace will switch to demo mode and live trading accounts will be paused."
-      : `You still have ${daysLeft} day${daysLeft === 1 ? "" : "s"} of full access. Pick a plan now to keep your risk rules, live alerts and AI insights running without interruption.`;
+      : `You still have ${daysLeft} day${daysLeft === 1 ? "" : "s"} of full access. Choose a plan to keep risk rules, live alerts, and AI insights without interruption.`;
 
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your RiskSent trial is ending</title>
-  <style>
-    body { margin:0; padding:0; background:#0f172a; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
-    .wrap { padding:20px; background:#0f172a; }
-    .card { max-width:600px; margin:0 auto; background:#1e293b; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,.5); }
-    .hero { background:linear-gradient(135deg,#ff3c3c 0%,#ff8c00 100%); padding:36px 30px; text-align:center; }
-    .logo { max-width:110px; border-radius:8px; margin-bottom:16px; }
-    .hero h1 { color:#0f172a; font-size:26px; font-weight:800; margin:0; letter-spacing:-0.01em; }
-    .body { padding:36px 30px; }
-    .greeting { font-size:18px; font-weight:600; color:#f1f5f9; margin-bottom:14px; }
-    .content { color:#cbd5e1; font-size:15px; }
-    .content p { margin:0 0 14px; }
-    .countdown { margin:28px 0; padding:22px; border-radius:10px; background:#0f172a; border-left:4px solid #ff8c00; }
-    .countdown .days { font-size:36px; font-weight:800; color:#ff8c00; letter-spacing:-0.02em; }
-    .countdown .label { font-size:13px; color:#94a3b8; text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
-    .countdown .end { font-size:13px; color:#64748b; margin-top:10px; }
-    .cta { display:inline-block; background:linear-gradient(135deg,#ff3c3c,#ff8c00); color:#0f172a!important; text-decoration:none; padding:14px 30px; border-radius:8px; font-weight:700; font-size:15px; }
-    .cta-secondary { display:inline-block; color:#94a3b8!important; text-decoration:none; padding:14px 20px; font-size:13px; font-weight:600; }
-    .plans { background:#0f172a; border-radius:10px; padding:20px; margin-top:22px; border:1px solid #334155; }
-    .plans h3 { color:#f1f5f9; font-size:15px; margin:0 0 12px; font-weight:600; }
-    .plans ul { list-style:none; padding:0; margin:0; }
-    .plans li { color:#cbd5e1; padding:6px 0 6px 22px; position:relative; font-size:14px; }
-    .plans li:before { content:"→"; position:absolute; left:0; color:#ff8c00; font-weight:bold; }
-    .footer { background:#0f172a; padding:24px; text-align:center; border-top:1px solid #1e293b; }
-    .footer p { color:#64748b; font-size:13px; margin:4px 0; }
-    .footer a { color:#ff8c00; text-decoration:none; }
-    @media (max-width:600px){ .hero{padding:28px 20px} .body{padding:28px 20px} .cta,.cta-secondary{display:block;width:100%;text-align:center;padding:14px;margin:6px 0} }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <div class="hero">
-        <img src="${logoUrl}" alt="RiskSent" class="logo" />
-        <h1>${headline}</h1>
-      </div>
-      <div class="body">
-        <div class="greeting">Hi ${userName},</div>
-        <div class="content">
-          <p>${sub}</p>
+  const main = `
+      <div class="body-pad">
+        <h1 class="h1">${headline}</h1>
+        <p style="margin:0 0 20px; font-size:15px; color:#94a3b8;">Hi ${escapeAttrText(userName)},</p>
+        <p style="margin:0 0 20px; font-size:15px; color:#cbd5e1;">${sub}</p>
 
-          <div class="countdown">
-            <div class="days">${Math.max(0, daysLeft)}</div>
-            <div class="label">day${daysLeft === 1 ? "" : "s"} left</div>
-            <div class="end">Trial ends on <strong>${endDate}</strong></div>
-          </div>
-
-          <p style="text-align:center; margin:24px 0;">
-            <a href="${pricingUrl}" class="cta">Choose a plan</a>
-            <br/>
-            <a href="${billingUrl}" class="cta-secondary">or manage your billing →</a>
-          </p>
-
-          <div class="plans">
-            <h3>What you keep when you upgrade</h3>
-            <ul>
-              <li>Live risk checks on every connected broker account</li>
-              <li>Daily-loss, drawdown and exposure rules with instant Telegram alerts</li>
-              <li>FTMO / Simplified challenge simulator and AI trade insights</li>
-              <li>Historical PnL and audit log for every action</li>
-            </ul>
-          </div>
-
-          <p style="font-size:13px; color:#94a3b8; margin-top:22px;">
-            Not ready to upgrade? No action needed — your workspace simply switches to read-only demo mode when the trial ends. You can subscribe any time from the billing page.
-          </p>
+        <div class="countdown">
+          <div class="days">${Math.max(0, daysLeft)}</div>
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#94a3b8; margin-top:4px;">day${daysLeft === 1 ? "" : "s"} left</div>
+          <div class="end">Trial ends on <strong style="color:#e2e8f0;">${endDate}</strong></div>
         </div>
+
+        <p style="text-align:center; margin:24px 0 8px;">${emailCtaButton(pricingUrl, "Choose a plan")}</p>
+        <p style="text-align:center; margin:0;">${emailCtaSubLink(billingUrl, "or manage billing →")}</p>
+
+        <div class="plans">
+          <h3>What you keep when you upgrade</h3>
+          <ul>
+            <li>Live risk checks on every connected broker account</li>
+            <li>Daily loss, drawdown, and exposure rules with Telegram alerts</li>
+            <li>FTMO / Simplified challenge simulator and AI trade insight</li>
+            <li>Historical PnL and audit log</li>
+          </ul>
+        </div>
+
+        <p style="font-size:13px; color:#94a3b8; margin:22px 0 0;">Not ready? No action needed — the workspace goes to read-only demo when the trial ends. You can subscribe anytime from billing.</p>
       </div>
-      <div class="footer">
-        <p><strong>RiskSent</strong> — Trading Risk Dashboard</p>
-        <p>
-          <a href="${pricingUrl}">Pricing</a> •
-          <a href="${billingUrl}">Billing</a> •
-          <a href="mailto:support@risksent.com">support@risksent.com</a>
-        </p>
-        <p style="margin-top:14px; font-size:11px; color:#475569;">
-          You're receiving this because your free trial is about to end. Once the trial expires you will not receive further reminders of this kind.
-        </p>
+  `;
+
+  return (
+    emailDocumentOpen({
+      documentTitle: "Your RiskSent trial is ending",
+      preheader: `Your trial ends in ${Math.max(0, daysLeft)} day(s). Keep full access with a plan.`,
+      subhead: "Plan & billing",
+    }) +
+    main +
+    emailDocumentFooter(
+      "You're receiving this because your free trial is ending.",
+      "After expiry you won't get further reminders of this type."
+    )
+  );
+}
+
+/** Exposed for /api/send-trial-expired-email and tests */
+export function getTrialExpiredEmailTemplate(userName: string): string {
+  const base = siteUrl();
+  const pricingUrl = `${base}/pricing`;
+  const billingUrl = `${base}/app/billing`;
+
+  const main = `
+      <div class="body-pad">
+        <h1 class="h1">Your free trial has ended</h1>
+        <p style="margin:0 0 8px; font-size:14px; color:#94a3b8;">Read-only demo mode is now active</p>
+
+        <p style="margin:20px 0 14px; font-size:15px; color:#cbd5e1;">Hi ${escapeAttrText(userName)},</p>
+        <p style="margin:0 0 20px; font-size:15px; color:#94a3b8;">Your 7-day trial of RiskSent has ended. Your data and settings are saved — pick a plan to turn live features back on.</p>
+
+        <div style="height:1px; background:rgba(255,255,255,0.06); margin:20px 0;"></div>
+
+        <p style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.1em; color:#64748b; margin:0 0 12px;">Unlocked again when you upgrade</p>
+        <p style="margin:0 0 6px; font-size:14px; color:#cbd5e1;">→ Live risk checks on connected accounts</p>
+        <p style="margin:0 0 6px; font-size:14px; color:#cbd5e1;">→ Telegram alerts when limits are hit</p>
+        <p style="margin:0 0 6px; font-size:14px; color:#cbd5e1;">→ Backtesting and strategy replay</p>
+        <p style="margin:0; font-size:14px; color:#cbd5e1;">→ AI Coach and journaling</p>
+
+        <div style="text-align:center; margin:28px 0 8px;">${emailCtaButton(pricingUrl, "Choose a plan")}</div>
+        <div style="text-align:center;">${emailCtaSubLink(billingUrl, "or visit billing →")}</div>
+
+        <p style="font-size:12px; color:#64748b; margin:20px 0 0;">Don&apos;t want to upgrade? No action required — you stay in demo; data stays accessible.</p>
       </div>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
+  `;
+
+  return (
+    emailDocumentOpen({
+      documentTitle: "Your RiskSent trial has ended",
+      preheader: "Your trial ended. Choose a plan to restore live risk checks and alerts.",
+      subhead: "Trial ended",
+    }) +
+    main +
+    emailDocumentFooter("You received this because your RiskSent trial expired.")
+  );
+}
+
+function escapeAttrText(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
