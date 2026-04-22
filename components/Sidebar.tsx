@@ -174,7 +174,7 @@ export function Sidebar({
               animation: "sidebar-ring-breathe 3.6s ease-in-out 1.8s infinite",
             }}
           />
-          <BrandLogo treatment="bare" size={72} priority />
+          <BrandLogo treatment="bare" size={88} priority />
         </span>
       </Link>
       <style>{`

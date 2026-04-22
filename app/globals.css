@@ -612,7 +612,7 @@ aside.lg\:flex {
     0 0 18px rgba(255, 60, 60, 0.25);
 }
 
-/* ── Logo R (PNG): varianti colore (niente glow / “cerchi”) + luccichio mascherato ── */
+/* ── Logo R (PNG): solo tono colore, nessun effetto animato sul bordo ── */
 .rs-logo-r-img[data-variant="live"] {
   filter: brightness(1.05) saturate(1.03);
 }
@@ -620,76 +620,12 @@ aside.lg\:flex {
   filter: brightness(1.06) saturate(1.1);
 }
 
-.rs-logo-r-shine {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  -webkit-mask-image: url("/brand/risk-sent-r.png");
-  mask-image: url("/brand/risk-sent-r.png");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
-.rs-logo-r-shine-bar {
-  position: absolute;
-  top: -8%;
-  bottom: -8%;
-  width: 42%;
-  left: -48%;
-  transform: skewX(-12deg);
-  background: linear-gradient(
-    95deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.04) 38%,
-    rgba(230, 220, 255, 0.28) 50%,
-    rgba(255, 255, 255, 0.06) 62%,
-    transparent 100%
-  );
-  animation: rs-logo-r-shimmer 4.5s ease-in-out infinite;
-}
-
-@keyframes rs-logo-r-shimmer {
-  0%,
-  72% {
-    transform: translateX(0) skewX(-12deg);
-    opacity: 0;
-  }
-  74% {
-    opacity: 0.75;
-  }
-  88% {
-    transform: translateX(260%) skewX(-12deg);
-    opacity: 0.45;
-  }
-  92%,
-  100% {
-    opacity: 0;
-    transform: translateX(260%) skewX(-12deg);
-  }
-}
-
-/* Bare: niente animazioni sui filtri; solo hover opzionale */
-.rs-logo-bare {
-  isolation: isolate;
-}
+/* Bare: hover statico (niente pulse) */
 .rs-logo-bare .rs-logo-r-img {
   transition: transform 220ms ease;
 }
 .rs-logo-bare:hover .rs-logo-r-img {
   transform: scale(1.03);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rs-logo-r-shine,
-  .rs-logo-r-shine-bar {
-    animation: none !important;
-    display: none;
-  }
 }
 
 /* Mock chrome: swap the `/` accent to violet so the demo feels distinct. */

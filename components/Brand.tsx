@@ -48,7 +48,7 @@ type LogoMarkProps = {
   /** Live = indigo/cyan; mock = violet (demo chrome). */
   variant?: Variant;
   /**
-   * "tile" = pannello con angolo tenue + ring; "bare" = solo mark (luce su hover via CSS)
+   * "tile" = pannello con angolo tenue + ring; "bare" = solo mark
    */
   treatment?: "tile" | "bare";
 };
@@ -57,7 +57,7 @@ type LogoMarkProps = {
  * RiskSent logo mark (R stilizzata, PNG con sfondo trasparente). Sidebar, topbar, mock shell.
  */
 export function BrandLogo({
-  size = 36,
+  size = 48,
   className = "",
   priority: _priority = false,
   alt = "RiskSent",
@@ -120,7 +120,7 @@ export function BrandLockup({
   size = "md",
   className = "",
   withLogo = true,
-  logoSize = 38,
+  logoSize = 48,
   hideDot = false,
   shine = true,
 }: BrandLockupProps) {

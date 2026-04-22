@@ -214,7 +214,7 @@ export function Topbar() {
               className="fixed inset-y-0 left-0 z-[70] flex w-[260px] flex-col border-r border-white/[0.07] bg-[#080809] px-4 py-6 lg:hidden"
             >
               <div className="mb-6 flex items-center justify-between">
-                <BrandLogo treatment="bare" size={52} />
+                <BrandLogo treatment="bare" size={62} />
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}

@@ -1,7 +1,3 @@
-"use client";
-
-import { useReducedMotion } from "framer-motion";
-
 type Variant = "live" | "mock";
 
 type Props = {
@@ -15,17 +11,15 @@ type Props = {
 const MARK_SRC = "/brand/risk-sent-r.png";
 
 /**
- * R stilizzata (PNG, sfondo rimosso). Luccichio leggero sulla silhouette (vedi globals.css).
+ * R stilizzata (PNG, sfondo trasparente). Nessuna animazione sul contorno.
  */
 export function RiskSentLogoMark({
-  size = 38,
+  size = 48,
   className = "",
   variant = "live",
   "aria-hidden": ariaHidden = true,
   title = "RiskSent",
 }: Props) {
-  const reduce = useReducedMotion();
-
   return (
     <div
       className={`rs-logo-r-stack rs-logo-mark-svg relative inline-block ${className}`}
@@ -44,11 +38,6 @@ export function RiskSentLogoMark({
         data-variant={variant}
         className="rs-logo-r-img h-full w-full object-contain"
       />
-      {!reduce ? (
-        <span className="rs-logo-r-shine" aria-hidden>
-          <span className="rs-logo-r-shine-bar" />
-        </span>
-      ) : null}
     </div>
   );
 }
