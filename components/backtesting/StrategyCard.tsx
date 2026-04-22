@@ -13,9 +13,18 @@ type Props = {
   onDeleteStrategy: (id: string) => void;
   onDeleteSession: (id: string) => void;
   onEditStrategy: (strategy: Strategy) => void;
+  sessionPathPrefix?: string;
 };
 
-export function StrategyCard({ strategy, sessions, onNewSession, onDeleteStrategy, onDeleteSession, onEditStrategy }: Props) {
+export function StrategyCard({
+  strategy,
+  sessions,
+  onNewSession,
+  onDeleteStrategy,
+  onDeleteSession,
+  onEditStrategy,
+  sessionPathPrefix = "/app/backtesting",
+}: Props) {
   const [expanded, setExpanded] = useState(true);
 
   const totalTrades = 0; // computed from sessions in parent if needed
@@ -100,7 +109,7 @@ export function StrategyCard({ strategy, sessions, onNewSession, onDeleteStrateg
               ) : (
                 <div className="space-y-1.5 pt-1">
                   {sessions.map((s) => (
-                    <SessionCard key={s.id} session={s} onDelete={onDeleteSession} />
+                    <SessionCard key={s.id} session={s} onDelete={onDeleteSession} sessionPathPrefix={sessionPathPrefix} />
                   ))}
                 </div>
               )}

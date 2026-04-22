@@ -6,6 +6,16 @@ import { X, TrendingUp, TrendingDown } from "lucide-react";
 import { fmtPrice } from "@/lib/backtesting/symbolMap";
 import type { Candle } from "@/lib/backtesting/types";
 
+type PlaceTradeBody = {
+  session_id: string;
+  direction: "BUY" | "SELL";
+  entry_price: number;
+  stop_loss: number | null;
+  take_profit: number | null;
+  lot_size: number;
+  entry_time: string;
+};
+
 type Props = {
   open: boolean;
   defaultDirection: "BUY" | "SELL";
@@ -17,9 +27,11 @@ type Props = {
   presetLot?: number;
   onClose: () => void;
   onTradeOpened: () => void;
+  /** When set, POST /api/backtesting/trades is skipped (e.g. mock replay) */
+  placeTradeOverride?: (body: PlaceTradeBody) => Promise<void>;
 };
 
-export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, presetSL, presetTP, presetLot, onClose, onTradeOpened }: Props) {
+export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, presetSL, presetTP, presetLot, onClose, onTradeOpened, placeTradeOverride }: Props) {
   const [direction, setDirection] = useState<"BUY" | "SELL">(defaultDirection);
   const [lotSize, setLotSize] = useState("0.10");
   const [slInput, setSlInput] = useState("");
@@ -65,18 +77,25 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
     setLoading(true);
     setErr("");
     try {
+      const body: PlaceTradeBody = {
+        session_id: sessionId,
+        direction,
+        entry_price: entryPrice,
+        stop_loss: sl || null,
+        take_profit: tp || null,
+        lot_size: parseFloat(lotSize) || 0.1,
+        entry_time: new Date(currentCandle.time * 1000).toISOString(),
+      };
+      if (placeTradeOverride) {
+        await placeTradeOverride(body);
+        onTradeOpened();
+        onClose();
+        return;
+      }
       const res = await fetch("/api/backtesting/trades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          direction,
-          entry_price: entryPrice,
-          stop_loss: sl || null,
-          take_profit: tp || null,
-          lot_size: parseFloat(lotSize) || 0.1,
-          entry_time: new Date(currentCandle.time * 1000).toISOString(),
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json() as { error?: string };
       if (!res.ok) { setErr(json.error ?? "Failed to place trade"); return; }

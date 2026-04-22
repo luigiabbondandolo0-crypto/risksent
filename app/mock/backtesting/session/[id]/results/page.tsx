@@ -2,11 +2,10 @@
 
 import { use, useEffect, useState } from "react";
 import { BacktestingSessionResultsView } from "@/components/backtesting/BacktestingSessionResultsView";
+import { getMockResultsBundle } from "@/lib/demo/mockBacktestingData";
 import type { Session, Trade, SessionStats } from "@/lib/backtesting/types";
 
-type SessionResponse = { session: Session; trades: Trade[]; stats: SessionStats };
-
-export default function ResultsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function MockResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [session, setSession] = useState<Session | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -14,15 +13,17 @@ export default function ResultsPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/backtesting/sessions/${id}`)
-      .then((r) => r.json() as Promise<SessionResponse>)
-      .then(({ session: s, trades: t, stats: st }) => {
-        setSession(s);
-        setTrades(t);
-        setStats(st);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const b = getMockResultsBundle(id);
+    if (b) {
+      setSession(b.session);
+      setTrades(b.trades);
+      setStats(b.stats);
+    } else {
+      setSession(null);
+      setTrades([]);
+      setStats(null);
+    }
+    setLoading(false);
   }, [id]);
 
   if (loading) {
@@ -59,8 +60,8 @@ export default function ResultsPage({ params }: { params: Promise<{ id: string }
       trades={trades}
       stats={stats}
       sessionId={id}
-      backToLabHref="/app/backtesting"
-      replayHref={`/app/backtesting/session/${id}/replay`}
+      backToLabHref="/mock/backtesting"
+      replayHref={`/mock/backtesting/session/${id}/replay`}
     />
   );
 }

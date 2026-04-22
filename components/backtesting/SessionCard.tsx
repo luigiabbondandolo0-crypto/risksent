@@ -7,6 +7,8 @@ import type { Session } from "@/lib/backtesting/types";
 type Props = {
   session: Session;
   onDelete: (id: string) => void;
+  /** Base path for session routes, e.g. /app/backtesting or /mock/backtesting */
+  sessionPathPrefix?: string;
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -15,7 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
   paused:    "bg-[#ff8c00]/12 text-[#ff8c00]",
 };
 
-export function SessionCard({ session, onDelete }: Props) {
+export function SessionCard({ session, onDelete, sessionPathPrefix = "/app/backtesting" }: Props) {
   const plSign = session.current_balance >= session.initial_balance ? "+" : "";
   const pl = session.current_balance - session.initial_balance;
   const plPct = session.initial_balance > 0 ? (pl / session.initial_balance) * 100 : 0;
@@ -71,14 +73,14 @@ export function SessionCard({ session, onDelete }: Props) {
       {/* Actions */}
       <div className="flex items-center gap-1.5 ml-2">
         <Link
-          href={`/app/backtesting/session/${session.id}/replay`}
+          href={`${sessionPathPrefix}/session/${session.id}/replay`}
           className="flex items-center gap-1.5 rounded-lg bg-[#6366f1]/15 px-3 py-1.5 font-mono text-[11px] text-[#818cf8] transition-all hover:bg-[#6366f1]/25"
         >
           <Play className="h-3 w-3" />
           <span className="hidden sm:block">Continue</span>
         </Link>
         <Link
-          href={`/app/backtesting/session/${session.id}/results`}
+          href={`${sessionPathPrefix}/session/${session.id}/results`}
           className="flex items-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-1.5 font-mono text-[11px] text-slate-400 transition-all hover:border-white/[0.15] hover:text-slate-200"
         >
           <LineChart className="h-3 w-3" />
