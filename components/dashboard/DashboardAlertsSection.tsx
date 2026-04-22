@@ -11,6 +11,7 @@ export type DashboardAlertItem = {
   solution: string | null;
   alert_date: string;
   read?: boolean | null;
+  dismissed?: boolean | null;
   account_nickname?: string | null;
 };
 
@@ -56,7 +57,11 @@ export function DashboardAlertsSection({
   emptyHeadline = "All clear",
   emptyDescription = "No pending alerts — rules are quiet for now.",
 }: Props) {
-  const pending = items.filter((a) => !a.read).slice(0, maxItems);
+  // Show recent, non-dismissed alerts. We intentionally DON'T filter by `read`
+  // because the Topbar bell marks things as read the moment it's opened, which
+  // would otherwise make the panel disappear even though the alerts are still
+  // actionable on the dashboard.
+  const pending = items.filter((a) => !a.dismissed).slice(0, maxItems);
 
   return (
     <section className="relative rounded-2xl border border-slate-700/60 bg-gradient-to-br from-slate-900/95 via-slate-950 to-slate-900/90 p-5 shadow-xl shadow-black/20 sm:p-6">

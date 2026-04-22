@@ -12,6 +12,7 @@ type AlertRow = {
   severity: string;
   alert_date: string;
   read?: boolean | null;
+  dismissed?: boolean | null;
   account_nickname?: string | null;
 };
 
@@ -100,8 +101,24 @@ export function AppHeaderBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bellOpen]);
 
-  const unread = alerts.filter((a) => !a.read).length;
-  const recent = alerts.slice(0, 5);
+  const visibleAlerts = alerts.filter((a) => !a.dismissed);
+  const unread = visibleAlerts.filter((a) => !a.read).length;
+  const recent = visibleAlerts.slice(0, 5);
+  const hasAny = visibleAlerts.length > 0;
+
+  const clearAll = async () => {
+    try {
+      const res = await fetch("/api/alerts/dismiss-all", {
+        method: "POST",
+        cache: "no-store"
+      });
+      if (res.ok) {
+        setAlerts((prev) => prev.map((a) => ({ ...a, dismissed: true, read: true })));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
   const display = fullName || email || "User";
   const initials = initialsFrom(fullName, email);
 
@@ -181,14 +198,22 @@ export function AppHeaderBar({
                   ))
                 )}
               </ul>
-              <div className="border-t border-white/[0.06] px-2 pt-2">
+              <div className="flex items-center gap-2 border-t border-white/[0.06] px-2 pt-2">
                 <Link
                   href="/app/risk-manager"
-                  className="block rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-indigo-400 hover:bg-white/[0.04]"
+                  className="flex-1 rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-indigo-400 hover:bg-white/[0.04]"
                   onClick={() => setBellOpen(false)}
                 >
                   View all
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => void clearAll()}
+                  disabled={!hasAny}
+                  className="flex-1 rounded-lg py-2 text-center text-xs font-[family-name:var(--font-mono)] text-slate-300 transition-colors hover:bg-white/[0.04] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                  Clear
+                </button>
               </div>
             </motion.div>
           )}

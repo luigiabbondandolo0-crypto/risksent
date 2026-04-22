@@ -10,6 +10,7 @@ type AlertRow = {
   solution: string | null;
   alert_date: string;
   read: boolean | null;
+  dismissed?: boolean | null;
   rule_type?: string | null;
   account_nickname?: string | null;
 };
