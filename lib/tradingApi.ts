@@ -225,34 +225,9 @@ function dealNetProfit(d: MetaDeal): number {
   return Number(d.profit ?? 0) + Number(d.commission ?? 0) + Number(d.swap ?? 0);
 }
 
-/** MT "Profit" column: price P/L only (excludes commission & swap on that deal). */
+/** MT "Profit" column on the closing row: price P/L for that deal only. */
 function dealPriceProfit(d: MetaDeal): number {
   return Number(d.profit ?? 0);
-}
-
-function inDealsStrictlyBeforeClose(list: MetaDeal[], closeDeal: MetaDeal): MetaDeal[] {
-  const tClose = new Date(closeDeal.time ?? 0).getTime();
-  if (!Number.isFinite(tClose)) return [];
-  return list.filter((x) => {
-    const et = x.entryType ?? "";
-    if (et !== "DEAL_ENTRY_IN") return false;
-    const tx = new Date(x.time ?? 0).getTime();
-    return Number.isFinite(tx) && tx < tClose;
-  });
-}
-
-/** First OUT/OUT_BY in time order for this position (not counting INOUT scalps). */
-function isFirstOutboundClose(sortedList: MetaDeal[], closeDeal: MetaDeal): boolean {
-  const tClose = new Date(closeDeal.time ?? 0).getTime();
-  if (!Number.isFinite(tClose)) return true;
-  for (const x of sortedList) {
-    const et = x.entryType ?? "";
-    if (et !== "DEAL_ENTRY_OUT" && et !== "DEAL_ENTRY_OUT_BY") continue;
-    const tx = new Date(x.time ?? 0).getTime();
-    if (!Number.isFinite(tx) || tx >= tClose) continue;
-    return false;
-  }
-  return true;
 }
 
 function findOpeningDeal(sortedPositionDeals: MetaDeal[], closeDeal: MetaDeal): MetaDeal | null {
@@ -322,16 +297,15 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
 
     const list = byPos.get(positionKey(d)) ?? [];
     const open = findOpeningDeal(list, d);
-    const firstClose = isFirstOutboundClose(list, d);
-    const ins = firstClose ? inDealsStrictlyBeforeClose(list, d) : [];
-    const profitNet =
-      ins.reduce((s, x) => s + dealNetProfit(x), 0) + dealNetProfit(d);
-    const profitGross =
-      ins.reduce((s, x) => s + dealPriceProfit(x), 0) + dealPriceProfit(d);
-    const commission =
-      ins.reduce((s, x) => s + Number(x.commission ?? 0), 0) + Number(d.commission ?? 0);
-    const swap =
-      ins.reduce((s, x) => s + Number(x.swap ?? 0), 0) + Number(d.swap ?? 0);
+    /**
+     * One closed-order row per **closing** deal only (same as a single History row in MT).
+     * Do not add DEAL_ENTRY_IN commission/profit here: many feeds already roll fees into the
+     * OUT deal or would double-count vs what traders compare in the terminal.
+     */
+    const profitNet = dealNetProfit(d);
+    const profitGross = dealPriceProfit(d);
+    const commission = Number(d.commission ?? 0);
+    const swap = Number(d.swap ?? 0);
 
     /** Closing deal `type` is exit direction (close long = SELL). Show position side from open deal. */
     let sideLabel: string;
