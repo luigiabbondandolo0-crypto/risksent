@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { encrypt } from "@/lib/encrypt";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 const SELECT_PUBLIC =
-  "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, last_synced_at, created_at";
+  "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, metaapi_account_id, last_synced_at, created_at";
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -56,7 +57,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (typeof body.broker_server === "string") patch.broker_server = body.broker_server.trim();
   if (typeof body.account_number === "string") patch.account_number = body.account_number.trim();
   if (typeof body.account_password === "string" && body.account_password.length > 0) {
-    patch.account_password = body.account_password;
+    try {
+      patch.account_password = encrypt(body.account_password);
+    } catch {
+      return NextResponse.json(
+        { error: "ENCRYPTION_KEY is not configured; cannot store password." },
+        { status: 503 }
+      );
+    }
   }
   if (body.platform === "MT4" || body.platform === "MT5") patch.platform = body.platform as JournalPlatform;
   if (typeof body.currency === "string") patch.currency = body.currency.trim().toUpperCase();

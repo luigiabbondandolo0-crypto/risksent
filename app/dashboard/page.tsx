@@ -311,8 +311,10 @@ export default function DashboardPage() {
   }, [isSubDemo]);
 
   const hasAnyBrokerMeta = useMemo(
-    () => tradingAccounts.some((t) => Boolean(t.metaapi_account_id)),
-    [tradingAccounts]
+    () =>
+      tradingAccounts.some((t) => Boolean(t.metaapi_account_id)) ||
+      Boolean(journalAccounts?.some((j) => Boolean(j.metaapi_account_id))),
+    [tradingAccounts, journalAccounts]
   );
 
   const resolvedStatsUuid = useMemo(

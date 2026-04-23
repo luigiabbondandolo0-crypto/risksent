@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { encrypt } from "@/lib/encrypt";
+import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
+import { fetchMetaApiAccountInformation } from "@/lib/tradingApi";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 export async function GET() {
@@ -15,7 +18,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("journal_account")
     .select(
-      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, last_synced_at, created_at"
+      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, metaapi_account_id, last_synced_at, created_at"
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -37,7 +40,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Demo mode guard — plan 'user' cannot create real data
   const { data: subRow } = await supabase
     .from("subscriptions")
     .select("plan")
@@ -50,7 +52,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // new_trader limit: max 1 broker account
   if (subRow.plan === "new_trader") {
     const { count } = await supabase
       .from("journal_account")
@@ -58,10 +59,28 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id);
     if ((count ?? 0) >= 1) {
       return NextResponse.json(
-        { error: "limit_reached", message: "New Trader plan allows 1 broker account. Upgrade to Experienced for unlimited." },
+        {
+          error: "limit_reached",
+          message: "New Trader plan allows 1 broker account. Upgrade to Experienced for unlimited."
+        },
         { status: 403 }
       );
     }
+  }
+
+  if (!process.env.METAAPI_TOKEN?.trim()) {
+    return NextResponse.json(
+      { error: "METAAPI_TOKEN is not configured on the server." },
+      { status: 503 }
+    );
+  }
+
+  const { error: appUserErr } = await supabase.from("app_user").upsert({ id: user.id }, { onConflict: "id" });
+  if (appUserErr) {
+    return NextResponse.json(
+      { error: `Could not ensure user profile row: ${appUserErr.message}` },
+      { status: 500 }
+    );
   }
 
   let body: {
@@ -70,8 +89,6 @@ export async function POST(req: NextRequest) {
     account_number?: string;
     account_password?: string;
     platform?: string;
-    currency?: string;
-    initial_balance?: number;
   };
   try {
     body = await req.json();
@@ -81,20 +98,109 @@ export async function POST(req: NextRequest) {
 
   const nickname = String(body.nickname ?? "").trim();
   const broker_server = String(body.broker_server ?? "").trim();
-  const account_number = String(body.account_number ?? "").trim();
+  const account_number_raw = String(body.account_number ?? "").trim();
   const account_password = String(body.account_password ?? "");
   const platform = (body.platform === "MT4" ? "MT4" : "MT5") as JournalPlatform;
-  const currency = String(body.currency ?? "USD").trim().toUpperCase() || "USD";
-  const initial_balance = Number(body.initial_balance ?? 0);
 
-  if (!nickname || !broker_server || !account_number || !account_password) {
+  if (!nickname || !broker_server || !account_number_raw || !account_password) {
     return NextResponse.json(
       { error: "nickname, broker_server, account_number, account_password required" },
       { status: 400 }
     );
   }
-  if (!Number.isFinite(initial_balance)) {
-    return NextResponse.json({ error: "invalid initial_balance" }, { status: 400 });
+
+  const loginDigits = account_number_raw.replace(/\D/g, "");
+  if (!loginDigits) {
+    return NextResponse.json({ error: "account_number must include digits" }, { status: 400 });
+  }
+
+  let passwordEncrypted: string;
+  try {
+    passwordEncrypted = encrypt(account_password);
+  } catch {
+    return NextResponse.json(
+      {
+        error:
+          "ENCRYPTION_KEY is not configured (32+ characters). Required to store credentials securely."
+      },
+      { status: 503 }
+    );
+  }
+
+  const { data: existingTrading } = await supabase
+    .from("trading_account")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("broker_type", platform)
+    .eq("account_number", loginDigits)
+    .maybeSingle();
+
+  if (existingTrading) {
+    return NextResponse.json(
+      { error: "This broker account is already linked. Use the existing account or remove it first." },
+      { status: 409 }
+    );
+  }
+
+  const provisioned = await provisionAndDeployMetaTraderAccount({
+    name: nickname,
+    login: loginDigits,
+    password: account_password,
+    server: broker_server,
+    platform: platform === "MT4" ? "mt4" : "mt5",
+    manualTrades: true,
+    magic: 0
+  });
+
+  if (!provisioned.ok) {
+    return NextResponse.json(
+      { error: provisioned.message, details: provisioned.details },
+      { status: provisioned.status >= 400 && provisioned.status < 600 ? provisioned.status : 502 }
+    );
+  }
+
+  const infoRes = await fetchMetaApiAccountInformation(provisioned.accountId);
+  if (!infoRes.ok || !infoRes.info) {
+    return NextResponse.json(
+      {
+        error:
+          infoRes.error ??
+          "Account was created on MetaApi but balance could not be read yet. Try again in a minute."
+      },
+      { status: 502 }
+    );
+  }
+
+  const info = infoRes.info;
+  const currency = String(info.currency ?? "USD")
+    .trim()
+    .toUpperCase()
+    .slice(0, 8);
+  const balance = Number(info.balance);
+  const equity = Number(info.equity);
+  const initial_balance = Number.isFinite(balance) ? balance : 0;
+  const current_balance = Number.isFinite(equity) ? equity : initial_balance;
+
+  const tradingInsert: Record<string, unknown> = {
+    user_id: user.id,
+    broker_type: platform,
+    account_number: loginDigits,
+    investor_password_encrypted: passwordEncrypted,
+    metaapi_account_id: provisioned.accountId,
+    broker_host: broker_server,
+    account_name: nickname
+  };
+
+  const { error: tradingErr } = await supabase.from("trading_account").insert(tradingInsert);
+  if (tradingErr) {
+    const msg = tradingErr.message ?? String(tradingErr);
+    if (msg.includes("duplicate") || tradingErr.code === "23505") {
+      return NextResponse.json(
+        { error: "This broker account is already linked.", metaapi_account_id: provisioned.accountId },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ error: msg, metaapi_account_id: provisioned.accountId }, { status: 500 });
   }
 
   const { data, error } = await supabase
@@ -103,21 +209,22 @@ export async function POST(req: NextRequest) {
       user_id: user.id,
       nickname,
       broker_server,
-      account_number,
-      account_password,
+      account_number: loginDigits,
+      account_password: passwordEncrypted,
       platform,
-      currency,
+      currency: currency || "USD",
       initial_balance,
-      current_balance: initial_balance,
-      status: "active"
+      current_balance,
+      status: "active",
+      metaapi_account_id: provisioned.accountId
     })
     .select(
-      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, last_synced_at, created_at"
+      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, metaapi_account_id, last_synced_at, created_at"
     )
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, metaapi_account_id: provisioned.accountId }, { status: 500 });
   }
 
   return NextResponse.json({ account: data });

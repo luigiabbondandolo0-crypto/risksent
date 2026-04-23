@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { RiskManagerPageClient } from "@/components/risk-manager/RiskManagerPageClient";
 import { NoAccountState } from "@/components/shared/NoAccountState";
-import { AddAccountModal } from "@/components/shared/AddAccountModal";
+import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
 const ALERT_BUTTONS = [
@@ -162,6 +162,7 @@ export default function RiskManagerPage() {
   const sub = useSubscription();
   const [accounts, setAccounts] = useState<JournalAccountPublic[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [accountReloadToken, setAccountReloadToken] = useState(0);
 
   useEffect(() => {
     if (sub?.isDemoMode) return;
@@ -181,7 +182,7 @@ export default function RiskManagerPage() {
     return () => {
       cancelled = true;
     };
-  }, [sub?.isDemoMode]);
+  }, [sub?.isDemoMode, accountReloadToken]);
 
   if (sub?.isDemoMode) {
     return (
@@ -208,7 +209,14 @@ export default function RiskManagerPage() {
           ctaLabel="Connect your first account"
           onCta={() => setModalOpen(true)}
         />
-        <AddAccountModal open={modalOpen} onClose={() => setModalOpen(false)} />
+        <AddAccountModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onCreated={() => {
+            setModalOpen(false);
+            setAccountReloadToken((t) => t + 1);
+          }}
+        />
       </div>
     );
   }

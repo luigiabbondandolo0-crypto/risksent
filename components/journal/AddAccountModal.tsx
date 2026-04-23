@@ -17,8 +17,6 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
   const [brokerServer, setBrokerServer] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
-  const [initialBalance, setInitialBalance] = useState("10000");
-  const [currency, setCurrency] = useState("USD");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,9 +34,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           broker_server: brokerServer,
           account_number: accountNumber,
           account_password: password,
-          platform,
-          currency,
-          initial_balance: Number(initialBalance)
+          platform
         })
       });
       const j = await res.json();
@@ -52,7 +48,6 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
       setBrokerServer("");
       setAccountNumber("");
       setPassword("");
-      setInitialBalance("10000");
     } finally {
       setLoading(false);
     }
@@ -73,7 +68,9 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           <X className="h-4 w-4" />
         </button>
         <h2 className={`${jn.h1} text-xl`}>Add broker account</h2>
-        <p className={jn.sub}>Credentials stored securely; encryption coming soon.</p>
+        <p className={jn.sub}>
+          We connect via MetaApi and set balance and currency from your live account automatically.
+        </p>
 
         {err && (
           <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
@@ -128,24 +125,6 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
             />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={jn.label}>Initial balance</label>
-              <input
-                className={jn.input}
-                value={initialBalance}
-                onChange={(e) => setInitialBalance(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={jn.label}>Currency</label>
-              <input
-                className={jn.input}
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              />
-            </div>
           </div>
         </div>
 

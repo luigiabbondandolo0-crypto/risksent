@@ -20,7 +20,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     .eq("id", id)
     .eq("user_id", user.id)
     .select(
-      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, last_synced_at, created_at"
+      "id, user_id, nickname, broker_server, account_number, platform, currency, initial_balance, current_balance, status, metaapi_account_id, last_synced_at, created_at"
     )
     .maybeSingle();
 

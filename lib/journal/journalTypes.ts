@@ -17,6 +17,8 @@ export type JournalAccountRow = {
   initial_balance: number;
   current_balance: number;
   status: JournalAccountStatus;
+  /** MetaApi.cloud id for live broker stats (see trading_account.metaapi_account_id) */
+  metaapi_account_id: string | null;
   last_synced_at: string | null;
   created_at: string | null;
 };

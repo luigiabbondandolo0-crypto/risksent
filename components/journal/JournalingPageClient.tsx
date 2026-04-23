@@ -66,6 +66,7 @@ const MOCK_ACCOUNT: JournalAccountPublic = {
   broker_server: "ICMarkets-Demo",
   account_number: "12345678",
   platform: "MT5",
+  metaapi_account_id: null,
   currency: "USD",
   initial_balance: 10000,
   current_balance: 12847.3,

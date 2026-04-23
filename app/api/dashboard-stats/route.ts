@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { buildRealStats, parseOrders, type ClosedOrder } from "@/lib/dashboard/buildRealStats";
@@ -25,6 +26,75 @@ function accountLabelFromRow(a: TradingAccountRow): string {
   const n = a.account_number ?? "";
   const tail = n.length > 4 ? `••••${n.slice(-4)}` : n || "Account";
   return `${a.broker_type ?? "MT"} ${tail}`;
+}
+
+/**
+ * Resolve trading row for MetaApi calls: prefer trading_account, fall back to journal_account.metaapi_account_id.
+ */
+async function resolveStatsTradingRow(
+  supabase: SupabaseClient,
+  userId: string,
+  uuid: string | null
+): Promise<TradingAccountRow | null> {
+  if (uuid) {
+    const { data: tradingByMeta } = await supabase
+      .from("trading_account")
+      .select(accountSelectColumns())
+      .eq("user_id", userId)
+      .eq("metaapi_account_id", uuid)
+      .maybeSingle();
+    if (tradingByMeta && (tradingByMeta as { metaapi_account_id?: string }).metaapi_account_id) {
+      return tradingByMeta as TradingAccountRow;
+    }
+    const { data: journalRow } = await supabase
+      .from("journal_account")
+      .select("account_number, platform, broker_server, metaapi_account_id")
+      .eq("user_id", userId)
+      .eq("metaapi_account_id", uuid)
+      .maybeSingle();
+    if (journalRow?.metaapi_account_id) {
+      return {
+        metaapi_account_id: String(journalRow.metaapi_account_id),
+        account_number: String(journalRow.account_number ?? ""),
+        broker_type: journalRow.platform === "MT4" ? "MT4" : "MT5",
+        broker_host: journalRow.broker_server != null ? String(journalRow.broker_server) : null,
+        broker_port: null
+      };
+    }
+    return null;
+  }
+
+  const { data: tradingFirst } = await supabase
+    .from("trading_account")
+    .select(accountSelectColumns())
+    .eq("user_id", userId)
+    .not("metaapi_account_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (tradingFirst && (tradingFirst as { metaapi_account_id?: string }).metaapi_account_id) {
+    return tradingFirst as TradingAccountRow;
+  }
+
+  const { data: journalFirst } = await supabase
+    .from("journal_account")
+    .select("account_number, platform, broker_server, metaapi_account_id")
+    .eq("user_id", userId)
+    .not("metaapi_account_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (journalFirst?.metaapi_account_id) {
+    return {
+      metaapi_account_id: String(journalFirst.metaapi_account_id),
+      account_number: String(journalFirst.account_number ?? ""),
+      broker_type: journalFirst.platform === "MT4" ? "MT4" : "MT5",
+      broker_host: journalFirst.broker_server != null ? String(journalFirst.broker_server) : null,
+      broker_port: null
+    };
+  }
+
+  return null;
 }
 
 function degradedBody(error: string) {
@@ -70,25 +140,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");
 
-  let accountRow: TradingAccountRow | null = null;
-  if (uuid) {
-    const { data } = await supabase
-      .from("trading_account")
-      .select(accountSelectColumns())
-      .eq("user_id", user.id)
-      .eq("metaapi_account_id", uuid)
-      .limit(1)
-      .single();
-    accountRow = data && typeof data === "object" && "metaapi_account_id" in data ? (data as unknown as TradingAccountRow) : null;
-  }
-  if (!accountRow) {
-    const { data: accounts } = await supabase
-      .from("trading_account")
-      .select(accountSelectColumns())
-      .eq("user_id", user.id)
-      .limit(1);
-    accountRow = (accounts?.[0] as unknown as TradingAccountRow) ?? null;
-  }
+  const accountRow = await resolveStatsTradingRow(supabase, user.id, uuid);
 
   if (!accountRow?.metaapi_account_id) {
     return NextResponse.json({
