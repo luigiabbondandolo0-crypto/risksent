@@ -53,29 +53,31 @@ export default function HorizonCanvas({
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 2));
+    renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.7;
+    renderer.toneMappingExposure = isMobile ? 0.55 : 0.7;
 
-    // ── Post-processing (dynamic import to stay tree-shakeable) ────────────
+    // ── Post-processing (desktop only — bloom blows out to white on many mobile GPUs / iOS) ──
     let composer: import("three/examples/jsm/postprocessing/EffectComposer.js").EffectComposer | null = null;
 
-    // Inline async setup — doesn't block render loop
-    Promise.all([
-      import("three/examples/jsm/postprocessing/EffectComposer.js"),
-      import("three/examples/jsm/postprocessing/RenderPass.js"),
-      import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
-    ]).then(([{ EffectComposer }, { RenderPass }, { UnrealBloomPass }]) => {
-      if (!renderer.domElement) return;
-      composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-      const bloom = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        isMobile ? 0.5 : 0.9,
-        0.4,
-        0.82
-      );
-      composer.addPass(bloom);
-    });
+    if (!isMobile) {
+      Promise.all([
+        import("three/examples/jsm/postprocessing/EffectComposer.js"),
+        import("three/examples/jsm/postprocessing/RenderPass.js"),
+        import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
+      ]).then(([{ EffectComposer }, { RenderPass }, { UnrealBloomPass }]) => {
+        if (!renderer.domElement) return;
+        composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloom = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          0.9,
+          0.4,
+          0.82
+        );
+        composer.addPass(bloom);
+      });
+    }
 
     // ── Helpers ────────────────────────────────────────────────────────────
     const hexToColor = (hex: string) => new THREE.Color(hex);

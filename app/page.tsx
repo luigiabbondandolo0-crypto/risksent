@@ -226,85 +226,23 @@ export default function HomePage() {
         return () => {};
       });
 
-      // Mobile: no hero opacity scrub; lighter scrub + wide start/end so scroll-linked motion works and nothing sticks at opacity 0.
+      // Mobile: hero + marquee only — no scroll-scrub opacity on copy (iOS/WebKit leaves partial alphas + white backdrop bugs).
       mm.add("(max-width: 767px)", () => {
         runHeroIntro();
         gsap.set(".hero-content", { opacity: 1 });
         runMarquee();
-
-        const softScrub = { scrub: 0.42 as const, start: "top bottom" as const, end: "top 52%" as const };
-
-        gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
-          const heading = section.querySelector(".feature-heading");
-          const body = section.querySelector(".feature-body");
-          const num = section.querySelector(".feature-num");
-          if (num) {
-            gsap.fromTo(num, { opacity: 0, x: -24 }, {
-              opacity: 1, x: 0,
-              ease: "none",
-              scrollTrigger: { trigger: section, ...softScrub },
-            });
-          }
-          if (heading) {
-            gsap.fromTo(heading, { y: 28, opacity: 0 }, {
-              y: 0, opacity: 1,
-              ease: "none",
-              scrollTrigger: { trigger: section, start: "top bottom", end: "top 48%", scrub: 0.48 },
-            });
-          }
-          if (body) {
-            gsap.fromTo(body, { opacity: 0, y: 18 }, {
-              opacity: 1, y: 0,
-              ease: "none",
-              scrollTrigger: { trigger: section, start: "top bottom", end: "top 44%", scrub: 0.45 },
-            });
-          }
-        });
-
-        gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el) => {
-          gsap.fromTo(el, { opacity: 0, y: 22 }, {
-            opacity: 1, y: 0,
-            ease: "none",
-            scrollTrigger: { trigger: el, start: "top bottom", end: "top 62%", scrub: 0.38 },
+        gsap.set(
+          ".feature-num, .feature-heading, .feature-body, .stat-item, .module-card, .final-cta-text, .scroll-section-label, .testimonial-card",
+          { opacity: 1, x: 0, y: 0, xPercent: 0, yPercent: 0, scale: 1, clearProps: "transform" }
+        );
+        gsap.delayedCall(2.8, () => {
+          gsap.set(".hero-word, .hero-sub, .hero-cta", {
+            opacity: 1,
+            y: 0,
+            yPercent: 0,
+            clearProps: "transform",
           });
         });
-
-        gsap.set(".module-card", { opacity: 1 });
-        gsap.utils.toArray<HTMLElement>(".module-card").forEach((card, i) => {
-          gsap.fromTo(card, { opacity: 0, y: 36 }, {
-            opacity: 1, y: 0,
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              start: "top bottom",
-              end: "top 62%",
-              scrub: 0.38 + i * 0.04,
-            },
-          });
-        });
-
-        gsap.fromTo(".final-cta-text", { yPercent: 12, opacity: 0 }, {
-          yPercent: 0, opacity: 1,
-          ease: "none",
-          scrollTrigger: { trigger: ".final-cta", start: "top bottom", end: "top 48%", scrub: 0.5 },
-        });
-
-        gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
-          gsap.fromTo(el, { opacity: 0, y: 24, scale: 0.96 }, {
-            opacity: 1, y: 0, scale: 1,
-            ease: "none",
-            scrollTrigger: { trigger: el, start: "top bottom", end: "top 55%", scrub: 0.4 },
-          });
-        });
-
-        gsap.utils.toArray<HTMLElement>(".testimonial-card").forEach((card) => {
-          gsap.fromTo(card, { opacity: 0, y: 28 }, {
-            opacity: 1, y: 0,
-            ease: "none",
-            scrollTrigger: { trigger: card, start: "top bottom", end: "top 58%", scrub: 0.42 },
-          });
-        });
-
         return () => {};
       });
 
@@ -332,7 +270,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-full overflow-x-hidden" style={{ background: "#070710" }}>
+    <div ref={containerRef} className="rs-landing min-h-full overflow-x-hidden" style={{ background: "#070710" }}>
 
       {/* ── SCROLL PROGRESS BAR ── */}
       <div
@@ -752,7 +690,7 @@ export default function HomePage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={LANDING_IN_VIEW_DEEP}
                                 transition={{ delay: mi * 0.18, duration: 0.45, ease: "easeOut" }}
-                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                                className={`flex rs-m-home ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                               >
                                 <div
                                   className="max-w-[82%] rounded-xl px-3 py-2.5 text-xs font-mono leading-relaxed"
@@ -771,7 +709,7 @@ export default function HomePage() {
                             ))}
                             {/* Typing indicator */}
                             <motion.div
-                              className="flex justify-start"
+                              className="flex justify-start rs-m-home"
                               initial={{ opacity: 0 }}
                               whileInView={{ opacity: 1 }}
                               viewport={LANDING_IN_VIEW_DEEP}
@@ -1079,7 +1017,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={LANDING_IN_VIEW} transition={{ duration: 0.7 }}
-            className="mb-14 text-center"
+            className="mb-14 text-center rs-m-home"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-3">Why switch</p>
             <h2
@@ -1098,6 +1036,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1 }}
               viewport={LANDING_IN_VIEW}
               transition={{ duration: 0.5, delay: 0.15 }}
+              className="rs-m-home"
             >
             <table
               className="w-full min-w-[640px] border-collapse"
@@ -1150,7 +1089,7 @@ export default function HomePage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={LANDING_IN_VIEW}
                     transition={{ duration: 0.45, delay: 0.06 * ri, ease: "easeOut" }}
-                    className="group cursor-default"
+                    className="group cursor-default rs-m-home"
                   >
                     <td className="py-3 pr-4 text-[13px] font-mono text-slate-200 border-t border-white/[0.06] transition-colors group-hover:bg-white/[0.025] group-hover:text-white rounded-l-lg pl-3">
                       {row.feature}
@@ -1204,7 +1143,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={LANDING_IN_VIEW} transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-10 text-center"
+            className="mt-10 text-center rs-m-home"
           >
             <p className="text-slate-500 font-mono text-[13px] mb-6">
               One subscription. Everything included.
@@ -1238,7 +1177,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={LANDING_IN_VIEW} transition={{ duration: 0.65 }}
-            className="mb-16 text-center"
+            className="mb-16 text-center rs-m-home"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.3em] mb-4"
               style={{ color: "#ff8c00" }}>
@@ -1289,7 +1228,7 @@ export default function HomePage() {
                 viewport={LANDING_IN_VIEW}
                 transition={{ duration: 0.5, delay: step.delay }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="relative rounded-2xl border p-6"
+                className="relative rounded-2xl border p-6 rs-m-home"
                 style={{
                   background: "rgba(14,14,18,0.9)",
                   borderColor: "rgba(255,255,255,0.07)",
@@ -1332,7 +1271,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={LANDING_IN_VIEW} transition={{ duration: 0.55, delay: 0.15 }}
-            className="mb-12 flex flex-wrap justify-center gap-px overflow-hidden rounded-2xl border"
+            className="mb-12 flex flex-wrap justify-center gap-px overflow-hidden rounded-2xl border rs-m-home"
             style={{ borderColor: "rgba(255,255,255,0.07)" }}
           >
             {[
@@ -1361,7 +1300,7 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={LANDING_IN_VIEW} transition={{ duration: 0.55, delay: 0.25 }}
-            className="text-center"
+            className="text-center rs-m-home"
           >
             <button
               type="button"

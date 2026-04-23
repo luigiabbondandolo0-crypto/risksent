@@ -661,3 +661,61 @@ aside.lg\:flex {
     touch-action: manipulation;
   }
 }
+
+/* ── Home landing (mobile): solid surfaces, no iOS backdrop white-out, visible Framer enters ── */
+@media (max-width: 767px) {
+  .rs-landing {
+    color-scheme: dark;
+    background-color: #070710;
+  }
+
+  .rs-landing .scan-card,
+  .rs-landing .module-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(14, 14, 18, 0.98) !important;
+  }
+
+  /* React inline styles serialize as backdrop-filter — replace glass with opaque fill (iOS flashes white). */
+  .rs-landing [style*="backdrop-filter"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(14, 14, 18, 0.97) !important;
+  }
+
+  .rs-landing .rs-m-home {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Gradient-filled headings (background-clip: text) often render invisible / white on iOS Safari */
+  .rs-landing .scroll-section-label h2 {
+    -webkit-text-fill-color: #e9d5ff !important;
+    color: #e9d5ff !important;
+    background: none !important;
+    background-image: none !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+  }
+
+  .rs-landing .final-cta-text span.bg-clip-text {
+    -webkit-text-fill-color: #c4b5fd !important;
+    color: #c4b5fd !important;
+    background-image: none !important;
+    animation: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+  }
+
+  .rs-landing {
+    forced-color-adjust: none;
+  }
+}
+
+@media (max-width: 767px) {
+  header.sticky.z-50 {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(8, 8, 9, 0.98) !important;
+  }
+}
