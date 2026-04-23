@@ -7,10 +7,6 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface HorizonCanvasProps {
   /** CSS hex accent colour (e.g. "#ff3c3c") — tints the nebula */
@@ -32,9 +28,12 @@ export default function HorizonCanvas({
     const isMobile = window.innerWidth < 768;
     const starCount = isMobile ? 2000 : 5000;
 
+    const BG = 0x070710;
+
     // ── Scene ──────────────────────────────────────────────────────────────
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.00018);
+    scene.background = new THREE.Color(BG);
+    scene.fog = new THREE.FogExp2(BG, 0.00018);
 
     // ── Camera ─────────────────────────────────────────────────────────────
     const camera = new THREE.PerspectiveCamera(
@@ -46,38 +45,20 @@ export default function HorizonCanvas({
     camera.position.set(0, 18, 280);
 
     // ── Renderer ───────────────────────────────────────────────────────────
+    // Opaque buffer + site-matched clear avoids alpha compositing glitches (white flashes on scroll, esp. Safari).
+    // Bloom / EffectComposer removed — UnrealBloomPass routinely blows out highlights and flickers with fixed full-viewport canvases.
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       antialias: !isMobile,
-      alpha: true,
+      alpha: false,
+      powerPreference: "high-performance",
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 2));
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(BG, 1);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = isMobile ? 0.55 : 0.7;
-
-    // ── Post-processing (desktop only — bloom blows out to white on many mobile GPUs / iOS) ──
-    let composer: import("three/examples/jsm/postprocessing/EffectComposer.js").EffectComposer | null = null;
-
-    if (!isMobile) {
-      Promise.all([
-        import("three/examples/jsm/postprocessing/EffectComposer.js"),
-        import("three/examples/jsm/postprocessing/RenderPass.js"),
-        import("three/examples/jsm/postprocessing/UnrealBloomPass.js"),
-      ]).then(([{ EffectComposer }, { RenderPass }, { UnrealBloomPass }]) => {
-        if (!renderer.domElement) return;
-        composer = new EffectComposer(renderer);
-        composer.addPass(new RenderPass(scene, camera));
-        const bloom = new UnrealBloomPass(
-          new THREE.Vector2(window.innerWidth, window.innerHeight),
-          0.9,
-          0.4,
-          0.82
-        );
-        composer.addPass(bloom);
-      });
-    }
+    renderer.toneMappingExposure = isMobile ? 0.5 : 0.58;
 
     // ── Helpers ────────────────────────────────────────────────────────────
     const hexToColor = (hex: string) => new THREE.Color(hex);
@@ -301,8 +282,9 @@ export default function HorizonCanvas({
       { x: 5,  y: 65, z: -500 },  // 100% — deep space above
     ];
 
-    // ── Scroll handler ─────────────────────────────────────────────────────
-    const handleScroll = () => {
+    // ── Scroll handler (coalesced to one update per frame — reduces GPU/main-thread jank / perceived flicker) ──
+    let scrollRaf = 0;
+    const applyScroll = () => {
       const progress = Math.min(
         window.scrollY / (document.documentElement.scrollHeight - window.innerHeight),
         1
@@ -317,7 +299,6 @@ export default function HorizonCanvas({
       targetCam.y = cur.y + (nxt.y - cur.y) * t;
       targetCam.z = cur.z + (nxt.z - cur.z) * t;
 
-      // Parallax mountains + ridges
       mountainLayers.forEach((m, i) => {
         const speed = 1 + i * 0.8;
         m.userData.scrollOffsetY = window.scrollY * speed * 0.15;
@@ -329,8 +310,16 @@ export default function HorizonCanvas({
       nebula.position.y = window.scrollY * 0.08;
     };
 
+    const handleScroll = () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        applyScroll();
+      });
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    applyScroll();
 
     // ── Animation loop ─────────────────────────────────────────────────────
     let rafId: number;
@@ -380,11 +369,7 @@ export default function HorizonCanvas({
         mat.opacity = baseOp + Math.sin(time * 0.22 + i) * 0.12;
       });
 
-      if (composer) {
-        composer.render();
-      } else {
-        renderer.render(scene, camera);
-      }
+      renderer.render(scene, camera);
     };
     animate();
 
@@ -393,13 +378,13 @@ export default function HorizonCanvas({
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      if (composer) composer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", handleResize);
 
     // ── Cleanup ────────────────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(rafId);
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
       starLayers.forEach((s) => {
@@ -426,7 +411,7 @@ export default function HorizonCanvas({
     <canvas
       ref={canvasRef}
       className={`pointer-events-none fixed inset-0 h-full w-full ${className}`}
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 0, background: "#070710" }}
     />
   );
 }
