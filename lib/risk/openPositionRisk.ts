@@ -113,14 +113,34 @@ function pointsPerLotRiskUsd(signedDiff: number, volumeLots: number): number {
 }
 
 /**
- * Estimated risk in account currency (same USD-oriented approximation as `calcPnl`) if SL is hit.
+ * MetaAPI / MT5 style: unrealized PnL uses (priceDelta * tickValue * volume) / tickSize.
+ * Same linear model for risk from open to stop (account currency).
+ */
+function riskMoneyFromTickModel(
+  absPriceDelta: number,
+  volumeLots: number,
+  tickSize: number,
+  tickValue: number
+): number | null {
+  if (absPriceDelta <= 0 || volumeLots <= 0 || tickSize <= 0 || tickValue <= 0) return null;
+  const r = (absPriceDelta / tickSize) * tickValue * volumeLots;
+  return Number.isFinite(r) && r > 0 ? r : null;
+}
+
+export type MetaTickRiskInput = { tickSize: number; tickValue: number };
+
+/**
+ * Estimated risk in account currency if SL is hit.
+ * When `metaTicks` is set (from MetaAPI position.currentTickValue + symbol specification), uses broker tick math.
+ * Otherwise falls back to symbol heuristics (`calcPnl` / point guess).
  */
 export function estimateRiskMoneyAtStopLoss(
   symbol: string,
   openPrice: number,
   stopLoss: number,
   volumeLots: number,
-  typeOrSide?: string | null
+  typeOrSide?: string | null,
+  metaTicks?: MetaTickRiskInput | null
 ): number | null {
   if (!symbol || volumeLots <= 0 || !Number.isFinite(openPrice) || !Number.isFinite(stopLoss)) return null;
   if (stopLoss <= 0 || stopLoss === openPrice) return null;
@@ -128,6 +148,11 @@ export function estimateRiskMoneyAtStopLoss(
   const side = positionSideFromType(typeOrSide);
   const signed = signedDeltaToStop(openPrice, stopLoss, side);
   if (signed === 0) return null;
+  const absDiff = Math.abs(signed);
+
+  if (metaTicks && metaTicks.tickSize > 0 && metaTicks.tickValue > 0) {
+    return riskMoneyFromTickModel(absDiff, volumeLots, metaTicks.tickSize, metaTicks.tickValue);
+  }
 
   const calcKey = aliasToCalcPnlKey(symRaw);
 
@@ -153,10 +178,11 @@ export function riskPctOfEquityAtStopLoss(
   stopLoss: number,
   volumeLots: number,
   equity: number,
-  typeOrSide?: string | null
+  typeOrSide?: string | null,
+  metaTicks?: MetaTickRiskInput | null
 ): number | null {
   if (equity <= 0) return null;
-  const money = estimateRiskMoneyAtStopLoss(symbol, openPrice, stopLoss, volumeLots, typeOrSide);
+  const money = estimateRiskMoneyAtStopLoss(symbol, openPrice, stopLoss, volumeLots, typeOrSide, metaTicks);
   if (money == null) return null;
   return (money / equity) * 100;
 }

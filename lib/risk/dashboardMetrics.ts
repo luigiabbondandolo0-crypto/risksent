@@ -1,5 +1,5 @@
 import type { ClosedOrder } from "@/lib/dashboard/buildRealStats";
-import { riskPctOfEquityAtStopLoss } from "@/lib/risk/openPositionRisk";
+import { riskPctOfEquityAtStopLoss, type MetaTickRiskInput } from "@/lib/risk/openPositionRisk";
 
 export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number {
   const valid = orders.filter(
@@ -63,6 +63,8 @@ export type RawOpenPosition = {
   openPrice?: number;
   stopLoss?: number;
   type?: string;
+  /** MetaAPI `currentTickValue` on the position (account currency). */
+  currentTickValue?: number;
 };
 
 export function parseOpenPositions(raw: unknown): RawOpenPosition[] {
@@ -73,7 +75,26 @@ export function parseOpenPositions(raw: unknown): RawOpenPosition[] {
   );
 }
 
-export function computeCurrentExposurePct(rawPositions: RawOpenPosition[], equity: number): number | null {
+function metaTicksForPosition(
+  p: RawOpenPosition,
+  tickSizeBySymbol?: Map<string, number>
+): MetaTickRiskInput | null {
+  const sym = String(p.symbol ?? "").trim();
+  if (!sym || !tickSizeBySymbol) return null;
+  const tickSize = tickSizeBySymbol.get(sym);
+  const tv = p.currentTickValue;
+  const tickValue = tv != null && Number.isFinite(tv) && tv > 0 ? tv : null;
+  if (tickSize != null && tickSize > 0 && tickValue != null) {
+    return { tickSize, tickValue };
+  }
+  return null;
+}
+
+export function computeCurrentExposurePct(
+  rawPositions: RawOpenPosition[],
+  equity: number,
+  tickSizeBySymbol?: Map<string, number>
+): number | null {
   if (equity <= 0) return null;
   let total = 0;
   for (const p of rawPositions) {
@@ -82,14 +103,27 @@ export function computeCurrentExposurePct(rawPositions: RawOpenPosition[], equit
     const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
     if (!volume || !openPrice) continue;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      const pct = riskPctOfEquityAtStopLoss(p.symbol ?? "", openPrice, stopLoss, volume, equity, p.type);
+      const meta = metaTicksForPosition(p, tickSizeBySymbol);
+      const pct = riskPctOfEquityAtStopLoss(
+        p.symbol ?? "",
+        openPrice,
+        stopLoss,
+        volume,
+        equity,
+        p.type,
+        meta
+      );
       if (pct != null) total += pct;
     }
   }
   return total > 0 ? total : null;
 }
 
-export function maxOpenPositionRiskPct(positions: RawOpenPosition[], equity: number): number | null {
+export function maxOpenPositionRiskPct(
+  positions: RawOpenPosition[],
+  equity: number,
+  tickSizeBySymbol?: Map<string, number>
+): number | null {
   if (equity <= 0) return null;
   let maxR: number | null = null;
   for (const p of positions) {
@@ -98,7 +132,16 @@ export function maxOpenPositionRiskPct(positions: RawOpenPosition[], equity: num
     const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
     if (!volume || !openPrice) continue;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      const pct = riskPctOfEquityAtStopLoss(p.symbol ?? "", openPrice, stopLoss, volume, equity, p.type);
+      const meta = metaTicksForPosition(p, tickSizeBySymbol);
+      const pct = riskPctOfEquityAtStopLoss(
+        p.symbol ?? "",
+        openPrice,
+        stopLoss,
+        volume,
+        equity,
+        p.type,
+        meta
+      );
       if (pct != null) maxR = maxR == null ? pct : Math.max(maxR, pct);
     }
   }

@@ -14,6 +14,7 @@ import {
   getAccountSummary,
   getClosedOrders,
   getOpenPositions,
+  fetchSymbolTickSizes,
   accountSelectColumns,
   type TradingAccountRow
 } from "./tradingApi";
@@ -122,6 +123,7 @@ type RawOpenPosition = {
   stopLoss?: number;
   stop_loss?: number;
   type?: string;
+  currentTickValue?: number;
 };
 
 function parseOrders(orders: unknown): ClosedOrder[] {
@@ -263,7 +265,11 @@ function parseOpenPositions(raw: unknown): RawOpenPosition[] {
   );
 }
 
-function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): OpenPositionForRisk[] {
+function buildOpenPositionsForRisk(
+  raw: RawOpenPosition[],
+  equity: number,
+  tickSizeBySymbol?: Map<string, number>
+): OpenPositionForRisk[] {
   if (equity <= 0) return [];
   const out: OpenPositionForRisk[] = [];
   for (const p of raw) {
@@ -282,7 +288,11 @@ function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): Open
     const side = String(p.type ?? "").toLowerCase() === "sell" ? "sell" : "buy";
     let riskPct: number | null = null;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      riskPct = riskPctOfEquityAtStopLoss(symbol, openPrice, stopLoss, volume, equity, side);
+      const ts = tickSizeBySymbol?.get(symbol);
+      const tv = p.currentTickValue != null ? Number(p.currentTickValue) : NaN;
+      const metaTicks =
+        ts != null && ts > 0 && Number.isFinite(tv) && tv > 0 ? { tickSize: ts, tickValue: tv } : null;
+      riskPct = riskPctOfEquityAtStopLoss(symbol, openPrice, stopLoss, volume, equity, side, metaTicks);
     }
     out.push({
       symbol,
@@ -349,7 +359,10 @@ export async function runRiskCheckForAccount(params: {
     }
     const useEquity = equity > 0 ? equity : balance;
     if (openResult.ok && openResult.positions.length > 0) {
-      openPositions = buildOpenPositionsForRisk(parseOpenPositions(openResult.positions), useEquity);
+      const parsed = parseOpenPositions(openResult.positions);
+      const syms = parsed.map((p) => String(p.symbol ?? p.instrument ?? "").trim()).filter((s) => s.length > 0);
+      const tickSizes = await fetchSymbolTickSizes(accountRow, syms);
+      openPositions = buildOpenPositionsForRisk(parsed, useEquity, tickSizes);
     }
   } catch (e) {
     console.error("[riskCheckRun] fetch failed", e);
@@ -608,7 +621,10 @@ export async function runRiskCheckDryRun(params: {
     const useEquity = equity > 0 ? equity : balance;
     if (openResult.ok && openResult.positions.length > 0) {
       rawOpen = openResult.positions;
-      openPositions = buildOpenPositionsForRisk(parseOpenPositions(openResult.positions), useEquity);
+      const parsed = parseOpenPositions(openResult.positions);
+      const syms = parsed.map((p) => String(p.symbol ?? p.instrument ?? "").trim()).filter((s) => s.length > 0);
+      const tickSizes = await fetchSymbolTickSizes(accountRow, syms);
+      openPositions = buildOpenPositionsForRisk(parsed, useEquity, tickSizes);
     } else {
       rawOpen = [];
     }

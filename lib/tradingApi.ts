@@ -389,15 +389,61 @@ export async function getOpenPositions(
     const sl = p.stopLoss;
     const stopLoss =
       sl != null && Number(sl) > 0 && Number.isFinite(Number(sl)) ? Number(sl) : undefined;
+    const ctv = p.currentTickValue;
+    const currentTickValue =
+      ctv != null && Number.isFinite(Number(ctv)) && Number(ctv) > 0 ? Number(ctv) : undefined;
     return {
       symbol: String(p.symbol ?? ""),
       volume: Number(p.volume) || 0,
       openPrice: Number(p.openPrice) || 0,
       stopLoss,
-      type: side
+      type: side,
+      ...(currentTickValue != null ? { currentTickValue } : {})
     };
   });
   return { ok: true, positions };
+}
+
+export type MetaSymbolSpecification = {
+  symbol?: string;
+  tickSize?: number;
+  point?: number;
+  contractSize?: number;
+  priceCalculationMode?: string;
+};
+
+/**
+ * Broker-accurate tick size for profit math (pairs with position.currentTickValue from MetaAPI).
+ * `symbol` must match the position's raw symbol string (e.g. GER40.m).
+ */
+export async function getSymbolSpecification(
+  account: TradingAccountRow,
+  symbol: string
+): Promise<MetaSymbolSpecification | null> {
+  const id = normalizeToken(account.metaapi_account_id);
+  if (!id || !symbol.trim()) return null;
+  if (!metaApiConfig()) return null;
+  const path = `/users/current/accounts/${encodeURIComponent(id)}/symbols/${encodeURIComponent(symbol)}/specification`;
+  const res = await metaApiGet<MetaSymbolSpecification>(id, path);
+  if (!res.ok) return null;
+  return res.data;
+}
+
+/** Parallel fetch of tick sizes keyed by exact `position.symbol` strings. */
+export async function fetchSymbolTickSizes(
+  account: TradingAccountRow,
+  rawSymbols: string[]
+): Promise<Map<string, number>> {
+  const uniq = [...new Set(rawSymbols.map((s) => String(s ?? "").trim()).filter((s) => s.length > 0))];
+  const map = new Map<string, number>();
+  await Promise.all(
+    uniq.map(async (sym) => {
+      const spec = await getSymbolSpecification(account, sym);
+      const ts = Number(spec?.tickSize ?? spec?.point);
+      if (Number.isFinite(ts) && ts > 0) map.set(sym, ts);
+    })
+  );
+  return map;
 }
 
 const OP_TO_METAAPI: Record<string, string> = {

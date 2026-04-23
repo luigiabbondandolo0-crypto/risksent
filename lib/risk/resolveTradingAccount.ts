@@ -3,6 +3,7 @@ import {
   getAccountSummary,
   getClosedOrders,
   getOpenPositions,
+  fetchSymbolTickSizes,
   accountSelectColumns,
   type TradingAccountRow
 } from "@/lib/tradingApi";
@@ -78,8 +79,10 @@ export async function fetchRiskLiveSnapshot(account: TradingAccountRow): Promise
   let maxOpenRiskPct: number | null = null;
   if (openResult.ok && openResult.positions.length > 0) {
     const positions = parseOpenPositions(openResult.positions);
-    currentExposurePct = computeCurrentExposurePct(positions, useEq);
-    maxOpenRiskPct = maxOpenPositionRiskPct(positions, useEq);
+    const syms = positions.map((p) => String(p.symbol ?? "").trim()).filter((s) => s.length > 0);
+    const tickSizes = await fetchSymbolTickSizes(account, syms);
+    currentExposurePct = computeCurrentExposurePct(positions, useEq, tickSizes);
+    maxOpenRiskPct = maxOpenPositionRiskPct(positions, useEq, tickSizes);
   }
 
   const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders);

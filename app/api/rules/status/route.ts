@@ -4,6 +4,7 @@ import {
   getAccountSummary,
   getClosedOrders,
   getOpenPositions,
+  fetchSymbolTickSizes,
   accountSelectColumns,
   type TradingAccountRow
 } from "@/lib/tradingApi";
@@ -88,7 +89,10 @@ export async function GET() {
 
     let currentExposurePct: number | null = null;
     if (openResult.ok && openResult.positions.length > 0 && equity > 0) {
-      currentExposurePct = computeCurrentExposurePct(parseOpenPositions(openResult.positions), equity);
+      const positions = parseOpenPositions(openResult.positions);
+      const syms = positions.map((p) => String(p.symbol ?? "").trim()).filter((s) => s.length > 0);
+      const tickSizes = await fetchSymbolTickSizes(account, syms);
+      currentExposurePct = computeCurrentExposurePct(positions, equity, tickSizes);
     }
 
     return NextResponse.json({
