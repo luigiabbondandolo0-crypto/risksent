@@ -36,10 +36,7 @@ import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMet
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
 import { localMonthBoundsIso, localYmdFromIso } from "@/lib/journal/calendarBounds";
-import {
-  JOURNAL_METAAPI_AUTO_SYNC_MS,
-  syncAllJournalMetaAccounts
-} from "@/lib/journal/metaApiAutoSyncClient";
+import { syncAllJournalMetaAccounts } from "@/lib/journal/metaApiAutoSyncClient";
 import { RefreshCw } from "lucide-react";
 import { toast } from "@/lib/toast";
 
@@ -132,8 +129,6 @@ function AnimatedNumber({
     </span>
   );
 }
-
-const POLL_MS = 45_000;
 
 function UpgradeBannerInner() {
   const searchParams = useSearchParams();
@@ -323,15 +318,6 @@ export default function DashboardPage() {
     [tradingAccounts, journalAccounts]
   );
 
-  /** Stable across harmless journal_account row refreshes — avoids sync/stat effect storms */
-  const journalBrokerSyncKey = useMemo(() => {
-    if (!journalAccounts?.length) return "";
-    return journalAccounts
-      .map((a) => `${a.id}:${a.metaapi_account_id ?? ""}`)
-      .sort()
-      .join("|");
-  }, [journalAccounts]);
-
   const resolvedStatsUuid = useMemo(
     () =>
       journalAccounts != null && journalAccounts.length > 0
@@ -422,25 +408,6 @@ export default function DashboardPage() {
     await reloadAccountData();
     return failures;
   }, [isSubDemo, loadCalJournalTrades, reloadAccountData]);
-
-  /** Background: MetaApi → journal_trade + calendar — no reloadAccountData (prevents re-render loop) */
-  useEffect(() => {
-    if (isSubDemo || !hasAnyBrokerMeta || !journalBrokerSyncKey) return;
-    let cancelled = false;
-    const tick = async () => {
-      if (cancelled) return;
-      const list = journalAccountsRef.current ?? [];
-      if (!list.some((a) => a.metaapi_account_id)) return;
-      await syncAllJournalMetaAccounts(list);
-      await loadCalJournalTrades();
-    };
-    void tick();
-    const id = setInterval(() => void tick(), JOURNAL_METAAPI_AUTO_SYNC_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [isSubDemo, hasAnyBrokerMeta, journalBrokerSyncKey, loadCalJournalTrades]);
 
   useEffect(() => {
     if (isSubDemo) return;
@@ -569,14 +536,6 @@ export default function DashboardPage() {
       setStats(null);
     }
     void fetchStats(resolvedStatsUuid);
-    let cancelled = false;
-    const t = setInterval(() => {
-      if (!cancelled) void fetchStats(resolvedStatsUuid);
-    }, POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
   }, [
     resolvedStatsUuid,
     accountsResolved,
@@ -755,7 +714,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="mt-1.5 text-sm font-mono text-slate-400">
-            Live risk · performance · activity — auto-refreshed
+            Live risk · performance · activity — use Sync trades or revisit the page to refresh
           </p>
           {stats?.updatedAt && (
             <p className="mt-1 text-xs font-mono text-slate-600">

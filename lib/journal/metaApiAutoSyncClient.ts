@@ -1,6 +1,3 @@
-/** Background MetaApi → journal_trade sync interval (client). */
-export const JOURNAL_METAAPI_AUTO_SYNC_MS = 90_000;
-
 /**
  * POST /api/journal/accounts/:id/sync for each account with a MetaApi id.
  * @returns number of failed sync responses

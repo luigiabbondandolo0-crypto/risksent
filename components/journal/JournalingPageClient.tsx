@@ -40,10 +40,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
-import {
-  JOURNAL_METAAPI_AUTO_SYNC_MS,
-  syncAllJournalMetaAccounts
-} from "@/lib/journal/metaApiAutoSyncClient";
+import { syncAllJournalMetaAccounts } from "@/lib/journal/metaApiAutoSyncClient";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { TradeReviewModal } from "@/components/journal/TradeReviewModal";
@@ -2056,14 +2053,6 @@ export function JournalingPageClient({
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    if (isMock) return;
-    const id = setInterval(() => {
-      void load();
-    }, JOURNAL_METAAPI_AUTO_SYNC_MS);
-    return () => clearInterval(id);
-  }, [isMock, load]);
 
   // Auto-save session with 800ms debounce
   const scheduleSessionSave = useCallback(
