@@ -89,6 +89,7 @@ export async function hasRecentRuleNotification(
     .select("id")
     .eq("user_id", userId)
     .in("rule_type", aliases)
+    .eq("dismissed", false)
     .gte("alert_date", since)
     .limit(1);
   aq = journalAccountId ? aq.eq("account_id", journalAccountId) : aq.is("account_id", null);

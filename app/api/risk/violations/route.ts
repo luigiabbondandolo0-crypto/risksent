@@ -33,13 +33,16 @@ export async function DELETE(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
 
-  const { error } = await supabase
-    .from("risk_violations")
-    .delete()
-    .eq("user_id", user.id);
+  const { error: violErr } = await supabase.from("risk_violations").delete().eq("user_id", user.id);
+  if (violErr) {
+    return NextResponse.json({ error: violErr.message }, { status: 500 });
+  }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  // Mirror rows in `alert` were used for Telegram dedupe; if we only delete violations,
+  // stale alerts block new notifications for RISK_ALERT_DEDUPE_MS (see hasRecentRuleNotification).
+  const { error: alertErr } = await supabase.from("alert").delete().eq("user_id", user.id);
+  if (alertErr) {
+    return NextResponse.json({ error: alertErr.message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
