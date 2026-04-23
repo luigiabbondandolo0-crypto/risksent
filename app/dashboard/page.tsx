@@ -34,6 +34,8 @@ import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
+import { RefreshCw } from "lucide-react";
+import { toast } from "@/lib/toast";
 
 type Stats = {
   balance: number;
@@ -240,7 +242,7 @@ export default function DashboardPage() {
   const [rulesPopupOpen, setRulesPopupOpen] = useState(false);
   const [rrTableOpen, setRrTableOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
-  const [syncing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [calJournalTrades, setCalJournalTrades] = useState<
     { close_time: string | null; pl: number | null; commission: number | null; swap: number | null; status: string }[]
   >([]);
@@ -282,33 +284,37 @@ export default function DashboardPage() {
       .catch(() => {});
   }, [isSubDemo]);
 
-  // Fetch journal trades for calendar — same source as journal page (no account filter = all user trades)
-  useEffect(() => {
+  const loadCalJournalTrades = useCallback(async () => {
     if (isSubDemo) return;
-    let cancelled = false;
-    // Fetch 3 pages to cover up to 300 closed trades (API max per page = 100)
-    Promise.all([
-      fetch("/api/journal/trades?pageSize=100&status=closed"),
-      fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
-      fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
-    ])
-      .then(async ([r1, r2, r3]) => {
-        const [j1, j2, j3] = await Promise.all([
-          r1.ok ? r1.json() : { trades: [] },
-          r2.ok ? r2.json() : { trades: [] },
-          r3.ok ? r3.json() : { trades: [] },
-        ]);
-        if (!cancelled) {
-          setCalJournalTrades([
-            ...(j1.trades ?? []),
-            ...(j2.trades ?? []),
-            ...(j3.trades ?? []),
-          ]);
-        }
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
+    try {
+      const responses = await Promise.all([
+        fetch("/api/journal/trades?pageSize=100&status=closed"),
+        fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
+        fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
+        fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
+        fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
+      ]);
+      const merged: {
+        close_time: string | null;
+        pl: number | null;
+        commission: number | null;
+        swap: number | null;
+        status: string;
+      }[] = [];
+      for (const r of responses) {
+        if (!r.ok) continue;
+        const j = await r.json();
+        merged.push(...(j.trades ?? []));
+      }
+      setCalJournalTrades(merged);
+    } catch {
+      /* ignore */
+    }
   }, [isSubDemo]);
+
+  useEffect(() => {
+    void loadCalJournalTrades();
+  }, [loadCalJournalTrades]);
 
   const hasAnyBrokerMeta = useMemo(
     () =>
@@ -556,7 +562,45 @@ export default function DashboardPage() {
     return { wrLast, wrPrev, diff };
   })();
 
-  const handleSyncTrades = useCallback(() => {}, []);
+  const handleSyncTrades = useCallback(async () => {
+    if (isSubDemo || syncing) return;
+    const targets = (journalAccounts ?? []).filter((a) => a.metaapi_account_id);
+    if (targets.length === 0) {
+      toast.info("Nothing to sync", "Connect a broker account with MetaApi first.");
+      return;
+    }
+    setSyncing(true);
+    let failures = 0;
+    try {
+      for (const a of targets) {
+        const res = await fetch(`/api/journal/accounts/${a.id}/sync`, { method: "POST" });
+        if (!res.ok) failures += 1;
+      }
+      await loadCalJournalTrades();
+      void fetchStats(resolvedStatsUuid);
+      void reloadAccountData();
+      if (failures > 0) {
+        toast.warning(
+          "Sync incomplete",
+          `${failures} account(s) failed. Check MetaApi and METAAPI_BASE_URL.`
+        );
+      } else {
+        toast.success("Trades synced", "Calendar reflects your closed trades from the broker.");
+      }
+    } catch {
+      toast.error("Sync failed", "Try again in a moment.");
+    } finally {
+      setSyncing(false);
+    }
+  }, [
+    isSubDemo,
+    syncing,
+    journalAccounts,
+    loadCalJournalTrades,
+    fetchStats,
+    resolvedStatsUuid,
+    reloadAccountData,
+  ]);
 
   const year = calendarMonth.getFullYear();
   const month = calendarMonth.getMonth();
@@ -673,6 +717,16 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+          <button
+            type="button"
+            onClick={() => void handleSyncTrades()}
+            disabled={syncing || !hasAnyBrokerMeta}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-mono text-slate-300 transition-colors hover:border-indigo-500/30 hover:text-slate-100 disabled:opacity-40"
+            title="Import closed trades from MetaApi into your journal"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            Sync trades
+          </button>
           <GlobalAccountSelector
             accounts={journalAccounts.map((a) => ({
               id: a.id,

@@ -55,6 +55,7 @@ import type {
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
 import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
 import { useDemoAction } from "@/hooks/useDemoAction";
+import { toast } from "@/lib/toast";
 import { DemoActionModal } from "@/components/demo/DemoActionModal";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -1957,14 +1958,18 @@ export function JournalingPageClient({
     setLoading(true);
     try {
       const today = getTodayStr();
-      const [aRes, sRes, tTodayRes, allRes, strRes, clRes, rRes] =
+      const [aRes, sRes, tTodayRes, allP1, allP2, allP3, allP4, allP5, strRes, clRes, rRes] =
         await Promise.all([
           fetch("/api/journal/accounts"),
           fetch(`/api/journal/sessions?date=${today}`),
           fetch(
             `/api/journal/trades?status=closed&from=${today}T00:00:00Z&to=${today}T23:59:59Z&pageSize=50`
           ),
-          fetch("/api/journal/trades?pageSize=500"),
+          fetch("/api/journal/trades?pageSize=100&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
           fetch("/api/journal/strategies"),
           fetch("/api/journal/checklist"),
           fetch("/api/journal/rules"),
@@ -2016,10 +2021,18 @@ export function JournalingPageClient({
         const j = await tTodayRes.json();
         setTodayTrades(j.trades ?? []);
       }
-      if (allRes.ok) {
-        const j = await allRes.json();
-        setAllTrades(j.trades ?? []);
-      }
+      const mergeAll = async (
+        ...responses: Response[]
+      ): Promise<JournalTradeRow[]> => {
+        const rows: JournalTradeRow[] = [];
+        for (const r of responses) {
+          if (!r.ok) continue;
+          const j = await r.json();
+          rows.push(...((j.trades ?? []) as JournalTradeRow[]));
+        }
+        return rows;
+      };
+      setAllTrades(await mergeAll(allP1, allP2, allP3, allP4, allP5));
       if (strRes.ok) {
         const j = await strRes.json();
         setStrategies(j.strategies ?? []);
@@ -2105,19 +2118,31 @@ export function JournalingPageClient({
 
   const handleSync = async () => {
     if (isMock || syncing) return;
-    const target =
+    const withMeta = accounts.filter((a) => a.metaapi_account_id);
+    const targets =
       selectedAccountId === "all"
-        ? accounts[0]
-        : accounts.length === 1
-          ? accounts[0]
-          : accounts.find((a) => a.id === selectedAccountId);
-    if (!target) return;
+        ? withMeta
+        : withMeta.filter((a) => a.id === selectedAccountId);
+    if (targets.length === 0) {
+      toast.info("Nothing to sync", "Connect a broker account with MetaApi first.");
+      return;
+    }
     setSyncing(true);
+    let failures = 0;
     try {
-      await fetch(`/api/journal/accounts/${target.id}/sync`, {
-        method: "POST",
-      });
+      for (const target of targets) {
+        const res = await fetch(`/api/journal/accounts/${target.id}/sync`, { method: "POST" });
+        if (!res.ok) failures += 1;
+      }
       await load();
+      if (failures > 0) {
+        toast.warning(
+          "Sync incomplete",
+          `${failures} account(s) failed. Check MetaApi connection and METAAPI_BASE_URL.`
+        );
+      } else {
+        toast.success("Synced", "Trades imported from your broker.");
+      }
     } finally {
       setSyncing(false);
     }

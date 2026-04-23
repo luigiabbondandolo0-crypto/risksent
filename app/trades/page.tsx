@@ -110,13 +110,40 @@ function TradesPageContent() {
   useEffect(() => {
     (async () => {
       try {
-        const accRes = await fetch("/api/accounts");
+        const [accRes, jRes] = await Promise.all([
+          fetch("/api/accounts"),
+          fetch("/api/journal/accounts")
+        ]);
         const body = await accRes.json().catch(() => ({}));
+        const jBody = await jRes.json().catch(() => ({}));
         if (!accRes.ok) {
           setError(body?.error ?? "Failed to load accounts");
           return;
         }
-        const list = body.accounts ?? [];
+        const tradingList = (body.accounts ?? []) as Account[];
+        const journals = (jBody.accounts ?? []) as {
+          id: string;
+          nickname: string;
+          account_number: string;
+          platform: string;
+          metaapi_account_id: string | null;
+        }[];
+        const fromJournal: Account[] = journals
+          .filter((j) => Boolean(j.metaapi_account_id))
+          .map((j) => ({
+            id: j.id,
+            broker_type: j.platform,
+            account_number: j.account_number,
+            account_name: j.nickname,
+            metaapi_account_id: j.metaapi_account_id
+          }));
+        const seenMeta = new Set(
+          tradingList.map((a) => a.metaapi_account_id).filter(Boolean) as string[]
+        );
+        const list = [
+          ...tradingList,
+          ...fromJournal.filter((a) => a.metaapi_account_id && !seenMeta.has(a.metaapi_account_id))
+        ];
         setAccounts(list);
         const uuidFromUrl = searchParams.get("uuid");
         if (uuidFromUrl && list.some((a: Account) => a.metaapi_account_id === uuidFromUrl)) {
@@ -132,7 +159,7 @@ function TradesPageContent() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (selectedUuid === null) return;
