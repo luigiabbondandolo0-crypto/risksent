@@ -113,9 +113,6 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           <X className="h-4 w-4" />
         </button>
         <h2 className={`${jn.h1} text-xl`}>Add broker account</h2>
-        <p className={jn.sub}>
-          We connect via MetaApi and set balance and currency from your live account automatically.
-        </p>
 
         {err && (
           <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">

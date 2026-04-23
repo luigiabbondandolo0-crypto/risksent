@@ -9,6 +9,15 @@ function looksLikeInvalidCredentials(message: string): boolean {
   return INVALID_HINTS.test(m);
 }
 
+/** Shorter waits early (terminal often connects in a few seconds), then backoff. */
+function waitMsAfterAttempt(attempt: number): number {
+  if (attempt < 2) return 650;
+  if (attempt < 4) return 1000;
+  if (attempt < 7) return 1400;
+  if (attempt < 11) return 1900;
+  return 2400;
+}
+
 export type VerifyProvisionedResult =
   | { ok: true; info: Record<string, unknown> }
   | { ok: false; error: string };
@@ -21,8 +30,9 @@ export async function verifyProvisionedMetaApiAccount(
   accountId: string,
   options?: { maxAttempts?: number; delayMs?: number }
 ): Promise<VerifyProvisionedResult> {
-  const maxAttempts = options?.maxAttempts ?? 18;
-  const delayMs = options?.delayMs ?? 4000;
+  const maxAttempts = options?.maxAttempts ?? 16;
+  /** @deprecated fixed delay; prefer adaptive waits unless explicitly set */
+  const fixedDelay = options?.delayMs;
   let lastError = "";
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -39,7 +49,8 @@ export async function verifyProvisionedMetaApiAccount(
       return { ok: false, error: lastError };
     }
     if (attempt < maxAttempts - 1) {
-      await new Promise((r) => setTimeout(r, delayMs));
+      const ms = fixedDelay ?? waitMsAfterAttempt(attempt);
+      await new Promise((r) => setTimeout(r, ms));
     }
   }
 
