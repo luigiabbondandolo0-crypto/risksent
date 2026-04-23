@@ -17,6 +17,20 @@ const HorizonCanvas = dynamic(() => import("@/components/ui/horizon-canvas"), {
 
 gsap.registerPlugin(ScrollTrigger);
 
+/** Framer `whileInView` — reliable on mobile (early trigger + root margin). */
+const LANDING_IN_VIEW = {
+  once: true,
+  amount: 0.12,
+  margin: "0px 0px -120px 0px",
+} as const;
+
+/** Deeper negative margin for nested previews (AI Coach chat bubbles). */
+const LANDING_IN_VIEW_DEEP = {
+  once: true,
+  amount: 0.05,
+  margin: "0px 0px -240px 0px",
+} as const;
+
 // Scroll-section labels
 const SECTIONS = [
   { id: "CONTROL", sub: "Chaos without discipline" },
@@ -31,6 +45,8 @@ export default function HomePage() {
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const mm = gsap.matchMedia();
 
     const ctx = gsap.context(() => {
       ScrollTrigger.refresh();
@@ -60,151 +76,244 @@ export default function HomePage() {
         return;
       }
 
-      // ── Hero text stagger on load ──────────────────────────────────────
-      gsap.from(".hero-word", {
-        yPercent: 110,
-        opacity: 0,
-        duration: 1,
-        stagger: 0.08,
-        ease: "expo.out",
-        delay: 0.3,
-      });
-      gsap.from(".hero-sub", {
-        opacity: 0,
-        y: 20,
-        duration: 0.8,
-        delay: 1.0,
-        ease: "power3.out",
-      });
-      gsap.from(".hero-cta", {
-        opacity: 0,
-        y: 16,
-        duration: 0.7,
-        delay: 1.2,
-        ease: "power3.out",
-      });
+      const runHeroIntro = () => {
+        gsap.from(".hero-word", {
+          yPercent: 110,
+          opacity: 0,
+          duration: 1,
+          stagger: 0.08,
+          ease: "expo.out",
+          delay: 0.3,
+        });
+        gsap.from(".hero-sub", {
+          opacity: 0,
+          y: 20,
+          duration: 0.8,
+          delay: 1.0,
+          ease: "power3.out",
+        });
+        gsap.from(".hero-cta", {
+          opacity: 0,
+          y: 16,
+          duration: 0.7,
+          delay: 1.2,
+          ease: "power3.out",
+        });
+      };
 
-      // ── Hero parallax — content rises as you scroll past ──────────────
-      gsap.to(".hero-content", {
-        y: -100,
-        opacity: 0.2,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero-section",
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.2,
-        },
-      });
+      const runMarquee = () => {
+        gsap.to(".marquee-inner", {
+          xPercent: -50,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".marquee-section",
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 0.5,
+          },
+        });
+      };
 
-      // ── Marquee scroll ─────────────────────────────────────────────────
-      gsap.to(".marquee-inner", {
-        xPercent: -50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".marquee-section",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 0.5,
-        },
-      });
+      // Desktop: scrubbed parallax + scroll-linked reveals (fine on large viewports).
+      mm.add("(min-width: 768px)", () => {
+        runHeroIntro();
+        gsap.to(".hero-content", {
+          y: -100,
+          opacity: 0.2,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".hero-section",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1.2,
+          },
+        });
+        runMarquee();
 
-      // ── Feature sections — continuous scrub reveal ─────────────────────
-      gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
-        const heading = section.querySelector(".feature-heading");
-        const body = section.querySelector(".feature-body");
-        const num = section.querySelector(".feature-num");
+        gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
+          const heading = section.querySelector(".feature-heading");
+          const body = section.querySelector(".feature-body");
+          const num = section.querySelector(".feature-num");
 
-        gsap.fromTo(num,
-          { opacity: 0, x: -40 },
-          {
-            opacity: 1, x: 0,
-            scrollTrigger: { trigger: section, start: "top 88%", end: "top 55%", scrub: 0.6 },
+          if (num) {
+            gsap.fromTo(num,
+              { opacity: 0, x: -40 },
+              {
+                opacity: 1, x: 0,
+                scrollTrigger: { trigger: section, start: "top 88%", end: "top 55%", scrub: 0.6 },
+              }
+            );
           }
-        );
-        gsap.fromTo(heading,
-          { yPercent: 50, opacity: 0 },
+          if (heading) {
+            gsap.fromTo(heading,
+              { yPercent: 50, opacity: 0 },
+              {
+                yPercent: 0, opacity: 1,
+                scrollTrigger: { trigger: section, start: "top 85%", end: "top 45%", scrub: 0.8 },
+              }
+            );
+          }
+          if (body) {
+            gsap.fromTo(body,
+              { opacity: 0, y: 28 },
+              {
+                opacity: 1, y: 0,
+                scrollTrigger: { trigger: section, start: "top 78%", end: "top 38%", scrub: 0.7 },
+              }
+            );
+          }
+        });
+
+        gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el) => {
+          gsap.fromTo(el,
+            { opacity: 0, y: 30 },
+            {
+              opacity: 1, y: 0,
+              scrollTrigger: { trigger: el, start: "top 92%", end: "top 65%", scrub: 0.5 },
+            }
+          );
+        });
+
+        gsap.set(".module-card", { opacity: 1 });
+        gsap.utils.toArray<HTMLElement>(".module-card").forEach((card, i) => {
+          gsap.fromTo(card,
+            { opacity: 0, y: 50 },
+            {
+              opacity: 1, y: 0,
+              scrollTrigger: {
+                trigger: ".modules-grid",
+                start: `top ${92 - i * 2}%`,
+                end: `top ${60 - i * 2}%`,
+                scrub: 0.6 + i * 0.1,
+              },
+            }
+          );
+        });
+
+        gsap.fromTo(".final-cta-text",
+          { yPercent: 25, opacity: 0 },
           {
             yPercent: 0, opacity: 1,
-            scrollTrigger: { trigger: section, start: "top 85%", end: "top 45%", scrub: 0.8 },
+            scrollTrigger: { trigger: ".final-cta", start: "top 85%", end: "top 45%", scrub: 0.9 },
           }
         );
-        gsap.fromTo(body,
-          { opacity: 0, y: 28 },
-          {
-            opacity: 1, y: 0,
-            scrollTrigger: { trigger: section, start: "top 78%", end: "top 38%", scrub: 0.7 },
-          }
-        );
+
+        gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
+          gsap.fromTo(el,
+            { opacity: 0, scale: 0.88, y: 40 },
+            {
+              opacity: 1, scale: 1, y: 0,
+              scrollTrigger: { trigger: el, start: "top 80%", end: "top 40%", scrub: 0.7 },
+            }
+          );
+        });
+
+        gsap.utils.toArray<HTMLElement>(".testimonial-card").forEach((card, i) => {
+          gsap.fromTo(card,
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1, y: 0,
+              scrollTrigger: {
+                trigger: ".testimonials-section",
+                start: `top ${88 - i * 3}%`,
+                end: `top ${55 - i * 3}%`,
+                scrub: 0.5 + i * 0.08,
+              },
+            }
+          );
+        });
+
+        return () => {};
       });
 
-      // ── Stat items — scrub reveal ──────────────────────────────────────
-      gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el) => {
-        gsap.fromTo(el,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1, y: 0,
-            scrollTrigger: { trigger: el, start: "top 92%", end: "top 65%", scrub: 0.5 },
-          }
-        );
-      });
+      // Mobile: no hero opacity scrub; lighter scrub + wide start/end so scroll-linked motion works and nothing sticks at opacity 0.
+      mm.add("(max-width: 767px)", () => {
+        runHeroIntro();
+        gsap.set(".hero-content", { opacity: 1 });
+        runMarquee();
 
-      // ── Module cards — stagger scrub ──────────────────────────────────
-      gsap.set(".module-card", { opacity: 1 });
-      gsap.utils.toArray<HTMLElement>(".module-card").forEach((card, i) => {
-        gsap.fromTo(card,
-          { opacity: 0, y: 50 },
-          {
+        const softScrub = { scrub: 0.42 as const, start: "top bottom" as const, end: "top 52%" as const };
+
+        gsap.utils.toArray<HTMLElement>(".feature-section").forEach((section) => {
+          const heading = section.querySelector(".feature-heading");
+          const body = section.querySelector(".feature-body");
+          const num = section.querySelector(".feature-num");
+          if (num) {
+            gsap.fromTo(num, { opacity: 0, x: -24 }, {
+              opacity: 1, x: 0,
+              ease: "none",
+              scrollTrigger: { trigger: section, ...softScrub },
+            });
+          }
+          if (heading) {
+            gsap.fromTo(heading, { y: 28, opacity: 0 }, {
+              y: 0, opacity: 1,
+              ease: "none",
+              scrollTrigger: { trigger: section, start: "top bottom", end: "top 48%", scrub: 0.48 },
+            });
+          }
+          if (body) {
+            gsap.fromTo(body, { opacity: 0, y: 18 }, {
+              opacity: 1, y: 0,
+              ease: "none",
+              scrollTrigger: { trigger: section, start: "top bottom", end: "top 44%", scrub: 0.45 },
+            });
+          }
+        });
+
+        gsap.utils.toArray<HTMLElement>(".stat-item").forEach((el) => {
+          gsap.fromTo(el, { opacity: 0, y: 22 }, {
             opacity: 1, y: 0,
+            ease: "none",
+            scrollTrigger: { trigger: el, start: "top bottom", end: "top 62%", scrub: 0.38 },
+          });
+        });
+
+        gsap.set(".module-card", { opacity: 1 });
+        gsap.utils.toArray<HTMLElement>(".module-card").forEach((card, i) => {
+          gsap.fromTo(card, { opacity: 0, y: 36 }, {
+            opacity: 1, y: 0,
+            ease: "none",
             scrollTrigger: {
-              trigger: ".modules-grid",
-              start: `top ${92 - i * 2}%`,
-              end: `top ${60 - i * 2}%`,
-              scrub: 0.6 + i * 0.1,
+              trigger: card,
+              start: "top bottom",
+              end: "top 62%",
+              scrub: 0.38 + i * 0.04,
             },
-          }
-        );
-      });
+          });
+        });
 
-      // ── Final CTA — scrub reveal ───────────────────────────────────────
-      gsap.fromTo(".final-cta-text",
-        { yPercent: 25, opacity: 0 },
-        {
+        gsap.fromTo(".final-cta-text", { yPercent: 12, opacity: 0 }, {
           yPercent: 0, opacity: 1,
-          scrollTrigger: { trigger: ".final-cta", start: "top 85%", end: "top 45%", scrub: 0.9 },
-        }
-      );
+          ease: "none",
+          scrollTrigger: { trigger: ".final-cta", start: "top bottom", end: "top 48%", scrub: 0.5 },
+        });
 
-      // ── Scroll journey labels — scrub in + scrub out ───────────────────
-      gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
-        gsap.fromTo(el,
-          { opacity: 0, scale: 0.88, y: 40 },
-          {
-            opacity: 1, scale: 1, y: 0,
-            scrollTrigger: { trigger: el, start: "top 80%", end: "top 40%", scrub: 0.7 },
-          }
-        );
-      });
+        gsap.utils.toArray<HTMLElement>(".scroll-section-label").forEach((el) => {
+          gsap.fromTo(el, { opacity: 0, y: 24, scale: 0.96 }, {
+            opacity: 1, y: 0, scale: 1,
+            ease: "none",
+            scrollTrigger: { trigger: el, start: "top bottom", end: "top 55%", scrub: 0.4 },
+          });
+        });
 
-      // ── Testimonial cards — stagger scrub ────────────────────────────
-      gsap.utils.toArray<HTMLElement>(".testimonial-card").forEach((card, i) => {
-        gsap.fromTo(card,
-          { opacity: 0, y: 40 },
-          {
+        gsap.utils.toArray<HTMLElement>(".testimonial-card").forEach((card) => {
+          gsap.fromTo(card, { opacity: 0, y: 28 }, {
             opacity: 1, y: 0,
-            scrollTrigger: {
-              trigger: ".testimonials-section",
-              start: `top ${88 - i * 3}%`,
-              end: `top ${55 - i * 3}%`,
-              scrub: 0.5 + i * 0.08,
-            },
-          }
-        );
+            ease: "none",
+            scrollTrigger: { trigger: card, start: "top bottom", end: "top 58%", scrub: 0.42 },
+          });
+        });
+
+        return () => {};
       });
 
     }, containerRef);
 
-    return () => ctx.revert();
+    return () => {
+      mm.revert();
+      ctx.revert();
+    };
   }, []);
 
   useEffect(() => {
@@ -287,7 +396,7 @@ export default function HomePage() {
             ))}
             <span className="inline-block overflow-hidden mr-[0.2em]">
               <span
-                className="hero-word inline-block bg-clip-text text-transparent"
+                className="hero-word inline-block text-[#c4b5fd] md:bg-clip-text md:text-transparent"
                 style={{
                   backgroundImage: "linear-gradient(135deg, #6366F1 0%, #A78BFA 50%, #6366F1 100%)",
                   backgroundSize: "200% 100%",
@@ -301,7 +410,7 @@ export default function HomePage() {
 
           <div className="hero-sub flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-6">
-              <p className="max-w-md text-lg text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+              <p className="max-w-md text-lg text-slate-300 sm:text-slate-400 leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                 One subscription. Backtesting, Journaling,<br />
                 Risk Manager, Live Alerts, AI Coach.<br />
                 <span className="text-slate-300">Everything your edge needs.</span>
@@ -543,7 +652,7 @@ export default function HomePage() {
                             {feature.heading}
                           </h2>
                         </div>
-                        <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                        <p className="feature-body mt-5 text-slate-300 sm:text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                           {feature.body}
                         </p>
                       </div>
@@ -585,7 +694,7 @@ export default function HomePage() {
                             {feature.heading}
                           </h2>
                         </div>
-                        <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                        <p className="feature-body mt-5 text-slate-300 sm:text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                           {feature.body}
                         </p>
                       </div>
@@ -641,7 +750,7 @@ export default function HomePage() {
                                 key={mi}
                                 initial={{ opacity: 0, y: 10 }}
                                 whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
+                                viewport={LANDING_IN_VIEW_DEEP}
                                 transition={{ delay: mi * 0.18, duration: 0.45, ease: "easeOut" }}
                                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                               >
@@ -665,7 +774,7 @@ export default function HomePage() {
                               className="flex justify-start"
                               initial={{ opacity: 0 }}
                               whileInView={{ opacity: 1 }}
-                              viewport={{ once: true }}
+                              viewport={LANDING_IN_VIEW_DEEP}
                               transition={{ delay: 0.9, duration: 0.4 }}
                             >
                               <div
@@ -707,7 +816,7 @@ export default function HomePage() {
                           {feature.heading}
                         </h2>
                       </div>
-                      <p className="feature-body mt-5 text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
+                      <p className="feature-body mt-5 text-slate-300 sm:text-slate-400 max-w-lg leading-relaxed" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "14px" }}>
                         {feature.body}
                       </p>
                     </div>
@@ -969,7 +1078,7 @@ export default function HomePage() {
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.7 }}
+            viewport={LANDING_IN_VIEW} transition={{ duration: 0.7 }}
             className="mb-14 text-center"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-3">Why switch</p>
@@ -984,11 +1093,13 @@ export default function HomePage() {
 
           {/* Table — horizontal scroll on mobile */}
           <div className="overflow-x-auto">
-            <motion.table
+            <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
+              viewport={LANDING_IN_VIEW}
               transition={{ duration: 0.5, delay: 0.15 }}
+            >
+            <table
               className="w-full min-w-[640px] border-collapse"
             >
               <thead>
@@ -1037,7 +1148,7 @@ export default function HomePage() {
                     key={row.feature}
                     initial={{ opacity: 0, x: -12 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
+                    viewport={LANDING_IN_VIEW}
                     transition={{ duration: 0.45, delay: 0.06 * ri, ease: "easeOut" }}
                     className="group cursor-default"
                   >
@@ -1085,13 +1196,14 @@ export default function HomePage() {
                   </motion.tr>
                 ))}
               </tbody>
-            </motion.table>
+            </table>
+            </motion.div>
           </div>
 
           {/* Below table CTA */}
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={LANDING_IN_VIEW} transition={{ duration: 0.6, delay: 0.4 }}
             className="mt-10 text-center"
           >
             <p className="text-slate-500 font-mono text-[13px] mb-6">
@@ -1125,7 +1237,7 @@ export default function HomePage() {
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.65 }}
+            viewport={LANDING_IN_VIEW} transition={{ duration: 0.65 }}
             className="mb-16 text-center"
           >
             <p className="text-[11px] font-mono uppercase tracking-[0.3em] mb-4"
@@ -1174,7 +1286,7 @@ export default function HomePage() {
                 key={step.n}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={LANDING_IN_VIEW}
                 transition={{ duration: 0.5, delay: step.delay }}
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 className="relative rounded-2xl border p-6"
@@ -1219,7 +1331,7 @@ export default function HomePage() {
           {/* Stats strip */}
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.15 }}
+            viewport={LANDING_IN_VIEW} transition={{ duration: 0.55, delay: 0.15 }}
             className="mb-12 flex flex-wrap justify-center gap-px overflow-hidden rounded-2xl border"
             style={{ borderColor: "rgba(255,255,255,0.07)" }}
           >
@@ -1248,7 +1360,7 @@ export default function HomePage() {
           {/* CTA */}
           <motion.div
             initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.55, delay: 0.25 }}
+            viewport={LANDING_IN_VIEW} transition={{ duration: 0.55, delay: 0.25 }}
             className="text-center"
           >
             <button

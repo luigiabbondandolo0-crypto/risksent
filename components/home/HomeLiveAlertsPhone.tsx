@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Send } from "lucide-react";
 
 const APPROACH_S = 3.6;
 const ALERT_HOLD_S = 5.6;
 
 export function HomeLiveAlertsPhone() {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [dotTravel, setDotTravel] = useState(52);
   const [cycle, setCycle] = useState(0);
   const [showAlert, setShowAlert] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  useLayoutEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const update = () => {
+      const h = el.clientHeight;
+      setDotTravel(Math.max(40, Math.round(h * 0.22)));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     setShowAlert(false);
@@ -28,16 +44,18 @@ export function HomeLiveAlertsPhone() {
 
   return (
     <div className="relative mx-auto flex w-full max-w-[280px] flex-col items-center sm:max-w-[300px]">
-      <AnimatePresence mode="wait">
-        {showAlert && (
-          <motion.div
-            key="tg"
-            initial={{ opacity: 0, y: 12, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 420, damping: 28 }}
-            className="absolute -top-2 z-20 w-[108%] max-w-[340px] -translate-y-full px-1"
-          >
+      {/* Reserved space so the Telegram card stays inside layout (parent overflow-hidden won’t clip it). */}
+      <div className="relative z-20 mb-1 min-h-[128px] w-[108%] max-w-[340px] px-1">
+        <AnimatePresence mode="wait">
+          {showAlert && (
+            <motion.div
+              key="tg"
+              initial={{ opacity: 0, y: 10, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 28 }}
+              className="w-full"
+            >
             <div
               className="rounded-2xl border border-white/[0.12] p-3 shadow-2xl"
               style={{
@@ -70,8 +88,9 @@ export function HomeLiveAlertsPhone() {
               </div>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
 
       <motion.div
         className="relative w-full"
@@ -102,7 +121,10 @@ export function HomeLiveAlertsPhone() {
               <p className="text-center text-[9px] font-mono text-slate-500">Bid 1.08218 · Ask 1.08220</p>
             </div>
 
-            <div className="relative aspect-[9/16] max-h-[320px] min-h-[260px] w-full bg-gradient-to-b from-[#12141a] to-[#0a0b0e]">
+            <div
+              ref={chartRef}
+              className="relative aspect-[9/16] max-h-[320px] min-h-[260px] w-full bg-gradient-to-b from-[#12141a] to-[#0a0b0e]"
+            >
               <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                 {[20, 35, 50, 65, 80].map((x) => (
                   <line
@@ -182,10 +204,14 @@ export function HomeLiveAlertsPhone() {
 
               <motion.div
                 key={cycle}
-                className="absolute left-[52%] h-2 w-2 -translate-x-1/2 rounded-full bg-[#38bdf8] shadow-[0_0_12px_rgba(56,189,248,0.9)] ring-2 ring-[#38bdf8]/40"
-                initial={{ top: "52%" }}
-                animate={{ top: "72%" }}
-                transition={{ duration: APPROACH_S, ease: [0.45, 0, 0.55, 1] }}
+                className="pointer-events-none absolute left-1/2 top-[52%] z-[5] h-2 w-2 -translate-x-1/2 rounded-full bg-[#38bdf8] shadow-[0_0_12px_rgba(56,189,248,0.9)] ring-2 ring-[#38bdf8]/40 will-change-transform"
+                initial={{ y: reduceMotion ? dotTravel : 0 }}
+                animate={{ y: dotTravel }}
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { duration: APPROACH_S, ease: [0.45, 0, 0.55, 1] }
+                }
               />
 
               <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[8px] font-mono text-slate-500">
