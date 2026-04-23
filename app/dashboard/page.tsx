@@ -714,7 +714,7 @@ export default function DashboardPage() {
             Dashboard
           </h1>
           <p className="mt-1.5 text-sm font-mono text-slate-400">
-            Live risk · performance · activity — use Sync trades or revisit the page to refresh
+            Balance, risk rules, and performance in one place.
           </p>
           {stats?.updatedAt && (
             <p className="mt-1 text-xs font-mono text-slate-600">

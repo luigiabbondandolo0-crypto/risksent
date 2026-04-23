@@ -2157,18 +2157,24 @@ export function JournalingPageClient({
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="flex flex-wrap items-center gap-4"
       >
-        {/* Title */}
-        <h1
-          className={jn.h1}
-          style={{
-            background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
-          Journal
-        </h1>
+        {/* Title + subtitle */}
+        <div className="min-w-0 w-full shrink-0 sm:w-auto">
+          <h1
+            className={jn.h1}
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Journal
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm font-mono text-slate-400">
+            Today&apos;s session, calendar, and trade history. Sync when you want
+            the latest from your broker.
+          </p>
+        </div>
 
         {/* Account selector — center */}
         <div className="flex flex-1 justify-center">
