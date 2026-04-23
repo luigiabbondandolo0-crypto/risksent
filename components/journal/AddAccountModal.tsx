@@ -49,14 +49,6 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           "Balance and currency will update when MetaApi connects to your broker (often under a minute). If it persists, check METAAPI_BASE_URL matches your MetaApi region."
         );
       }
-      const accId = j.account?.id as string | undefined;
-      if (accId) {
-        try {
-          await fetch(`/api/journal/accounts/${accId}/sync`, { method: "POST" });
-        } catch {
-          /* sync is best-effort; user can tap Sync */
-        }
-      }
       onCreated();
       onClose();
       setNickname("");

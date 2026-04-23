@@ -40,6 +40,10 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
+import {
+  JOURNAL_METAAPI_AUTO_SYNC_MS,
+  syncAllJournalMetaAccounts
+} from "@/lib/journal/metaApiAutoSyncClient";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { TradeReviewModal } from "@/components/journal/TradeReviewModal";
@@ -1933,26 +1937,11 @@ export function JournalingPageClient({
     setLoading(true);
     try {
       const today = getTodayStr();
-      const [aRes, sRes, tTodayRes, allP1, allP2, allP3, allP4, allP5, strRes, clRes, rRes] =
-        await Promise.all([
-          fetch("/api/journal/accounts"),
-          fetch(`/api/journal/sessions?date=${today}`),
-          fetch(
-            `/api/journal/trades?status=closed&from=${today}T00:00:00Z&to=${today}T23:59:59Z&pageSize=50`
-          ),
-          fetch("/api/journal/trades?pageSize=100&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
-          fetch("/api/journal/strategies"),
-          fetch("/api/journal/checklist"),
-          fetch("/api/journal/rules"),
-        ]);
-
+      const aRes = await fetch("/api/journal/accounts");
+      let accs: JournalAccountPublic[] = [];
       if (aRes.ok) {
         const j = await aRes.json();
-        const accs: JournalAccountPublic[] = j.accounts ?? [];
+        accs = j.accounts ?? [];
         setAccounts(accs);
         const stored =
           typeof window !== "undefined"
@@ -1968,6 +1957,24 @@ export function JournalingPageClient({
           setSelectedAccountId(accs[0].id);
         }
       }
+
+      await syncAllJournalMetaAccounts(accs);
+
+      const [sRes, tTodayRes, allP1, allP2, allP3, allP4, allP5, strRes, clRes, rRes] =
+        await Promise.all([
+          fetch(`/api/journal/sessions?date=${today}`),
+          fetch(
+            `/api/journal/trades?status=closed&from=${today}T00:00:00Z&to=${today}T23:59:59Z&pageSize=50`
+          ),
+          fetch("/api/journal/trades?pageSize=100&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
+          fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
+          fetch("/api/journal/strategies"),
+          fetch("/api/journal/checklist"),
+          fetch("/api/journal/rules"),
+        ]);
       if (sRes.ok) {
         const j = await sRes.json();
         if (j.session) {
@@ -2028,6 +2035,14 @@ export function JournalingPageClient({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (isMock) return;
+    const id = setInterval(() => {
+      void load();
+    }, JOURNAL_METAAPI_AUTO_SYNC_MS);
+    return () => clearInterval(id);
+  }, [isMock, load]);
 
   // Auto-save session with 800ms debounce
   const scheduleSessionSave = useCallback(
@@ -2093,31 +2108,16 @@ export function JournalingPageClient({
 
   const handleSync = async () => {
     if (isMock || syncing) return;
-    const withMeta = accounts.filter((a) => a.metaapi_account_id);
-    const targets =
-      selectedAccountId === "all"
-        ? withMeta
-        : withMeta.filter((a) => a.id === selectedAccountId);
-    if (targets.length === 0) {
+    if (!accounts.some((a) => a.metaapi_account_id)) {
       toast.info("Nothing to sync", "Connect a broker account with MetaApi first.");
       return;
     }
     setSyncing(true);
-    let failures = 0;
     try {
-      for (const target of targets) {
-        const res = await fetch(`/api/journal/accounts/${target.id}/sync`, { method: "POST" });
-        if (!res.ok) failures += 1;
-      }
       await load();
-      if (failures > 0) {
-        toast.warning(
-          "Sync incomplete",
-          `${failures} account(s) failed. Check MetaApi connection and METAAPI_BASE_URL.`
-        );
-      } else {
-        toast.success("Synced", "Trades imported from your broker.");
-      }
+      toast.success("Synced", "Trades updated from your broker.");
+    } catch {
+      toast.error("Sync failed", "Try again in a moment.");
     } finally {
       setSyncing(false);
     }

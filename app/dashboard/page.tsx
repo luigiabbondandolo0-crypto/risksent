@@ -35,6 +35,10 @@ import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
+import {
+  JOURNAL_METAAPI_AUTO_SYNC_MS,
+  syncAllJournalMetaAccounts
+} from "@/lib/journal/metaApiAutoSyncClient";
 import { RefreshCw } from "lucide-react";
 import { toast } from "@/lib/toast";
 
@@ -382,6 +386,31 @@ export default function DashboardPage() {
     }
   }, [isSubDemo]);
 
+  const runAutoJournalBrokerSync = useCallback(async (): Promise<number> => {
+    if (isSubDemo) return 0;
+    const list = journalAccounts ?? [];
+    const failures = await syncAllJournalMetaAccounts(list);
+    await loadCalJournalTrades();
+    void reloadAccountData();
+    return failures;
+  }, [isSubDemo, journalAccounts, loadCalJournalTrades, reloadAccountData]);
+
+  useEffect(() => {
+    if (isSubDemo || !hasAnyBrokerMeta) return;
+    if (!journalAccounts || journalAccounts.length === 0) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      await runAutoJournalBrokerSync();
+    };
+    void tick();
+    const id = setInterval(() => void tick(), JOURNAL_METAAPI_AUTO_SYNC_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [isSubDemo, hasAnyBrokerMeta, journalAccounts, runAutoJournalBrokerSync]);
+
   useEffect(() => {
     if (isSubDemo) return;
     let cancelled = false;
@@ -542,21 +571,14 @@ export default function DashboardPage() {
 
   const handleSyncTrades = useCallback(async () => {
     if (isSubDemo || syncing) return;
-    const targets = (journalAccounts ?? []).filter((a) => a.metaapi_account_id);
-    if (targets.length === 0) {
+    if (!(journalAccounts ?? []).some((a) => a.metaapi_account_id)) {
       toast.info("Nothing to sync", "Connect a broker account with MetaApi first.");
       return;
     }
     setSyncing(true);
-    let failures = 0;
     try {
-      for (const a of targets) {
-        const res = await fetch(`/api/journal/accounts/${a.id}/sync`, { method: "POST" });
-        if (!res.ok) failures += 1;
-      }
-      await loadCalJournalTrades();
+      const failures = await runAutoJournalBrokerSync();
       void fetchStats(resolvedStatsUuid);
-      void reloadAccountData();
       if (failures > 0) {
         toast.warning(
           "Sync incomplete",
@@ -574,10 +596,9 @@ export default function DashboardPage() {
     isSubDemo,
     syncing,
     journalAccounts,
-    loadCalJournalTrades,
+    runAutoJournalBrokerSync,
     fetchStats,
     resolvedStatsUuid,
-    reloadAccountData,
   ]);
 
   const year = calendarMonth.getFullYear();
