@@ -201,3 +201,25 @@ export async function provisionAndDeployMetaTraderAccount(input: ProvisionAccoun
 
   return { ok: true, accountId, state: state ?? "DEPLOYED" };
 }
+
+/**
+ * Remove a trading account from MetaApi provisioning (rollback if validation failed).
+ * @see https://metaapi.cloud/docs/provisioning/api/account/deleteAccount/
+ */
+export async function deleteProvisionedMetaTraderAccount(accountId: string): Promise<boolean> {
+  const token = getToken();
+  if (!token) return false;
+  const id = String(accountId ?? "").trim();
+  if (!id) return false;
+  const base = provisioningBaseUrl();
+  const url = `${base}/users/current/accounts/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      "auth-token": token
+    },
+    cache: "no-store"
+  });
+  return res.ok || res.status === 204;
+}

@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
-import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
+import {
+  deleteProvisionedMetaTraderAccount,
+  provisionAndDeployMetaTraderAccount
+} from "@/lib/metaapiProvisioning";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
+import {
+  METAAPI_INVALID_ACCOUNT_MESSAGE,
+  verifyProvisionedMetaApiAccount
+} from "@/lib/metaapiVerifyProvisionedAccount";
+
+export const maxDuration = 120;
 
 /**
  * POST /api/add-account
@@ -102,6 +111,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const verified = await verifyProvisionedMetaApiAccount(provisioned.accountId);
+    if (!verified.ok) {
+      await deleteProvisionedMetaTraderAccount(provisioned.accountId);
+      return NextResponse.json({ error: METAAPI_INVALID_ACCOUNT_MESSAGE }, { status: 400 });
+    }
+
     const insertRow: Record<string, unknown> = {
       user_id: user.id,
       broker_type: platformRaw,
@@ -136,8 +151,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       account: inserted,
-      message:
-        "Account created on MetaApi and linked. Connection can take a minute; refresh the dashboard if stats are empty at first."
+      message: "Account linked. Your live balance and stats should appear on the dashboard."
     });
   } catch (e) {
     return NextResponse.json(

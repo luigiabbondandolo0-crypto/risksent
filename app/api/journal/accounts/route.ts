@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
-import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
-import { fetchMetaApiAccountInformationWithRetry } from "@/lib/tradingApi";
+import {
+  deleteProvisionedMetaTraderAccount,
+  provisionAndDeployMetaTraderAccount
+} from "@/lib/metaapiProvisioning";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
+import {
+  METAAPI_INVALID_ACCOUNT_MESSAGE,
+  verifyProvisionedMetaApiAccount
+} from "@/lib/metaapiVerifyProvisionedAccount";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
+
+export const maxDuration = 120;
 
 export async function GET() {
   const supabase = await createSupabaseRouteClient();
@@ -160,27 +168,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const infoRes = await fetchMetaApiAccountInformationWithRetry(provisioned.accountId);
-
-  let currency = "USD";
-  let initial_balance = 0;
-  let current_balance = 0;
-  let metaapi_sync_pending = false;
-
-  if (infoRes.ok && infoRes.info) {
-    const info = infoRes.info;
-    currency = String(info.currency ?? "USD")
-      .trim()
-      .toUpperCase()
-      .slice(0, 8);
-    const balance = Number(info.balance);
-    const equity = Number(info.equity);
-    initial_balance = Number.isFinite(balance) ? balance : 0;
-    current_balance = Number.isFinite(equity) ? equity : initial_balance;
-  } else {
-    metaapi_sync_pending = true;
-    console.warn("[journal/accounts] MetaApi account-information after provision:", infoRes.error);
+  const verified = await verifyProvisionedMetaApiAccount(provisioned.accountId);
+  if (!verified.ok) {
+    await deleteProvisionedMetaTraderAccount(provisioned.accountId);
+    return NextResponse.json({ error: METAAPI_INVALID_ACCOUNT_MESSAGE }, { status: 400 });
   }
+
+  const info = verified.info;
+  const currency = String(info.currency ?? "USD")
+    .trim()
+    .toUpperCase()
+    .slice(0, 8);
+  const balance = Number(info.balance);
+  const equity = Number(info.equity);
+  const initial_balance = Number.isFinite(balance) ? balance : 0;
+  const current_balance = Number.isFinite(equity) ? equity : initial_balance;
 
   const tradingInsert: Record<string, unknown> = {
     user_id: user.id,
@@ -228,5 +230,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message, metaapi_account_id: provisioned.accountId }, { status: 500 });
   }
 
-  return NextResponse.json({ account: data, metaapi_sync_pending });
+  return NextResponse.json({ account: data, metaapi_sync_pending: false });
 }
