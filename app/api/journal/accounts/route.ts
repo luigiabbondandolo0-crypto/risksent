@@ -134,19 +134,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: existingTrading } = await supabase
-    .from("trading_account")
+  const { data: existingJournal } = await supabase
+    .from("journal_account")
     .select("id")
     .eq("user_id", user.id)
-    .eq("broker_type", platform)
+    .eq("platform", platform)
     .eq("account_number", loginDigits)
     .maybeSingle();
 
-  if (existingTrading) {
+  if (existingJournal) {
     return NextResponse.json(
       { error: "This broker account is already linked. Use the existing account or remove it first." },
       { status: 409 }
     );
+  }
+
+  /** Stale trading_account rows without a journal (e.g. partial delete) would block re-add. */
+  const { error: orphanDelErr } = await supabase
+    .from("trading_account")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("broker_type", platform)
+    .eq("account_number", loginDigits);
+
+  if (orphanDelErr) {
+    return NextResponse.json({ error: orphanDelErr.message }, { status: 500 });
   }
 
   const provisioned = await provisionAndDeployMetaTraderAccount({
