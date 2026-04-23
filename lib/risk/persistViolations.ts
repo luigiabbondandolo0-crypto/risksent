@@ -55,7 +55,7 @@ async function loadTelegramAlertContext(
       .maybeSingle(),
     supabase
       .from("journal_trade")
-      .select("pl, commission, swap")
+      .select("pl")
       .eq("user_id", userId)
       .eq("account_id", journalAccountId)
       .eq("status", "closed")
@@ -65,10 +65,7 @@ async function loadTelegramAlertContext(
   const currency = String(accRes.data?.currency ?? "USD");
   const rows = tradesRes.data ?? [];
   const todayTrades = rows.length;
-  const todayPl = rows.reduce(
-    (s, r) => s + Number(r.pl ?? 0) + Number(r.commission ?? 0) + Number(r.swap ?? 0),
-    0
-  );
+  const todayPl = rows.reduce((s, r) => s + Number(r.pl ?? 0), 0);
   return { todayTrades, todayPl, currency };
 }
 

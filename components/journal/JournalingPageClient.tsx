@@ -176,7 +176,7 @@ function getDayStats(trades: JournalTradeRow[], dateStr: string) {
     (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
   );
   const pl = day.reduce(
-    (s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0),
+    (s, t) => s + (t.pl ?? 0),
     0
   );
   return { pl, count: day.length };
@@ -256,7 +256,7 @@ function TradeCard({
   trade: JournalTradeRow;
   onClick: () => void;
 }) {
-  const net = (trade.pl ?? 0) + (trade.commission ?? 0) + (trade.swap ?? 0);
+  const net = trade.pl ?? 0;
   return (
     <motion.button
       type="button"
@@ -983,7 +983,7 @@ function CalendarTab({
   }, [selectedDay, allTrades]);
 
   const selectedDayPl = selectedDayTrades.reduce(
-    (s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0),
+    (s, t) => s + (t.pl ?? 0),
     0
   );
 
@@ -993,11 +993,11 @@ function CalendarTab({
     (t) => t.close_time?.slice(0, 7) === monthStr && t.status === "closed"
   );
   const monthPl = monthTrades.reduce(
-    (s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0),
+    (s, t) => s + (t.pl ?? 0),
     0
   );
   const monthWins = monthTrades.filter(
-    (t) => (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0) > 0
+    (t) => (t.pl ?? 0) > 0
   ).length;
   const monthWinRate =
     monthTrades.length > 0
@@ -1010,7 +1010,7 @@ function CalendarTab({
       if (!t.close_time || t.status !== "closed") return;
       const d = t.close_time.slice(0, 10);
       if (!map[d]) map[d] = { pl: 0, count: 0, wins: 0 };
-      const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+      const net = t.pl ?? 0;
       map[d].pl += net;
       map[d].count++;
       if (net > 0) map[d].wins++;
@@ -1101,11 +1101,7 @@ function CalendarTab({
                         .reduce(
                           (acc, t) => {
                             const d = t.close_time!.slice(0, 10);
-                            acc[d] =
-                              (acc[d] ?? 0) +
-                              (t.pl ?? 0) +
-                              (t.commission ?? 0) +
-                              (t.swap ?? 0);
+                            acc[d] = (acc[d] ?? 0) + (t.pl ?? 0);
                             return acc;
                           },
                           {} as Record<string, number>
@@ -1271,10 +1267,7 @@ function CalendarTab({
                 ) : (
                   <div className="space-y-2">
                     {selectedDayTrades.map((t) => {
-                      const net =
-                        (t.pl ?? 0) +
-                        (t.commission ?? 0) +
-                        (t.swap ?? 0);
+                      const net = t.pl ?? 0;
                       return (
                         <Link
                           key={t.id}
@@ -1336,7 +1329,7 @@ function CalendarTab({
 const TRADES_PAGE_SIZE = 50;
 
 function tradeNetPl(t: JournalTradeRow): number {
-  return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  return t.pl ?? 0;
 }
 
 function fmtTradePrice(n: number | null | undefined): string {

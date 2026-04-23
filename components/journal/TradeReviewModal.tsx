@@ -81,7 +81,7 @@ export function TradeReviewModal({
   const [newChecklist, setNewChecklist] = useState("");
   const [newRule, setNewRule] = useState("");
 
-  const netPl = (trade.pl ?? 0) + (trade.commission ?? 0) + (trade.swap ?? 0);
+  const netPl = trade.pl ?? 0;
 
   // Load existing review
   useEffect(() => {

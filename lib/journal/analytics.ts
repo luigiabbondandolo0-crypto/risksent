@@ -18,13 +18,13 @@ export function closedTrades(trades: JournalTradeRow[]): JournalTradeRow[] {
 }
 
 export function totalPl(trades: JournalTradeRow[]): number {
-  return closedTrades(trades).reduce((s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0);
+  return closedTrades(trades).reduce((s, t) => s + (t.pl ?? 0), 0);
 }
 
 export function winRatePct(trades: JournalTradeRow[]): number {
   const c = closedTrades(trades);
   if (c.length === 0) return 0;
-  const net = (t: JournalTradeRow) => (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  const net = (t: JournalTradeRow) => t.pl ?? 0;
   const wins = c.filter((t) => net(t) > 0).length;
   return (wins / c.length) * 100;
 }
@@ -42,7 +42,7 @@ export function equityCurve(trades: JournalTradeRow[]): EquityPoint[] {
   let bal = INITIAL_EQUITY;
   const pts: EquityPoint[] = [{ t: "start", balance: bal, label: "Start" }];
   for (const t of c) {
-    const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    const net = (t.pl ?? 0);
     bal += net;
     pts.push({
       t: t.close_time!,
@@ -55,7 +55,7 @@ export function equityCurve(trades: JournalTradeRow[]): EquityPoint[] {
 
 export function winLossSplit(trades: JournalTradeRow[]): { name: string; value: number; fill: string }[] {
   const c = closedTrades(trades);
-  const net = (t: JournalTradeRow) => (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  const net = (t: JournalTradeRow) => t.pl ?? 0;
   let win = 0;
   let loss = 0;
   for (const t of c) {
@@ -75,7 +75,7 @@ export function plByDayOfWeek(trades: JournalTradeRow[]): { day: string; pl: num
   const sums = [0, 0, 0, 0, 0, 0, 0];
   for (const t of closedTrades(trades)) {
     const d = getDay(parseISO(t.close_time!));
-    sums[d] += (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    sums[d] += (t.pl ?? 0);
   }
   /* Mon-first display */
   const order = [1, 2, 3, 4, 5, 6, 0];
@@ -85,7 +85,7 @@ export function plByDayOfWeek(trades: JournalTradeRow[]): { day: string; pl: num
 export function plBySymbol(trades: JournalTradeRow[]): { symbol: string; pl: number }[] {
   const m = new Map<string, number>();
   for (const t of closedTrades(trades)) {
-    const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    const net = (t.pl ?? 0);
     m.set(t.symbol, (m.get(t.symbol) ?? 0) + net);
   }
   return [...m.entries()]
@@ -106,7 +106,7 @@ export function plBySession(trades: JournalTradeRow[]): { session: string; pl: n
   const m = { Asia: 0, London: 0, NY: 0, Other: 0 };
   for (const t of closedTrades(trades)) {
     const b = sessionBucketUtc(t.close_time!);
-    m[b] += (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    m[b] += (t.pl ?? 0);
   }
   return (Object.keys(m) as (keyof typeof m)[]).map((session) => ({
     session,
@@ -117,7 +117,7 @@ export function plBySession(trades: JournalTradeRow[]): { session: string; pl: n
 export function tagStats(trades: JournalTradeRow[]): { tag: string; pl: number; count: number }[] {
   const m = new Map<string, { pl: number; count: number }>();
   for (const t of closedTrades(trades)) {
-    const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    const net = (t.pl ?? 0);
     const tags = t.setup_tags?.length ? t.setup_tags : ["Untagged"];
     for (const tag of tags) {
       const cur = m.get(tag) ?? { pl: 0, count: 0 };
@@ -137,7 +137,7 @@ export function holdTimeHours(trades: JournalTradeRow[]): { winners: number; los
   let wN = 0;
   let lSum = 0;
   let lN = 0;
-  const net = (t: JournalTradeRow) => (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  const net = (t: JournalTradeRow) => t.pl ?? 0;
   for (const t of c) {
     const h = differenceInHours(parseISO(t.close_time!), parseISO(t.open_time));
     if (!Number.isFinite(h) || h < 0) continue;
@@ -166,7 +166,7 @@ export function monthlyPlHeatmap(trades: JournalTradeRow[], ref: Date = new Date
     const d = parseISO(t.close_time!);
     if (d < start || d > end) continue;
     const key = format(d, "yyyy-MM-dd");
-    dayMap.set(key, (dayMap.get(key) ?? 0) + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0));
+    dayMap.set(key, (dayMap.get(key) ?? 0) + (t.pl ?? 0));
   }
   const days = eachDayOfInterval({ start, end });
   return days.map((d) => {

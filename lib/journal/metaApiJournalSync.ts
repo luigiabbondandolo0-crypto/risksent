@@ -11,6 +11,7 @@ export type JournalAccountSyncInput = {
 
 /**
  * Pull closed deals from MetaApi and upsert into journal_trade; refresh journal_account balance when possible.
+ * `pl` = MetaTrader Profit column (MetaApi deal `profit` on the close); commission/swap cleared so UI sums match MT.
  */
 export async function syncJournalAccountFromMetaApi(
   supabase: SupabaseClient,
@@ -68,23 +69,8 @@ export async function syncJournalAccountFromMetaApi(
     const openTime = String(rec.openTime ?? "");
     const closeTime = String(rec.closeTime ?? "");
     if (!openTime || !closeTime) continue;
-    const profitNet = Number(rec.profit);
-    if (!Number.isFinite(profitNet)) continue;
-
-    const profitGross =
-      rec.profitGross != null && Number.isFinite(Number(rec.profitGross))
-        ? Number(rec.profitGross)
-        : profitNet;
-    const openingProfit =
-      rec.openingProfit != null && Number.isFinite(Number(rec.openingProfit))
-        ? Number(rec.openingProfit)
-        : 0;
-    const commission =
-      rec.commission != null && Number.isFinite(Number(rec.commission))
-        ? Number(rec.commission)
-        : 0;
-    const swap =
-      rec.swap != null && Number.isFinite(Number(rec.swap)) ? Number(rec.swap) : 0;
+    const plVal = Number(rec.profit);
+    if (!Number.isFinite(plVal)) continue;
 
     const sl = rec.stopLoss;
     const stopLoss = sl != null && Number.isFinite(Number(sl)) && Number(sl) > 0 ? Number(sl) : null;
@@ -102,9 +88,9 @@ export async function syncJournalAccountFromMetaApi(
       lot_size: Number(rec.lots) || 0,
       stop_loss: stopLoss,
       take_profit: null,
-      pl: profitGross + openingProfit,
-      commission,
-      swap,
+      pl: plVal,
+      commission: 0,
+      swap: 0,
       pips: null,
       risk_reward: null,
       setup_tags: [],

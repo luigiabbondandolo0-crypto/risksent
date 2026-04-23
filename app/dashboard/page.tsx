@@ -647,7 +647,7 @@ export default function DashboardPage() {
     for (const t of calJournalTrades) {
       if (!t.close_time || t.status !== "closed") continue;
       const d = t.close_time.slice(0, 10);
-      const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+      const net = t.pl ?? 0;
       const entry = map.get(d) ?? { profit: 0, trades: 0, wins: 0 };
       entry.profit += net;
       entry.trades += 1;

@@ -221,39 +221,9 @@ type MetaDeal = {
 
 const CLOSING_ENTRIES = new Set(["DEAL_ENTRY_OUT", "DEAL_ENTRY_OUT_BY", "DEAL_ENTRY_INOUT"]);
 
-function dealNetProfit(d: MetaDeal): number {
-  return Number(d.profit ?? 0) + Number(d.commission ?? 0) + Number(d.swap ?? 0);
-}
-
-/** MT "Profit" column on the closing row: price P/L for that deal only. */
-function dealPriceProfit(d: MetaDeal): number {
+/** MetaTrader "Profit" column for this history deal (MetaApi `profit` field). */
+function mtDealProfit(d: MetaDeal): number {
   return Number(d.profit ?? 0);
-}
-
-/** Opening deals strictly before this close (MT5 split IN / OUT). */
-function inDealsStrictlyBeforeClose(list: MetaDeal[], closeDeal: MetaDeal): MetaDeal[] {
-  const tClose = new Date(closeDeal.time ?? 0).getTime();
-  if (!Number.isFinite(tClose)) return [];
-  return list.filter((x) => {
-    const et = x.entryType ?? "";
-    if (et !== "DEAL_ENTRY_IN") return false;
-    const tx = new Date(x.time ?? 0).getTime();
-    return Number.isFinite(tx) && tx < tClose;
-  });
-}
-
-/** First OUT/OUT_BY in time order for this position (excludes INOUT). */
-function isFirstOutboundClose(sortedList: MetaDeal[], closeDeal: MetaDeal): boolean {
-  const tClose = new Date(closeDeal.time ?? 0).getTime();
-  if (!Number.isFinite(tClose)) return true;
-  for (const x of sortedList) {
-    const et = x.entryType ?? "";
-    if (et !== "DEAL_ENTRY_OUT" && et !== "DEAL_ENTRY_OUT_BY") continue;
-    const tx = new Date(x.time ?? 0).getTime();
-    if (!Number.isFinite(tx) || tx >= tClose) continue;
-    return false;
-  }
-  return true;
 }
 
 function findOpeningDeal(sortedPositionDeals: MetaDeal[], closeDeal: MetaDeal): MetaDeal | null {
@@ -302,7 +272,6 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
 
     if (et === "DEAL_ENTRY_INOUT") {
       const sideLabel = d.type === "DEAL_TYPE_SELL" ? "Sell" : "Buy";
-      const profitNet = dealNetProfit(d);
       rows.push({
         ticket,
         openTime: d.time,
@@ -312,11 +281,7 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
         lots: d.volume ?? 0,
         openPrice: d.price ?? 0,
         closePrice: d.price ?? 0,
-        profit: profitNet,
-        profitGross: dealPriceProfit(d),
-        openingProfit: 0,
-        commission: Number(d.commission ?? 0),
-        swap: Number(d.swap ?? 0),
+        profit: mtDealProfit(d),
         stopLoss: d.stopLoss ?? null
       });
       continue;
@@ -324,20 +289,6 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
 
     const list = byPos.get(positionKey(d)) ?? [];
     const open = findOpeningDeal(list, d);
-    /**
-     * One row per closing deal. `profitGross` = MT Profit on the **exit** deal only.
-     * Add **opening** commission & swap on the *first* OUT of the position so journal/calendar
-     * net (pl + commission + swap) matches account P/L; we do not add IN `profit` (always 0 on open).
-     */
-    const firstClose = isFirstOutboundClose(list, d);
-    const ins = firstClose ? inDealsStrictlyBeforeClose(list, d) : [];
-    const inComm = ins.reduce((s, x) => s + Number(x.commission ?? 0), 0);
-    const inSwap = ins.reduce((s, x) => s + Number(x.swap ?? 0), 0);
-    const inProfit = ins.reduce((s, x) => s + Number(x.profit ?? 0), 0);
-    const profitNet = dealNetProfit(d) + inComm + inSwap + inProfit;
-    const profitGross = dealPriceProfit(d);
-    const commission = inComm + Number(d.commission ?? 0);
-    const swap = inSwap + Number(d.swap ?? 0);
 
     /** Closing deal `type` is exit direction (close long = SELL). Show position side from open deal. */
     let sideLabel: string;
@@ -355,11 +306,7 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
       lots: d.volume ?? 0,
       openPrice: open?.price ?? d.price ?? 0,
       closePrice: d.price ?? 0,
-      profit: profitNet,
-      profitGross,
-      openingProfit: inProfit,
-      commission,
-      swap,
+      profit: mtDealProfit(d),
       stopLoss: (d.stopLoss ?? open?.stopLoss) ?? null
     });
   }

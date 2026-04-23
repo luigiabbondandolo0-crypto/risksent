@@ -50,7 +50,7 @@ function buildDailyStatsFromSeed(): { date: string; profit: number; trades: numb
   for (const t of SEED_TRADES) {
     if (t.status !== "closed" || !t.close_time) continue;
     const d = t.close_time.slice(0, 10);
-    const net = (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+    const net = (t.pl ?? 0);
     const cur = map.get(d) ?? { profit: 0, trades: 0, wins: 0 };
     cur.profit += net;
     cur.trades += 1;
@@ -72,18 +72,18 @@ export function buildDemoDashboardStats(): DemoDashboardStats {
   });
 
   const wins = SEED_TRADES.filter(
-    (t) => t.status === "closed" && (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0) > 0
+    (t) => t.status === "closed" && (t.pl ?? 0) > 0
   );
   const losses = SEED_TRADES.filter(
-    (t) => t.status === "closed" && (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0) < 0
+    (t) => t.status === "closed" && (t.pl ?? 0) < 0
   );
   const avgWin =
     wins.length > 0
-      ? wins.reduce((s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0) / wins.length
+      ? wins.reduce((s, t) => s + (t.pl ?? 0), 0) / wins.length
       : null;
   const avgLoss =
     losses.length > 0
-      ? losses.reduce((s, t) => s + (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0) / losses.length
+      ? losses.reduce((s, t) => s + (t.pl ?? 0), 0) / losses.length
       : null;
 
   return {

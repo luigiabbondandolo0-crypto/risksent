@@ -12,7 +12,7 @@ import { SEED_TRADES } from "@/lib/journal/seedTrades";
 const SYMBOLS = ["ALL", "EURUSD", "GBPUSD", "XAUUSD", "US30"];
 
 function netPl(t: JournalTradeRow) {
-  return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  return t.pl ?? 0;
 }
 
 type JournalTradesPageClientProps = {

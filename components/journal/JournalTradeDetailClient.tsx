@@ -27,7 +27,7 @@ const emotionColor: Record<JournalEmotion, string> = {
 const TAG_PRESETS = ["FOMO", "HTF Trend", "Revenge", "A+ Setup", "London", "NY", "Asia", "Breakout", "Liquidity sweep"];
 
 function netPl(t: JournalTradeRow) {
-  return (t.pl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+  return t.pl ?? 0;
 }
 
 type Props = { tradeId: string; linkBase?: string };
