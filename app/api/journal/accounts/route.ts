@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
 import {
@@ -6,8 +7,8 @@ import {
   provisionAndDeployMetaTraderAccount
 } from "@/lib/metaapiProvisioning";
 import { mapMetaApiErrorToAddAccountMessage } from "@/lib/metaapiAddAccountUserMessages";
+import { finalizeJournalAccountAfterProvision } from "@/lib/journal/finalizeJournalAccountMetaApi";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
-import { verifyProvisionedMetaApiAccount } from "@/lib/metaapiVerifyProvisionedAccount";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 export const maxDuration = 120;
@@ -179,25 +180,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const verified = await verifyProvisionedMetaApiAccount(provisioned.accountId);
-  if (!verified.ok) {
-    await deleteProvisionedMetaTraderAccount(provisioned.accountId);
-    return NextResponse.json(
-      { error: mapMetaApiErrorToAddAccountMessage(verified.error || "") },
-      { status: 400 }
-    );
-  }
-
-  const info = verified.info;
-  const currency = String(info.currency ?? "USD")
-    .trim()
-    .toUpperCase()
-    .slice(0, 8);
-  const balance = Number(info.balance);
-  const equity = Number(info.equity);
-  const initial_balance = Number.isFinite(balance) ? balance : 0;
-  const current_balance = Number.isFinite(equity) ? equity : initial_balance;
-
   const tradingInsert: Record<string, unknown> = {
     user_id: user.id,
     broker_type: platform,
@@ -229,9 +211,9 @@ export async function POST(req: NextRequest) {
       account_number: loginDigits,
       account_password: passwordEncrypted,
       platform,
-      currency: currency || "USD",
-      initial_balance,
-      current_balance,
+      currency: "USD",
+      initial_balance: 0,
+      current_balance: 0,
       status: "active",
       metaapi_account_id: provisioned.accountId
     })
@@ -241,8 +223,24 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
+    await deleteProvisionedMetaTraderAccount(provisioned.accountId);
+    await supabase
+      .from("trading_account")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("metaapi_account_id", provisioned.accountId);
     return NextResponse.json({ error: error.message, metaapi_account_id: provisioned.accountId }, { status: 500 });
   }
 
-  return NextResponse.json({ account: data, metaapi_sync_pending: false });
+  const journalId = data.id;
+  const metaId = provisioned.accountId;
+  after(() => {
+    void finalizeJournalAccountAfterProvision({
+      userId: user.id,
+      journalAccountId: journalId,
+      metaapiAccountId: metaId
+    }).catch((e) => console.error("[journal/accounts POST] finalize:", e));
+  });
+
+  return NextResponse.json({ account: data, metaapi_sync_pending: true });
 }

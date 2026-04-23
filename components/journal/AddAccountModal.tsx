@@ -79,9 +79,9 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
         return;
       }
       if (j.metaapi_sync_pending) {
-        toast.warning(
-          "Account linked",
-          "Balance and currency will update when MetaApi connects to your broker (often under a minute). If it persists, check METAAPI_BASE_URL matches your MetaApi region."
+        toast.info(
+          "Account added",
+          "We’re finishing the broker link — balance and currency usually appear within a few seconds. Refresh if needed."
         );
       }
       onCreated();
