@@ -75,6 +75,10 @@ export async function syncJournalAccountFromMetaApi(
       rec.profitGross != null && Number.isFinite(Number(rec.profitGross))
         ? Number(rec.profitGross)
         : profitNet;
+    const openingProfit =
+      rec.openingProfit != null && Number.isFinite(Number(rec.openingProfit))
+        ? Number(rec.openingProfit)
+        : 0;
     const commission =
       rec.commission != null && Number.isFinite(Number(rec.commission))
         ? Number(rec.commission)
@@ -98,7 +102,7 @@ export async function syncJournalAccountFromMetaApi(
       lot_size: Number(rec.lots) || 0,
       stop_loss: stopLoss,
       take_profit: null,
-      pl: profitGross,
+      pl: profitGross + openingProfit,
       commission,
       swap,
       pips: null,

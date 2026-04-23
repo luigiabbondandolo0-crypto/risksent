@@ -230,6 +230,32 @@ function dealPriceProfit(d: MetaDeal): number {
   return Number(d.profit ?? 0);
 }
 
+/** Opening deals strictly before this close (MT5 split IN / OUT). */
+function inDealsStrictlyBeforeClose(list: MetaDeal[], closeDeal: MetaDeal): MetaDeal[] {
+  const tClose = new Date(closeDeal.time ?? 0).getTime();
+  if (!Number.isFinite(tClose)) return [];
+  return list.filter((x) => {
+    const et = x.entryType ?? "";
+    if (et !== "DEAL_ENTRY_IN") return false;
+    const tx = new Date(x.time ?? 0).getTime();
+    return Number.isFinite(tx) && tx < tClose;
+  });
+}
+
+/** First OUT/OUT_BY in time order for this position (excludes INOUT). */
+function isFirstOutboundClose(sortedList: MetaDeal[], closeDeal: MetaDeal): boolean {
+  const tClose = new Date(closeDeal.time ?? 0).getTime();
+  if (!Number.isFinite(tClose)) return true;
+  for (const x of sortedList) {
+    const et = x.entryType ?? "";
+    if (et !== "DEAL_ENTRY_OUT" && et !== "DEAL_ENTRY_OUT_BY") continue;
+    const tx = new Date(x.time ?? 0).getTime();
+    if (!Number.isFinite(tx) || tx >= tClose) continue;
+    return false;
+  }
+  return true;
+}
+
 function findOpeningDeal(sortedPositionDeals: MetaDeal[], closeDeal: MetaDeal): MetaDeal | null {
   const closeT = new Date(closeDeal.time ?? 0).getTime();
   if (!Number.isFinite(closeT)) return null;
@@ -288,6 +314,7 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
         closePrice: d.price ?? 0,
         profit: profitNet,
         profitGross: dealPriceProfit(d),
+        openingProfit: 0,
         commission: Number(d.commission ?? 0),
         swap: Number(d.swap ?? 0),
         stopLoss: d.stopLoss ?? null
@@ -298,14 +325,19 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
     const list = byPos.get(positionKey(d)) ?? [];
     const open = findOpeningDeal(list, d);
     /**
-     * One closed-order row per **closing** deal only (same as a single History row in MT).
-     * Do not add DEAL_ENTRY_IN commission/profit here: many feeds already roll fees into the
-     * OUT deal or would double-count vs what traders compare in the terminal.
+     * One row per closing deal. `profitGross` = MT Profit on the **exit** deal only.
+     * Add **opening** commission & swap on the *first* OUT of the position so journal/calendar
+     * net (pl + commission + swap) matches account P/L; we do not add IN `profit` (always 0 on open).
      */
-    const profitNet = dealNetProfit(d);
+    const firstClose = isFirstOutboundClose(list, d);
+    const ins = firstClose ? inDealsStrictlyBeforeClose(list, d) : [];
+    const inComm = ins.reduce((s, x) => s + Number(x.commission ?? 0), 0);
+    const inSwap = ins.reduce((s, x) => s + Number(x.swap ?? 0), 0);
+    const inProfit = ins.reduce((s, x) => s + Number(x.profit ?? 0), 0);
+    const profitNet = dealNetProfit(d) + inComm + inSwap + inProfit;
     const profitGross = dealPriceProfit(d);
-    const commission = Number(d.commission ?? 0);
-    const swap = Number(d.swap ?? 0);
+    const commission = inComm + Number(d.commission ?? 0);
+    const swap = inSwap + Number(d.swap ?? 0);
 
     /** Closing deal `type` is exit direction (close long = SELL). Show position side from open deal. */
     let sideLabel: string;
@@ -325,6 +357,7 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
       closePrice: d.price ?? 0,
       profit: profitNet,
       profitGross,
+      openingProfit: inProfit,
       commission,
       swap,
       stopLoss: (d.stopLoss ?? open?.stopLoss) ?? null
