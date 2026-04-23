@@ -8,8 +8,7 @@ import {
   notifyFlagForRule
 } from "./violationEngine";
 import { ruleTypeToLabel, sendSmartTelegramAlert } from "./telegramRisk";
-
-const DEDUPE_MINUTES = 30;
+import { canonicalAlertRuleType, hasRecentRuleNotification } from "./alertRuleDedupe";
 
 function solutionForRule(ruleType: RiskRuleType): string {
   switch (ruleType) {
@@ -67,55 +66,6 @@ async function loadTelegramAlertContext(
   const todayTrades = rows.length;
   const todayPl = rows.reduce((s, r) => s + Number(r.pl ?? 0), 0);
   return { todayTrades, todayPl, currency };
-}
-
-async function shouldSkipDedupe(
-  supabase: SupabaseClient,
-  userId: string,
-  ruleType: string,
-  message: string,
-  journalAccountId: string | null
-): Promise<boolean> {
-  const since = new Date(Date.now() - DEDUPE_MINUTES * 60 * 1000).toISOString();
-  let q = supabase
-    .from("risk_violations")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("rule_type", ruleType)
-    .eq("message", message)
-    .gte("created_at", since)
-    .limit(1);
-  q = journalAccountId ? q.eq("account_id", journalAccountId) : q.is("account_id", null);
-  const { data } = await q;
-  return (data?.length ?? 0) > 0;
-}
-
-/**
- * Dedupe the alert mirror independently from risk_violations. This is critical
- * because older risk_violations rows can exist without a matching alert row
- * (the mirror was added later) — if we tied the alert insert to the violations
- * dedupe, the dashboard / bell would stay empty even for legitimate new
- * violations whenever the history already contained a similar row.
- */
-async function shouldSkipAlertDedupe(
-  supabase: SupabaseClient,
-  userId: string,
-  ruleType: string,
-  message: string,
-  journalAccountId: string | null
-): Promise<boolean> {
-  const since = new Date(Date.now() - DEDUPE_MINUTES * 60 * 1000).toISOString();
-  let q = supabase
-    .from("alert")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("rule_type", ruleType)
-    .eq("message", message)
-    .gte("alert_date", since)
-    .limit(1);
-  q = journalAccountId ? q.eq("account_id", journalAccountId) : q.is("account_id", null);
-  const { data } = await q;
-  return (data?.length ?? 0) > 0;
 }
 
 async function loadNotificationsDefaults(supabase: SupabaseClient, userId: string): Promise<RiskNotificationsRow | null> {
@@ -209,17 +159,11 @@ export async function persistRiskViolations(params: {
       continue;
     }
 
-    // --- Risk Manager violation history (+ Telegram tied to new violations) ---
-    const skipHistory = await shouldSkipDedupe(
-      supabase,
-      userId,
-      c.rule_type,
-      c.message,
-      journalAccountId
-    );
+    const skipDup = await hasRecentRuleNotification(supabase, userId, c.rule_type, journalAccountId);
+    const canonicalType = canonicalAlertRuleType(c.rule_type);
 
-    let notified = false;
-    if (!skipHistory) {
+    if (!skipDup) {
+      let notified = false;
       if (notif?.telegram_enabled && notif.telegram_chat_id) {
         const send = await sendSmartTelegramAlert({
           chatId: notif.telegram_chat_id,
@@ -239,7 +183,7 @@ export async function persistRiskViolations(params: {
 
       const { error: histErr } = await supabase.from("risk_violations").insert({
         user_id: userId,
-        rule_type: c.rule_type,
+        rule_type: canonicalType,
         value_at_violation: c.value_at_violation,
         limit_value: c.limit_value,
         message: c.message,
@@ -253,27 +197,13 @@ export async function persistRiskViolations(params: {
       } else {
         inserted += 1;
       }
-    }
 
-    // --- Dashboard Live Alerts + Topbar bell mirror ---
-    // Dedupe against the alert table directly. This is decoupled from the
-    // risk_violations dedupe on purpose: an existing violation row (e.g. created
-    // before the mirror existed, or created on a different cycle) must NOT
-    // prevent the dashboard / bell from surfacing the alert.
-    const skipAlert = await shouldSkipAlertDedupe(
-      supabase,
-      userId,
-      c.rule_type,
-      c.message,
-      journalAccountId
-    );
-    if (!skipAlert) {
       const { error: alertErr } = await supabase.from("alert").insert({
         user_id: userId,
         message: c.message,
         severity: c.severity === "danger" ? "high" : "medium",
         solution: solutionForRule(c.rule_type),
-        rule_type: c.rule_type,
+        rule_type: canonicalType,
         account_id: journalAccountId,
         account_nickname: accountNickname
       });

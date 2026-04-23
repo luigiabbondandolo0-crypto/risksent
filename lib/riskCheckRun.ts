@@ -19,7 +19,10 @@ import {
   type TradingAccountRow
 } from "./tradingApi";
 import { riskPctOfEquityAtStopLoss } from "@/lib/risk/openPositionRisk";
-const DEDUPE_HOURS = 12;
+import {
+  canonicalAlertRuleType,
+  hasRecentRuleNotification
+} from "@/lib/risk/alertRuleDedupe";
 
 type FindingType = RiskFinding["type"];
 
@@ -395,8 +398,6 @@ export async function runRiskCheckForAccount(params: {
     currentExposurePct
   });
 
-  const dedupeSince = new Date(Date.now() - DEDUPE_HOURS * 60 * 60 * 1000).toISOString();
-
   // Fetch user's Telegram chat ID once for the whole loop
   const adminDb = createSupabaseAdmin();
   const { data: appUser } = await adminDb
@@ -455,17 +456,10 @@ export async function runRiskCheckForAccount(params: {
       continue;
     }
 
-    let recentQ = supabase
-      .from("alert")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("rule_type", f.type)
-      .gte("alert_date", dedupeSince)
-      .limit(1);
-    recentQ = journalCtx?.id ? recentQ.eq("account_id", journalCtx.id) : recentQ.is("account_id", null);
-    const { data: recent } = await recentQ;
-    if (recent && recent.length > 0) continue;
+    const skipDup = await hasRecentRuleNotification(supabase, userId, f.type, journalCtx?.id ?? null);
+    if (skipDup) continue;
 
+    const canonicalRule = canonicalAlertRuleType(f.type);
     const { data: alertRow } = await supabase
       .from("alert")
       .insert({
@@ -473,7 +467,7 @@ export async function runRiskCheckForAccount(params: {
         message: f.message,
         severity: f.severity,
         solution: f.advice,
-        rule_type: f.type,
+        rule_type: canonicalRule,
         account_id: journalCtx?.id ?? null,
         account_nickname: journalCtx?.nickname ?? null
       })
