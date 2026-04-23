@@ -28,6 +28,10 @@ export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const ctx = gsap.context(() => {
       ScrollTrigger.refresh();
 
@@ -40,6 +44,21 @@ export default function HomePage() {
           if (bar) bar.style.transform = `scaleX(${self.progress})`;
         },
       });
+
+      if (reduced) {
+        gsap.set(
+          ".hero-word, .hero-sub, .hero-cta, .feature-num, .feature-heading, .feature-body, .stat-item, .module-card, .final-cta-text, .scroll-section-label, .testimonial-card, .marquee-inner, .hero-content",
+          {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            xPercent: 0,
+            yPercent: 0,
+            scale: 1
+          }
+        );
+        return;
+      }
 
       // ── Hero text stagger on load ──────────────────────────────────────
       gsap.from(".hero-word", {
@@ -188,6 +207,21 @@ export default function HomePage() {
     return () => ctx.revert();
   }, []);
 
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const scheduleRefresh = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => ScrollTrigger.refresh(), 120);
+    };
+    window.addEventListener("resize", scheduleRefresh);
+    window.addEventListener("orientationchange", scheduleRefresh);
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener("resize", scheduleRefresh);
+      window.removeEventListener("orientationchange", scheduleRefresh);
+    };
+  }, []);
+
   return (
     <div ref={containerRef} className="min-h-full overflow-x-hidden" style={{ background: "#070710" }}>
 
@@ -206,7 +240,7 @@ export default function HomePage() {
       <HorizonCanvas accentColor="#6366F1" />
 
       {/* ─── HERO ─── */}
-      <section className="hero-section relative min-h-screen flex flex-col justify-center px-6 pt-24 pb-20 lg:px-16 overflow-hidden" style={{ zIndex: 1 }}>
+      <section className="hero-section relative min-h-screen flex flex-col justify-center overflow-hidden px-4 pt-20 pb-16 sm:px-6 sm:pt-24 sm:pb-20 lg:px-16" style={{ zIndex: 1 }}>
         {/* Dot grid */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -237,7 +271,7 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1
-            className="text-[clamp(36px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
+            className="break-words text-[clamp(36px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {["Stop", "trading", "blind."].map((word, i) => (
@@ -355,7 +389,7 @@ export default function HomePage() {
       {SECTIONS.map((sec, i) => (
         <section
           key={sec.id}
-          className="relative flex items-center justify-center min-h-[60vh] px-6 lg:px-16"
+          className="relative flex min-h-[60vh] items-center justify-center px-4 sm:px-6 lg:px-16"
           style={{ zIndex: 1 }}
         >
           <div className="scroll-section-label text-center">
@@ -363,7 +397,7 @@ export default function HomePage() {
               {String(i + 1).padStart(2, "0")} / 03
             </p>
             <h2
-              className="text-[clamp(36px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
+              className="break-words text-[clamp(36px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
               style={{
                 fontFamily: "var(--font-display)",
                 background: i === 0

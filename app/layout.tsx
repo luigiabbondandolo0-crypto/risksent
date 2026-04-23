@@ -85,9 +85,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${outfit.variable} ${jetbrainsMono.variable} ${syne.variable}`}>
       <body
-        className={`${outfit.className} flex min-h-screen flex-col bg-background text-slate-100 antialiased`}
+        className={`${outfit.className} flex min-h-screen min-w-0 flex-col overflow-x-clip bg-background text-slate-100 antialiased`}
       >
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <RootLayoutChrome>{children}</RootLayoutChrome>
         </div>
         <Toaster />

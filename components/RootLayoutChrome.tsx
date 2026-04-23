@@ -13,7 +13,7 @@ import { CookieConsentBanner } from "@/components/CookieConsent";
 /** Fills the viewport; sidebar stays put while only main scrolls. */
 function ShellViewportLock({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden">
+    <div className="flex h-dvh max-h-dvh min-h-0 w-full min-w-0 max-w-[100vw] flex-col overflow-hidden">
       {children}
     </div>
   );
@@ -53,10 +53,12 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
-      <ScrollToTop />
-      <Topbar />
-      <AppShell>{children}</AppShell>
-      <Footer variant="marketing" />
+      <div className="flex min-w-0 w-full max-w-[100vw] flex-1 flex-col">
+        <ScrollToTop />
+        <Topbar />
+        <AppShell>{children}</AppShell>
+        <Footer variant="marketing" />
+      </div>
       <CookieConsentBanner />
     </>
   );

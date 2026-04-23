@@ -63,7 +63,7 @@ export function Topbar() {
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
     >
 
-      <div className="flex h-full w-full items-center justify-between gap-4 pl-10 pr-4 sm:pl-12 sm:pr-6 lg:pl-[58px]">
+      <div className="flex h-full min-w-0 w-full max-w-[100vw] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:pl-8 md:pr-5 lg:pl-[58px] lg:pr-6">
 
         {/* Brand wordmark — on lg, the "/" lands roughly under the sidebar logo */}
         <Link
@@ -71,7 +71,7 @@ export function Topbar() {
           className="shrink-0 transition-opacity duration-200 hover:opacity-80"
           aria-label="RiskSent home"
         >
-          <BrandWordmark className="text-[16px] sm:text-[18px]" />
+          <BrandWordmark className="text-[clamp(14px,3.5vw,18px)]" />
         </Link>
 
         {/* Marketing nav — desktop */}
@@ -126,11 +126,11 @@ export function Topbar() {
                 </button>
               )}
               <Link href="/login"
-                className="rounded-xl border border-slate-700/50 bg-slate-900/50 px-3 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/70 hover:text-white">
+                className="rounded-xl border border-slate-700/50 bg-slate-900/50 px-2.5 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:bg-slate-800/70 hover:text-white sm:px-3 sm:text-xs">
                 Log in
               </Link>
               <Link href="/signup"
-                className="rounded-xl px-3 py-1.5 text-xs font-bold text-black transition-all hover:scale-[1.02]"
+                className="rounded-xl px-2.5 py-1.5 text-[11px] font-bold text-black transition-transform hover:scale-[1.02] sm:px-3 sm:text-xs motion-reduce:transition-none motion-reduce:hover:scale-100"
                 style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}>
                 Start free
               </Link>
