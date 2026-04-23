@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
 import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
-import { fetchMetaApiAccountInformation } from "@/lib/tradingApi";
+import { fetchMetaApiAccountInformationWithRetry } from "@/lib/tradingApi";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
@@ -160,27 +160,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const infoRes = await fetchMetaApiAccountInformation(provisioned.accountId);
-  if (!infoRes.ok || !infoRes.info) {
-    return NextResponse.json(
-      {
-        error:
-          infoRes.error ??
-          "Account was created on MetaApi but balance could not be read yet. Try again in a minute."
-      },
-      { status: 502 }
-    );
-  }
+  const infoRes = await fetchMetaApiAccountInformationWithRetry(provisioned.accountId);
 
-  const info = infoRes.info;
-  const currency = String(info.currency ?? "USD")
-    .trim()
-    .toUpperCase()
-    .slice(0, 8);
-  const balance = Number(info.balance);
-  const equity = Number(info.equity);
-  const initial_balance = Number.isFinite(balance) ? balance : 0;
-  const current_balance = Number.isFinite(equity) ? equity : initial_balance;
+  let currency = "USD";
+  let initial_balance = 0;
+  let current_balance = 0;
+  let metaapi_sync_pending = false;
+
+  if (infoRes.ok && infoRes.info) {
+    const info = infoRes.info;
+    currency = String(info.currency ?? "USD")
+      .trim()
+      .toUpperCase()
+      .slice(0, 8);
+    const balance = Number(info.balance);
+    const equity = Number(info.equity);
+    initial_balance = Number.isFinite(balance) ? balance : 0;
+    current_balance = Number.isFinite(equity) ? equity : initial_balance;
+  } else {
+    metaapi_sync_pending = true;
+    console.warn("[journal/accounts] MetaApi account-information after provision:", infoRes.error);
+  }
 
   const tradingInsert: Record<string, unknown> = {
     user_id: user.id,
@@ -228,5 +228,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message, metaapi_account_id: provisioned.accountId }, { status: 500 });
   }
 
-  return NextResponse.json({ account: data });
+  return NextResponse.json({ account: data, metaapi_sync_pending });
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { jn } from "@/lib/journal/jnClasses";
+import { toast } from "@/lib/toast";
 
 type Props = {
   open: boolean;
@@ -41,6 +42,12 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
       if (!res.ok) {
         setErr(j.error ?? "Failed");
         return;
+      }
+      if (j.metaapi_sync_pending) {
+        toast.warning(
+          "Account linked",
+          "Balance and currency will update when MetaApi connects to your broker (often under a minute). If it persists, check METAAPI_BASE_URL matches your MetaApi region."
+        );
       }
       onCreated();
       onClose();

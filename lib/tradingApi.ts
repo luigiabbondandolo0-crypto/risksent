@@ -156,6 +156,21 @@ export async function fetchMetaApiAccountInformation(accountId: string): Promise
   return { ok: true, info: res.data };
 }
 
+/**
+ * After provisioning, MetaApi often returns 504 until the terminal connects to the broker.
+ * One delayed retry keeps Vercel timeouts safe; callers can still persist the account if this fails.
+ */
+export async function fetchMetaApiAccountInformationWithRetry(accountId: string): Promise<{
+  ok: boolean;
+  info: Record<string, unknown> | null;
+  error?: string;
+}> {
+  const first = await fetchMetaApiAccountInformation(accountId);
+  if (first.ok && first.info) return first;
+  await new Promise((r) => setTimeout(r, 4000));
+  return fetchMetaApiAccountInformation(accountId);
+}
+
 export async function getAccountSummary(
   account: TradingAccountRow
 ): Promise<{ ok: boolean; summary: AccountSummary | null; error?: string }> {
