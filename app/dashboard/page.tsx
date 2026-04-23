@@ -34,6 +34,7 @@ import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
+import { fmtDayPl } from "@/lib/journal/fmtDayPl";
 import { RefreshCw } from "lucide-react";
 import { toast } from "@/lib/toast";
 
@@ -69,29 +70,6 @@ type Stats = {
 type DayStat = { date: string; profit: number; trades: number; wins: number };
 
 type RuleStatus = "safe" | "watch" | "high";
-
-function currencySymbol(code: string): string {
-  const map: Record<string, string> = {
-    USD: "$", EUR: "€", GBP: "£", JPY: "¥",
-    CHF: "Fr", CAD: "C$", AUD: "A$", NZD: "NZ$",
-  };
-  return map[code.toUpperCase()] ?? code;
-}
-
-function fmtDayPl(pl: number, currency?: string): string {
-  const abs = Math.abs(pl);
-  const sign = pl >= 0 ? "+" : "-";
-  const sym = currency ? currencySymbol(currency) : "";
-  if (abs >= 1000) {
-    const k = abs / 1000;
-    const kStr =
-      k % 1 === 0
-        ? k.toFixed(0)
-        : k.toFixed(2).replace(/\.?0+$/, "");
-    return `${sign}${sym}${kStr}k`;
-  }
-  return `${sign}${sym}${Math.round(abs)}`;
-}
 
 function getRuleStatus(current: number | null, limit: number): RuleStatus {
   if (current == null || limit <= 0) return "safe";

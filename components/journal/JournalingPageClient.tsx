@@ -39,6 +39,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
+import { fmtDayPl } from "@/lib/journal/fmtDayPl";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import { TradeReviewModal } from "@/components/journal/TradeReviewModal";
@@ -165,29 +166,6 @@ function normSessionImages(v: unknown): string[] {
 type JournalSessionPatch =
   | Partial<JournalSession>
   | ((prev: Partial<JournalSession>) => Partial<JournalSession>);
-
-function currencySymbol(code: string): string {
-  const map: Record<string, string> = {
-    USD: "$", EUR: "€", GBP: "£", JPY: "¥",
-    CHF: "Fr", CAD: "C$", AUD: "A$", NZD: "NZ$",
-  };
-  return map[code.toUpperCase()] ?? code;
-}
-
-function fmtDayPl(pl: number, currency?: string): string {
-  const abs = Math.abs(pl);
-  const sign = pl >= 0 ? "+" : "-";
-  const sym = currency ? currencySymbol(currency) : "";
-  if (abs >= 1000) {
-    const k = abs / 1000;
-    const kStr =
-      k % 1 === 0
-        ? k.toFixed(0)
-        : k.toFixed(2).replace(/\.?0+$/, "");
-    return `${sign}${sym}${kStr}k`;
-  }
-  return `${sign}${sym}${Math.round(abs)}`;
-}
 
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
@@ -1099,9 +1077,7 @@ function CalendarTab({
             {
               label: "Total P&L",
               value:
-                monthTrades.length > 0
-                  ? `${monthPl >= 0 ? "+" : ""}${monthPl.toFixed(2)}`
-                  : "—",
+                monthTrades.length > 0 ? fmtDayPl(monthPl, currency) : "—",
               color: monthPl >= 0 ? "#4ADE80" : "#F87171",
               glowColor: monthPl >= 0 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
               borderColor: monthPl >= 0 ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)",
@@ -1135,7 +1111,7 @@ function CalendarTab({
                 );
                 if (dayPls.length === 0) return "—";
                 const best = Math.max(...dayPls);
-                return `+${best.toFixed(0)}`;
+                return fmtDayPl(best, currency);
               })(),
               color: "#4ADE80",
               glowColor: "rgba(74,222,128,0.08)",
@@ -1283,8 +1259,7 @@ function CalendarTab({
                       color: selectedDayPl >= 0 ? "#4ADE80" : "#F87171",
                     }}
                   >
-                    {selectedDayPl >= 0 ? "+" : ""}
-                    {selectedDayPl.toFixed(2)}
+                    {fmtDayPl(selectedDayPl, currency)}
                   </span>
                 </div>
                 {selectedDayTrades.length === 0 ? (
