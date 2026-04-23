@@ -229,6 +229,9 @@ export default function DashboardPage() {
     { close_time: string | null; pl: number | null; commission: number | null; swap: number | null; status: string }[]
   >([]);
   const [journalAccounts, setJournalAccounts] = useState<JournalAccountPublic[] | null>(null);
+  const journalAccountsRef = useRef<JournalAccountPublic[] | null>(null);
+  journalAccountsRef.current = journalAccounts;
+  const lastStatsUuidKeyRef = useRef<string | undefined>(undefined);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [onboardingDone, setOnboardingDone] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -304,6 +307,15 @@ export default function DashboardPage() {
       Boolean(journalAccounts?.some((j) => Boolean(j.metaapi_account_id))),
     [tradingAccounts, journalAccounts]
   );
+
+  /** Stable across harmless journal_account row refreshes — avoids sync/stat effect storms */
+  const journalBrokerSyncKey = useMemo(() => {
+    if (!journalAccounts?.length) return "";
+    return journalAccounts
+      .map((a) => `${a.id}:${a.metaapi_account_id ?? ""}`)
+      .sort()
+      .join("|");
+  }, [journalAccounts]);
 
   const resolvedStatsUuid = useMemo(
     () =>
@@ -386,22 +398,26 @@ export default function DashboardPage() {
     }
   }, [isSubDemo]);
 
+  /** Manual “Sync trades” only — includes account list refresh */
   const runAutoJournalBrokerSync = useCallback(async (): Promise<number> => {
     if (isSubDemo) return 0;
-    const list = journalAccounts ?? [];
+    const list = journalAccountsRef.current ?? [];
     const failures = await syncAllJournalMetaAccounts(list);
     await loadCalJournalTrades();
-    void reloadAccountData();
+    await reloadAccountData();
     return failures;
-  }, [isSubDemo, journalAccounts, loadCalJournalTrades, reloadAccountData]);
+  }, [isSubDemo, loadCalJournalTrades, reloadAccountData]);
 
+  /** Background: MetaApi → journal_trade + calendar — no reloadAccountData (prevents re-render loop) */
   useEffect(() => {
-    if (isSubDemo || !hasAnyBrokerMeta) return;
-    if (!journalAccounts || journalAccounts.length === 0) return;
+    if (isSubDemo || !hasAnyBrokerMeta || !journalBrokerSyncKey) return;
     let cancelled = false;
     const tick = async () => {
       if (cancelled) return;
-      await runAutoJournalBrokerSync();
+      const list = journalAccountsRef.current ?? [];
+      if (!list.some((a) => a.metaapi_account_id)) return;
+      await syncAllJournalMetaAccounts(list);
+      await loadCalJournalTrades();
     };
     void tick();
     const id = setInterval(() => void tick(), JOURNAL_METAAPI_AUTO_SYNC_MS);
@@ -409,7 +425,7 @@ export default function DashboardPage() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [isSubDemo, hasAnyBrokerMeta, journalAccounts, runAutoJournalBrokerSync]);
+  }, [isSubDemo, hasAnyBrokerMeta, journalBrokerSyncKey, loadCalJournalTrades]);
 
   useEffect(() => {
     if (isSubDemo) return;
@@ -518,22 +534,38 @@ export default function DashboardPage() {
     })();
   }, [isSubDemo]);
 
+  const journalListLoaded = journalAccounts !== null;
+
   useEffect(() => {
     if (isSubDemo) return;
     if (!accountsResolved) return;
-    if (journalAccounts === null || journalAccounts.length === 0) return;
+    if (!journalListLoaded) return;
     if (!hasAnyBrokerMeta) {
       setStats(null);
+      lastStatsUuidKeyRef.current = undefined;
       return;
     }
-    setStats(null);
+    const uuidKey =
+      resolvedStatsUuid !== undefined && resolvedStatsUuid !== ""
+        ? resolvedStatsUuid
+        : "__default__";
+    if (lastStatsUuidKeyRef.current !== uuidKey) {
+      lastStatsUuidKeyRef.current = uuidKey;
+      setStats(null);
+    }
     void fetchStats(resolvedStatsUuid);
-    const t = setInterval(() => void fetchStats(resolvedStatsUuid), POLL_MS);
-    return () => clearInterval(t);
+    let cancelled = false;
+    const t = setInterval(() => {
+      if (!cancelled) void fetchStats(resolvedStatsUuid);
+    }, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
   }, [
     resolvedStatsUuid,
     accountsResolved,
-    journalAccounts,
+    journalListLoaded,
     hasAnyBrokerMeta,
     fetchStats,
     isSubDemo,
