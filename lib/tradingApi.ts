@@ -9,7 +9,39 @@ import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
  */
 
 const LOG = "[TradingAPI]";
+/** Default is NYC; accounts in other regions need METAAPI_BASE_URL from MetaApi dashboard. */
 const DEFAULT_BASE = "https://mt-client-api-v1.new-york.agiliumtrade.ai";
+const METAAPI_API_URLS_PAGE = "https://app.metaapi.cloud/api-access/api-urls";
+
+/**
+ * MetaApi often returns 504 + TimeoutError when the client API host doesn't match the account region,
+ * or the terminal isn't connected to the broker yet. Surface a concrete fix for operators.
+ */
+function humanizeMetaApiErrorBody(status: number, rawBody: string): string {
+  const trimmed = rawBody.trim().slice(0, 4000);
+  let messageFromJson = "";
+  let errorCode = "";
+  try {
+    const j = JSON.parse(trimmed) as { error?: string; message?: string };
+    if (typeof j.message === "string") messageFromJson = j.message;
+    if (typeof j.error === "string") errorCode = j.error;
+  } catch {
+    /* plain text */
+  }
+  const isTimeoutRegion =
+    errorCode === "TimeoutError" ||
+    /not connected to broker yet|does not match the account region|api-access\/api-urls/i.test(messageFromJson) ||
+    (status === 504 && /region|connected to broker|timeout/i.test(trimmed));
+
+  if (isTimeoutRegion) {
+    const detail = messageFromJson || trimmed.slice(0, 400);
+    return `${detail} — Set env METAAPI_BASE_URL to the MetaApi client REST API URL for this account's region (see ${METAAPI_API_URLS_PAGE}). If the URL is already correct, open the MetaApi app and wait until the account is connected to the broker, then retry.`.slice(
+      0,
+      2500
+    );
+  }
+  return trimmed.slice(0, 1500);
+}
 
 function normalizeToken(id: string | null | undefined): string {
   if (id == null) return "";
@@ -45,7 +77,7 @@ async function metaApiGet<T>(accountId: string, path: string): Promise<{ ok: tru
   });
   const text = await res.text();
   if (!res.ok) {
-    return { ok: false, status: res.status, body: text.slice(0, 500) };
+    return { ok: false, status: res.status, body: humanizeMetaApiErrorBody(res.status, text) };
   }
   try {
     return { ok: true, data: JSON.parse(text) as T };
@@ -76,7 +108,7 @@ async function metaApiPost<T>(
   });
   const text = await res.text();
   if (!res.ok) {
-    return { ok: false, status: res.status, body: text.slice(0, 500) };
+    return { ok: false, status: res.status, body: humanizeMetaApiErrorBody(res.status, text) };
   }
   try {
     return { ok: true, data: JSON.parse(text) as T };
