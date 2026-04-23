@@ -2171,8 +2171,7 @@ export function JournalingPageClient({
             Journal
           </h1>
           <p className="mt-1.5 max-w-xl text-sm font-mono text-slate-400">
-            Today&apos;s session, calendar, and trade history. Sync when you want
-            the latest from your broker.
+            Today&apos;s session, calendar, and trade history.
           </p>
         </div>
 
