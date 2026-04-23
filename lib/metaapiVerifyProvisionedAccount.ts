@@ -1,7 +1,5 @@
 import { fetchMetaApiAccountInformation } from "@/lib/tradingApi";
-
-/** Shown when login/server/password fail validation or the terminal never returns account info. */
-export const METAAPI_INVALID_ACCOUNT_MESSAGE = "Invalid Credentials/Account";
+import { isMetaApiBrokerServerErrorMessage } from "@/lib/metaapiAddAccountUserMessages";
 
 const INVALID_HINTS =
   /invalid|password|credential|authentication|unauthori|login failed|access denied|wrong password|bad password|auth failed|not authorized|invalid account|invalid login|authorization failed|access rights|disconnected|rejected/i;
@@ -38,6 +36,9 @@ export async function verifyProvisionedMetaApiAccount(
       }
     }
     lastError = res.error ?? "";
+    if (isMetaApiBrokerServerErrorMessage(lastError)) {
+      return { ok: false, error: lastError };
+    }
     if (looksLikeInvalidCredentials(lastError)) {
       return { ok: false, error: lastError };
     }

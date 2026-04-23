@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
+import { deleteProvisionedMetaTraderAccount } from "@/lib/metaapiProvisioning";
+import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 const SELECT_PUBLIC =
@@ -109,10 +111,53 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("journal_account").delete().eq("id", id).eq("user_id", user.id);
+  const { data: row, error: fetchErr } = await supabase
+    .from("journal_account")
+    .select("id, metaapi_account_id, account_number, platform")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (fetchErr) {
+    return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+  }
+  if (!row) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const metaId = row.metaapi_account_id?.trim() ?? "";
+  if (normalizeMetaApiToken(process.env.METAAPI_TOKEN) && metaId) {
+    try {
+      await deleteProvisionedMetaTraderAccount(metaId);
+    } catch (e) {
+      console.warn("[journal/accounts DELETE] MetaApi cleanup:", e);
+    }
+  }
+
+  const { error: jErr } = await supabase.from("journal_account").delete().eq("id", id).eq("user_id", user.id);
+  if (jErr) {
+    return NextResponse.json({ error: jErr.message }, { status: 500 });
+  }
+
+  if (metaId) {
+    const { error: tDel } = await supabase
+      .from("trading_account")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("metaapi_account_id", metaId);
+    if (tDel) {
+      return NextResponse.json({ error: tDel.message }, { status: 500 });
+    }
+  } else {
+    const { error: tDel } = await supabase
+      .from("trading_account")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("account_number", row.account_number)
+      .eq("broker_type", row.platform);
+    if (tDel) {
+      return NextResponse.json({ error: tDel.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ ok: true });

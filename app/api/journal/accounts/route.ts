@@ -5,11 +5,9 @@ import {
   deleteProvisionedMetaTraderAccount,
   provisionAndDeployMetaTraderAccount
 } from "@/lib/metaapiProvisioning";
+import { mapMetaApiErrorToAddAccountMessage } from "@/lib/metaapiAddAccountUserMessages";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
-import {
-  METAAPI_INVALID_ACCOUNT_MESSAGE,
-  verifyProvisionedMetaApiAccount
-} from "@/lib/metaapiVerifyProvisionedAccount";
+import { verifyProvisionedMetaApiAccount } from "@/lib/metaapiVerifyProvisionedAccount";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 export const maxDuration = 120;
@@ -162,8 +160,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (!provisioned.ok) {
+    const userMsg = mapMetaApiErrorToAddAccountMessage(provisioned.message);
     return NextResponse.json(
-      { error: provisioned.message, details: provisioned.details },
+      { error: userMsg },
       { status: provisioned.status >= 400 && provisioned.status < 600 ? provisioned.status : 502 }
     );
   }
@@ -171,7 +170,10 @@ export async function POST(req: NextRequest) {
   const verified = await verifyProvisionedMetaApiAccount(provisioned.accountId);
   if (!verified.ok) {
     await deleteProvisionedMetaTraderAccount(provisioned.accountId);
-    return NextResponse.json({ error: METAAPI_INVALID_ACCOUNT_MESSAGE }, { status: 400 });
+    return NextResponse.json(
+      { error: mapMetaApiErrorToAddAccountMessage(verified.error || "") },
+      { status: 400 }
+    );
   }
 
   const info = verified.info;
