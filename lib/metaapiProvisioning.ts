@@ -5,6 +5,8 @@
 
 import crypto from "crypto";
 
+import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
+
 const DEFAULT_PROVISIONING_BASE = "https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai";
 
 export type ProvisionAccountInput = {
@@ -31,7 +33,8 @@ function provisioningBaseUrl(): string {
 }
 
 function getToken(): string | null {
-  return process.env.METAAPI_TOKEN?.trim() || null;
+  const t = normalizeMetaApiToken(process.env.METAAPI_TOKEN);
+  return t || null;
 }
 
 function transactionId(): string {

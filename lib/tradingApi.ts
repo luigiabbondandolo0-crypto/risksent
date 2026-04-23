@@ -1,3 +1,5 @@
+import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
+
 /**
  * Trading / broker data via MetaApi.cloud REST API.
  * `metaapi_account_id` on `trading_account` = MetaApi account id (UUID from app.metaapi.cloud/accounts).
@@ -15,7 +17,7 @@ function normalizeToken(id: string | null | undefined): string {
 }
 
 function metaApiConfig(): { token: string; base: string; historyDays: number } | null {
-  const token = process.env.METAAPI_TOKEN?.trim();
+  const token = normalizeMetaApiToken(process.env.METAAPI_TOKEN);
   if (!token) return null;
   const rawBase = process.env.METAAPI_BASE_URL?.trim() || DEFAULT_BASE;
   const base = rawBase.replace(/\/$/, "");

@@ -3,6 +3,7 @@ import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
 import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
 import { fetchMetaApiAccountInformation } from "@/lib/tradingApi";
+import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
 
 export async function GET() {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!process.env.METAAPI_TOKEN?.trim()) {
+  if (!normalizeMetaApiToken(process.env.METAAPI_TOKEN)) {
     return NextResponse.json(
       { error: "METAAPI_TOKEN is not configured on the server." },
       { status: 503 }

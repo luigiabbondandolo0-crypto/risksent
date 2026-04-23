@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
 import { provisionAndDeployMetaTraderAccount } from "@/lib/metaapiProvisioning";
+import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 
 /**
  * POST /api/add-account
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!process.env.METAAPI_TOKEN?.trim()) {
+    if (!normalizeMetaApiToken(process.env.METAAPI_TOKEN)) {
       return NextResponse.json(
         {
           ok: false,
