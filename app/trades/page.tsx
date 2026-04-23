@@ -54,10 +54,18 @@ type Trade = {
   lots: number;
   openPrice: number;
   closePrice: number;
+  /** Net P/L (incl. commission & swap) — used for totals and equity curve. */
   profit: number;
+  /** MetaTrader “Profit” column (price only), when provided. */
+  profitGross?: number;
   comment?: string;
   stopLoss?: number | null;
 };
+
+/** Primary cell value to compare with MetaTrader’s Profit column. */
+function mtDisplayPl(t: Trade): number {
+  return t.profitGross ?? t.profit;
+}
 
 type Rules = {
   max_risk_per_trade_pct: number;
@@ -511,7 +519,12 @@ function TradesPageContent() {
                   <th className="px-4 py-3 font-medium">Lots</th>
                   <th className="px-4 py-3 font-medium">Open</th>
                   <th className="px-4 py-3 font-medium">Close</th>
-                  <th className="px-4 py-3 font-medium">Profit</th>
+                  <th
+                    className="px-4 py-3 font-medium"
+                    title="Price P/L like MetaTrader; net incl. fees in tooltip when different"
+                  >
+                    P/L
+                  </th>
                   <th className="px-4 py-3 font-medium" title="Sanity: green ok, yellow borderline, red revenge/risk">Sanity</th>
                   <th className="px-3 py-3 font-medium text-right whitespace-nowrap">Score · AI</th>
                 </tr>
@@ -520,7 +533,8 @@ function TradesPageContent() {
                 {paginatedTrades.map((t, idx) => {
                   const globalIndex = sortedByTime.findIndex((x) => x.ticket === t.ticket);
                   const type = normalizeType(t.type);
-                  const pct = profitPctOfBalance(t.profit, balance);
+                  const displayPl = mtDisplayPl(t);
+                  const pct = profitPctOfBalance(displayPl, balance);
                   const { riskPct } = riskPctAndEquity[globalIndex] ?? { riskPct: null };
                   const consec = consecutiveLossesBefore[globalIndex] ?? 0;
                   const maxRisk = rules?.max_risk_per_trade_pct ?? 1;
@@ -585,14 +599,24 @@ function TradesPageContent() {
                       <td className="px-4 py-3 text-slate-300">{t.openPrice.toFixed(2)}</td>
                       <td className="px-4 py-3 text-slate-300">{t.closePrice.toFixed(2)}</td>
                       <td
-                        className={`px-4 py-3 font-medium ${t.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}
-                        title={`Ticket ${t.ticket}. ${t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)} ${currency}${pct != null ? ` (${(t.profit >= 0 ? "+" : "")}${pct.toFixed(2)}% on account)` : ""}`}
+                        className={`px-4 py-3 font-medium ${displayPl >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                        title={
+                          `Ticket ${t.ticket}. ` +
+                          `${displayPl >= 0 ? "+" : ""}${displayPl.toFixed(2)} ${currency}` +
+                          (pct != null
+                            ? ` (${displayPl >= 0 ? "+" : ""}${pct.toFixed(2)}% on account)`
+                            : "") +
+                          (t.profitGross != null &&
+                          Math.abs(t.profit - t.profitGross) > 0.005
+                            ? ` · Net incl. fees: ${t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)}`
+                            : "")
+                        }
                       >
-                        {t.profit >= 0 ? "+" : ""}
-                        {t.profit.toFixed(2)} {currency}
+                        {displayPl >= 0 ? "+" : ""}
+                        {displayPl.toFixed(2)} {currency}
                         {pct != null && (
                           <span className="text-slate-500 ml-1">
-                            ({t.profit >= 0 ? "+" : ""}{pct.toFixed(2)}%)
+                            ({displayPl >= 0 ? "+" : ""}{pct.toFixed(2)}%)
                           </span>
                         )}
                       </td>

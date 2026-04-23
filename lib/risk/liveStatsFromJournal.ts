@@ -29,7 +29,7 @@ export async function buildLiveStatsFromJournal(
 
   const { data: rows, error: trErr } = await supabase
     .from("journal_trade")
-    .select("pl, close_time, status")
+    .select("pl, commission, swap, close_time, status")
     .eq("user_id", userId)
     .eq("account_id", journalAccountId)
     .eq("status", "closed")
@@ -41,7 +41,10 @@ export async function buildLiveStatsFromJournal(
     .filter((r) => r.close_time != null && r.pl != null)
     .map((r) => ({
       closeTime: String(r.close_time),
-      profit: Number(r.pl)
+      profit:
+        Number(r.pl) +
+        Number(r.commission ?? 0) +
+        Number(r.swap ?? 0)
     }));
 
   const currentBal = Number(acc.current_balance);

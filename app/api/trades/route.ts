@@ -16,7 +16,10 @@ export type TradeRow = {
   lots: number;
   openPrice: number;
   closePrice: number;
+  /** Full P/L incl. commission & swap (balance impact). */
   profit: number;
+  /** MetaTrader-style price P/L (excl. commission & swap), when available. */
+  profitGross?: number;
   comment?: string;
   stopLoss?: number | null;
 };
@@ -56,6 +59,10 @@ function parseOrders(raw: unknown): TradeRow[] {
       const ex = (o.ex as Record<string, unknown>) ?? {};
       const sl = o.stopLoss ?? ex.stop_loss ?? o.sl;
       const stopLossVal = sl != null && Number.isFinite(Number(sl)) ? Number(sl) : null;
+      const profit = Number(o.profit ?? ex.profit) ?? 0;
+      const pg = o.profitGross;
+      const profitGross =
+        pg != null && Number.isFinite(Number(pg)) ? Number(pg) : undefined;
       return {
         ticket: Number(o.ticket) ?? 0,
         openTime: String(o.openTime ?? ""),
@@ -65,7 +72,8 @@ function parseOrders(raw: unknown): TradeRow[] {
         lots: getLots(o),
         openPrice: Number(o.openPrice ?? ex.open_price) ?? 0,
         closePrice: Number(o.closePrice ?? ex.close_price) ?? 0,
-        profit: Number(o.profit ?? ex.profit) ?? 0,
+        profit,
+        ...(profitGross !== undefined ? { profitGross } : {}),
         comment: o.comment != null ? String(o.comment) : undefined,
         stopLoss: stopLossVal
       };

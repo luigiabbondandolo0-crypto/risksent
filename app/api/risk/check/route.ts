@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     dayStart.setUTCHours(0, 0, 0, 0);
     const { data: todayRows } = await supabase
       .from("journal_trade")
-      .select("pl")
+      .select("pl, commission, swap")
       .eq("user_id", user.id)
       .eq("account_id", journalCtx.id)
       .eq("status", "closed")
@@ -131,7 +131,10 @@ export async function POST(request: Request) {
     const list = todayRows ?? [];
     telegramAlertContext = {
       todayTrades: list.length,
-      todayPl: list.reduce((s, r) => s + Number(r.pl ?? 0), 0),
+      todayPl: list.reduce(
+        (s, r) => s + Number(r.pl ?? 0) + Number(r.commission ?? 0) + Number(r.swap ?? 0),
+        0
+      ),
       currency: journalCtx.currency
     };
   }
