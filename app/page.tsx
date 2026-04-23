@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,8 +38,32 @@ const SECTIONS = [
   { id: "EXECUTE", sub: "Discipline at every entry" },
 ];
 
+/** iOS (any browser) uses WebKit; full-viewport WebGL + fixed layers causes white flicker during scroll/composite. */
+function isIOSDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ desktop UA
+  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+}
+
+const HOME_STATIC_BACKDROP_STYLE: CSSProperties = {
+  zIndex: 0,
+  backgroundColor: "#070710",
+  backgroundImage: [
+    "radial-gradient(ellipse 90% 60% at 50% -15%, rgba(99, 102, 241, 0.14), transparent 65%)",
+    "radial-gradient(ellipse 50% 40% at 100% 0%, rgba(167, 139, 250, 0.07), transparent 55%)",
+    "radial-gradient(ellipse 40% 30% at 0% 100%, rgba(99, 102, 241, 0.05), transparent 50%)",
+  ].join(", "),
+};
+
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [useWebGLBackdrop, setUseWebGLBackdrop] = useState(false);
+
+  useEffect(() => {
+    setUseWebGLBackdrop(!isIOSDevice());
+  }, []);
 
   useEffect(() => {
     const reduced =
@@ -283,8 +307,13 @@ export default function HomePage() {
         }}
       />
 
-      {/* ── THREE.JS BACKGROUND CANVAS ── */}
-      <HorizonCanvas accentColor="#6366F1" />
+      {/* ── BACKGROUND: CSS always (stable on iOS); WebGL only off-iOS ── */}
+      <div
+        className="pointer-events-none fixed inset-0 h-full w-full"
+        style={HOME_STATIC_BACKDROP_STYLE}
+        aria-hidden
+      />
+      {useWebGLBackdrop ? <HorizonCanvas accentColor="#6366F1" /> : null}
 
       {/* ─── HERO ─── */}
       <section className="hero-section relative min-h-screen flex flex-col justify-center overflow-hidden px-4 pt-20 pb-16 sm:px-6 sm:pt-24 sm:pb-20 lg:px-16" style={{ zIndex: 1 }}>
