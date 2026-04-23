@@ -268,10 +268,10 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
     if (!CLOSING_ENTRIES.has(et)) continue;
 
     const totalProfit = dealNetProfit(d);
-    const sideLabel = d.type === "DEAL_TYPE_SELL" ? "Sell" : "Buy";
     const ticket = Number(d.id) || 0;
 
     if (et === "DEAL_ENTRY_INOUT") {
+      const sideLabel = d.type === "DEAL_TYPE_SELL" ? "Sell" : "Buy";
       rows.push({
         ticket,
         openTime: d.time,
@@ -289,6 +289,13 @@ function dealsToClosedOrders(deals: MetaDeal[]): Record<string, unknown>[] {
 
     const list = byPos.get(positionKey(d)) ?? [];
     const open = findOpeningDeal(list, d);
+    /** Closing deal `type` is exit direction (close long = SELL). Show position side from open deal. */
+    let sideLabel: string;
+    if (open?.type === "DEAL_TYPE_SELL") sideLabel = "Sell";
+    else if (open?.type === "DEAL_TYPE_BUY") sideLabel = "Buy";
+    else if (d.type === "DEAL_TYPE_SELL") sideLabel = "Buy";
+    else if (d.type === "DEAL_TYPE_BUY") sideLabel = "Sell";
+    else sideLabel = "Buy";
     rows.push({
       ticket,
       openTime: open?.time ?? d.time,
