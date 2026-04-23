@@ -4,6 +4,7 @@ import {
   MOCK_ALERTS,
 } from "@/lib/demo/mockData";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
+import { localYmdFromIso } from "@/lib/journal/calendarBounds";
 
 export type DemoDashboardStats = {
   balance: number;
@@ -49,7 +50,7 @@ function buildDailyStatsFromSeed(): { date: string; profit: number; trades: numb
   const map = new Map<string, { profit: number; trades: number; wins: number }>();
   for (const t of SEED_TRADES) {
     if (t.status !== "closed" || !t.close_time) continue;
-    const d = t.close_time.slice(0, 10);
+    const d = localYmdFromIso(t.close_time) ?? t.close_time.slice(0, 10);
     const net = (t.pl ?? 0);
     const cur = map.get(d) ?? { profit: 0, trades: 0, wins: 0 };
     cur.profit += net;

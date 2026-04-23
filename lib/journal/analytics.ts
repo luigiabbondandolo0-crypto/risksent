@@ -8,6 +8,7 @@ import {
   startOfMonth
 } from "date-fns";
 import type { JournalTradeRow } from "./journalTypes";
+import { localYmdFromIso } from "./calendarBounds";
 
 const INITIAL_EQUITY = 10_000;
 
@@ -74,7 +75,7 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export function plByDayOfWeek(trades: JournalTradeRow[]): { day: string; pl: number }[] {
   const sums = [0, 0, 0, 0, 0, 0, 0];
   for (const t of closedTrades(trades)) {
-    const d = getDay(parseISO(t.close_time!));
+    const d = getDay(new Date(t.close_time!));
     sums[d] += (t.pl ?? 0);
   }
   /* Mon-first display */
@@ -161,11 +162,12 @@ export type HeatCell = { date: string; pl: number; day: number };
 export function monthlyPlHeatmap(trades: JournalTradeRow[], ref: Date = new Date()): HeatCell[] {
   const start = startOfMonth(ref);
   const end = endOfMonth(ref);
+  const monthStart = format(start, "yyyy-MM-dd");
+  const monthEnd = format(end, "yyyy-MM-dd");
   const dayMap = new Map<string, number>();
   for (const t of closedTrades(trades)) {
-    const d = parseISO(t.close_time!);
-    if (d < start || d > end) continue;
-    const key = format(d, "yyyy-MM-dd");
+    const key = localYmdFromIso(t.close_time);
+    if (!key || key < monthStart || key > monthEnd) continue;
     dayMap.set(key, (dayMap.get(key) ?? 0) + (t.pl ?? 0));
   }
   const days = eachDayOfInterval({ start, end });

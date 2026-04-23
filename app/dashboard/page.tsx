@@ -35,6 +35,7 @@ import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector
 import { resolveMetaapiUuidForJournalSelection } from "@/lib/accounts/resolveMetaapiForJournal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
+import { localMonthBoundsIso, localYmdFromIso } from "@/lib/journal/calendarBounds";
 import {
   JOURNAL_METAAPI_AUTO_SYNC_MS,
   syncAllJournalMetaAccounts
@@ -272,30 +273,44 @@ export default function DashboardPage() {
   const loadCalJournalTrades = useCallback(async () => {
     if (isSubDemo) return;
     try {
-      const responses = await Promise.all([
-        fetch("/api/journal/trades?pageSize=100&status=closed"),
-        fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
-        fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
-        fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
-        fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
-      ]);
+      const { from, to } = localMonthBoundsIso(
+        calendarMonth.getFullYear(),
+        calendarMonth.getMonth()
+      );
       const merged: {
+        id?: string;
         close_time: string | null;
         pl: number | null;
         commission: number | null;
         swap: number | null;
         status: string;
       }[] = [];
-      for (const r of responses) {
-        if (!r.ok) continue;
+      const seen = new Set<string>();
+      let page = 1;
+      for (;;) {
+        const u = `/api/journal/trades?status=closed&close_from=${encodeURIComponent(from)}&close_to=${encodeURIComponent(to)}&sort=close_time&pageSize=500&page=${page}`;
+        const r = await fetch(u);
+        if (!r.ok) break;
         const j = await r.json();
-        merged.push(...(j.trades ?? []));
+        const batch = (j.trades ?? []) as typeof merged;
+        for (const t of batch) {
+          const id = typeof t.id === "string" ? t.id : "";
+          if (id) {
+            if (seen.has(id)) continue;
+            seen.add(id);
+          }
+          merged.push(t);
+        }
+        if (batch.length < 500) break;
+        if (typeof j.total === "number" && merged.length >= j.total) break;
+        page += 1;
+        if (page > 40) break;
       }
       setCalJournalTrades(merged);
     } catch {
       /* ignore */
     }
-  }, [isSubDemo]);
+  }, [isSubDemo, calendarMonth]);
 
   useEffect(() => {
     void loadCalJournalTrades();
@@ -646,7 +661,8 @@ export default function DashboardPage() {
     const map = new Map<string, { profit: number; trades: number; wins: number }>();
     for (const t of calJournalTrades) {
       if (!t.close_time || t.status !== "closed") continue;
-      const d = t.close_time.slice(0, 10);
+      const d = localYmdFromIso(t.close_time);
+      if (!d) continue;
       const net = t.pl ?? 0;
       const entry = map.get(d) ?? { profit: 0, trades: 0, wins: 0 };
       entry.profit += net;

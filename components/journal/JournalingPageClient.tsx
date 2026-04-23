@@ -59,6 +59,12 @@ import type {
 } from "@/lib/journal/journalTypes";
 import { SEED_TRADES } from "@/lib/journal/seedTrades";
 import { JOURNAL_IMAGE_MAX, readImageFileAsDataUrl } from "@/lib/journal/imageUpload";
+import {
+  localDayBoundsIso,
+  localYearsAgoStartIso,
+  localYmdFromIso,
+  localYmFromIso
+} from "@/lib/journal/calendarBounds";
 import { useDemoAction } from "@/hooks/useDemoAction";
 import { toast } from "@/lib/toast";
 import { DemoActionModal } from "@/components/demo/DemoActionModal";
@@ -173,7 +179,10 @@ type JournalSessionPatch =
 
 function getDayStats(trades: JournalTradeRow[], dateStr: string) {
   const day = trades.filter(
-    (t) => t.close_time?.slice(0, 10) === dateStr && t.status === "closed"
+    (t) =>
+      t.status === "closed" &&
+      t.close_time != null &&
+      localYmdFromIso(t.close_time) === dateStr
   );
   const pl = day.reduce(
     (s, t) => s + (t.pl ?? 0),
@@ -955,7 +964,7 @@ function CalendarTab({
     if (!isMock || allTrades.length === 0 || mockMonthInitialized.current) return;
     const fc = allTrades.find((t) => t.close_time)?.close_time;
     if (fc) {
-      setMonth(startOfMonth(parseISO(fc.slice(0, 10))));
+      setMonth(startOfMonth(new Date(fc)));
       mockMonthInitialized.current = true;
     }
   }, [isMock, allTrades]);
@@ -978,7 +987,10 @@ function CalendarTab({
   const selectedDayTrades = useMemo(() => {
     if (!selectedDay) return [];
     return allTrades.filter(
-      (t) => t.close_time?.slice(0, 10) === selectedDay && t.status === "closed"
+      (t) =>
+        t.status === "closed" &&
+        t.close_time != null &&
+        localYmdFromIso(t.close_time) === selectedDay
     );
   }, [selectedDay, allTrades]);
 
@@ -990,7 +1002,10 @@ function CalendarTab({
   // Monthly stats
   const monthStr = format(month, "yyyy-MM");
   const monthTrades = allTrades.filter(
-    (t) => t.close_time?.slice(0, 7) === monthStr && t.status === "closed"
+    (t) =>
+      t.status === "closed" &&
+      t.close_time != null &&
+      localYmFromIso(t.close_time) === monthStr
   );
   const monthPl = monthTrades.reduce(
     (s, t) => s + (t.pl ?? 0),
@@ -1008,7 +1023,8 @@ function CalendarTab({
     const map: Record<string, { pl: number; count: number; wins: number }> = {};
     allTrades.forEach((t) => {
       if (!t.close_time || t.status !== "closed") return;
-      const d = t.close_time.slice(0, 10);
+      const d = localYmdFromIso(t.close_time);
+      if (!d) return;
       if (!map[d]) map[d] = { pl: 0, count: 0, wins: 0 };
       const net = t.pl ?? 0;
       map[d].pl += net;
@@ -1095,12 +1111,14 @@ function CalendarTab({
                       allTrades
                         .filter(
                           (t) =>
-                            t.close_time?.slice(0, 7) === monthStr &&
-                            t.status === "closed"
+                            t.status === "closed" &&
+                            t.close_time != null &&
+                            localYmFromIso(t.close_time) === monthStr
                         )
                         .reduce(
                           (acc, t) => {
-                            const d = t.close_time!.slice(0, 10);
+                            const d = localYmdFromIso(t.close_time!);
+                            if (!d) return acc;
                             acc[d] = (acc[d] ?? 0) + (t.pl ?? 0);
                             return acc;
                           },
@@ -1376,7 +1394,11 @@ function TradesTab({
     if (status !== "ALL") list = list.filter((t) => t.status === status);
     if (fromDate || toDate) {
       list = list.filter((t) => {
-        const anchor = (t.close_time ?? t.open_time).slice(0, 10);
+        const anchor =
+          t.close_time != null
+            ? localYmdFromIso(t.close_time)
+            : t.open_time?.slice(0, 10) ?? "";
+        if (!anchor) return false;
         if (fromDate && anchor < fromDate) return false;
         if (toDate && anchor > toDate) return false;
         return true;
@@ -1953,21 +1975,18 @@ export function JournalingPageClient({
 
       await syncAllJournalMetaAccounts(accs);
 
-      const [sRes, tTodayRes, allP1, allP2, allP3, allP4, allP5, strRes, clRes, rRes] =
-        await Promise.all([
-          fetch(`/api/journal/sessions?date=${today}`),
-          fetch(
-            `/api/journal/trades?status=closed&from=${today}T00:00:00Z&to=${today}T23:59:59Z&pageSize=50`
-          ),
-          fetch("/api/journal/trades?pageSize=100&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=2&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=3&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=4&status=closed"),
-          fetch("/api/journal/trades?pageSize=100&page=5&status=closed"),
-          fetch("/api/journal/strategies"),
-          fetch("/api/journal/checklist"),
-          fetch("/api/journal/rules"),
-        ]);
+      const { from: todayCloseFrom, to: todayCloseTo } = localDayBoundsIso(today);
+      const sinceClose = localYearsAgoStartIso(3);
+
+      const [sRes, tTodayRes, strRes, clRes, rRes] = await Promise.all([
+        fetch(`/api/journal/sessions?date=${today}`),
+        fetch(
+          `/api/journal/trades?status=closed&close_from=${encodeURIComponent(todayCloseFrom)}&close_to=${encodeURIComponent(todayCloseTo)}&sort=close_time&pageSize=200`
+        ),
+        fetch("/api/journal/strategies"),
+        fetch("/api/journal/checklist"),
+        fetch("/api/journal/rules"),
+      ]);
       if (sRes.ok) {
         const j = await sRes.json();
         if (j.session) {
@@ -1996,18 +2015,27 @@ export function JournalingPageClient({
         const j = await tTodayRes.json();
         setTodayTrades(j.trades ?? []);
       }
-      const mergeAll = async (
-        ...responses: Response[]
-      ): Promise<JournalTradeRow[]> => {
-        const rows: JournalTradeRow[] = [];
-        for (const r of responses) {
-          if (!r.ok) continue;
-          const j = await r.json();
-          rows.push(...((j.trades ?? []) as JournalTradeRow[]));
+      const allClosed: JournalTradeRow[] = [];
+      const seenIds = new Set<string>();
+      let p = 1;
+      for (;;) {
+        const r = await fetch(
+          `/api/journal/trades?status=closed&close_from=${encodeURIComponent(sinceClose)}&sort=close_time&pageSize=500&page=${p}`
+        );
+        if (!r.ok) break;
+        const j = await r.json();
+        const batch = (j.trades ?? []) as JournalTradeRow[];
+        for (const t of batch) {
+          if (seenIds.has(t.id)) continue;
+          seenIds.add(t.id);
+          allClosed.push(t);
         }
-        return rows;
-      };
-      setAllTrades(await mergeAll(allP1, allP2, allP3, allP4, allP5));
+        if (batch.length < 500) break;
+        if (typeof j.total === "number" && allClosed.length >= j.total) break;
+        p += 1;
+        if (p > 100) break;
+      }
+      setAllTrades(allClosed);
       if (strRes.ok) {
         const j = await strRes.json();
         setStrategies(j.strategies ?? []);

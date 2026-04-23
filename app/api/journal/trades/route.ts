@@ -19,15 +19,20 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get("status")?.trim().toLowerCase();
   const from = url.searchParams.get("from")?.trim();
   const to = url.searchParams.get("to")?.trim();
+  const closeFrom = url.searchParams.get("close_from")?.trim();
+  const closeTo = url.searchParams.get("close_to")?.trim();
+  const sort = url.searchParams.get("sort")?.trim().toLowerCase();
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(url.searchParams.get("pageSize") ?? "50") || 50));
+  const pageSize = Math.min(500, Math.max(1, Number(url.searchParams.get("pageSize") ?? "50") || 50));
   const offset = (page - 1) * pageSize;
 
-  let q = supabase
-    .from("journal_trade")
-    .select("*", { count: "exact" })
-    .eq("user_id", user.id)
-    .order("open_time", { ascending: false });
+  let q = supabase.from("journal_trade").select("*", { count: "exact" }).eq("user_id", user.id);
+
+  if (sort === "close_time") {
+    q = q.order("close_time", { ascending: false });
+  } else {
+    q = q.order("open_time", { ascending: false });
+  }
 
   if (accountId) q = q.eq("account_id", accountId);
   if (symbol) q = q.eq("symbol", symbol.toUpperCase());
@@ -35,6 +40,8 @@ export async function GET(req: NextRequest) {
   if (status === "open" || status === "closed") q = q.eq("status", status as JournalTradeStatus);
   if (from) q = q.gte("open_time", from);
   if (to) q = q.lte("open_time", to);
+  if (closeFrom) q = q.gte("close_time", closeFrom);
+  if (closeTo) q = q.lte("close_time", closeTo);
 
   q = q.range(offset, offset + pageSize - 1);
 
