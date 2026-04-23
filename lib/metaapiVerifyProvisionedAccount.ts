@@ -1,5 +1,4 @@
 import { fetchMetaApiAccountInformation } from "@/lib/tradingApi";
-import { isMetaApiBrokerServerErrorMessage } from "@/lib/metaapiAddAccountUserMessages";
 
 const INVALID_HINTS =
   /invalid|password|credential|authentication|unauthori|login failed|access denied|wrong password|bad password|auth failed|not authorized|invalid account|invalid login|authorization failed|access rights|disconnected|rejected/i;
@@ -22,8 +21,8 @@ export async function verifyProvisionedMetaApiAccount(
   accountId: string,
   options?: { maxAttempts?: number; delayMs?: number }
 ): Promise<VerifyProvisionedResult> {
-  const maxAttempts = options?.maxAttempts ?? 14;
-  const delayMs = options?.delayMs ?? 3500;
+  const maxAttempts = options?.maxAttempts ?? 18;
+  const delayMs = options?.delayMs ?? 4000;
   let lastError = "";
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -36,9 +35,6 @@ export async function verifyProvisionedMetaApiAccount(
       }
     }
     lastError = res.error ?? "";
-    if (isMetaApiBrokerServerErrorMessage(lastError)) {
-      return { ok: false, error: lastError };
-    }
     if (looksLikeInvalidCredentials(lastError)) {
       return { ok: false, error: lastError };
     }

@@ -146,6 +146,9 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           </div>
           <div ref={brokerWrapRef} className="relative">
             <label className={jn.label}>Broker server</label>
+            <p className="mb-1.5 text-[11px] font-mono text-slate-500">
+              Presets are optional — type the exact server from MetaTrader; linking uses MetaApi, not this list.
+            </p>
             <div className="relative">
               <input
                 className={`${jn.input} pr-10`}
