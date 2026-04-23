@@ -43,8 +43,13 @@ async function resolveStatsTradingRow(
       .eq("user_id", userId)
       .eq("metaapi_account_id", uuid)
       .maybeSingle();
-    if (tradingByMeta && (tradingByMeta as { metaapi_account_id?: string }).metaapi_account_id) {
-      return tradingByMeta as TradingAccountRow;
+    if (
+      tradingByMeta &&
+      typeof tradingByMeta === "object" &&
+      "metaapi_account_id" in tradingByMeta &&
+      String((tradingByMeta as { metaapi_account_id?: string }).metaapi_account_id ?? "").trim()
+    ) {
+      return tradingByMeta as unknown as TradingAccountRow;
     }
     const { data: journalRow } = await supabase
       .from("journal_account")
@@ -72,8 +77,13 @@ async function resolveStatsTradingRow(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (tradingFirst && (tradingFirst as { metaapi_account_id?: string }).metaapi_account_id) {
-    return tradingFirst as TradingAccountRow;
+  if (
+    tradingFirst &&
+    typeof tradingFirst === "object" &&
+    "metaapi_account_id" in tradingFirst &&
+    String((tradingFirst as { metaapi_account_id?: string }).metaapi_account_id ?? "").trim()
+  ) {
+    return tradingFirst as unknown as TradingAccountRow;
   }
 
   const { data: journalFirst } = await supabase
