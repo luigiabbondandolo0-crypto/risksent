@@ -17,7 +17,7 @@ import {
   accountSelectColumns,
   type TradingAccountRow
 } from "./tradingApi";
-const DEFAULT_CONTRACT_SIZE = 100_000;
+import { riskPctOfEquityAtStopLoss } from "@/lib/risk/openPositionRisk";
 const DEDUPE_HOURS = 12;
 
 type FindingType = RiskFinding["type"];
@@ -279,17 +279,17 @@ function buildOpenPositionsForRisk(raw: RawOpenPosition[], equity: number): Open
     const stopLossRaw = p.stopLoss ?? (p as RawOpenPosition).stop_loss;
     const stopLoss = stopLossRaw != null ? Number(stopLossRaw) : undefined;
     if (!symbol || volume <= 0 || openPrice <= 0) continue;
+    const side = String(p.type ?? "").toLowerCase() === "sell" ? "sell" : "buy";
     let riskPct: number | null = null;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
-      riskPct = (riskAmount / equity) * 100;
+      riskPct = riskPctOfEquityAtStopLoss(symbol, openPrice, stopLoss, volume, equity, side);
     }
     out.push({
       symbol,
       volume,
       openPrice,
       stopLoss: stopLoss ?? null,
-      type: String(p.type ?? "").toLowerCase() === "sell" ? "sell" : "buy",
+      type: side,
       riskPct: riskPct ?? null
     });
   }

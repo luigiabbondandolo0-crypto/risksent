@@ -7,6 +7,7 @@ import {
   accountSelectColumns,
   type TradingAccountRow
 } from "@/lib/tradingApi";
+import { computeCurrentExposurePct, parseOpenPositions } from "@/lib/risk/dashboardMetrics";
 
 /**
  * GET /api/rules/status
@@ -87,19 +88,7 @@ export async function GET() {
 
     let currentExposurePct: number | null = null;
     if (openResult.ok && openResult.positions.length > 0 && equity > 0) {
-      const CONTRACT = 100_000;
-      let total = 0;
-      for (const p of openResult.positions) {
-        if (p == null || typeof p !== "object") continue;
-        const vol = Number((p as { volume?: number; lots?: number }).volume ?? (p as { lots?: number }).lots) || 0;
-        const open = Number((p as { openPrice?: number }).openPrice) || 0;
-        const sl = (p as { stopLoss?: number }).stopLoss;
-        if (vol && open && sl != null && Number.isFinite(Number(sl))) {
-          const risk = Math.abs(open - Number(sl)) * vol * CONTRACT;
-          total += (risk / equity) * 100;
-        }
-      }
-      if (total > 0) currentExposurePct = total;
+      currentExposurePct = computeCurrentExposurePct(parseOpenPositions(openResult.positions), equity);
     }
 
     return NextResponse.json({

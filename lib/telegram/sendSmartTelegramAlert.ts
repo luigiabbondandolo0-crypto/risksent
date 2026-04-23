@@ -62,8 +62,12 @@ function buildFallback(alertType: string, data: Record<string, unknown>, severit
         return `🚨 ${data.count} consecutive losses detected — total loss $${data.totalLoss}\nWhat to do NOW: Stop trading now and review your last ${data.count} trades.\nRisk: Continuing after a losing streak multiplies drawdown and emotional errors.`;
       case "revenge_trading":
         return `🚨 Revenge trading detected — ${data.tradesCount} trades in ${data.minutes} minutes after a loss\nWhat to do NOW: Step away from the platform for at least 30 minutes.\nRisk: Emotional trading causes average 3x larger losses. You are not thinking clearly.`;
-      case "position_size":
-        return `🚨 Position size ${data.positionSize}% is ${data.positionSize}x your ${data.limit}% limit on ${data.symbol}\nWhat to do NOW: Reduce position size to your configured maximum immediately.\nRisk: Oversized positions can wipe out multiple sessions of profit in one trade.`;
+      case "position_size": {
+        const pos = Number(data.positionSize ?? 0);
+        const lim = Number(data.limit ?? 0);
+        const mult = lim > 0 ? (pos / lim).toFixed(1) : "?";
+        return `🚨 Position size ${data.positionSize}% is ${mult}x your ${data.limit}% limit on ${data.symbol}\nWhat to do NOW: Reduce position size to your configured maximum immediately.\nRisk: Oversized positions can wipe out multiple sessions of profit in one trade.`;
+      }
       default:
         return `🚨 Critical risk alert — ${alertType}\nWhat to do NOW: Review your open positions and risk exposure immediately.\nRisk: Ignoring this alert may result in significant account drawdown.`;
     }

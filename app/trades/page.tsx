@@ -247,10 +247,12 @@ function TradesPageContent() {
       const equity = runningEquity;
       runningEquity += t.profit;
       const riskPct = riskPctForTrade({
+        symbol: t.symbol,
         stopLoss: t.stopLoss,
         lots: t.lots,
         openPrice: t.openPrice,
         equity,
+        side: t.type,
       });
       return { riskPct, equity };
     });

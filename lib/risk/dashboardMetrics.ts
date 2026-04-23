@@ -1,4 +1,5 @@
 import type { ClosedOrder } from "@/lib/dashboard/buildRealStats";
+import { riskPctOfEquityAtStopLoss } from "@/lib/risk/openPositionRisk";
 
 export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number {
   const valid = orders.filter(
@@ -64,8 +65,6 @@ export type RawOpenPosition = {
   type?: string;
 };
 
-const DEFAULT_CONTRACT_SIZE = 100_000;
-
 export function parseOpenPositions(raw: unknown): RawOpenPosition[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
@@ -83,8 +82,8 @@ export function computeCurrentExposurePct(rawPositions: RawOpenPosition[], equit
     const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
     if (!volume || !openPrice) continue;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
-      total += (riskAmount / equity) * 100;
+      const pct = riskPctOfEquityAtStopLoss(p.symbol ?? "", openPrice, stopLoss, volume, equity, p.type);
+      if (pct != null) total += pct;
     }
   }
   return total > 0 ? total : null;
@@ -99,9 +98,8 @@ export function maxOpenPositionRiskPct(positions: RawOpenPosition[], equity: num
     const stopLoss = p.stopLoss != null ? Number(p.stopLoss) : undefined;
     if (!volume || !openPrice) continue;
     if (stopLoss != null && Number.isFinite(stopLoss) && stopLoss !== openPrice) {
-      const riskAmount = Math.abs(openPrice - stopLoss) * volume * DEFAULT_CONTRACT_SIZE;
-      const pct = (riskAmount / equity) * 100;
-      maxR = maxR == null ? pct : Math.max(maxR, pct);
+      const pct = riskPctOfEquityAtStopLoss(p.symbol ?? "", openPrice, stopLoss, volume, equity, p.type);
+      if (pct != null) maxR = maxR == null ? pct : Math.max(maxR, pct);
     }
   }
   return maxR;

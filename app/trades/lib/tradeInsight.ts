@@ -1,6 +1,5 @@
 import { getSanityLevel } from "../components/SanityBadge";
-
-const CONTRACT_SIZE = 100_000;
+import { riskPctOfEquityAtStopLoss } from "@/lib/risk/openPositionRisk";
 
 export type TradeInsightContext = {
   consecutiveLossesBefore: number;
@@ -73,12 +72,14 @@ export function buildTradeInsightIssues(ctx: TradeInsightContext): string[] {
 }
 
 export function riskPctForTrade(params: {
+  symbol: string;
   stopLoss: number | null | undefined;
   lots: number;
   openPrice: number;
   equity: number;
+  side?: string | null;
 }): number | null {
-  const { stopLoss, lots, openPrice, equity } = params;
+  const { symbol, stopLoss, lots, openPrice, equity, side } = params;
   if (
     stopLoss == null ||
     !Number.isFinite(stopLoss) ||
@@ -87,6 +88,5 @@ export function riskPctForTrade(params: {
   ) {
     return null;
   }
-  const riskAmount = lots * CONTRACT_SIZE * Math.abs(openPrice - stopLoss);
-  return (riskAmount / equity) * 100;
+  return riskPctOfEquityAtStopLoss(symbol, openPrice, stopLoss, lots, equity, side);
 }
