@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
@@ -11,10 +11,33 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const journalAccountId = req.nextUrl.searchParams.get("journal_account_id")?.trim() ?? "";
+  if (!journalAccountId) {
+    return NextResponse.json(
+      { error: "journal_account_id query parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  const { data: accountRow, error: accountErr } = await supabase
+    .from("journal_account")
+    .select("id")
+    .eq("id", journalAccountId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (accountErr) {
+    return NextResponse.json({ error: accountErr.message }, { status: 500 });
+  }
+  if (!accountRow) {
+    return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  }
+
   const { data, error } = await supabase
     .from("ai_coach_message")
     .select("*")
     .eq("user_id", user.id)
+    .eq("journal_account_id", journalAccountId)
     .order("created_at", { ascending: true })
     .limit(50);
 

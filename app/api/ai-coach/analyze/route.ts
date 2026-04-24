@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAiAnalyzeRateLimit, rateLimitJsonResponse } from "@/lib/security/apiAbuse";
 import { clampInt } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { COACH_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
 import { parseCoachReportFromModelText } from "@/lib/ai-coach/parseCoachReport";
 
 const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
+
+/** One successful report per journal account per rolling 24h (server-enforced). */
+const REPORT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+function cooldownPayload(lastCreatedAt: string) {
+  const nextMs = new Date(lastCreatedAt).getTime() + REPORT_COOLDOWN_MS;
+  const retryAfterSeconds = Math.max(1, Math.ceil((nextMs - Date.now()) / 1000));
+  return {
+    next_allowed_at: new Date(nextMs).toISOString(),
+    retry_after_seconds: retryAfterSeconds,
+  };
+}
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -17,16 +28,57 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const analyzeLimit = checkAiAnalyzeRateLimit(user.id);
-  if (!analyzeLimit.allowed) {
-    return rateLimitJsonResponse(analyzeLimit, "Too many analysis requests. Try again tomorrow.");
-  }
-
-  let body: { days?: number };
+  let body: { days?: number; journal_account_id?: string };
   try {
     body = await req.json();
   } catch {
-    body = {};
+    body = {} as { days?: number; journal_account_id?: string };
+  }
+
+  const journalAccountId =
+    typeof body.journal_account_id === "string" ? body.journal_account_id.trim() : "";
+  if (!journalAccountId) {
+    return NextResponse.json(
+      { error: "journal_account_id is required" },
+      { status: 400 }
+    );
+  }
+
+  const { data: accountRow, error: accountErr } = await supabase
+    .from("journal_account")
+    .select("id")
+    .eq("id", journalAccountId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (accountErr) {
+    return NextResponse.json({ error: accountErr.message }, { status: 500 });
+  }
+  if (!accountRow) {
+    return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  }
+
+  const { data: lastReport } = await supabase
+    .from("ai_coach_report")
+    .select("created_at")
+    .eq("user_id", user.id)
+    .eq("journal_account_id", journalAccountId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastReport?.created_at) {
+    const elapsed = Date.now() - new Date(lastReport.created_at).getTime();
+    if (elapsed < REPORT_COOLDOWN_MS) {
+      const cd = cooldownPayload(lastReport.created_at);
+      return NextResponse.json(
+        {
+          error: "You can generate one report per account every 24 hours.",
+          ...cd,
+        },
+        { status: 429, headers: { "Retry-After": String(cd.retry_after_seconds) } }
+      );
+    }
   }
 
   let days: number;
@@ -42,7 +94,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // All time: no date filter
   const fromDate =
     days >= 9999
       ? null
@@ -51,11 +102,11 @@ export async function POST(req: NextRequest) {
           .slice(0, 10);
   const toDate = new Date().toISOString().slice(0, 10);
 
-  // ── Collect trading data ──────────────────────────────────────────────────
   let tradesQuery = supabase
     .from("journal_trade")
     .select("*")
     .eq("user_id", user.id)
+    .eq("account_id", journalAccountId)
     .eq("status", "closed")
     .order("open_time", { ascending: true })
     .limit(500);
@@ -64,12 +115,8 @@ export async function POST(req: NextRequest) {
     tradesQuery = tradesQuery.gte("open_time", fromDate);
   }
 
-  const [tradesRes, reviewsRes, rulesRes, accountsRes] = await Promise.all([
+  const [tradesRes, rulesRes, accountOneRes] = await Promise.all([
     tradesQuery,
-    supabase
-      .from("journal_trade_review")
-      .select("*, journal_strategy(name)")
-      .eq("user_id", user.id),
     supabase
       .from("app_user")
       .select(
@@ -81,26 +128,41 @@ export async function POST(req: NextRequest) {
     supabase
       .from("journal_account")
       .select("initial_balance, current_balance, currency, nickname")
+      .eq("id", journalAccountId)
       .eq("user_id", user.id)
-      .limit(5),
+      .maybeSingle(),
   ]);
 
+  if (tradesRes.error) {
+    return NextResponse.json({ error: tradesRes.error.message }, { status: 500 });
+  }
+
   const rawTrades = tradesRes.data ?? [];
+  const tradeIds = rawTrades.map((t) => t.id);
+
+  let reviewsData: Record<string, unknown>[] = [];
+  if (tradeIds.length > 0) {
+    const { data: rev } = await supabase
+      .from("journal_trade_review")
+      .select("*, journal_strategy(name)")
+      .eq("user_id", user.id)
+      .in("trade_id", tradeIds);
+    reviewsData = rev ?? [];
+  }
 
   if (rawTrades.length < 10) {
     return NextResponse.json(
       {
         error:
-          "Insufficient data — load more trades. Minimum 10 closed trades required.",
+          "Insufficient data — load more trades for this account. Minimum 10 closed trades required.",
       },
       { status: 422 }
     );
   }
 
-  // Build review map
   const reviewMap = new Map<string, Record<string, unknown>>();
-  for (const r of reviewsRes.data ?? []) {
-    reviewMap.set(r.trade_id, r);
+  for (const r of reviewsData) {
+    reviewMap.set(r.trade_id as string, r);
   }
 
   const trades = rawTrades.map((t) => {
@@ -136,8 +198,7 @@ export async function POST(req: NextRequest) {
       checklist_compliance_pct:
         checklistValues.length > 0
           ? Math.round(
-              (checklistValues.filter(Boolean).length /
-                checklistValues.length) *
+              (checklistValues.filter(Boolean).length / checklistValues.length) *
                 100
             )
           : null,
@@ -157,16 +218,16 @@ export async function POST(req: NextRequest) {
     revenge_threshold_trades: 3,
   };
 
-  const firstAccount = accountsRes.data?.[0];
+  const acc = accountOneRes.data;
   const context = {
     trades,
     risk_rules: riskRules,
-    account: firstAccount
+    account: acc
       ? {
-          initial_balance: firstAccount.initial_balance,
-          current_balance: firstAccount.current_balance,
-          currency: firstAccount.currency,
-          nickname: firstAccount.nickname,
+          initial_balance: acc.initial_balance,
+          current_balance: acc.current_balance,
+          currency: acc.currency,
+          nickname: acc.nickname,
         }
       : null,
     period: {
@@ -180,7 +241,6 @@ export async function POST(req: NextRequest) {
     "Analyze this trading data and return a JSON report: " +
     JSON.stringify(context);
 
-  // ── Call AI ───────────────────────────────────────────────────────────────
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
     return NextResponse.json(
@@ -229,11 +289,11 @@ export async function POST(req: NextRequest) {
   }
   const report = parsed.report;
 
-  // ── Persist ───────────────────────────────────────────────────────────────
   const { data: saved, error: saveErr } = await supabase
     .from("ai_coach_report")
     .insert({
       user_id: user.id,
+      journal_account_id: journalAccountId,
       model: "claude",
       period_from: fromDate,
       period_to: toDate,
@@ -247,5 +307,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: saveErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ report: saved });
+  const nextMs = new Date(saved.created_at).getTime() + REPORT_COOLDOWN_MS;
+
+  return NextResponse.json({
+    report: saved,
+    next_allowed_at: new Date(nextMs).toISOString(),
+  });
 }

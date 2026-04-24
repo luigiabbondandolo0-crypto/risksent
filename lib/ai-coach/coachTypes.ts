@@ -84,6 +84,7 @@ export interface CoachReport {
 export interface CoachReportRow {
   id: string;
   user_id: string;
+  journal_account_id?: string | null;
   model: CoachModel;
   period_from: string | null;
   period_to: string | null;
@@ -95,6 +96,7 @@ export interface CoachReportRow {
 export interface CoachMessage {
   id: string;
   user_id: string;
+  journal_account_id?: string | null;
   role: "user" | "assistant";
   content: string;
   model: CoachModel;

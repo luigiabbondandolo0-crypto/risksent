@@ -28,6 +28,10 @@ import {
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { authFetch } from "@/lib/api/authFetch";
+import {
+  GlobalAccountSelector,
+  RS_SELECTED_ACCOUNT_KEY,
+} from "@/components/shared/GlobalAccountSelector";
 import type {
   CoachAdaptation,
   CoachError,
@@ -37,6 +41,15 @@ import type {
   CoachReportRow,
   ErrorSeverity,
 } from "@/lib/ai-coach/coachTypes";
+
+const REPORT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+type JournalAccountRow = {
+  id: string;
+  nickname: string;
+  status: string;
+  platform?: string;
+};
 
 // ─── Design tokens — calm teal / slate system ─────────────────────────────
 
@@ -656,6 +669,8 @@ function ReportTab({
   onGenerate,
   generating,
   isMock,
+  generateBlocked,
+  cooldownLabel,
 }: {
   report: CoachReport | null;
   reportRow: CoachReportRow | null;
@@ -664,6 +679,8 @@ function ReportTab({
   onGenerate: () => void;
   generating: boolean;
   isMock: boolean;
+  generateBlocked: boolean;
+  cooldownLabel: string | null;
 }) {
   if (!report) {
     return (
@@ -686,7 +703,7 @@ function ReportTab({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           transition={{ scale: HOVER_SCALE_TRANSITION }}
-          disabled={generating || isMock}
+          disabled={generating || isMock || generateBlocked}
           onClick={onGenerate}
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition-colors hover:bg-teal-500 disabled:opacity-50"
         >
@@ -697,10 +714,18 @@ function ReportTab({
           )}
           {isMock
             ? "Not available in demo"
-            : generating
-              ? "Analyzing trades…"
-              : "Generate Report"}
+            : generateBlocked && cooldownLabel
+              ? `Available in ${cooldownLabel}`
+              : generating
+                ? "Analyzing trades…"
+                : "Generate Report"}
         </motion.button>
+        {cooldownLabel && generateBlocked && !isMock ? (
+          <p className="mt-3 text-center text-xs text-slate-500">
+            One report per account every 24 hours. Next in{" "}
+            <span className="font-mono text-teal-400/90">{cooldownLabel}</span>.
+          </p>
+        ) : null}
       </motion.div>
     );
   }
@@ -1343,6 +1368,12 @@ export function AiCoachPageClient({
   const [analysisWindow, setAnalysisWindow] = useState(9999);
   const [windowOpen, setWindowOpen] = useState(false);
 
+  const [journalAccounts, setJournalAccounts] = useState<JournalAccountRow[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(!isMock);
+  const [coachAccountId, setCoachAccountId] = useState<string | null>(null);
+  const [forcedCooldownUntil, setForcedCooldownUntil] = useState<number | null>(null);
+  const [tick, setTick] = useState(() => Date.now());
+
   const [reportRow, setReportRow] = useState<CoachReportRow | null>(
     mockReport ?? null
   );
@@ -1356,9 +1387,35 @@ export function AiCoachPageClient({
     mockMessages ?? []
   );
   const [chatLoading, setChatLoading] = useState(false);
-  const [loading, setLoading] = useState(!isMock);
+  const [loading, setLoading] = useState(false);
 
   const report = reportRow?.report ?? null;
+
+  const cooldownUntilMs = useMemo(() => {
+    const fromLatest = allReports[0]?.created_at
+      ? new Date(allReports[0].created_at).getTime() + REPORT_COOLDOWN_MS
+      : 0;
+    return Math.max(fromLatest, forcedCooldownUntil ?? 0);
+  }, [allReports, forcedCooldownUntil]);
+
+  useEffect(() => {
+    const left = cooldownUntilMs - Date.now();
+    if (left <= 0) return;
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntilMs]);
+
+  const reportCooldownActive = cooldownUntilMs > tick;
+  const reportCooldownLabel = useMemo(() => {
+    if (!reportCooldownActive) return null;
+    const sec = Math.max(0, Math.ceil((cooldownUntilMs - tick) / 1000));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${h}h ${m}m ${s}s`;
+  }, [cooldownUntilMs, tick, reportCooldownActive]);
+
+  const generateBlocked = !isMock && !!coachAccountId && reportCooldownActive;
 
   // Read tab from URL
   useEffect(() => {
@@ -1368,20 +1425,57 @@ export function AiCoachPageClient({
     }
   }, []);
 
-  // Load reports + messages on mount (live only)
-  const loadData = useCallback(async () => {
+  useEffect(() => {
     if (isMock) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch("/api/journal/accounts");
+        if (!res.ok || cancelled) return;
+        const j = await res.json();
+        const list: JournalAccountRow[] = j.accounts ?? [];
+        if (cancelled) return;
+        setJournalAccounts(list);
+        let stored: string | null = null;
+        try {
+          stored = localStorage.getItem(RS_SELECTED_ACCOUNT_KEY);
+        } catch {
+          /* ignore */
+        }
+        const pick =
+          stored &&
+          stored !== "all" &&
+          list.some((a) => a.id === stored)
+            ? stored
+            : list[0]?.id ?? null;
+        setCoachAccountId(pick);
+      } finally {
+        if (!cancelled) setAccountsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isMock]);
+
+  const loadData = useCallback(async () => {
+    if (isMock || !coachAccountId) return;
     setLoading(true);
+    setAllReports([]);
+    setReportRow(null);
+    setMessages([]);
     try {
+      const q = `journal_account_id=${encodeURIComponent(coachAccountId)}`;
       const [rRes, mRes] = await Promise.all([
-        authFetch("/api/ai-coach/reports"),
-        authFetch("/api/ai-coach/messages"),
+        authFetch(`/api/ai-coach/reports?${q}`),
+        authFetch(`/api/ai-coach/messages?${q}`),
       ]);
       if (rRes.ok) {
         const j = await rRes.json();
         const reports: CoachReportRow[] = j.reports ?? [];
         setAllReports(reports);
         if (reports.length > 0) setReportRow(reports[0]);
+        else setReportRow(null);
       }
       if (mRes.ok) {
         const j = await mRes.json();
@@ -1390,27 +1484,37 @@ export function AiCoachPageClient({
     } finally {
       setLoading(false);
     }
-  }, [isMock]);
+  }, [isMock, coachAccountId]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
   const handleGenerate = async () => {
-    if (isMock || generating) return;
+    if (isMock || generating || !coachAccountId || generateBlocked) return;
     setGenerating(true);
     setGenerateError(null);
     try {
       const res = await authFetch("/api/ai-coach/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ days: analysisWindow }),
+        body: JSON.stringify({
+          days: analysisWindow,
+          journal_account_id: coachAccountId,
+        }),
       });
       const j = await res.json();
       if (!res.ok) {
+        if (
+          res.status === 429 &&
+          typeof j.next_allowed_at === "string"
+        ) {
+          setForcedCooldownUntil(new Date(j.next_allowed_at).getTime());
+        }
         setGenerateError(j.error ?? "Analysis failed");
         return;
       }
+      setForcedCooldownUntil(null);
       const newRow = j.report as CoachReportRow;
       setReportRow(newRow);
       setAllReports((prev) => [newRow, ...prev]);
@@ -1420,7 +1524,7 @@ export function AiCoachPageClient({
   };
 
   const handleChatSend = async (msg: string) => {
-    if (isMock || chatLoading) return;
+    if (isMock || chatLoading || !coachAccountId) return;
     const userMsg: CoachMessage = {
       id: `tmp-u-${Date.now()}`,
       user_id: "",
@@ -1439,7 +1543,11 @@ export function AiCoachPageClient({
       const res = await authFetch("/api/ai-coach/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, history }),
+        body: JSON.stringify({
+          message: msg,
+          history,
+          journal_account_id: coachAccountId,
+        }),
       });
       const j = await res.json();
       if (res.ok) {
@@ -1489,6 +1597,29 @@ export function AiCoachPageClient({
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          {!isMock && journalAccounts.length > 0 && coachAccountId ? (
+            <GlobalAccountSelector
+              accounts={journalAccounts.map((a) => ({
+                id: a.id,
+                nickname: a.nickname,
+                status: a.status,
+                platform: a.platform,
+              }))}
+              selectedId={coachAccountId}
+              allowAll={false}
+              onChange={(id) => {
+                if (id === "all") return;
+                setCoachAccountId(id);
+                setForcedCooldownUntil(null);
+                setGenerateError(null);
+                try {
+                  localStorage.setItem(RS_SELECTED_ACCOUNT_KEY, id);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            />
+          ) : null}
           <div className="relative sm:min-w-0">
             <button
               type="button"
@@ -1537,9 +1668,15 @@ export function AiCoachPageClient({
                 : { duration: 0.2 },
               scale: HOVER_SCALE_TRANSITION,
             }}
-            disabled={generating || isMock}
+            disabled={generating || isMock || !coachAccountId || generateBlocked}
             onClick={() => void handleGenerate()}
-            title={isMock ? "Not available in demo" : undefined}
+            title={
+              isMock
+                ? "Not available in demo"
+                : generateBlocked && reportCooldownLabel
+                  ? `Next report in ${reportCooldownLabel}`
+                  : undefined
+            }
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-teal-900/25 transition-opacity hover:bg-teal-500 disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
           >
@@ -1550,12 +1687,32 @@ export function AiCoachPageClient({
             )}
             {isMock
               ? "Demo mode"
-              : generating
-                ? `Analyzing${tradeCount > 0 ? ` ${tradeCount}` : ""} trades…`
-                : "Generate Report"}
+              : generateBlocked && reportCooldownLabel
+                ? `Wait ${reportCooldownLabel}`
+                : generating
+                  ? `Analyzing${tradeCount > 0 ? ` ${tradeCount}` : ""} trades…`
+                  : "Generate Report"}
           </motion.button>
+          {!isMock && generateBlocked && reportCooldownLabel ? (
+            <p className="w-full text-center text-[11px] text-slate-500 sm:text-right">
+              Report cooldown:{" "}
+              <span className="font-mono text-teal-400/90">{reportCooldownLabel}</span>{" "}
+              left (per account, 24h)
+            </p>
+          ) : null}
         </div>
       </motion.div>
+
+      {!isMock && !accountsLoading && journalAccounts.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3 text-sm text-amber-200/90"
+        >
+          Add a broker account in the journal to run AI Coach reports and chat for that
+          account.
+        </motion.div>
+      ) : null}
 
       {/* Demo banner */}
       {isMock && (
@@ -1589,7 +1746,8 @@ export function AiCoachPageClient({
       </AnimatePresence>
 
       {/* Tab switcher */}
-      {!loading && (
+      {isMock ||
+      (!accountsLoading && journalAccounts.length > 0 && coachAccountId) ? (
         <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
           {(
             [
@@ -1617,10 +1775,11 @@ export function AiCoachPageClient({
             </motion.button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Loading */}
-      {loading ? (
+      {/* Loading + report/chat */}
+      {!isMock && !accountsLoading && journalAccounts.length === 0 ? null : !isMock &&
+        (accountsLoading || (!!coachAccountId && loading)) ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -1650,6 +1809,8 @@ export function AiCoachPageClient({
                 onGenerate={() => void handleGenerate()}
                 generating={generating}
                 isMock={isMock}
+                generateBlocked={generateBlocked}
+                cooldownLabel={reportCooldownLabel}
               />
             </motion.div>
           ) : (

@@ -29,11 +29,35 @@ export async function POST(req: NextRequest) {
   let body: {
     message?: string;
     history?: ChatMessage[];
+    journal_account_id?: string;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const journalAccountId =
+    typeof body.journal_account_id === "string" ? body.journal_account_id.trim() : "";
+  if (!journalAccountId) {
+    return NextResponse.json(
+      { error: "journal_account_id is required" },
+      { status: 400 }
+    );
+  }
+
+  const { data: accountRow, error: accountErr } = await supabase
+    .from("journal_account")
+    .select("id")
+    .eq("id", journalAccountId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (accountErr) {
+    return NextResponse.json({ error: accountErr.message }, { status: 500 });
+  }
+  if (!accountRow) {
+    return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
   const message = sanitizeText(String(body.message ?? ""), 12_000);
@@ -47,28 +71,26 @@ export async function POST(req: NextRequest) {
       }))
     : [];
 
-  // ── Load last report for context ──────────────────────────────────────────
   const { data: lastReport } = await supabase
     .from("ai_coach_report")
     .select("report, trades_analyzed, created_at, period_from, period_to")
     .eq("user_id", user.id)
+    .eq("journal_account_id", journalAccountId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   const contextBlock = lastReport
     ? `\n\nTRADER CONTEXT (from last report — ${lastReport.created_at?.slice(0, 10)}, ${lastReport.trades_analyzed} trades analyzed, period ${lastReport.period_from} to ${lastReport.period_to}):\n${JSON.stringify(lastReport.report)}`
-    : "\n\nNo analysis report available yet. Encourage the user to generate one.";
+    : "\n\nNo analysis report available yet for this account. Encourage the user to generate one.";
 
   const systemWithContext = CHAT_SYSTEM_PROMPT + contextBlock;
 
-  // Build message array (alternating user/assistant)
   const messages: ChatMessage[] = [
     ...history,
     { role: "user", content: message },
   ];
 
-  // ── Call AI ───────────────────────────────────────────────────────────────
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (!anthropicKey) {
     return NextResponse.json(
@@ -107,10 +129,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Persist both messages ─────────────────────────────────────────────────
   await supabase.from("ai_coach_message").insert([
-    { user_id: user.id, role: "user", content: message, model: "claude" },
-    { user_id: user.id, role: "assistant", content: response, model: "claude" },
+    {
+      user_id: user.id,
+      journal_account_id: journalAccountId,
+      role: "user",
+      content: message,
+      model: "claude",
+    },
+    {
+      user_id: user.id,
+      journal_account_id: journalAccountId,
+      role: "assistant",
+      content: response,
+      model: "claude",
+    },
   ]);
 
   return NextResponse.json({ response });

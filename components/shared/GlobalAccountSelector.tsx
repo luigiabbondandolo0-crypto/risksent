@@ -20,6 +20,8 @@ type Props = {
   onChange: (id: string | "all") => void;
   onAddAccount?: () => void;
   isMock?: boolean;
+  /** When false, hide "All accounts" — every selection is a concrete account id. */
+  allowAll?: boolean;
 };
 
 function statusDotClass(status: string) {
@@ -67,6 +69,7 @@ export function GlobalAccountSelector({
   onChange,
   onAddAccount,
   isMock = false,
+  allowAll = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -120,7 +123,11 @@ export function GlobalAccountSelector({
       : accounts.find((a) => a.id === selectedId) ?? null;
 
   const label =
-    selectedId === "all" || !selected ? "All accounts" : selected.nickname;
+    !allowAll && selected
+      ? selected.nickname
+      : selectedId === "all" || !selected
+        ? "All accounts"
+        : selected.nickname;
 
   return withAddToolbar(
     <div ref={rootRef} className="relative z-40">
@@ -153,17 +160,21 @@ export function GlobalAccountSelector({
             transition={{ type: "spring", stiffness: 400, damping: 32 }}
             className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(100vw-2rem,300px)] overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e]/95 py-1 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.85)] backdrop-blur-xl"
           >
-            <button
-              type="button"
-              onClick={() => pick("all")}
-              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-[family-name:var(--font-mono)] transition-colors hover:bg-white/[0.05] ${
-                selectedId === "all" ? "text-cyan-300" : "text-slate-300"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full bg-cyan-400/80" />
-              All accounts
-            </button>
-            <div className="mx-2 my-1 h-px bg-white/[0.06]" />
+            {allowAll ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => pick("all")}
+                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-[family-name:var(--font-mono)] transition-colors hover:bg-white/[0.05] ${
+                    selectedId === "all" ? "text-cyan-300" : "text-slate-300"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-cyan-400/80" />
+                  All accounts
+                </button>
+                <div className="mx-2 my-1 h-px bg-white/[0.06]" />
+              </>
+            ) : null}
             {accounts.map((a) => (
               <button
                 key={a.id}
