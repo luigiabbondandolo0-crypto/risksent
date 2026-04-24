@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeIanaTimeZone } from "@/lib/journal/calendarBounds";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { buildRealStats, parseOrders, type ClosedOrder } from "@/lib/dashboard/buildRealStats";
 import {
@@ -150,6 +151,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const uuid = searchParams.get("uuid");
+  const paramTz = searchParams.get("tz");
+  const { data: auTz } = await supabase
+    .from("app_user")
+    .select("preference_timezone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const timeZone =
+    paramTz != null && paramTz.trim() !== ""
+      ? normalizeIanaTimeZone(paramTz)
+      : normalizeIanaTimeZone(auTz?.preference_timezone ?? null);
 
   const accountRow = await resolveStatsTradingRow(supabase, user.id, uuid);
 
@@ -181,7 +192,7 @@ export async function GET(req: NextRequest) {
       // dashboard live alerts, and headbar stay aligned when the broker API is off.
       const journalCtx = await resolveJournalAccountForTradingRow(supabase, user.id, account);
       if (journalCtx?.id) {
-        const fromJournal = await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id);
+        const fromJournal = await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id, timeZone);
         if (fromJournal) {
           const rules: RiskRulesDTO = await loadMergedRiskRules(
             supabase,
@@ -195,7 +206,8 @@ export async function GET(req: NextRequest) {
             live: fromJournal,
             journalAccountId: journalCtx.id,
             accountNickname: journalCtx.nickname,
-            brokerServer: journalCtx.broker_server
+            brokerServer: journalCtx.broker_server,
+            timeZone
           });
         }
       }
@@ -223,8 +235,8 @@ export async function GET(req: NextRequest) {
       maxOpenRiskPct = maxOpenPositionRiskPct(positions, useEq, tickSizes);
     }
 
-    const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders);
-    const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders);
+    const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders, timeZone);
+    const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders, 30, timeZone);
 
     const {
       winRate,
@@ -246,7 +258,7 @@ export async function GET(req: NextRequest) {
       dailyStats,
       totalProfit,
       initialBalance
-    } = buildRealStats(balance, equity, closedOrders);
+    } = buildRealStats(balance, equity, closedOrders, { timeZone });
 
     const balancePct =
       initialBalance > 0 ? ((balance - initialBalance) / initialBalance) * 100 : null;
@@ -274,7 +286,8 @@ export async function GET(req: NextRequest) {
       },
       journalAccountId: journalCtx?.id ?? null,
       accountNickname: journalCtx?.nickname ?? accountLabelFromRow(account),
-      brokerServer: journalCtx?.broker_server ?? null
+      brokerServer: journalCtx?.broker_server ?? null,
+      timeZone
     });
 
     return NextResponse.json({

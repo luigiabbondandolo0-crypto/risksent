@@ -1,3 +1,5 @@
+import { ymdInTimeZone } from "@/lib/journal/calendarBounds";
+
 export type ClosedOrder = {
   closeTime?: string;
   profit?: number;
@@ -9,10 +11,29 @@ export function parseOrders(orders: unknown): ClosedOrder[] {
   return orders as ClosedOrder[];
 }
 
+export type BuildRealStatsOptions = {
+  /** IANA zone; defines "today" for session daily DD and must match the user's trading calendar. */
+  timeZone?: string;
+};
+
+function sumRealizedProfitForLocalDay(
+  orders: ClosedOrder[],
+  dayYmd: string,
+  timeZone: string
+): number {
+  let s = 0;
+  for (const o of orders) {
+    if (o == null || typeof o.closeTime !== "string" || typeof o.profit !== "number") continue;
+    if (ymdInTimeZone(new Date(o.closeTime), timeZone) === dayYmd) s += o.profit;
+  }
+  return s;
+}
+
 export function buildRealStats(
   balance: number,
   equity: number,
-  orders: ClosedOrder[]
+  orders: ClosedOrder[],
+  opts?: BuildRealStatsOptions
 ): {
   winRate: number | null;
   maxDd: number | null;
@@ -34,19 +55,23 @@ export function buildRealStats(
   totalProfit: number;
   initialBalance: number;
 } {
+  const tz = (opts?.timeZone ?? "UTC").trim() || "UTC";
   const valid = orders.filter(
     (o) => o != null && typeof o.closeTime === "string" && typeof o.profit === "number"
   );
   if (valid.length === 0) {
     const totalProfit = Number.isFinite(balance) ? 0 : 0;
     const initialBalance = balance;
+    const ref = initialBalance > 0 ? initialBalance : balance > 0 ? balance : 0;
+    const floating = equity - balance;
+    const dailyDdPct = ref > 0 ? (floating / ref) * 100 : null;
     return {
       winRate: null,
       maxDd: null,
       highestDdPct: null,
       peakDdDate: null,
       maxDdDollars: null,
-      dailyDdPct: null,
+      dailyDdPct,
       avgRiskReward: null,
       avgWin: null,
       avgLoss: null,
@@ -160,10 +185,11 @@ export function buildRealStats(
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const initBal = initialBalance > 0 ? initialBalance : balance - totalProfit;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayStat = dayMap.get(todayStr);
-  const dailyDdPct =
-    todayStat && initBal > 0 ? (todayStat.profit / initBal) * 100 : null;
+  const todayYmd = ymdInTimeZone(new Date(), tz);
+  const realizedToday = sumRealizedProfitForLocalDay(valid, todayYmd, tz);
+  const floating = equity - balance;
+  const ref = initBal > 0 ? initBal : balance > 0 ? balance : 0;
+  const dailyDdPct = ref > 0 ? ((realizedToday + floating) / ref) * 100 : null;
 
   return {
     winRate,

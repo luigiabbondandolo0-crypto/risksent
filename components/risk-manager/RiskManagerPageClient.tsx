@@ -453,10 +453,14 @@ export function RiskManagerPageClient({
         });
         return;
       }
+      const tz =
+        typeof window !== "undefined"
+          ? encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")
+          : encodeURIComponent("UTC");
       const url =
         uuid !== undefined && uuid !== ""
-          ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}`
-          : "/api/dashboard-stats";
+          ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}&tz=${tz}`
+          : `/api/dashboard-stats?tz=${tz}`;
       const res = await authFetch(url);
       if (!res.ok) return;
       const j = await res.json();
@@ -514,6 +518,9 @@ export function RiskManagerPageClient({
             account_nickname: raw.account_nickname != null ? String(raw.account_nickname) : null,
           };
           setViolations((prev) => [item, ...prev]);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("rs-alerts-refresh"));
+          }
         }
       )
       .subscribe();

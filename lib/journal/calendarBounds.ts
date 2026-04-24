@@ -44,3 +44,28 @@ export function localYmFromIso(iso: string | null | undefined): string | null {
   if (Number.isNaN(d.getTime())) return null;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
+
+/** `yyyy-MM-dd` for `date` interpreted in IANA `timeZone` (e.g. Europe/Rome). */
+export function ymdInTimeZone(date: Date, timeZone: string): string {
+  const tz = (timeZone ?? "").trim() || "UTC";
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+export function normalizeIanaTimeZone(raw: string | null | undefined): string {
+  const s = (raw ?? "").trim() || "UTC";
+  try {
+    Intl.DateTimeFormat("en-US", { timeZone: s });
+    return s;
+  } catch {
+    return "UTC";
+  }
+}

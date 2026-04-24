@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeIanaTimeZone } from "@/lib/journal/calendarBounds";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import {
   fetchRiskLiveSnapshot,
@@ -6,10 +7,7 @@ import {
   tradingAccountLabel
 } from "@/lib/risk/resolveTradingAccount";
 import { buildLiveStatsFromJournal } from "@/lib/risk/liveStatsFromJournal";
-import {
-  persistRiskViolations,
-  type TelegramAlertContext
-} from "@/lib/risk/persistViolations";
+import { persistRiskViolations } from "@/lib/risk/persistViolations";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
 import type { RiskRulesDTO } from "@/lib/risk/riskTypes";
@@ -25,6 +23,13 @@ export async function POST(request: Request) {
   const auth = await requireRouteUser(request);
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
+
+  const { data: auTz } = await supabase
+    .from("app_user")
+    .select("preference_timezone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const timeZone = normalizeIanaTimeZone(auTz?.preference_timezone ?? null);
 
   let accountIdBody: string | undefined;
   try {
@@ -84,10 +89,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ violations: [], warning: "No linked trading account" });
   }
 
-  const snap = await fetchRiskLiveSnapshot(account);
+  const snap = await fetchRiskLiveSnapshot(account, timeZone);
   const journalLive =
     !snap && journalCtx?.id
-      ? await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id)
+      ? await buildLiveStatsFromJournal(supabase, user.id, journalCtx.id, timeZone)
       : null;
   if (!snap && !journalLive) {
     return NextResponse.json({ error: "Failed to load account data" }, { status: 502 });
@@ -117,25 +122,6 @@ export async function POST(request: Request) {
         avgTradesPerDay: journalLive!.avgTradesPerDay
       };
 
-  let telegramAlertContext: TelegramAlertContext | undefined;
-  if (journalCtx?.id) {
-    const dayStart = new Date();
-    dayStart.setUTCHours(0, 0, 0, 0);
-    const { data: todayRows } = await supabase
-      .from("journal_trade")
-      .select("pl")
-      .eq("user_id", user.id)
-      .eq("account_id", journalCtx.id)
-      .eq("status", "closed")
-      .gte("close_time", dayStart.toISOString());
-    const list = todayRows ?? [];
-    telegramAlertContext = {
-      todayTrades: list.length,
-      todayPl: list.reduce((s, r) => s + Number(r.pl ?? 0), 0),
-      currency: journalCtx.currency
-    };
-  }
-
   const { candidates } = await persistRiskViolations({
     userId: user.id,
     supabase,
@@ -144,7 +130,7 @@ export async function POST(request: Request) {
     journalAccountId: journalCtx?.id ?? null,
     accountNickname: journalCtx?.nickname ?? tradingAccountLabel(snap?.account ?? account),
     brokerServer: journalCtx?.broker_server ?? null,
-    telegramAlertContext
+    timeZone
   });
 
   const violations = candidates.map((v) => ({

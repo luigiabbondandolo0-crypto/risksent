@@ -59,7 +59,10 @@ export type RiskLiveSnapshot = {
   account: TradingAccountRow;
 };
 
-export async function fetchRiskLiveSnapshot(account: TradingAccountRow): Promise<RiskLiveSnapshot | null> {
+export async function fetchRiskLiveSnapshot(
+  account: TradingAccountRow,
+  timeZone = "UTC"
+): Promise<RiskLiveSnapshot | null> {
   const [summaryResult, closedResult, openResult] = await Promise.all([
     getAccountSummary(account),
     getClosedOrders(account),
@@ -85,9 +88,10 @@ export async function fetchRiskLiveSnapshot(account: TradingAccountRow): Promise
     maxOpenRiskPct = maxOpenPositionRiskPct(positions, useEq, tickSizes);
   }
 
-  const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders);
-  const { dailyDdPct } = buildRealStats(balance, equity, closedOrders);
-  const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders);
+  const tz = (timeZone ?? "UTC").trim() || "UTC";
+  const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(closedOrders, tz);
+  const { dailyDdPct } = buildRealStats(balance, equity, closedOrders, { timeZone: tz });
+  const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(closedOrders, 30, tz);
 
   return {
     dailyDdPct,

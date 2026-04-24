@@ -16,7 +16,8 @@ import type { LiveStatsForRisk } from "@/lib/risk/riskTypes";
 export async function buildLiveStatsFromJournal(
   supabase: SupabaseClient,
   userId: string,
-  journalAccountId: string
+  journalAccountId: string,
+  timeZone = "UTC"
 ): Promise<LiveStatsForRisk | null> {
   const { data: acc, error: accErr } = await supabase
     .from("journal_account")
@@ -49,9 +50,10 @@ export async function buildLiveStatsFromJournal(
   const balance = Number.isFinite(currentBal) && currentBal > 0 ? currentBal : initialBal > 0 ? initialBal : 0;
   const equity = balance;
 
-  const br = buildRealStats(balance, equity, orders);
-  const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(orders);
-  const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(orders);
+  const tz = (timeZone ?? "UTC").trim() || "UTC";
+  const br = buildRealStats(balance, equity, orders, { timeZone: tz });
+  const consecutiveLossesAtEnd = consecutiveLossesAtEndFromClosed(orders, tz);
+  const { todayTrades, avgTradesPerDay } = todayAndAvgTradesFromClosed(orders, 30, tz);
 
   return {
     dailyDdPct: br.dailyDdPct,

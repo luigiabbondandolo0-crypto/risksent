@@ -84,10 +84,13 @@ export function AppHeaderBar({
       }
       if (!cancelled) void fetchAlerts();
     })();
-    const id = window.setInterval(() => void fetchAlerts(), 30_000);
+    const id = window.setInterval(() => void fetchAlerts(), 15_000);
+    const onRefresh = () => void fetchAlerts();
+    window.addEventListener("rs-alerts-refresh", onRefresh);
     return () => {
       cancelled = true;
       window.clearInterval(id);
+      window.removeEventListener("rs-alerts-refresh", onRefresh);
     };
   }, []);
 
@@ -190,6 +193,18 @@ export function AppHeaderBar({
               <p className="border-b border-white/[0.06] px-3 pb-2 text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-wider text-slate-500">
                 Alerts
               </p>
+              {unread > 0 && (
+                <div className="border-b border-amber-500/20 bg-amber-500/10 px-3 py-2.5">
+                  <Link
+                    href="/app/risk-manager"
+                    className="block text-xs font-semibold text-amber-200/95 hover:text-amber-100"
+                    onClick={() => setBellOpen(false)}
+                  >
+                    Nuova alert: verifica
+                  </Link>
+                  <p className="mt-0.5 text-[10px] text-slate-500">Apri il Risk Manager per i dettagli.</p>
+                </div>
+              )}
               <ul className="max-h-64 overflow-y-auto">
                 {recent.length === 0 ? (
                   <li className="px-3 py-4 text-center text-xs text-slate-500">No alerts yet</li>

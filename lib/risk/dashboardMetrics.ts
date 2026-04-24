@@ -1,17 +1,26 @@
 import type { ClosedOrder } from "@/lib/dashboard/buildRealStats";
+import { ymdInTimeZone } from "@/lib/journal/calendarBounds";
 import { riskPctOfEquityAtStopLoss, type MetaTickRiskInput } from "@/lib/risk/openPositionRisk";
 
-export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number {
+/**
+ * Consecutive losses from the most recent closes, scoped to the current local trading day:
+ * a new calendar day resets the streak to 0 until new closes occur today.
+ */
+export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[], timeZone = "UTC"): number {
   const valid = orders.filter(
     (o): o is { closeTime: string; profit: number } =>
       o != null && typeof o.closeTime === "string" && typeof o.profit === "number"
   );
   if (valid.length === 0) return 0;
+  const tz = (timeZone ?? "UTC").trim() || "UTC";
+  const todayYmd = ymdInTimeZone(new Date(), tz);
   const sorted = [...valid].sort(
     (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
   );
+  if (ymdInTimeZone(new Date(sorted[0]!.closeTime), tz) !== todayYmd) return 0;
   let n = 0;
   for (const o of sorted) {
+    if (ymdInTimeZone(new Date(o.closeTime), tz) !== todayYmd) break;
     if (o.profit < 0) n++;
     else break;
   }
@@ -24,7 +33,8 @@ export function consecutiveLossesAtEndFromClosed(orders: ClosedOrder[]): number 
  */
 export function todayAndAvgTradesFromClosed(
   orders: ClosedOrder[],
-  lookbackDays = 30
+  lookbackDays = 30,
+  timeZone = "UTC"
 ): { todayTrades: number; avgTradesPerDay: number | null } {
   const valid = orders.filter(
     (o): o is { closeTime: string; profit: number } =>
@@ -32,7 +42,8 @@ export function todayAndAvgTradesFromClosed(
   );
   if (valid.length === 0) return { todayTrades: 0, avgTradesPerDay: null };
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const tz = (timeZone ?? "UTC").trim() || "UTC";
+  const todayStr = ymdInTimeZone(new Date(), tz);
   const cutoff = Date.now() - lookbackDays * 24 * 60 * 60 * 1000;
 
   let todayTrades = 0;
@@ -40,7 +51,7 @@ export function todayAndAvgTradesFromClosed(
   for (const o of valid) {
     const ts = new Date(o.closeTime).getTime();
     if (Number.isNaN(ts)) continue;
-    const day = o.closeTime.slice(0, 10);
+    const day = ymdInTimeZone(new Date(o.closeTime), tz);
     if (day === todayStr) {
       todayTrades += 1;
       continue;

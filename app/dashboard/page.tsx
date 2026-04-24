@@ -341,10 +341,13 @@ export default function DashboardPage() {
   const noKpi = noLinkedAccount || Boolean(stats?.error);
 
   const fetchStats = useCallback(async (uuid?: string) => {
+    const tz = encodeURIComponent(
+      typeof window !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" : "UTC"
+    );
     const url =
       uuid !== undefined && uuid !== ""
-        ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}`
-        : "/api/dashboard-stats";
+        ? `/api/dashboard-stats?uuid=${encodeURIComponent(uuid)}&tz=${tz}`
+        : `/api/dashboard-stats?tz=${tz}`;
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) {

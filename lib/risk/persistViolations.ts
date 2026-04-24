@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ymdInTimeZone } from "@/lib/journal/calendarBounds";
 import type { RiskNotificationsRow, RiskRulesDTO, RiskViolationCandidate, LiveStatsForRisk, RiskRuleType } from "./riskTypes";
 import {
   buildViolationCandidates,
@@ -39,11 +40,12 @@ export type TelegramAlertContext = {
 async function loadTelegramAlertContext(
   supabase: SupabaseClient,
   userId: string,
-  journalAccountId: string
+  journalAccountId: string,
+  timeZone: string
 ): Promise<TelegramAlertContext> {
-  const dayStart = new Date();
-  dayStart.setUTCHours(0, 0, 0, 0);
-  const iso = dayStart.toISOString();
+  const tz = (timeZone ?? "UTC").trim() || "UTC";
+  const todayYmd = ymdInTimeZone(new Date(), tz);
+  const sinceIso = new Date(Date.now() - 4 * 86400000).toISOString();
 
   const [accRes, tradesRes] = await Promise.all([
     supabase
@@ -54,15 +56,18 @@ async function loadTelegramAlertContext(
       .maybeSingle(),
     supabase
       .from("journal_trade")
-      .select("pl")
+      .select("pl, close_time")
       .eq("user_id", userId)
       .eq("account_id", journalAccountId)
       .eq("status", "closed")
-      .gte("close_time", iso)
+      .gte("close_time", sinceIso)
   ]);
 
   const currency = String(accRes.data?.currency ?? "USD");
-  const rows = tradesRes.data ?? [];
+  const rows = (tradesRes.data ?? []).filter((r) => {
+    if (r.close_time == null) return false;
+    return ymdInTimeZone(new Date(String(r.close_time)), tz) === todayYmd;
+  });
   const todayTrades = rows.length;
   const todayPl = rows.reduce((s, r) => s + Number(r.pl ?? 0), 0);
   return { todayTrades, todayPl, currency };
@@ -84,6 +89,8 @@ export async function persistRiskViolations(params: {
   brokerServer: string | null;
   /** Optional; when omitted and journalAccountId is set, loaded from journal + today's trades */
   telegramAlertContext?: TelegramAlertContext;
+  /** IANA timezone for "today" in Telegram enrichment and journal today P/L */
+  timeZone?: string;
 }): Promise<{ inserted: number; candidates: RiskViolationCandidate[] }> {
   const {
     userId,
@@ -93,8 +100,10 @@ export async function persistRiskViolations(params: {
     journalAccountId,
     accountNickname,
     brokerServer,
-    telegramAlertContext: contextOverride
+    telegramAlertContext: contextOverride,
+    timeZone: timeZoneParam
   } = params;
+  const timeZone = (timeZoneParam ?? "UTC").trim() || "UTC";
   const candidates = buildViolationCandidates(rules, live);
   // This path runs only from GET /api/dashboard-stats and POST /api/risk/check — never from
   // /api/cron/check-risk-all (that uses runRiskCheckForAccount in riskCheckRun.ts only).
@@ -141,7 +150,7 @@ export async function persistRiskViolations(params: {
   if (contextOverride) {
     enrich = contextOverride;
   } else if (journalAccountId) {
-    enrich = await loadTelegramAlertContext(supabase, userId, journalAccountId);
+    enrich = await loadTelegramAlertContext(supabase, userId, journalAccountId, timeZone);
   }
 
   let inserted = 0;
@@ -225,6 +234,7 @@ export async function runDashboardRiskViolationSideEffect(params: {
   accountNickname: string;
   brokerServer: string | null;
   telegramAlertContext?: TelegramAlertContext;
+  timeZone?: string;
 }): Promise<void> {
   try {
     await persistRiskViolations(params);
