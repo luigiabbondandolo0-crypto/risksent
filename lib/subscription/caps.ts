@@ -1,6 +1,24 @@
 export type Plan = "user" | "trial" | "new_trader" | "experienced" | "admin";
 export type SubStatus = "active" | "trialing" | "past_due" | "canceled" | "incomplete";
 
+/**
+ * Paid Stripe tiers keep access while status is active/past_due/trialing (including
+ * cancel_at_period_end until Stripe moves the subscription to canceled). If status
+ * is canceled but the row still shows a paid plan briefly, access ends when
+ * current_period_end is reached (must resubscribe manually after that).
+ */
+export function paidPlanHasEntitlement(status: SubStatus, currentPeriodEnd: string | null): boolean {
+  if (status === "active" || status === "past_due" || status === "trialing") {
+    return true;
+  }
+  if (status === "canceled") {
+    if (!currentPeriodEnd) return false;
+    return Date.now() < new Date(currentPeriodEnd).getTime();
+  }
+  if (status === "incomplete") return false;
+  return false;
+}
+
 export type SubscriptionInfo = {
   plan: Plan;
   status: SubStatus;
@@ -24,12 +42,15 @@ export type SubscriptionInfo = {
 };
 
 export function capsForPlan(
-  plan: Plan,
+  plan: Plan | "free",
   status: SubStatus,
   trialEndsAt: string | null,
   trialUsed = false
 ): SubscriptionInfo {
-  const isTrialingPlan = status === "trialing" || plan === "trial";
+  // Stripe webhook sets plan "free" when the subscription ends; treat as demo ("user").
+  const effectivePlan: Plan = plan === "free" ? "user" : plan;
+
+  const isTrialingPlan = status === "trialing" || effectivePlan === "trial";
   const trialMsLeft = trialEndsAt ? new Date(trialEndsAt).getTime() - Date.now() : null;
   const trialExpired = isTrialingPlan && trialMsLeft !== null && trialMsLeft <= 0;
   const trialDaysLeft =
@@ -57,9 +78,9 @@ export function capsForPlan(
     };
   }
 
-  if (plan === "user") {
+  if (effectivePlan === "user") {
     return {
-      plan,
+      plan: effectivePlan,
       status,
       isDemoMode: true,
       isTrialing: false,
@@ -74,7 +95,7 @@ export function capsForPlan(
     };
   }
 
-  if (plan === "admin") {
+  if (effectivePlan === "admin") {
     return {
       plan: "admin",
       status: "active",
@@ -94,7 +115,7 @@ export function capsForPlan(
 
   if (isTrialingPlan) {
     return {
-      plan,
+      plan: effectivePlan,
       status,
       isDemoMode: false,
       isTrialing: true,
@@ -109,9 +130,28 @@ export function capsForPlan(
     };
   }
 
-  if (plan === "experienced") {
+  if (effectivePlan === "experienced" || effectivePlan === "new_trader") {
+    if (!paidPlanHasEntitlement(status, trialEndsAt)) {
+      return {
+        plan: "user",
+        status: "canceled",
+        isDemoMode: true,
+        isTrialing: false,
+        trialDaysLeft: null,
+        canAccessBacktesting: false,
+        canAccessAICoach: false,
+        canAccessRiskManager: false,
+        maxBrokerAccounts: 0,
+        maxBacktestingSessions: 0,
+        trialEndsAt: null,
+        trialUsed,
+      };
+    }
+  }
+
+  if (effectivePlan === "experienced") {
     return {
-      plan,
+      plan: effectivePlan,
       status,
       isDemoMode: false,
       isTrialing: false,
@@ -128,7 +168,7 @@ export function capsForPlan(
 
   // new_trader
   return {
-    plan,
+    plan: effectivePlan,
     status,
     isDemoMode: false,
     isTrialing: false,

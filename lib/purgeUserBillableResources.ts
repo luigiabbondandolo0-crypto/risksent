@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import Stripe from "stripe";
+import { createStripe } from "@/lib/stripe/client";
 import { deleteProvisionedMetaTraderAccount } from "@/lib/metaapiProvisioning";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 
@@ -28,7 +28,7 @@ export async function purgeUserBillableResources(
   const stripeSecret = process.env.STRIPE_SECRET_KEY?.trim();
   if (subId && stripeSecret) {
     try {
-      const stripe = new Stripe(stripeSecret, { apiVersion: "2026-03-25.dahlia" });
+      const stripe = createStripe(stripeSecret);
       await stripe.subscriptions.cancel(subId);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

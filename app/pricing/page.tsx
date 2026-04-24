@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, X as XIcon, Zap, ChevronDown } from "lucide-react";
 import { useRefreshSubscription, useSubscription } from "@/lib/subscription/SubscriptionContext";
+import { PLAN_MONTHLY_USD } from "@/lib/subscription/planPricing";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const containerVariants = {
@@ -30,9 +31,9 @@ const plans = [
   {
     id: "new_trader",
     name: "New Trader",
-    monthlyPrice: 25,
-    annualTotal: 208,
-    annualMonthly: 17.33,
+    monthlyPrice: PLAN_MONTHLY_USD.new_trader,
+    annualTotal: 250,
+    annualMonthly: 250 / 12,
     highlight: false,
     features: [
       { text: "1 broker account", included: true },
@@ -46,9 +47,9 @@ const plans = [
   {
     id: "experienced",
     name: "Experienced",
-    monthlyPrice: 39,
-    annualTotal: 325,
-    annualMonthly: 27.08,
+    monthlyPrice: PLAN_MONTHLY_USD.experienced,
+    annualTotal: 375,
+    annualMonthly: 375 / 12,
     highlight: true,
     features: [
       { text: "Unlimited broker accounts", included: true },
@@ -282,8 +283,8 @@ export default function PricingPage() {
           {plans.map((plan) => {
             const isHighlight = plan.highlight;
             const price = annual ? plan.annualMonthly : plan.monthlyPrice;
-            const priceLabel = `€${price % 1 === 0 ? price : price.toFixed(2)}`;
-            const billedLabel = annual ? `€${plan.annualTotal}/year` : null;
+            const priceLabel = `$${price % 1 === 0 ? price : price.toFixed(2)}`;
+            const billedLabel = annual ? `$${plan.annualTotal}/year` : null;
             const subLoading = subscription === null;
             const ctaBusy = loadingPlan === plan.id || loadingDirectPlan === plan.id;
 

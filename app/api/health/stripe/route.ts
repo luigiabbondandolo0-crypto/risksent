@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import { createStripe } from "@/lib/stripe/client";
 
 export async function GET() {
   const start = Date.now();
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
+    const stripe = createStripe(process.env.STRIPE_SECRET_KEY!);
     await stripe.customers.list({ limit: 1 });
     return NextResponse.json({ ok: true, ms: Date.now() - start, checkedAt: new Date().toISOString() });
   } catch {

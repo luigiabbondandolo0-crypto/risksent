@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createStripe } from "@/lib/stripe/client";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 function priceIdFromPlan(plan: string): string {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Stripe is not configured (missing STRIPE_SECRET_KEY)." }, { status: 503 });
   }
 
-  const stripe = new Stripe(secret, { apiVersion: "2026-03-25.dahlia" });
+  const stripe = createStripe(secret);
 
   try {
     const supabase = await createSupabaseRouteClient();
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     let customerId = sub?.stripe_customer_id as string | undefined;
+    let createdNewStripeCustomer = false;
 
     if (!customerId) {
       const { data: profile } = await supabase
@@ -62,6 +64,19 @@ export async function POST(req: Request) {
         metadata: { supabase_user_id: user.id },
       });
       customerId = customer.id;
+      createdNewStripeCustomer = true;
+    }
+
+    if (createdNewStripeCustomer && customerId) {
+      const { error: persistErr } = await supabase.from("subscriptions").upsert(
+        {
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+      if (persistErr) console.error("[create-checkout] persist stripe_customer_id", persistErr);
     }
 
     const baseUrl =

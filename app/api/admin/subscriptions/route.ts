@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+import { PLAN_MONTHLY_USD } from "@/lib/subscription/planPricing";
 
 function serviceClient() {
   return createClient(
@@ -10,7 +11,11 @@ function serviceClient() {
   );
 }
 
-const PLAN_PRICES: Record<string, number> = { free: 0, new_trader: 25, experienced: 39 };
+const PLAN_PRICES: Record<string, number> = {
+  free: 0,
+  new_trader: PLAN_MONTHLY_USD.new_trader,
+  experienced: PLAN_MONTHLY_USD.experienced,
+};
 
 export async function GET() {
   const supabase = await createSupabaseRouteClient();

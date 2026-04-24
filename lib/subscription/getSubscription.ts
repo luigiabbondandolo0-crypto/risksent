@@ -25,7 +25,7 @@ export async function getSubscription(): Promise<SubscriptionInfo> {
     return capsForPlan("user", "active", null, false);
   }
 
-  const plan = (data.plan as Plan) ?? "user";
+  const plan = (data.plan as Plan | "free") ?? "user";
   const status = (data.status as SubStatus) ?? "active";
   const trialEndsAt = (data.current_period_end as string | null) ?? null;
   const trialUsed = Boolean((data as { trial_started_at?: string | null }).trial_started_at);

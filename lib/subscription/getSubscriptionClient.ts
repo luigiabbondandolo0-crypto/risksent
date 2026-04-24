@@ -40,7 +40,7 @@ export async function getSubscriptionClient(): Promise<SubscriptionInfo> {
     }
     const d = (await subRes.json()) as {
       subscription?: {
-        plan: Plan;
+        plan: Plan | "free";
         status: SubStatus;
         current_period_end: string | null;
         trial_started_at?: string | null;

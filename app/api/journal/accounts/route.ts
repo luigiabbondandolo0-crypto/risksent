@@ -10,6 +10,8 @@ import { mapMetaApiErrorToAddAccountMessage } from "@/lib/metaapiAddAccountUserM
 import { finalizeJournalAccountAfterProvision } from "@/lib/journal/finalizeJournalAccountMetaApi";
 import { normalizeMetaApiToken } from "@/lib/metaapiTokenNormalize";
 import type { JournalPlatform } from "@/lib/journal/journalTypes";
+import type { Plan, SubStatus } from "@/lib/subscription/caps";
+import { capsForPlan } from "@/lib/subscription/caps";
 
 export const maxDuration = 120;
 
@@ -50,17 +52,24 @@ export async function POST(req: NextRequest) {
 
   const { data: subRow } = await supabase
     .from("subscriptions")
-    .select("plan")
+    .select("plan, status, current_period_end, trial_started_at")
     .eq("user_id", user.id)
-    .single();
-  if (!subRow || subRow.plan === "user") {
+    .maybeSingle();
+
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode) {
     return NextResponse.json(
       { error: "demo_mode", message: "Start your trial to use this feature" },
       { status: 403 }
     );
   }
 
-  if (subRow.plan === "new_trader") {
+  if (subRow?.plan === "new_trader") {
     const { count } = await supabase
       .from("journal_account")
       .select("id", { count: "exact", head: true })

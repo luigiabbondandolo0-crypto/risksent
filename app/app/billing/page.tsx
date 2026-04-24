@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { CreditCard, Clock, AlertCircle, CheckCircle, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 import type { SubscriptionRow } from "@/app/api/stripe/subscription/route";
+import { PLAN_MONTHLY_USD } from "@/lib/subscription/planPricing";
 
 const PLAN_LABELS: Record<string, string> = {
   user: "Demo",
@@ -17,8 +18,8 @@ const PLAN_LABELS: Record<string, string> = {
 const PLAN_PRICES: Record<string, number> = {
   user: 0,
   trial: 0,
-  new_trader: 25,
-  experienced: 39,
+  new_trader: PLAN_MONTHLY_USD.new_trader,
+  experienced: PLAN_MONTHLY_USD.experienced,
 };
 
 const PLAN_COLOR: Record<string, string> = {
@@ -42,14 +43,14 @@ const DIRECT_PLANS = [
   {
     id: "new_trader" as const,
     name: "NEW TRADER",
-    price: 25,
+    price: PLAN_MONTHLY_USD.new_trader,
     features: ["1 broker account", "2 backtesting sessions", "Full journal"],
     highlight: false,
   },
   {
     id: "experienced" as const,
     name: "EXPERIENCED",
-    price: 39,
+    price: PLAN_MONTHLY_USD.experienced,
     features: ["Unlimited everything", "AI Coach", "Risk Manager"],
     highlight: true,
   },
@@ -123,7 +124,7 @@ function PlanChoiceGrid({
             </div>
             <div className="relative z-10 flex flex-1 flex-col">
             <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
-              €{p.price}
+              ${p.price}
               <span className="text-sm font-normal text-slate-500">/mo</span>
             </p>
             <ul className="mt-3 flex-1 space-y-2">
@@ -348,7 +349,7 @@ export default function BillingPage() {
               </p>
             ) : (
               <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-                €{PLAN_PRICES[plan] ?? 0}
+                ${PLAN_PRICES[plan] ?? 0}
                 <span className="text-base font-normal text-slate-500">/mo</span>
               </p>
             )}
@@ -394,12 +395,19 @@ export default function BillingPage() {
         )}
 
         {/* Renewal / cancellation notice (paid plans only) */}
-        {sub?.current_period_end && !isTrialingActive && !trialExpired && rawPlan !== "user" && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
-            <Clock className="h-4 w-4 shrink-0 text-slate-500" />
-            {sub.cancel_at_period_end
-              ? `Cancels on ${new Date(sub.current_period_end).toLocaleDateString()}`
-              : `Renews on ${new Date(sub.current_period_end).toLocaleDateString()}`}
+        {sub?.current_period_end && !isTrialingActive && !trialExpired && rawPlan !== "user" && rawPlan !== "free" && (
+          <div className="mt-4 flex flex-col gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 shrink-0 text-slate-500" />
+              {sub.cancel_at_period_end
+                ? `Subscription ends on ${new Date(sub.current_period_end).toLocaleDateString()}`
+                : `Renews on ${new Date(sub.current_period_end).toLocaleDateString()}`}
+            </div>
+            {sub.cancel_at_period_end && (
+              <p className="pl-6 text-xs font-mono text-slate-500">
+                You keep full access until that date. After it ends, subscribe again manually to continue.
+              </p>
+            )}
           </div>
         )}
 
@@ -570,7 +578,7 @@ export default function BillingPage() {
           </h2>
           <UpgradeCard
             name="Experienced"
-            price={39}
+            price={PLAN_MONTHLY_USD.experienced}
             features={["Unlimited AI Coach", "Risk Manager", "Priority support", "Unlimited backtesting"]}
             plan="experienced"
             onCheckout={startCheckout}
@@ -663,7 +671,7 @@ function UpgradeCard({
               </span>
             )}
           </div>
-          <p className="mt-1 font-mono text-sm text-slate-400">€{price}/month</p>
+          <p className="mt-1 font-mono text-sm text-slate-400">${price}/month</p>
           <ul className="mt-2 space-y-1">
             {features.map((f) => (
               <li key={f} className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">

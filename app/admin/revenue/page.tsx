@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { PLAN_MONTHLY_USD } from "@/lib/subscription/planPricing";
 import {
   ResponsiveContainer,
   LineChart,
@@ -33,7 +34,11 @@ type SubRow = {
   created_at: string | null;
 };
 
-const PLAN_PRICES: Record<string, number> = { free: 0, new_trader: 25, experienced: 39 };
+const PLAN_PRICES: Record<string, number> = {
+  free: 0,
+  new_trader: PLAN_MONTHLY_USD.new_trader,
+  experienced: PLAN_MONTHLY_USD.experienced,
+};
 const PLAN_LABELS: Record<string, string> = { free: "Free", new_trader: "New Trader", experienced: "Experienced" };
 const PLAN_COLORS: Record<string, string> = {
   free: "text-slate-400 bg-slate-500/15 border-slate-500/30",
@@ -72,7 +77,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
     <div className="rounded-xl border px-3 py-2 text-xs font-mono" style={{ background: "rgba(12,12,14,0.95)", borderColor: "rgba(255,255,255,0.1)" }}>
       <p className="text-slate-400 mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-white">€{p.value} {p.name}</p>
+        <p key={i} className="text-white">${p.value} {p.name}</p>
       ))}
     </div>
   );
@@ -169,8 +174,8 @@ export default function RevenuePage() {
       {/* Stats row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "MRR", value: mrr, prefix: "€", icon: DollarSign, color: "text-emerald-400" },
-          { label: "ARR", value: mrr * 12, prefix: "€", icon: TrendingUp, color: "text-cyan-400" },
+          { label: "MRR", value: mrr, prefix: "$", icon: DollarSign, color: "text-emerald-400" },
+          { label: "ARR", value: mrr * 12, prefix: "$", icon: TrendingUp, color: "text-cyan-400" },
           { label: "Active subscribers", value: activeCount, prefix: "", icon: Users, color: "text-amber-400" },
           { label: "Churn rate", value: churnRate, prefix: "", suffix: "%", icon: AlertCircle, color: "text-red-400" },
         ].map((c, i) => (
@@ -203,7 +208,7 @@ export default function RevenuePage() {
               <LineChart data={mrrTrend}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `€${v}`} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${v}`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Line type="monotone" dataKey="mrr" name="MRR" stroke="#00e676" strokeWidth={2} dot={false} />
               </LineChart>
@@ -265,7 +270,7 @@ export default function RevenuePage() {
                         {s.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-300">€{PLAN_PRICES[s.plan] ?? 0}/mo</td>
+                    <td className="px-4 py-3 font-mono text-slate-300">${PLAN_PRICES[s.plan] ?? 0}/mo</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">
                       {s.created_at ? new Date(s.created_at).toLocaleDateString() : "—"}
                     </td>

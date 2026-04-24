@@ -7,7 +7,7 @@ export type SubscriptionRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
-  plan: "user" | "trial" | "new_trader" | "experienced";
+  plan: "user" | "trial" | "new_trader" | "experienced" | "free";
   status: "active" | "trialing" | "past_due" | "canceled" | "incomplete";
   current_period_start: string | null;
   current_period_end: string | null;

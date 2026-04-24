@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendPlanPurchasedEmail } from "@/lib/email";
+import { createStripe } from "@/lib/stripe/client";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 function createServiceClient() {
@@ -54,8 +55,37 @@ function stripeCustomerId(
   return null;
 }
 
+async function upsertSubscriptionFromStripe(
+  supabase: ReturnType<typeof createServiceClient>,
+  stripeSub: Stripe.Subscription
+) {
+  const sub = toSubShape(stripeSub);
+  const userId = sub.metadata?.user_id;
+  if (!userId) return;
+
+  const priceId = sub.items.data[0]?.price.id ?? "";
+  const plan = planFromPriceId(priceId);
+  const customerId = stripeCustomerId(stripeSub.customer);
+
+  await supabase.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      ...(customerId ? { stripe_customer_id: customerId } : {}),
+      stripe_subscription_id: sub.id,
+      stripe_price_id: priceId,
+      plan,
+      status: sub.status,
+      current_period_start: stripePeriodSecondsToIso(sub.current_period_start),
+      current_period_end: stripePeriodSecondsToIso(sub.current_period_end),
+      cancel_at_period_end: sub.cancel_at_period_end,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+}
+
 export async function POST(req: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-03-25.dahlia" });
+  const stripe = createStripe(process.env.STRIPE_SECRET_KEY!);
 
   const rawBody = await req.text();
   const sig = req.headers.get("stripe-signature");
@@ -74,13 +104,18 @@ export async function POST(req: Request) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.user_id;
-      const plan = session.metadata?.plan ?? "free";
       if (!userId) break;
 
       const rawSub = session.subscription
         ? await stripe.subscriptions.retrieve(session.subscription as string)
         : null;
       const sub = rawSub ? toSubShape(rawSub) : null;
+
+      let plan = session.metadata?.plan ?? "free";
+      if (plan !== "new_trader" && plan !== "experienced" && sub?.items.data[0]?.price.id) {
+        const fromPrice = planFromPriceId(sub.items.data[0].price.id);
+        if (fromPrice !== "free") plan = fromPrice;
+      }
 
       const customerId =
         stripeCustomerId(session.customer) ??
@@ -129,31 +164,9 @@ export async function POST(req: Request) {
       break;
     }
 
+    case "customer.subscription.created":
     case "customer.subscription.updated": {
-      const stripeSub = event.data.object as Stripe.Subscription;
-      const sub = toSubShape(stripeSub);
-      const userId = sub.metadata?.user_id;
-      if (!userId) break;
-
-      const priceId = sub.items.data[0]?.price.id ?? "";
-      const plan = planFromPriceId(priceId);
-      const customerId = stripeCustomerId(stripeSub.customer);
-
-      await supabase.from("subscriptions").upsert(
-        {
-          user_id: userId,
-          ...(customerId ? { stripe_customer_id: customerId } : {}),
-          stripe_subscription_id: sub.id,
-          stripe_price_id: priceId,
-          plan,
-          status: sub.status,
-          current_period_start: stripePeriodSecondsToIso(sub.current_period_start),
-          current_period_end: stripePeriodSecondsToIso(sub.current_period_end),
-          cancel_at_period_end: sub.cancel_at_period_end,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+      await upsertSubscriptionFromStripe(supabase, event.data.object as Stripe.Subscription);
       break;
     }
 
@@ -168,6 +181,10 @@ export async function POST(req: Request) {
           plan: "free",
           status: "canceled",
           cancel_at_period_end: false,
+          stripe_subscription_id: null,
+          stripe_price_id: null,
+          current_period_start: null,
+          current_period_end: null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

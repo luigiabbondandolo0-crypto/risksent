@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createStripe } from "@/lib/stripe/client";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
+
+/** Cancellation timing (e.g. end of billing period vs immediate) is set in Stripe → Settings → Billing → Customer portal. */
 
 function extractStripeCustomerId(
   customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined
@@ -38,7 +41,7 @@ export async function POST() {
     return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
   }
 
-  const stripe = new Stripe(secret, { apiVersion: "2026-03-25.dahlia" });
+  const stripe = createStripe(secret);
 
   const supabase = await createSupabaseRouteClient();
   const {
@@ -92,10 +95,13 @@ export async function POST() {
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     "http://localhost:3000";
 
+  const portalConfigurationId = process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID?.trim();
+
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${baseUrl}/app/billing`,
+      ...(portalConfigurationId ? { configuration: portalConfigurationId } : {}),
     });
     if (!session.url) {
       return NextResponse.json({ error: "Stripe did not return a portal URL." }, { status: 502 });

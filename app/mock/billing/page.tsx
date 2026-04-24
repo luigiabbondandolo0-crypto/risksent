@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CreditCard, ArrowRight, CheckCircle, Zap } from "lucide-react";
+import { PLAN_MONTHLY_USD } from "@/lib/subscription/planPricing";
 
 const DIRECT_PLANS = [
   {
     id: "new_trader",
     name: "NEW TRADER",
-    price: 25,
+    price: PLAN_MONTHLY_USD.new_trader,
     features: ["1 broker account", "2 backtesting sessions", "Full journal"],
     highlight: false,
   },
   {
     id: "experienced",
     name: "EXPERIENCED",
-    price: 39,
+    price: PLAN_MONTHLY_USD.experienced,
     features: ["Unlimited everything", "AI Coach", "Risk Manager"],
     highlight: true,
   },
@@ -51,7 +52,7 @@ export default function MockBillingPage() {
               </span>
             </div>
             <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
-              €0
+              $0
               <span className="text-base font-normal text-slate-500">/mo</span>
             </p>
           </div>
@@ -115,7 +116,7 @@ export default function MockBillingPage() {
                 )}
               </div>
               <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
-                €{p.price}
+                ${p.price}
                 <span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
               <ul className="mt-3 flex-1 space-y-2">

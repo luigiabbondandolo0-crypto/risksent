@@ -1108,7 +1108,7 @@ export default function HomePage() {
                   { feature: "Live Telegram Alerts", rs: true,     fx: false,    tz: false },
                   { feature: "AI Coach",             rs: true,     fx: false,    tz: false },
                   { feature: "Real-time Risk Blocks",rs: true,     fx: false,    tz: false },
-                  { feature: "Price",                rs: "$45/mo", fx: "$35/mo", tz: "$49/mo" },
+                  { feature: "Price",                rs: "From $30/mo", fx: "$35/mo", tz: "$49/mo" },
                   { feature: "Free Trial",           rs: "7 days", fx: "Limited",tz: "7 days" },
                   { feature: "All-in-one",           rs: true,     fx: false,    tz: "Partial" },
                 ].map((row, ri) => (
