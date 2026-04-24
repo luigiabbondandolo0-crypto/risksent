@@ -176,11 +176,11 @@ const HOVER_SCALE_TRANSITION = {
 };
 
 const COACH_WAITING_TIPS = [
-  "Stiamo analizzando le tue abitudini e i pattern emotivi…",
-  "Incrociamo journal, review e regole di rischio che hai impostato.",
-  "Claude sta quantificando errori, costi stimati e simulazioni challenge.",
-  "Controllo sessioni, orari e simboli dove performi meglio o peggio.",
-  "Quasi pronto: ultimi ritocchi al report prima di mostrartelo.",
+  "Analyzing your habits and emotional patterns…",
+  "Cross-checking your journal, reviews, and risk rules.",
+  "Your coach is quantifying mistakes, estimated costs, and challenge simulations.",
+  "Reviewing sessions, hours, and symbols where you perform best or worst.",
+  "Almost there — putting the finishing touches on your report.",
 ];
 
 type LucideIcon = ComponentType<{ className?: string }>;
@@ -1458,7 +1458,7 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
           role="dialog"
           aria-modal="true"
           aria-live="polite"
-          aria-label="Generazione report AI Coach in corso"
+          aria-label="Generating AI Coach report"
         >
           <motion.div
             initial={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -1492,7 +1492,7 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
                 AI Coach
               </p>
               <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold text-white">
-                Creo il tuo report…
+                Building your report…
               </h2>
               <AnimatePresence mode="wait">
                 <motion.p
@@ -1516,7 +1516,7 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
                   />
                 ))}
               </div>
-              <p className="mt-5 text-[11px] text-slate-600">Di solito richiede meno di un minuto.</p>
+              <p className="mt-5 text-[11px] text-slate-600">Usually takes less than a minute.</p>
             </div>
           </motion.div>
         </motion.div>
