@@ -175,6 +175,14 @@ const HOVER_SCALE_TRANSITION = {
   ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
 };
 
+const COACH_WAITING_TIPS = [
+  "Stiamo analizzando le tue abitudini e i pattern emotivi…",
+  "Incrociamo journal, review e regole di rischio che hai impostato.",
+  "Claude sta quantificando errori, costi stimati e simulazioni challenge.",
+  "Controllo sessioni, orari e simboli dove performi meglio o peggio.",
+  "Quasi pronto: ultimi ritocchi al report prima di mostrartelo.",
+];
+
 type LucideIcon = ComponentType<{ className?: string }>;
 
 function CoachSection({
@@ -1423,6 +1431,100 @@ function ChatTab({
   );
 }
 
+function CoachGeneratingOverlay({ active }: { active: boolean }) {
+  const [tipIdx, setTipIdx] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setTipIdx(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setTipIdx((i) => (i + 1) % COACH_WAITING_TIPS.length);
+    }, 2800);
+    return () => window.clearInterval(id);
+  }, [active]);
+
+  return (
+    <AnimatePresence>
+      {active ? (
+        <motion.div
+          key="coach-gen-overlay"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          role="dialog"
+          aria-modal="true"
+          aria-live="polite"
+          aria-label="Generazione report AI Coach in corso"
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 12 }}
+            transition={{ type: "spring", damping: 26, stiffness: 340 }}
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/[0.12] bg-[#0f1014]/96 px-8 py-10 shadow-2xl shadow-violet-950/40"
+          >
+            <div
+              className="pointer-events-none absolute -left-16 top-0 h-48 w-48 rounded-full opacity-30 blur-3xl"
+              style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+            />
+            <div
+              className="pointer-events-none absolute -right-12 bottom-0 h-40 w-40 rounded-full opacity-25 blur-3xl"
+              style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+            />
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <motion.div
+                className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-violet-500/35 bg-gradient-to-br from-violet-600/35 to-indigo-950/50 shadow-[0_0_48px_rgba(124,58,237,0.35)]"
+                animate={{ y: [0, -7, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Brain className="relative z-10 h-11 w-11 text-violet-100" />
+                <motion.span
+                  className="absolute inset-0 rounded-2xl border-2 border-violet-400/50"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.45, 0, 0.45] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </motion.div>
+              <p className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300/90">
+                AI Coach
+              </p>
+              <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold text-white">
+                Creo il tuo report…
+              </h2>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={tipIdx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="mt-4 min-h-[3.25rem] text-sm leading-relaxed text-slate-400"
+                >
+                  {COACH_WAITING_TIPS[tipIdx]}
+                </motion.p>
+              </AnimatePresence>
+              <div className="mt-6 flex gap-1.5">
+                {COACH_WAITING_TIPS.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === tipIdx ? "w-5 bg-violet-400" : "w-1.5 bg-white/20"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="mt-5 text-[11px] text-slate-600">Di solito richiede meno di un minuto.</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export function AiCoachPageClient({
@@ -1779,6 +1881,7 @@ export function AiCoachPageClient({
           )}
         </AnimatePresence>
       )}
+      <CoachGeneratingOverlay active={generating && !isMock} />
     </div>
   );
 }

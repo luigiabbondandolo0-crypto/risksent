@@ -3,7 +3,7 @@ import { checkAiAnalyzeRateLimit, rateLimitJsonResponse } from "@/lib/security/a
 import { clampInt } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { COACH_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
-import type { CoachReport } from "@/lib/ai-coach/coachTypes";
+import { parseCoachReportFromModelText } from "@/lib/ai-coach/parseCoachReport";
 
 const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
 
@@ -197,7 +197,8 @@ export async function POST(req: NextRequest) {
     },
     body: JSON.stringify({
       model: CLAUDE_COACH_MODEL,
-      max_tokens: 4000,
+      max_tokens: 8192,
+      temperature: 0.2,
       system: COACH_SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -209,28 +210,24 @@ export async function POST(req: NextRequest) {
       { status: 502 }
     );
   }
-  const j = await res.json();
-  const rawContent: string = j.content?.[0]?.text ?? "";
+  const j = (await res.json()) as {
+    content?: Array<{ type?: string; text?: string }>;
+    stop_reason?: string | null;
+  };
+  const rawContent: string = Array.isArray(j.content)
+    ? j.content
+        .map((b) => (b?.type === "text" && typeof b.text === "string" ? b.text : ""))
+        .join("")
+    : "";
 
-  // ── Parse JSON ────────────────────────────────────────────────────────────
-  let report: CoachReport;
-  try {
-    // First { … last } so we parse JSON even if the model adds surrounding text
-    const firstBrace = rawContent.indexOf("{");
-    const lastBrace = rawContent.lastIndexOf("}");
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      throw new Error("No JSON object found in response");
-    }
-
-    const jsonStr = rawContent.slice(firstBrace, lastBrace + 1);
-    report = JSON.parse(jsonStr) as CoachReport;
-  } catch {
-    return NextResponse.json(
-      { error: "AI returned invalid JSON. Try again." },
-      { status: 502 }
-    );
+  const parsed = parseCoachReportFromModelText(rawContent, {
+    stopReason: j.stop_reason ?? null,
+  });
+  if (!parsed.ok) {
+    console.warn("[ai-coach/analyze] JSON parse failed", parsed.detail?.slice(0, 240));
+    return NextResponse.json({ error: parsed.error }, { status: 422 });
   }
+  const report = parsed.report;
 
   // ── Persist ───────────────────────────────────────────────────────────────
   const { data: saved, error: saveErr } = await supabase
