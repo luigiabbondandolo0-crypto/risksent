@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendTrialActivatedEmail } from "@/lib/email";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -90,6 +91,13 @@ export async function POST() {
 
   if (writeError) {
     return NextResponse.json({ error: writeError.message }, { status: 500 });
+  }
+
+  if (user.email) {
+    void sendTrialActivatedEmail({
+      to: user.email,
+      userName: (user.user_metadata?.full_name as string | undefined) || undefined,
+    }).catch((err) => console.error("[start-trial] trial email:", err));
   }
 
   return NextResponse.json({

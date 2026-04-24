@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPasswordResetEmail } from "@/lib/email";
 import { emailFingerprint, logAuthAttempt } from "@/lib/security/authAudit";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 import { securityLog } from "@/lib/security/structuredLog";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/routeHandlerClient";
+import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const RESET_LIMIT = 3;
 const RESET_WINDOW_MS = 15 * 60 * 1000;
@@ -46,10 +48,42 @@ export async function POST(req: NextRequest) {
     message: "If the email exists, a reset link has been sent."
   });
 
+  const redirectTo = `${req.nextUrl.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`;
+
   try {
-    const supabase = createSupabaseRouteHandlerClient(req, res);
-    const redirectTo = `${req.nextUrl.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`;
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    let sentBranded = false;
+    try {
+      const admin = createSupabaseAdmin();
+      const { data, error: genErr } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: { redirectTo },
+      });
+      const actionLink =
+        data?.properties && typeof (data.properties as { action_link?: string }).action_link === "string"
+          ? (data.properties as { action_link: string }).action_link
+          : null;
+      if (!genErr && actionLink) {
+        const meta = data?.user?.user_metadata as { full_name?: string } | undefined;
+        const sendRes = await sendPasswordResetEmail({
+          to: email,
+          userName: meta?.full_name,
+          resetLink: actionLink,
+        });
+        sentBranded = sendRes.success;
+      }
+    } catch (adminErr) {
+      securityLog("warn", "api.auth.request_password_reset.generate_link", {
+        email_fp: fp,
+        message: adminErr instanceof Error ? adminErr.message : "admin_unavailable",
+      });
+    }
+
+    if (!sentBranded) {
+      const supabase = createSupabaseRouteHandlerClient(req, res);
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    }
+
     logAuthAttempt(req, "auth.password_reset_request", "success", { email_fp: fp });
     return res;
   } catch (e) {

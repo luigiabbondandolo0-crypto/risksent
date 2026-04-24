@@ -25,28 +25,32 @@ const TOPICS = [
 export default function ContactPage() {
   const [topic, setTopic] = useState<string>("general");
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function buildMailto(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") ?? "").trim();
     const email = String(form.get("email") ?? "").trim();
     const message = String(form.get("message") ?? "").trim();
-    const topicLabel =
-      TOPICS.find((t) => t.id === topic)?.label ?? "General question";
-    const subject = `[${topicLabel}] — ${name || "RiskSent inquiry"}`;
-    const body = [
-      `Name: ${name}`,
-      `Email: ${email}`,
-      `Topic: ${topicLabel}`,
-      "",
-      message,
-    ].join("\n");
-    const href = `mailto:support@risksent.com?subject=${encodeURIComponent(
-      subject,
-    )}&body=${encodeURIComponent(body)}`;
-    window.location.href = href;
-    setSent(true);
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, topic, message }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Could not send. Try again.");
+        return;
+      }
+      setSent(true);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -78,7 +82,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_minmax(0,320px)]">
           {/* Form */}
           <form
-            onSubmit={buildMailto}
+            onSubmit={(ev) => void onSubmit(ev)}
             className="rounded-3xl border p-6 sm:p-8"
             style={{
               borderColor: "rgba(255,255,255,0.08)",
@@ -180,6 +184,12 @@ export default function ContactPage() {
               />
             </div>
 
+            {error ? (
+              <p className="mt-4 text-[13px] text-red-400" role="alert">
+                {error}
+              </p>
+            ) : null}
+
             {/* Submit */}
             <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[12px] text-slate-500">
@@ -191,7 +201,8 @@ export default function ContactPage() {
               </p>
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[14px] font-semibold text-white transition-all hover:scale-[1.02]"
+                disabled={sending || sent}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[14px] font-semibold text-white transition-all hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100"
                 style={{
                   background: "linear-gradient(135deg, #ff3c3c, #ff8c00)",
                   boxShadow: "0 10px 30px -12px rgba(255,60,60,0.6)",
@@ -200,8 +211,10 @@ export default function ContactPage() {
                 {sent ? (
                   <>
                     <CheckCircle2 className="h-4 w-4" />
-                    Opened in your email app
+                    Message sent
                   </>
+                ) : sending ? (
+                  <>Sending…</>
                 ) : (
                   <>
                     Send message
@@ -213,14 +226,15 @@ export default function ContactPage() {
 
             {sent && (
               <p className="mt-3 text-[12.5px] text-slate-400">
-                If your email client didn’t open, write to{" "}
+                We&apos;ve emailed you a confirmation and forwarded your note to our team. You can
+                still reach{" "}
                 <a
                   href="mailto:support@risksent.com"
                   className="text-[#ff8c00] underline underline-offset-4"
                 >
                   support@risksent.com
                 </a>{" "}
-                directly.
+                directly if needed.
               </p>
             )}
           </form>

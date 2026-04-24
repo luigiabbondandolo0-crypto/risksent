@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendTrialActivatedEmail } from "@/lib/email";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/send-welcome-email
- * Sends a welcome email to the authenticated user
- * Called after successful signup
+ * Sends the “free trial active” onboarding email to the authenticated user.
  */
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
   const {
     data: { user },
@@ -19,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await sendWelcomeEmail({
+    const result = await sendTrialActivatedEmail({
       to: user.email || "",
       userName: user.user_metadata?.full_name || user.email?.split("@")[0]
     });

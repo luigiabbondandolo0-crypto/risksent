@@ -3,6 +3,7 @@ import { emailFingerprint, logAuthAttempt } from "@/lib/security/authAudit";
 import { validatePasswordPolicy } from "@/lib/security/passwordPolicy";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 import { securityLog } from "@/lib/security/structuredLog";
+import { sendRegistrationEmail } from "@/lib/email";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/routeHandlerClient";
 
 const SIGNUP_LIMIT = 5;
@@ -90,6 +91,10 @@ export async function POST(req: NextRequest) {
       email_fp: fp,
       user_id: data.user?.id ?? null
     });
+    void sendRegistrationEmail({
+      to: email,
+      userName: fullName || undefined,
+    }).catch((err) => console.error("[auth.signup] registration email:", err));
     return NextResponse.json(
       { ok: true, message: "Account created. Verify your email before signing in." },
       { headers: res.headers }

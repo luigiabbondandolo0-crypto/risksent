@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPasswordChangedEmail } from "@/lib/email";
 import { logAuthAttempt } from "@/lib/security/authAudit";
 import { validatePasswordPolicy } from "@/lib/security/passwordPolicy";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userEmail = user.email;
+    const userName = user.user_metadata?.full_name as string | undefined;
+
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       logAuthAttempt(req, "auth.password_reset", "failure", {
@@ -61,6 +65,11 @@ export async function POST(req: NextRequest) {
     }
 
     await supabase.auth.signOut();
+    if (userEmail) {
+      void sendPasswordChangedEmail({ to: userEmail, userName }).catch((err) =>
+        console.error("[auth.password_reset] confirmation email:", err)
+      );
+    }
     logAuthAttempt(req, "auth.password_reset", "success", { user_id: user.id });
     return res;
   } catch (e) {

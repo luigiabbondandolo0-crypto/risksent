@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { sendPlanPurchasedEmail } from "@/lib/email";
+import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 function createServiceClient() {
   return createClient(
@@ -106,6 +108,24 @@ export async function POST(req: Request) {
         },
         { onConflict: "user_id" }
       );
+
+      if (plan === "new_trader" || plan === "experienced") {
+        void (async () => {
+          try {
+            const admin = createSupabaseAdmin();
+            const { data: authRes, error: authErr } = await admin.auth.admin.getUserById(userId);
+            if (authErr || !authRes?.user?.email) return;
+            const u = authRes.user;
+            await sendPlanPurchasedEmail({
+              to: u.email!,
+              userName: (u.user_metadata?.full_name as string | undefined) || undefined,
+              planKey: plan,
+            });
+          } catch (e) {
+            console.error("[stripe/webhook] plan-purchased email:", e);
+          }
+        })();
+      }
       break;
     }
 

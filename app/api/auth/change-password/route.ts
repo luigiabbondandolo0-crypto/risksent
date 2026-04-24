@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendPasswordChangedEmail } from "@/lib/email";
 import { logAuthAttempt } from "@/lib/security/authAudit";
 import { validatePasswordPolicy } from "@/lib/security/passwordPolicy";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
@@ -86,6 +87,11 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
+
+    void sendPasswordChangedEmail({
+      to: user.email,
+      userName: user.user_metadata?.full_name as string | undefined,
+    }).catch((err) => console.error("[auth.change_password] confirmation email:", err));
 
     logAuthAttempt(req, "auth.change_password", "success", { user_id: user.id });
     return res;
