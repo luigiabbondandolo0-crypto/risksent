@@ -38,9 +38,17 @@ import type {
   ErrorSeverity,
 } from "@/lib/ai-coach/coachTypes";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────
+// ─── Design tokens — calm teal / slate system ─────────────────────────────
 
-const CLAUDE_COLOR = "#7c3aed";
+const COACH = {
+  accent: "#2dd4bf",
+  accentMuted: "rgba(45,212,191,0.12)",
+  surface: "rgba(18,23,31,0.92)",
+  border: "rgba(255,255,255,0.06)",
+  good: "#34d399",
+  warn: "#fbbf24",
+  bad: "#f87171",
+} as const;
 
 const severityConfig: Record<
   ErrorSeverity,
@@ -48,34 +56,34 @@ const severityConfig: Record<
 > = {
   critical: {
     label: "Critical",
-    color: "#ff3c3c",
-    bg: "rgba(255,60,60,0.08)",
-    border: "rgba(255,60,60,0.25)",
+    color: "#f87171",
+    bg: "rgba(248,113,113,0.06)",
+    border: "rgba(248,113,113,0.22)",
   },
   high: {
     label: "High",
-    color: "#ff8c00",
-    bg: "rgba(255,140,0,0.08)",
-    border: "rgba(255,140,0,0.25)",
+    color: "#fb923c",
+    bg: "rgba(251,146,60,0.06)",
+    border: "rgba(251,146,60,0.2)",
   },
   medium: {
     label: "Medium",
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.08)",
-    border: "rgba(245,158,11,0.2)",
+    color: COACH.warn,
+    bg: "rgba(251,191,36,0.06)",
+    border: "rgba(251,191,36,0.18)",
   },
   low: {
     label: "Low",
-    color: "#64748b",
-    bg: "rgba(100,116,139,0.08)",
-    border: "rgba(100,116,139,0.2)",
+    color: "#94a3b8",
+    bg: "rgba(148,163,184,0.06)",
+    border: "rgba(148,163,184,0.16)",
   },
 };
 
 function scoreColor(s: number) {
-  if (s >= 70) return "#00e676";
-  if (s >= 40) return "#ff8c00";
-  return "#ff3c3c";
+  if (s >= 70) return COACH.good;
+  if (s >= 40) return COACH.warn;
+  return COACH.bad;
 }
 
 function errorTypeLabel(type: string) {
@@ -87,11 +95,9 @@ function errorTypeLabel(type: string) {
 
 const SUGGESTED_QUESTIONS = [
   "What's my biggest weakness?",
-  "Would I pass an FTMO challenge?",
-  "Analyze my revenge trading pattern",
-  "What's causing my drawdown?",
-  "When should I stop trading for the day?",
+  "Would I pass a prop challenge?",
   "Am I overtrading?",
+  "What should I fix first?",
 ];
 
 const ANALYSIS_WINDOWS = [
@@ -114,53 +120,14 @@ const coachSectionVariants = {
 
 type SectionTone = "default" | "critical" | "insight" | "challenge" | "rules" | "context";
 
-const sectionToneClass: Record<SectionTone, string> = {
-  default:
-    "border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015]",
-  critical:
-    "border-red-500/25 bg-gradient-to-b from-red-500/[0.08] to-transparent",
-  insight:
-    "border-[#6366f1]/20 bg-gradient-to-b from-[#6366f1]/[0.06] to-transparent",
-  challenge:
-    "border-violet-500/20 bg-gradient-to-b from-violet-500/[0.07] to-transparent",
-  rules:
-    "border-emerald-500/15 bg-gradient-to-b from-emerald-500/[0.05] to-transparent",
-  context:
-    "border-white/[0.08] bg-gradient-to-b from-slate-900/50 to-transparent",
-};
-
-/** Left accent bar on section header — high visibility */
-const headerAccentBar: Record<SectionTone, string> = {
-  default: "from-[#6366f1] via-violet-500 to-fuchsia-500/80",
-  critical: "from-red-500 via-red-400 to-orange-500/90",
-  insight: "from-[#6366f1] to-[#4f46e5]",
-  challenge: "from-violet-500 via-fuchsia-500 to-indigo-400",
-  rules: "from-emerald-400 to-cyan-600/90",
-  context: "from-slate-400 via-slate-300 to-slate-500",
-};
-
-const headerBgTone: Record<SectionTone, string> = {
-  default:
-    "bg-gradient-to-br from-white/[0.12] via-white/[0.04] to-transparent",
-  critical:
-    "bg-gradient-to-br from-red-500/20 via-red-500/5 to-transparent",
-  insight:
-    "bg-gradient-to-br from-[#6366f1]/15 via-[#6366f1]/5 to-transparent",
-  challenge:
-    "bg-gradient-to-br from-violet-500/18 via-violet-500/6 to-transparent",
-  rules:
-    "bg-gradient-to-br from-emerald-500/12 via-emerald-500/4 to-transparent",
-  context:
-    "bg-gradient-to-br from-slate-600/15 via-slate-800/30 to-transparent",
-};
-
-const sectionBlobColor: Record<SectionTone, string> = {
-  default: "#6366f1",
-  critical: "#f87171",
-  insight: "#38bdf8",
-  challenge: "#a78bfa",
-  rules: "#4ade80",
-  context: "#64748b",
+/** Subtle left accent only — rest is flat for readability */
+const sectionToneBorder: Record<SectionTone, string> = {
+  default: "border-l-teal-500/35",
+  critical: "border-l-rose-400/45",
+  insight: "border-l-teal-400/35",
+  challenge: "border-l-sky-400/35",
+  rules: "border-l-emerald-500/35",
+  context: "border-l-slate-500/40",
 };
 
 const CARD_HOVER = {
@@ -207,56 +174,33 @@ function CoachSection({
       id={id}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, margin: "-48px" }}
+      viewport={{ once: true, margin: "-40px" }}
       variants={coachSectionVariants}
       transition={{
-        opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-        y: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+        opacity: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+        y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
       }}
       className={[
-        "relative scroll-mt-24 overflow-hidden rounded-2xl border shadow-[0_16px_56px_-20px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:scroll-mt-28",
-        sectionToneClass[tone],
+        "scroll-mt-24 rounded-2xl border border-white/[0.07] bg-[#12171f]/95 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] sm:scroll-mt-28",
+        "border-l-[3px]",
+        sectionToneBorder[tone],
         className,
       ].join(" ")}
     >
-      <div
-        className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
-        style={{ background: `radial-gradient(circle, ${sectionBlobColor[tone]}, transparent)` }}
-      />
-      <div
-        className={[
-          "relative z-10 border-b border-white/10 px-4 py-4 backdrop-blur-md sm:px-6 sm:py-5",
-          headerBgTone[tone],
-        ].join(" ")}
-      >
-        <div
-          className={`absolute left-0 top-0 h-full w-[4px] bg-gradient-to-b ${headerAccentBar[tone]} shadow-[2px_0_20px_rgba(0,0,0,0.45)]`}
-          aria-hidden
-        />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-        <div className="relative flex items-start gap-3 sm:gap-4 pl-2 sm:pl-3">
-          <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ type: "spring", stiffness: 380, damping: 22 }}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/30 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_24px_rgba(0,0,0,0.45)] sm:h-12 sm:w-12"
-          >
-            <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden />
-          </motion.div>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <h2 className="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-transparent drop-shadow-[0_1px_24px_rgba(255,255,255,0.12)] sm:text-xl">
-              {title}
-            </h2>
-            {description ? (
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
-                {description}
-              </p>
-            ) : null}
-          </div>
+      <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5 sm:py-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-teal-300/90">
+          <Icon className="h-4 w-4" aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-slate-100 sm:text-lg">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-0.5 text-xs leading-snug text-slate-500">{description}</p>
+          ) : null}
         </div>
       </div>
-      <div className="relative z-10 p-4 sm:p-5 md:p-6">{children}</div>
+      <div className="p-4 sm:p-5 md:p-6">{children}</div>
     </motion.section>
   );
 }
@@ -288,7 +232,7 @@ function ReportJumpNav({
             x: { delay: i * 0.04, duration: 0.25 },
             scale: HOVER_SCALE_TRANSITION,
           }}
-          className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] font-medium text-slate-400 transition-colors hover:border-[#6366f1]/30 hover:bg-[#6366f1]/10 hover:text-indigo-100 sm:text-xs"
+          className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:border-teal-500/25 hover:bg-teal-500/5 hover:text-teal-100/90 sm:text-xs"
         >
           {item.label}
         </motion.a>
@@ -343,13 +287,13 @@ function CircularScore({
             r={r}
             fill="none"
             stroke={color}
-            strokeWidth="6"
+            strokeWidth="5"
             strokeDasharray={circ}
             strokeDashoffset={offset}
             strokeLinecap="round"
             style={{
               transition: "stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)",
-              filter: `drop-shadow(0 0 6px ${color}60)`,
+              opacity: 0.92,
             }}
           />
         </svg>
@@ -365,7 +309,7 @@ function CircularScore({
           </span>
         </div>
       </div>
-      <span className="text-center text-[11px] font-medium uppercase tracking-wider text-slate-500">
+      <span className="max-w-[5.5rem] text-center text-[11px] font-medium leading-tight text-slate-500">
         {label}
       </span>
     </div>
@@ -419,12 +363,12 @@ function ErrorCard({
         <p className="text-sm leading-relaxed text-slate-400">
           {err.description}
         </p>
-        <div className="mt-3 flex flex-wrap gap-4 text-xs font-mono">
-          <span style={{ color: cfg.color }}>
-            Est. cost: -${err.estimated_cost_usd.toFixed(0)}
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500">
+          <span style={{ color: cfg.color }} className="font-mono">
+            ~${err.estimated_cost_usd.toFixed(0)} est.
           </span>
-          <span className="text-slate-600">
-            {err.trades_affected} trades · {err.occurrences}× occurred
+          <span>
+            {err.trades_affected} trades · {err.occurrences}×
           </span>
         </div>
       </div>
@@ -453,34 +397,26 @@ function InsightCard({
       }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
-      className="relative cursor-default overflow-hidden rs-card p-5"
+      className="relative cursor-default overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-5"
     >
-      <div
-        className="absolute left-0 top-0 h-full w-1 rounded-l-2xl"
-        style={{ background: "linear-gradient(to bottom, #22d3ee, #7c3aed)" }}
-      />
-      <div className="pl-2">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="rounded-full border border-[#22d3ee]/30 bg-[#22d3ee]/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#22d3ee]">
-            {insight.category}
-          </span>
-        </div>
-        <h3 className="mb-1.5 text-sm font-semibold text-white">
+      <div className="border-l-2 border-teal-400/40 pl-3">
+        <span className="inline-block rounded-md bg-teal-500/10 px-2 py-0.5 text-[10px] font-medium text-teal-200/90">
+          {insight.category}
+        </span>
+        <h3 className="mb-1 mt-2 text-sm font-semibold text-slate-100">
           {insight.title}
         </h3>
         <p className="text-xs leading-relaxed text-slate-500">
           {insight.description}
         </p>
-        <div className="mt-3 rounded-xl border border-[#00e676]/20 bg-[#00e676]/05 p-3">
-          <p className="text-xs font-medium text-[#00e676]">
-            → {insight.recommendation}
+        <div className="mt-3 rounded-lg border border-teal-500/15 bg-teal-500/[0.06] px-3 py-2.5">
+          <p className="text-xs leading-snug text-teal-100/90">
+            {insight.recommendation}
           </p>
         </div>
-        {insight.estimated_impact && (
-          <p className="mt-2 text-[10px] text-slate-600 font-mono">
-            {insight.estimated_impact}
-          </p>
-        )}
+        {insight.estimated_impact ? (
+          <p className="mt-2 text-[10px] text-slate-600">{insight.estimated_impact}</p>
+        ) : null}
       </div>
     </motion.div>
   );
@@ -508,11 +444,11 @@ function ChallengeCard({
       }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
-      className="cursor-default rs-card p-6"
+      className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-6"
       style={{
         borderColor: result.would_pass
-          ? "rgba(0,230,118,0.2)"
-          : "rgba(255,60,60,0.2)",
+          ? "rgba(52,211,153,0.2)"
+          : "rgba(248,113,113,0.2)",
       }}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -524,14 +460,14 @@ function ChallengeCard({
           style={
             result.would_pass
               ? {
-                  background: "rgba(0,230,118,0.15)",
-                  color: "#00e676",
-                  border: "1px solid rgba(0,230,118,0.3)",
+                  background: "rgba(52,211,153,0.12)",
+                  color: COACH.good,
+                  border: "1px solid rgba(52,211,153,0.28)",
                 }
               : {
-                  background: "rgba(255,60,60,0.15)",
-                  color: "#ff3c3c",
-                  border: "1px solid rgba(255,60,60,0.3)",
+                  background: "rgba(248,113,113,0.1)",
+                  color: COACH.bad,
+                  border: "1px solid rgba(248,113,113,0.28)",
                 }
           }
         >
@@ -548,7 +484,7 @@ function ChallengeCard({
       <div className="mb-4 flex items-center gap-4">
         <CircularScore
           score={result.pass_probability}
-          label="Pass prob."
+          label="Pass %"
           size={72}
         />
         <div>
@@ -556,8 +492,8 @@ function ChallengeCard({
             {result.reason}
           </p>
           {result.estimated_days_to_fail !== null && (
-            <p className="mt-2 text-xs font-mono text-[#ff3c3c]">
-              Breach estimated: day {result.estimated_days_to_fail}
+            <p className="mt-2 text-xs font-mono text-rose-300/90">
+              Risk ~day {result.estimated_days_to_fail}
             </p>
           )}
         </div>
@@ -567,7 +503,7 @@ function ChallengeCard({
         <div className="space-y-1.5">
           {result.critical_issues.map((issue, i) => (
             <div key={i} className="flex items-start gap-2 text-xs text-slate-500">
-              <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-[#ff3c3c]" />
+              <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-rose-400/80" />
               {issue}
             </div>
           ))}
@@ -587,9 +523,9 @@ function AdaptationCard({
   index: number;
 }) {
   const priorityColors = {
-    high: { color: "#ff3c3c", glow: "rgba(255,60,60,0.15)" },
-    medium: { color: "#ff8c00", glow: "rgba(255,140,0,0.1)" },
-    low: { color: "#64748b", glow: "transparent" },
+    high: { color: "#f87171", glow: "rgba(248,113,113,0.12)" },
+    medium: { color: "#fbbf24", glow: "rgba(251,191,36,0.08)" },
+    low: { color: "#94a3b8", glow: "transparent" },
   };
   const pc = priorityColors[adapt.priority];
 
@@ -609,9 +545,7 @@ function AdaptationCard({
         boxShadow:
           adapt.priority === "high" ? `0 0 20px ${pc.glow}` : undefined,
         borderColor:
-          adapt.priority === "high"
-            ? "rgba(255,60,60,0.2)"
-            : undefined,
+          adapt.priority === "high" ? "rgba(248,113,113,0.18)" : undefined,
       }}
     >
       <div className="mb-2 flex items-center gap-2">
@@ -629,9 +563,7 @@ function AdaptationCard({
       </div>
       <p className="mb-3 text-xs text-slate-500">{adapt.reason}</p>
       <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-600 mb-1">
-          Implementation
-        </p>
+        <p className="mb-1 text-[10px] font-medium text-slate-600">How</p>
         <p className="text-xs text-slate-400">{adapt.implementation}</p>
       </div>
     </motion.div>
@@ -673,7 +605,7 @@ function ChatBubble({
           <motion.div
             whileHover={{ scale: 1.015 }}
             transition={{ scale: HOVER_SCALE_TRANSITION }}
-            className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#6366f1] via-[#4f46e5] to-[#3730a3] px-4 py-3 text-sm leading-relaxed text-white shadow-[0_16px_48px_-16px_rgba(99,102,241,0.55)]"
+            className="rounded-2xl rounded-br-md bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 px-4 py-3 text-sm leading-relaxed text-white shadow-[0_12px_40px_-16px_rgba(13,148,136,0.45)]"
           >
             {msg.content}
           </motion.div>
@@ -693,22 +625,19 @@ function ChatBubble({
       className="flex w-full justify-start"
     >
       <div className="flex w-full max-w-[min(96%,40rem)] gap-3 sm:gap-4">
-        <div
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/35 bg-gradient-to-br from-violet-500/20 to-violet-900/30 text-[10px] font-bold text-violet-100 shadow-inner shadow-violet-500/10"
-          style={{ color: CLAUDE_COLOR, borderColor: `${CLAUDE_COLOR}44` }}
-        >
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-500/25 bg-teal-950/40 text-[10px] font-semibold text-teal-200/90">
           AI
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/[0.1] bg-white/[0.05] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
-              Claude
+            <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-slate-400">
+              Coach
             </span>
             <span className="font-mono text-[10px] text-slate-600">
               {format(parseISO(msg.created_at), "HH:mm")}
             </span>
           </div>
-          <div className="rounded-2xl rounded-tl-md border border-white/[0.1] bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent px-4 py-3.5 text-sm leading-relaxed text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <div className="rounded-2xl rounded-tl-md border border-white/[0.08] bg-[#161c26] px-4 py-3.5 text-sm leading-relaxed text-slate-200">
             <span className="whitespace-pre-wrap">{displayed}</span>
           </div>
         </div>
@@ -743,24 +672,23 @@ function ReportTab({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-24 text-center"
       >
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.02]">
-          <Brain className="h-9 w-9 text-slate-600" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-teal-500/15 bg-teal-950/20">
+          <Brain className="h-9 w-9 text-teal-500/50" />
         </div>
-        <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-          No analysis yet
+        <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-100">
+          No report yet
         </h2>
-        <p className="mt-2 max-w-sm text-sm text-slate-500">
-          Generate your first behavioral report to understand your trading
-          patterns, emotional biases, and performance gaps.
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
+          Run an analysis on your closed trades to get a clear read on habits and risk.
         </p>
         <motion.button
           type="button"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           transition={{ scale: HOVER_SCALE_TRANSITION }}
           disabled={generating || isMock}
           onClick={onGenerate}
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#6366f1]/20 disabled:opacity-50"
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition-colors hover:bg-teal-500 disabled:opacity-50"
         >
           {generating ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -778,10 +706,10 @@ function ReportTab({
   }
 
   const scores = [
-    { label: "Emotional", value: report.emotional_score },
+    { label: "Emotion", value: report.emotional_score },
     { label: "Performance", value: report.performance_score },
     { label: "Discipline", value: report.discipline_score },
-    { label: "Risk consistency", value: report.risk_consistency_score },
+    { label: "Risk", value: report.risk_consistency_score },
     { label: "Strategy", value: report.strategy_adherence_score },
   ];
 
@@ -789,68 +717,51 @@ function ReportTab({
     scores.reduce((s, x) => s + x.value, 0) / scores.length
   );
 
-  const jumpLinks: { id: string; label: string }[] = [
-    { id: "coach-overview", label: "Overview" },
-  ];
+  const jumpLinks: { id: string; label: string }[] = [{ id: "coach-overview", label: "Summary" }];
   if (report.errors.length > 0) {
-    jumpLinks.push({
-      id: "coach-errors",
-      label: `Errors (${report.errors.length})`,
-    });
+    jumpLinks.push({ id: "coach-errors", label: `Issues (${report.errors.length})` });
   }
   if (report.insights.length > 0) {
-    jumpLinks.push({
-      id: "coach-insights",
-      label: `Insights (${report.insights.length})`,
-    });
+    jumpLinks.push({ id: "coach-insights", label: "Ideas" });
   }
-  jumpLinks.push({ id: "coach-challenges", label: "Challenges" });
+  jumpLinks.push({ id: "coach-challenges", label: "Prop test" });
   if (report.adaptations.length > 0) {
-    jumpLinks.push({ id: "coach-adaptations", label: "Rule tweaks" });
+    jumpLinks.push({ id: "coach-adaptations", label: "Rules" });
   }
-  jumpLinks.push({ id: "coach-context", label: "Sessions & symbols" });
-  jumpLinks.push({ id: "coach-weekly", label: "Weekly" });
+  jumpLinks.push({ id: "coach-context", label: "Timing" });
   if (allReports.length > 1) {
-    jumpLinks.push({ id: "coach-history", label: "History" });
+    jumpLinks.push({ id: "coach-history", label: "Past" });
   }
 
   return (
     <motion.div
-      className="space-y-5 md:space-y-7"
+      className="space-y-6 md:space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       <ReportJumpNav items={jumpLinks} />
 
-      <CoachSection
-        id="coach-overview"
-        icon={Zap}
-        title="Overview"
-        description="Dimensional scores and coach narrative for this analysis."
-        tone="default"
-      >
-        {reportRow && (
-          <p className="rs-mono mb-5 text-[10px] text-slate-500 sm:text-xs">
-            {format(parseISO(reportRow.created_at), "MMM d, yyyy · HH:mm")} ·{" "}
-            {reportRow.trades_analyzed} trades ·{" "}
-            <span style={{ color: CLAUDE_COLOR }}>Claude</span>
+      <CoachSection id="coach-overview" icon={Zap} title="At a glance" tone="default">
+        {reportRow ? (
+          <p className="mb-6 font-mono text-[11px] text-slate-500">
+            {format(parseISO(reportRow.created_at), "MMM d, yyyy")} · {reportRow.trades_analyzed}{" "}
+            trades
           </p>
-        )}
-        <p className="rs-section-title mb-3">Score breakdown</p>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        ) : null}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {scores.map((s, idx) => (
             <motion.div
               key={s.label}
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{
-                opacity: { delay: idx * 0.05, duration: 0.32 },
-                y: { delay: idx * 0.05, duration: 0.32 },
+                opacity: { delay: idx * 0.04, duration: 0.28 },
+                y: { delay: idx * 0.04, duration: 0.28 },
                 scale: HOVER_SCALE_TRANSITION,
               }}
-              whileHover={{ scale: 1.045 }}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.99 }}
               className="flex justify-center"
             >
@@ -859,97 +770,56 @@ function ReportTab({
           ))}
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.012 }}
-          whileTap={{ scale: 1.005 }}
-          transition={{ scale: HOVER_SCALE_TRANSITION }}
-          className="rs-card-accent relative mt-6 cursor-default p-4 sm:p-6"
-        >
-          <p className="rs-kpi-label mb-2 flex items-center gap-2">
-            <Brain className="h-3.5 w-3.5" /> Coach summary
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_minmax(0,14rem)] lg:items-start">
+          <p className="max-w-2xl text-[15px] leading-[1.65] text-slate-400">
+            {report.summary}
           </p>
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-            <div className="min-w-0 flex-1">
-              <p className="leading-relaxed text-slate-300">{report.summary}</p>
+          <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="text-center">
+              <p className="text-[10px] text-slate-600">Blend</p>
+              <p
+                className="font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums"
+                style={{ color: scoreColor(overallScore) }}
+              >
+                {overallScore}
+              </p>
             </div>
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch lg:w-72 lg:shrink-0 lg:flex-col">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center sm:flex-1">
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-600">
-                  Overall
-                </p>
-                <p
-                  className="font-[family-name:var(--font-display)] text-3xl font-bold sm:text-4xl"
-                  style={{ color: scoreColor(overallScore) }}
-                >
-                  {overallScore}
-                </p>
-              </div>
-              <div className="space-y-1.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-xs sm:flex-1">
-                <p>
-                  <span className="text-slate-600">Best session </span>
-                  <span className="font-medium text-[#00e676]">
-                    {report.best_session}
-                  </span>
-                </p>
-                <p>
-                  <span className="text-slate-600">Worst pattern </span>
-                  <span className="font-medium text-[#ff3c3c]">
-                    {report.worst_pattern}
-                  </span>
-                </p>
-              </div>
-              <div className="rounded-xl border border-[#ff8c00]/20 bg-[#ff8c00]/08 p-3 sm:flex-1">
-                <p className="mb-1 text-[10px] uppercase tracking-wider text-[#ff8c00]">
-                  Fix this week
-                </p>
-                <p className="text-xs leading-relaxed text-slate-300">
-                  {report.one_thing_to_fix_this_week}
-                </p>
-              </div>
+            <div className="border-t border-white/[0.06] pt-3 text-xs leading-snug text-slate-500">
+              <span className="text-emerald-400/90">{report.best_session}</span>
+              <span className="text-slate-600"> · </span>
+              <span className="text-rose-300/90">{report.worst_pattern}</span>
+            </div>
+            <div className="border-t border-white/[0.06] pt-3">
+              <p className="text-[10px] text-amber-200/80">Focus</p>
+              <p className="mt-1 text-xs leading-snug text-slate-400">
+                {report.one_thing_to_fix_this_week}
+              </p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </CoachSection>
 
       {report.errors.length > 0 && (
-        <CoachSection
-          id="coach-errors"
-          icon={AlertTriangle}
-          title="Behavioral errors"
-          description="Repeated mistakes ranked by severity and estimated cost."
-          tone="critical"
-        >
+        <CoachSection id="coach-errors" icon={AlertTriangle} title="Issues" tone="critical">
           <div className="grid gap-4 sm:grid-cols-2">
             {report.errors.map((err, i) => (
-              <ErrorCard key={err.type} err={err} index={i} />
+              <ErrorCard key={`${err.type}-${i}`} err={err} index={i} />
             ))}
           </div>
         </CoachSection>
       )}
 
       {report.insights.length > 0 && (
-        <CoachSection
-          id="coach-insights"
-          icon={Sparkles}
-          title="Insights"
-          description="Actionable observations tied to your recent behavior."
-          tone="insight"
-        >
+        <CoachSection id="coach-insights" icon={Sparkles} title="Ideas" tone="insight">
           <div className="grid gap-4 sm:grid-cols-2">
             {report.insights.map((ins, i) => (
-              <InsightCard key={ins.title} insight={ins} index={i} />
+              <InsightCard key={`${ins.title}-${i}`} insight={ins} index={i} />
             ))}
           </div>
         </CoachSection>
       )}
 
-      <CoachSection
-        id="coach-challenges"
-        icon={Target}
-        title="Challenge simulator"
-        description="How your stats would fare against common prop rules."
-        tone="challenge"
-      >
+      <CoachSection id="coach-challenges" icon={Target} title="Prop challenges" tone="challenge">
         <div className="grid gap-4 sm:grid-cols-2">
           <ChallengeCard
             title="FTMO Standard (Phase 1)"
@@ -965,28 +835,16 @@ function ReportTab({
       </CoachSection>
 
       {report.adaptations.length > 0 && (
-        <CoachSection
-          id="coach-adaptations"
-          icon={Shield}
-          title="Rule adaptations"
-          description="Concrete tweaks to your risk rules, by priority."
-          tone="rules"
-        >
+        <CoachSection id="coach-adaptations" icon={Shield} title="Risk rules" tone="rules">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {report.adaptations.map((a, i) => (
-              <AdaptationCard key={a.rule} adapt={a} index={i} />
+              <AdaptationCard key={`${a.rule}-${i}`} adapt={a} index={i} />
             ))}
           </div>
         </CoachSection>
       )}
 
-      <CoachSection
-        id="coach-context"
-        icon={Clock}
-        title="Sessions & symbols"
-        description="When and what you trade best — and what to avoid."
-        tone="context"
-      >
+      <CoachSection id="coach-context" icon={Clock} title="Timing & markets" tone="context">
         <div className="grid gap-4 md:grid-cols-2">
           <motion.div
             whileHover={CARD_HOVER.hover}
@@ -994,17 +852,13 @@ function ReportTab({
             transition={{ scale: HOVER_SCALE_TRANSITION }}
             className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
           >
-            <p className="rs-kpi-label mb-3 flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5" /> Sessions
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+              <Clock className="h-3.5 w-3.5 opacity-70" /> Sessions
             </p>
             <div className="space-y-2">
               {[
-                { label: "Best", value: report.best_session, color: "#00e676" },
-                {
-                  label: "Worst",
-                  value: report.worst_session,
-                  color: "#ff3c3c",
-                },
+                { label: "Best", value: report.best_session, color: COACH.good },
+                { label: "Worst", value: report.worst_session, color: COACH.bad },
               ].map(({ label, value, color }) => (
                 <div
                   key={label}
@@ -1021,19 +875,12 @@ function ReportTab({
               ))}
               {report.best_trading_hours.length > 0 && (
                 <div className="pt-2">
-                  <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
-                    Best hours (UTC)
-                  </p>
+                  <p className="mb-1.5 text-[10px] text-slate-600">Hours (UTC)</p>
                   <div className="flex flex-wrap gap-1.5">
                     {report.best_trading_hours.slice(0, 5).map((h) => (
                       <span
                         key={h}
-                        className="rounded-full px-2 py-0.5 font-mono text-[10px]"
-                        style={{
-                          background: "rgba(0,230,118,0.12)",
-                          color: "#00e676",
-                          border: "1px solid rgba(0,230,118,0.2)",
-                        }}
+                        className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] text-emerald-300/90"
                       >
                         {h}
                       </span>
@@ -1050,24 +897,17 @@ function ReportTab({
             transition={{ scale: HOVER_SCALE_TRANSITION }}
             className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
           >
-            <p className="rs-kpi-label mb-3 flex items-center gap-2">
-              <TrendingDown className="h-3.5 w-3.5" /> Symbols
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+              <TrendingDown className="h-3.5 w-3.5 opacity-70" /> Symbols
             </p>
             <div className="space-y-3">
               <div>
-                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
-                  Best
-                </p>
+                <p className="mb-1.5 text-[10px] text-slate-600">Strong</p>
                 <div className="flex flex-wrap gap-1.5">
                   {report.best_symbols.map((s) => (
                     <span
                       key={s}
-                      className="rounded-full px-2.5 py-0.5 font-mono text-xs"
-                      style={{
-                        background: "rgba(0,230,118,0.12)",
-                        color: "#00e676",
-                        border: "1px solid rgba(0,230,118,0.2)",
-                      }}
+                      className="rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs text-emerald-200/90"
                     >
                       {s}
                     </span>
@@ -1075,19 +915,12 @@ function ReportTab({
                 </div>
               </div>
               <div>
-                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-slate-600">
-                  Worst
-                </p>
+                <p className="mb-1.5 text-[10px] text-slate-600">Weak</p>
                 <div className="flex flex-wrap gap-1.5">
                   {report.worst_symbols.map((s) => (
                     <span
                       key={s}
-                      className="rounded-full px-2.5 py-0.5 font-mono text-xs"
-                      style={{
-                        background: "rgba(255,60,60,0.12)",
-                        color: "#ff3c3c",
-                        border: "1px solid rgba(255,60,60,0.2)",
-                      }}
+                      className="rounded-md border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 font-mono text-xs text-rose-200/90"
                     >
                       {s}
                     </span>
@@ -1097,26 +930,17 @@ function ReportTab({
             </div>
           </motion.div>
         </div>
-      </CoachSection>
 
-      <CoachSection
-        id="coach-weekly"
-        icon={Sparkles}
-        title="Weekly summary"
-        description="Rolling narrative for the last week of activity."
-        tone="challenge"
-      >
-        <p className="leading-relaxed text-slate-300">{report.weekly_summary}</p>
+        {report.weekly_summary ? (
+          <div className="mt-6 border-t border-white/[0.06] pt-6">
+            <p className="mb-2 text-xs font-medium text-slate-500">Week recap</p>
+            <p className="max-w-3xl text-sm leading-relaxed text-slate-400">{report.weekly_summary}</p>
+          </div>
+        ) : null}
       </CoachSection>
 
       {allReports.length > 1 && (
-        <CoachSection
-          id="coach-history"
-          icon={History}
-          title="Report history"
-          description="Open a previous run without leaving this page."
-          tone="default"
-        >
+        <CoachSection id="coach-history" icon={History} title="Earlier reports" tone="default">
           <div className="flex flex-wrap gap-2">
             {allReports.map((r) => {
               const score = Math.round(
@@ -1136,10 +960,8 @@ function ReportTab({
                   transition={{ scale: HOVER_SCALE_TRANSITION }}
                   className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
                   style={{
-                    borderColor: isActive
-                      ? "rgba(34,211,238,0.35)"
-                      : "rgba(255,255,255,0.08)",
-                    background: isActive ? "rgba(34,211,238,0.06)" : "transparent",
+                    borderColor: isActive ? "rgba(45,212,191,0.35)" : "rgba(255,255,255,0.08)",
+                    background: isActive ? "rgba(45,212,191,0.08)" : "transparent",
                   }}
                 >
                   <p className="text-xs font-medium text-slate-300">
@@ -1225,39 +1047,30 @@ function ChatTab({
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="flex w-full min-h-0 flex-col"
     >
-      <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.09] bg-gradient-to-b from-[#101012] via-[#0a0a0c] to-[#080809] shadow-[0_28px_90px_-36px_rgba(0,0,0,0.9)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
-        {/* Panel header */}
-        <div className="relative shrink-0 border-b border-white/[0.08] bg-black/45 px-4 py-4 backdrop-blur-md sm:px-5">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#6366f1]/35 to-transparent" />
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1319] shadow-[0_24px_80px_-32px_rgba(0,0,0,0.75)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
+        <div className="shrink-0 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/15 to-violet-950/40 shadow-lg shadow-violet-900/25">
-                <MessageSquare className="h-5 w-5 text-violet-300" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-950/30">
+                <MessageSquare className="h-4 w-4 text-teal-300/90" />
               </div>
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-white sm:text-lg">
-                  Coach chat
+                <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
+                  Chat
                 </h3>
-                <p className="text-[11px] leading-snug text-slate-500 sm:text-xs">
-                  {reportRow
-                    ? "Replies use your latest report as context."
-                    : "Generate a report first for deeper, personalized answers."}
+                <p className="text-[11px] text-slate-500 sm:text-xs">
+                  {reportRow ? "Using your latest report." : "Generate a report for richer answers."}
                 </p>
               </div>
             </div>
-            {reportRow && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#6366f1]/15 bg-[#6366f1]/5 px-3 py-2 text-[11px] text-slate-400 sm:shrink-0">
-                <Brain className="h-3.5 w-3.5 text-indigo-400/80" />
-                <span>
-                  Report{" "}
-                  <span className="text-slate-300">
-                    {format(parseISO(reportRow.created_at), "MMM d")}
-                  </span>
-                  <span className="text-slate-600"> · </span>
-                  {reportRow.trades_analyzed} trades
+            {reportRow ? (
+              <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] text-slate-500">
+                <Brain className="h-3 w-3 text-teal-400/70" />
+                <span className="text-slate-400">
+                  {format(parseISO(reportRow.created_at), "MMM d")} · {reportRow.trades_analyzed} trades
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -1267,21 +1080,18 @@ function ChatTab({
             ref={scrollAreaRef}
             className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_45%_at_50%_-10%,rgba(99,102,241,0.12),transparent_55%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_40%_at_50%_-8%,rgba(45,212,191,0.06),transparent_50%)]" />
             <div className="relative space-y-6 sm:space-y-7">
               {messages.length === 0 ? (
-                <div className="mx-auto flex max-w-3xl flex-col items-center px-1 py-6 text-center sm:py-10">
-                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#6366f1]/20 bg-gradient-to-br from-[#6366f1]/10 to-transparent shadow-[0_0_40px_-8px_rgba(99,102,241,0.35)]">
-                    <Sparkles className="h-7 w-7 text-indigo-400/80" />
+                <div className="mx-auto flex max-w-lg flex-col items-center px-1 py-6 text-center sm:py-10">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/5">
+                    <Sparkles className="h-6 w-6 text-teal-400/80" />
                   </div>
-                  <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
-                    Start the conversation
+                  <p className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
+                    Ask something
                   </p>
-                  <p className="mt-2 max-w-md text-sm text-slate-500">
-                    Pick a prompt below or write your own. The coach reads your
-                    numbers, not your excuses.
-                  </p>
-                  <div className="mt-8 grid w-full gap-2.5 sm:grid-cols-2">
+                  <p className="mt-1.5 text-sm text-slate-500">Or tap a starter below.</p>
+                  <div className="mt-6 grid w-full gap-2 sm:grid-cols-2">
                     {SUGGESTED_QUESTIONS.map((q, i) => (
                       <motion.button
                         key={q}
@@ -1297,7 +1107,7 @@ function ChatTab({
                         whileTap={CARD_HOVER.tap}
                         onClick={() => onSend(q)}
                         disabled={isMock}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-[#6366f1]/25 hover:bg-[#6366f1]/[0.07] hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-teal-500/20 hover:bg-teal-500/[0.06] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {q}
                       </motion.button>
@@ -1319,11 +1129,8 @@ function ChatTab({
                       animate={{ opacity: 1, y: 0 }}
                       className="flex justify-start pl-0 sm:pl-1"
                     >
-                      <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
-                        <div
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/30 bg-violet-500/10 text-[9px] font-bold text-violet-200"
-                          style={{ color: CLAUDE_COLOR }}
-                        >
+                      <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500/25 bg-teal-950/40 text-[9px] font-semibold text-teal-200/90">
                           AI
                         </div>
                         <div className="flex gap-1.5">
@@ -1357,7 +1164,7 @@ function ChatTab({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 onClick={scrollThreadToBottom}
-                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-[#0c0c0e]/95 text-slate-400 shadow-xl backdrop-blur-md transition-colors hover:border-[#6366f1]/30 hover:text-white"
+                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-[#0c0f14]/95 text-slate-400 shadow-lg backdrop-blur-md transition-colors hover:border-teal-500/25 hover:text-teal-100"
               >
                 <ChevronDown className="h-4 w-4" />
               </motion.button>
@@ -1366,7 +1173,7 @@ function ChatTab({
         </div>
 
         {/* Composer */}
-        <div className="shrink-0 border-t border-white/[0.08] bg-gradient-to-t from-black/80 to-black/40 px-3 py-3 backdrop-blur-xl sm:px-4 sm:py-4">
+        <div className="shrink-0 border-t border-white/[0.06] bg-[#0c0f14]/90 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-4">
           {messages.length > 0 && messages.length < 5 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {SUGGESTED_QUESTIONS.slice(0, 3).map((q) => (
@@ -1416,7 +1223,7 @@ function ChatTab({
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
               transition={{ scale: HOVER_SCALE_TRANSITION }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#6366f1] to-[#3730a3] text-white shadow-[0_8px_24px_-6px_rgba(99,102,241,0.45)] transition-opacity disabled:opacity-35"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-[0_8px_24px_-6px_rgba(13,148,136,0.4)] transition-opacity hover:bg-teal-500 disabled:opacity-35"
             >
               {loading ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1465,30 +1272,26 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.96, opacity: 0, y: 12 }}
             transition={{ type: "spring", damping: 26, stiffness: 340 }}
-            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/[0.12] bg-[#0f1014]/96 px-8 py-10 shadow-2xl shadow-violet-950/40"
+            className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/[0.08] bg-[#12171f]/98 px-8 py-10 shadow-2xl shadow-black/50"
           >
             <div
-              className="pointer-events-none absolute -left-16 top-0 h-48 w-48 rounded-full opacity-30 blur-3xl"
-              style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
-            />
-            <div
-              className="pointer-events-none absolute -right-12 bottom-0 h-40 w-40 rounded-full opacity-25 blur-3xl"
-              style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
+              className="pointer-events-none absolute -left-20 top-0 h-52 w-52 rounded-full opacity-[0.2] blur-3xl"
+              style={{ background: "radial-gradient(circle, #2dd4bf, transparent)" }}
             />
             <div className="relative z-10 flex flex-col items-center text-center">
               <motion.div
-                className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-violet-500/35 bg-gradient-to-br from-violet-600/35 to-indigo-950/50 shadow-[0_0_48px_rgba(124,58,237,0.35)]"
+                className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-teal-500/25 bg-teal-950/40"
                 animate={{ y: [0, -7, 0] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Brain className="relative z-10 h-11 w-11 text-violet-100" />
+                <Brain className="relative z-10 h-11 w-11 text-teal-200/95" />
                 <motion.span
-                  className="absolute inset-0 rounded-2xl border-2 border-violet-400/50"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.45, 0, 0.45] }}
+                  className="absolute inset-0 rounded-2xl border-2 border-teal-400/35"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0, 0.4] }}
                   transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
                 />
               </motion.div>
-              <p className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-300/90">
+              <p className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-400/80">
                 AI Coach
               </p>
               <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold text-white">
@@ -1511,7 +1314,7 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
                   <span
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === tipIdx ? "w-5 bg-violet-400" : "w-1.5 bg-white/20"
+                      i === tipIdx ? "w-5 bg-teal-400" : "w-1.5 bg-white/15"
                     }`}
                   />
                 ))}
@@ -1658,19 +1461,15 @@ export function AiCoachPageClient({
   const tradeCount = useMemo(() => reportRow?.trades_analyzed ?? 0, [reportRow]);
 
   return (
-    <div className="relative space-y-5 sm:space-y-6">
+    <div className="relative space-y-6 sm:space-y-7">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
-          className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
-          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
+          className="absolute -top-32 left-1/3 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full opacity-[0.07] blur-3xl"
+          style={{ background: "radial-gradient(circle, #0f766e, transparent 65%)" }}
         />
         <div
-          className="absolute top-1/3 right-0 h-72 w-72 rounded-full opacity-[0.04] blur-3xl"
-          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
-        />
-        <div
-          className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
-          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+          className="absolute bottom-0 right-0 h-64 w-64 rounded-full opacity-[0.05] blur-3xl"
+          style={{ background: "radial-gradient(circle, #134e4a, transparent 70%)" }}
         />
       </div>
       {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -1681,19 +1480,11 @@ export function AiCoachPageClient({
         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="min-w-0">
-          <h1
-            className="rs-page-title"
-            style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+          <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">
             AI Coach
           </h1>
-          <p className="rs-page-sub">
-            Behavioral analysis — no excuses, only data.
+          <p className="mt-1.5 max-w-md text-sm leading-relaxed text-slate-500">
+            Clear feedback from your journal — scores first, detail when you scroll.
           </p>
         </div>
 
@@ -1749,7 +1540,7 @@ export function AiCoachPageClient({
             disabled={generating || isMock}
             onClick={() => void handleGenerate()}
             title={isMock ? "Not available in demo" : undefined}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-[#6366f1]/20 transition-opacity disabled:opacity-50 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-teal-900/25 transition-opacity hover:bg-teal-500 disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
           >
             {generating ? (
@@ -1772,7 +1563,7 @@ export function AiCoachPageClient({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex flex-col gap-2 rounded-xl border border-[#7c3aed]/30 bg-[#7c3aed]/10 px-4 py-3 text-sm text-[#818cf8] sm:flex-row sm:items-center sm:gap-3 rs-mono"
+          className="flex flex-col gap-2 rounded-xl border border-teal-500/20 bg-teal-950/25 px-4 py-3 text-sm text-teal-200/80 sm:flex-row sm:items-center sm:gap-3"
         >
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
@@ -1817,7 +1608,7 @@ export function AiCoachPageClient({
                 <motion.span
                   layoutId="coach-tab-pill"
                   className="absolute inset-0 rounded-lg"
-                  style={{ background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }}
+                  style={{ background: "rgba(45,212,191,0.12)", boxShadow: "0 0 0 1px rgba(45,212,191,0.12)" }}
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
