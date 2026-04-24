@@ -6,9 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, Pencil, Trash2, Plus } from "lucide-react";
 import { authFetch } from "@/lib/api/authFetch";
+import { ACCOUNT_DELETE_CONFIRM_PHRASE } from "@/lib/accountDeleteConstants";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
-
-const DELETE_ACCOUNT_PHRASE = "DELETE_MY_RISKSENT_ACCOUNT";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
@@ -286,14 +285,14 @@ export default function ProfilePage() {
   };
 
   const deleteOwnAccount = async () => {
-    if (deletePhrase !== DELETE_ACCOUNT_PHRASE) return;
+    if (deletePhrase !== ACCOUNT_DELETE_CONFIRM_PHRASE) return;
     setAccountDeleteBusy(true);
     setDeleteAccountError(null);
     try {
       const res = await authFetch("/api/account/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation: DELETE_ACCOUNT_PHRASE }),
+        body: JSON.stringify({ confirmation: ACCOUNT_DELETE_CONFIRM_PHRASE }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
@@ -720,8 +719,8 @@ export default function ProfilePage() {
           Danger zone
         </h2>
         <p className="mb-4 text-xs font-mono text-slate-500">
-          Permanently removes your RiskSent login, subscription row, and auth profile. Broker-linked data is removed
-          with your user; you will receive a confirmation email.
+          Cancels your Stripe subscription, removes broker accounts from MetaApi, then deletes your login and data. You
+          will receive a confirmation email.
         </p>
         <button
           type="button"
@@ -762,14 +761,14 @@ export default function ProfilePage() {
             <p className="text-sm font-semibold text-red-300">Delete your RiskSent account?</p>
             <p className="mt-2 text-sm text-slate-400">
               This cannot be undone. Type{" "}
-              <span className="font-mono text-slate-200">{DELETE_ACCOUNT_PHRASE}</span> below to confirm.
+              <span className="font-mono text-slate-200">{ACCOUNT_DELETE_CONFIRM_PHRASE}</span> below to confirm.
             </p>
             <input
               type="text"
               value={deletePhrase}
               onChange={(e) => setDeletePhrase(e.target.value)}
               autoComplete="off"
-              placeholder={DELETE_ACCOUNT_PHRASE}
+              placeholder={ACCOUNT_DELETE_CONFIRM_PHRASE}
               className="mt-4 w-full rounded-xl border border-white/[0.12] bg-[#0e0e12] px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-red-500/40"
             />
             {deleteAccountError ? (
@@ -781,7 +780,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 disabled={
-                  accountDeleteBusy || deletePhrase !== DELETE_ACCOUNT_PHRASE
+                  accountDeleteBusy || deletePhrase !== ACCOUNT_DELETE_CONFIRM_PHRASE
                 }
                 onClick={() => void deleteOwnAccount()}
                 className="rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-40"

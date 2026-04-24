@@ -437,7 +437,8 @@ function getAccountDeletedEmailTemplate(userName: string): string {
         <h1 class="h1">Account deleted</h1>
         <p style="margin:0 0 16px; font-size:15px; color:#cbd5e1;">Hi ${escapeAttrText(userName)},</p>
         <p style="margin:0 0 20px; font-size:15px; color:#94a3b8;">
-          Your RiskSent account and authentication have been removed. Broker credentials and personal data tied to this account are being deleted as part of this process.
+          Your RiskSent account and authentication have been removed. Active subscriptions were cancelled, broker
+          connections were removed from our hosting provider where applicable, and related data is being deleted.
         </p>
         <p style="margin:0; font-size:14px; color:#64748b;">
           If you didn&apos;t request deletion, contact

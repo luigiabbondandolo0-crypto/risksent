@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ACCOUNT_DELETE_CONFIRM_PHRASE } from "@/lib/accountDeleteConstants";
 import { sendAccountDeletedEmail } from "@/lib/email";
+import { purgeUserBillableResources } from "@/lib/purgeUserBillableResources";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-const CONFIRM_PHRASE = "DELETE_MY_RISKSENT_ACCOUNT";
-
 /**
  * POST /api/account/delete
- * Body: { confirmation: "DELETE_MY_RISKSENT_ACCOUNT" }
- * Permanently removes the authenticated user (Supabase Auth). Sends a confirmation email first.
+ * Body: { confirmation: ACCOUNT_DELETE_CONFIRM_PHRASE }
+ * Cancels Stripe + MetaApi broker accounts, then removes the Supabase auth user (DB cascades).
  */
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -28,10 +28,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (body.confirmation !== CONFIRM_PHRASE) {
+  if (body.confirmation !== ACCOUNT_DELETE_CONFIRM_PHRASE) {
     return NextResponse.json(
       {
-        error: `Confirmation must be exactly: ${CONFIRM_PHRASE}`,
+        error: `Confirmation must be exactly: ${ACCOUNT_DELETE_CONFIRM_PHRASE}`,
       },
       { status: 400 }
     );
@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const admin = createSupabaseAdmin();
+    const { warnings } = await purgeUserBillableResources(admin, userId);
+    if (warnings.length) {
+      console.warn("[account/delete] purge warnings", { userId, warnings });
+    }
+
     const { error: delErr } = await admin.auth.admin.deleteUser(userId);
     if (delErr) {
       console.error("[account/delete]", delErr);

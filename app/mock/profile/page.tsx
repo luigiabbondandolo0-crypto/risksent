@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, Pencil, Plus } from "lucide-react";
+import { ACCOUNT_DELETE_CONFIRM_PHRASE } from "@/lib/accountDeleteConstants";
 
 const TZ_OPTIONS = [
   "UTC",
@@ -58,6 +60,10 @@ const cardVariants = {
 };
 
 export default function MockProfilePage() {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [demoDeleteDone, setDemoDeleteDone] = useState(false);
+
   const ini = initials(MOCK_PROFILE.fullName, MOCK_PROFILE.email);
   const memberSince = new Date(MOCK_PROFILE.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -197,18 +203,30 @@ export default function MockProfilePage() {
         </ul>
       </motion.section>
 
-      <motion.section custom={3} variants={cardVariants} initial="hidden" animate="show" className={glassCard}>
+      <motion.section
+        custom={3}
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className={`${glassCard} border-red-500/20 bg-red-500/[0.03]`}
+      >
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Irreversible</p>
         <h2 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg font-semibold text-red-400">
           <AlertTriangle className="h-5 w-5" />
           Danger zone
         </h2>
         <p className="mb-4 text-xs font-mono text-slate-500">
-          Deleting your account is irreversible. Contact support to request deletion.
+          On the real profile this cancels Stripe, removes broker accounts from MetaApi, then deletes your login. Demo
+          only — nothing is removed here.
         </p>
         <button
           type="button"
-          disabled
-          className="cursor-not-allowed rounded-xl border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 opacity-60"
+          onClick={() => {
+            setDeletePhrase("");
+            setDemoDeleteDone(false);
+            setDeleteOpen(true);
+          }}
+          className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
         >
           Delete account
         </button>
@@ -219,6 +237,74 @@ export default function MockProfilePage() {
           ← Back to dashboard
         </Link>
       </p>
+
+      {deleteOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md rounded-2xl border border-white/[0.1] bg-[#0c0c0e] p-6"
+          >
+            {!demoDeleteDone ? (
+              <>
+                <p className="text-sm font-semibold text-red-300">Delete your RiskSent account?</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  Type{" "}
+                  <span className="font-mono text-slate-200">{ACCOUNT_DELETE_CONFIRM_PHRASE}</span> below — same flow as
+                  the live app.
+                </p>
+                <input
+                  type="text"
+                  value={deletePhrase}
+                  onChange={(e) => setDeletePhrase(e.target.value)}
+                  autoComplete="off"
+                  placeholder={ACCOUNT_DELETE_CONFIRM_PHRASE}
+                  className="mt-4 w-full rounded-xl border border-white/[0.12] bg-[#0e0e12] px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-red-500/40"
+                />
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-row-reverse">
+                  <button
+                    type="button"
+                    disabled={deletePhrase !== ACCOUNT_DELETE_CONFIRM_PHRASE}
+                    onClick={() => setDemoDeleteDone(true)}
+                    className="rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-40"
+                  >
+                    Permanently delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteOpen(false);
+                      setDeletePhrase("");
+                    }}
+                    className="rounded-xl bg-white/[0.08] py-2.5 text-sm text-white hover:bg-white/[0.12]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-amber-200">Demo mode</p>
+                <p className="mt-2 text-sm text-slate-400">
+                  No data was deleted. With a real account we would cancel billing, remove MetaApi broker connections, and
+                  delete your user — then email you a confirmation.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteOpen(false);
+                    setDeletePhrase("");
+                    setDemoDeleteDone(false);
+                  }}
+                  className="mt-4 w-full rounded-xl bg-white/[0.08] py-2.5 text-sm text-white hover:bg-white/[0.12]"
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
