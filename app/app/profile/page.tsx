@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, Pencil, Trash2, Plus } from "lucide-react";
+import { authFetch } from "@/lib/api/authFetch";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+
+const DELETE_ACCOUNT_PHRASE = "DELETE_MY_RISKSENT_ACCOUNT";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
@@ -95,6 +98,9 @@ export default function ProfilePage() {
   const [addOpen, setAddOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [accountDeleteBusy, setAccountDeleteBusy] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
 
   const loadJournal = useCallback(async () => {
     try {
@@ -276,6 +282,34 @@ export default function ProfilePage() {
       if (res.ok) void loadJournal();
     } finally {
       setDeleteBusy(false);
+    }
+  };
+
+  const deleteOwnAccount = async () => {
+    if (deletePhrase !== DELETE_ACCOUNT_PHRASE) return;
+    setAccountDeleteBusy(true);
+    setDeleteAccountError(null);
+    try {
+      const res = await authFetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: DELETE_ACCOUNT_PHRASE }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setDeleteAccountError(
+          typeof data.error === "string" ? data.error : "Could not delete account."
+        );
+        return;
+      }
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      setDeleteOpen(false);
+      router.push("/login?accountDeleted=1");
+    } catch {
+      setDeleteAccountError("Unexpected error. Try again or contact support.");
+    } finally {
+      setAccountDeleteBusy(false);
     }
   };
 
@@ -686,11 +720,16 @@ export default function ProfilePage() {
           Danger zone
         </h2>
         <p className="mb-4 text-xs font-mono text-slate-500">
-          Deleting your account is irreversible. This action is not available in-app yet — contact support.
+          Permanently removes your RiskSent login, subscription row, and auth profile. Broker-linked data is removed
+          with your user; you will receive a confirmation email.
         </p>
         <button
           type="button"
-          onClick={() => setDeleteOpen(true)}
+          onClick={() => {
+            setDeletePhrase("");
+            setDeleteAccountError(null);
+            setDeleteOpen(true);
+          }}
           className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
         >
           Delete account
@@ -718,19 +757,50 @@ export default function ProfilePage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-sm rounded-2xl border border-white/[0.1] bg-[#0c0c0e] p-6"
+            className="w-full max-w-md rounded-2xl border border-white/[0.1] bg-[#0c0c0e] p-6"
           >
-            <p className="text-sm text-slate-300">
-              Account deletion must be requested through support so we can securely remove broker credentials and
-              history.
+            <p className="text-sm font-semibold text-red-300">Delete your RiskSent account?</p>
+            <p className="mt-2 text-sm text-slate-400">
+              This cannot be undone. Type{" "}
+              <span className="font-mono text-slate-200">{DELETE_ACCOUNT_PHRASE}</span> below to confirm.
             </p>
-            <button
-              type="button"
-              onClick={() => setDeleteOpen(false)}
-              className="mt-4 w-full rounded-xl bg-white/[0.08] py-2.5 text-sm text-white"
-            >
-              Close
-            </button>
+            <input
+              type="text"
+              value={deletePhrase}
+              onChange={(e) => setDeletePhrase(e.target.value)}
+              autoComplete="off"
+              placeholder={DELETE_ACCOUNT_PHRASE}
+              className="mt-4 w-full rounded-xl border border-white/[0.12] bg-[#0e0e12] px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-red-500/40"
+            />
+            {deleteAccountError ? (
+              <p className="mt-2 text-xs text-red-400" role="alert">
+                {deleteAccountError}
+              </p>
+            ) : null}
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-row-reverse">
+              <button
+                type="button"
+                disabled={
+                  accountDeleteBusy || deletePhrase !== DELETE_ACCOUNT_PHRASE
+                }
+                onClick={() => void deleteOwnAccount()}
+                className="rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-40"
+              >
+                {accountDeleteBusy ? "Deleting…" : "Permanently delete"}
+              </button>
+              <button
+                type="button"
+                disabled={accountDeleteBusy}
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setDeletePhrase("");
+                  setDeleteAccountError(null);
+                }}
+                className="rounded-xl bg-white/[0.08] py-2.5 text-sm text-white hover:bg-white/[0.12]"
+              >
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       )}

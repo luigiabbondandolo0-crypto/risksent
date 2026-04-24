@@ -60,6 +60,7 @@ function LoginForm() {
     [searchParams]
   );
   const sessionExpired = searchParams.get("sessionExpired") === "1";
+  const accountDeleted = searchParams.get("accountDeleted") === "1";
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -229,6 +230,11 @@ function LoginForm() {
           {sessionExpired && (
             <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
               Session expired due to inactivity. Please sign in again.
+            </p>
+          )}
+          {accountDeleted && (
+            <p className="mt-3 rounded-lg border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-xs text-slate-200">
+              Your account has been deleted. You can create a new one anytime.
             </p>
           )}
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
