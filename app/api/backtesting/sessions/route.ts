@@ -4,6 +4,8 @@ import { sanitizeText, isUuid, isIsoDate } from "@/lib/security/validation";
 import { TIMEFRAMES } from "@/lib/backtesting/symbolMap";
 import { ALL_SYMBOLS } from "@/lib/backtesting/symbolMap";
 import type { BtTimeframe } from "@/lib/backtesting/types";
+import type { Plan, SubStatus } from "@/lib/subscription/caps";
+import { capsForPlan } from "@/lib/subscription/caps";
 
 export async function GET(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
@@ -30,6 +32,43 @@ export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+
+  if (caps.isDemoMode || !caps.canAccessBacktesting) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Start your trial or upgrade to use backtesting." },
+      { status: 403 }
+    );
+  }
+
+  const maxSessions = caps.maxBacktestingSessions;
+  if (maxSessions !== null) {
+    const { count } = await supabase
+      .from("bt_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= maxSessions) {
+      return NextResponse.json(
+        {
+          error: "limit_reached",
+          message: `Your plan allows ${maxSessions} backtesting session${maxSessions > 1 ? "s" : ""}. Upgrade to add more.`
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

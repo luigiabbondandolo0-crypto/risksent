@@ -28,6 +28,7 @@ export type SubscriptionInfo = {
   canAccessBacktesting: boolean;
   canAccessAICoach: boolean;
   canAccessRiskManager: boolean;
+  canAccessTelegramAlerts: boolean;
   maxBrokerAccounts: number | null;
   maxBacktestingSessions: number | null;
   trialEndsAt: string | null;
@@ -71,6 +72,7 @@ export function capsForPlan(
       canAccessBacktesting: false,
       canAccessAICoach: false,
       canAccessRiskManager: false,
+      canAccessTelegramAlerts: false,
       maxBrokerAccounts: 0,
       maxBacktestingSessions: 0,
       trialEndsAt,
@@ -88,6 +90,7 @@ export function capsForPlan(
       canAccessBacktesting: false,
       canAccessAICoach: false,
       canAccessRiskManager: false,
+      canAccessTelegramAlerts: false,
       maxBrokerAccounts: 0,
       maxBacktestingSessions: 0,
       trialEndsAt: null,
@@ -105,6 +108,7 @@ export function capsForPlan(
       canAccessBacktesting: true,
       canAccessAICoach: true,
       canAccessRiskManager: true,
+      canAccessTelegramAlerts: true,
       maxBrokerAccounts: null,
       maxBacktestingSessions: null,
       trialEndsAt: null,
@@ -123,8 +127,9 @@ export function capsForPlan(
       canAccessBacktesting: true,
       canAccessAICoach: true,
       canAccessRiskManager: true,
-      maxBrokerAccounts: null,
-      maxBacktestingSessions: null,
+      canAccessTelegramAlerts: true,
+      maxBrokerAccounts: 1,
+      maxBacktestingSessions: 1,
       trialEndsAt,
       trialUsed: true,
     };
@@ -141,6 +146,7 @@ export function capsForPlan(
         canAccessBacktesting: false,
         canAccessAICoach: false,
         canAccessRiskManager: false,
+        canAccessTelegramAlerts: false,
         maxBrokerAccounts: 0,
         maxBacktestingSessions: 0,
         trialEndsAt: null,
@@ -159,7 +165,8 @@ export function capsForPlan(
       canAccessBacktesting: true,
       canAccessAICoach: true,
       canAccessRiskManager: true,
-      maxBrokerAccounts: null,
+      canAccessTelegramAlerts: true,
+      maxBrokerAccounts: 5,
       maxBacktestingSessions: null,
       trialEndsAt: null,
       trialUsed,
@@ -176,6 +183,7 @@ export function capsForPlan(
     canAccessBacktesting: true,
     canAccessAICoach: false,
     canAccessRiskManager: false,
+    canAccessTelegramAlerts: false,
     maxBrokerAccounts: 1,
     maxBacktestingSessions: 2,
     trialEndsAt: null,

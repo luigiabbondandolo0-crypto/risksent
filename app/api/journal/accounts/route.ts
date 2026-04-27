@@ -69,16 +69,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (subRow?.plan === "new_trader") {
+  const maxAccounts = caps.maxBrokerAccounts;
+  if (maxAccounts !== null && maxAccounts > 0) {
     const { count } = await supabase
       .from("journal_account")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
-    if ((count ?? 0) >= 1) {
+    if ((count ?? 0) >= maxAccounts) {
       return NextResponse.json(
         {
           error: "limit_reached",
-          message: "New Trader plan allows 1 broker account. Upgrade to Experienced for unlimited."
+          message: `Your plan allows ${maxAccounts} broker account${maxAccounts > 1 ? "s" : ""}. Upgrade to add more.`
         },
         { status: 403 }
       );

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTelegramBotLinkUsername } from "@/lib/telegramAlert";
+import type { Plan, SubStatus } from "@/lib/subscription/caps";
+import { capsForPlan } from "@/lib/subscription/caps";
 
 const LOG_PREFIX = "[Telegram link]";
 
@@ -20,6 +22,26 @@ export async function POST() {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+
+  if (!caps.canAccessTelegramAlerts) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade to Experienced to use Telegram alerts." },
+      { status: 403 }
+    );
   }
 
   const botUsername = getTelegramBotLinkUsername();
