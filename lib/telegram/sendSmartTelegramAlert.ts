@@ -124,6 +124,8 @@ export async function sendSmartTelegramAlert({
   fallbackMessage,
   supabase,
   userId,
+  accountNickname,
+  accountId,
 }: {
   chatId: string;
   alertType: string;
@@ -131,27 +133,38 @@ export async function sendSmartTelegramAlert({
   fallbackMessage?: string;
   supabase?: SupabaseClient;
   userId?: string;
+  accountNickname?: string | null;
+  accountId?: string | null;
 }): Promise<{ ok: boolean; reason?: string }> {
   const severity = detectSeverity(alertType, data);
   const staticFallback = buildFallback(alertType, data, severity);
-  let message = fallbackMessage ?? staticFallback;
+
+  // Append account line to the message so traders know which account triggered the alert
+  const accountSuffix = accountNickname
+    ? `\n\n📊 Account: <b>${accountNickname.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</b>`
+    : "";
+
+  let message = (fallbackMessage ?? staticFallback) + accountSuffix;
 
   try {
+    const accountCtx = accountNickname
+      ? ` Account: ${accountNickname}.`
+      : "";
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: 200,
       temperature: 0.6,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(alertType, data, severity) },
+        { role: "user", content: buildUserPrompt(alertType, data, severity) + accountCtx },
       ],
     });
 
     const generated = completion.choices[0]?.message?.content?.trim();
-    if (generated) message = generated;
+    if (generated) message = generated + accountSuffix;
   } catch (err) {
     console.error("[sendSmartTelegramAlert] OpenAI error, using fallback:", err);
-    message = staticFallback;
+    message = staticFallback + accountSuffix;
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -183,7 +196,13 @@ export async function sendSmartTelegramAlert({
         ) || 0;
       const limitValue =
         Number(data.limitDD ?? data.limit ?? data.avgTrades ?? data.threshold ?? 0) || 0;
-      const nickname = data.accountNickname != null ? String(data.accountNickname) : null;
+      // Prefer explicit param; fall back to data.accountNickname for backwards compat
+      const nickname =
+        accountNickname != null
+          ? accountNickname
+          : data.accountNickname != null
+            ? String(data.accountNickname)
+            : null;
       await supabase
         .from("risk_violations")
         .insert({
@@ -194,6 +213,7 @@ export async function sendSmartTelegramAlert({
           message: message,
           notified_telegram: true,
           account_nickname: nickname,
+          account_id: accountId ?? null,
         })
         .then(({ error }) => {
           if (error) console.error("[sendSmartTelegramAlert] Failed to save violation:", error.message);

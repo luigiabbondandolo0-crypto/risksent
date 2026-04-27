@@ -143,13 +143,22 @@ export function RiskManagerPageClient({
     );
   }, [draft, savedRules, previewChrome]);
 
+  // Ref so realtime handler can read the current selection without stale closure
+  const selectedGlobalIdRef = useRef<string>(selectedGlobalId);
+  useEffect(() => {
+    selectedGlobalIdRef.current = selectedGlobalId;
+  }, [selectedGlobalId]);
+
   const loadViolations = useCallback(async () => {
     if (demoData) return;
-    const res = await authFetch("/api/risk/violations?limit=100");
+    const qs = selectedGlobalId !== "all"
+      ? `&account_id=${encodeURIComponent(selectedGlobalId)}`
+      : "";
+    const res = await authFetch(`/api/risk/violations?limit=100${qs}`);
     if (!res.ok) return;
     const j = (await res.json()) as { violations: ViolationItem[] };
     setViolations(j.violations ?? []);
-  }, [demoData]);
+  }, [demoData, selectedGlobalId]);
 
   const VIOLATIONS_PER_PAGE = 10;
   const totalViolationPages = Math.max(1, Math.ceil(violations.length / VIOLATIONS_PER_PAGE));
@@ -174,7 +183,14 @@ export function RiskManagerPageClient({
     }
     setClearingViolations(true);
     try {
-      const res = await authFetch("/api/risk/violations", { method: "DELETE" });
+      const body = selectedGlobalId !== "all"
+        ? JSON.stringify({ account_id: selectedGlobalId })
+        : undefined;
+      const res = await authFetch("/api/risk/violations", {
+        method: "DELETE",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body,
+      });
       if (res.ok) {
         setViolations([]);
         setViolationPage(1);
@@ -182,7 +198,7 @@ export function RiskManagerPageClient({
     } finally {
       setClearingViolations(false);
     }
-  }, [demoData, violations.length]);
+  }, [demoData, violations.length, selectedGlobalId]);
 
   useEffect(() => {
     if (demoData) {
@@ -268,9 +284,12 @@ export function RiskManagerPageClient({
     (async () => {
       setLoading(true);
       try {
+        const violQs = selectedGlobalId !== "all"
+          ? `&account_id=${encodeURIComponent(selectedGlobalId)}`
+          : "";
         const [nRes, vRes] = await Promise.all([
           authFetch("/api/risk/notifications"),
-          authFetch("/api/risk/violations?limit=100")
+          authFetch(`/api/risk/violations?limit=100${violQs}`)
         ]);
         if (nRes.ok) {
           const n = (await nRes.json()) as TelegramSettings;
@@ -487,6 +506,12 @@ export function RiskManagerPageClient({
     return () => window.clearInterval(t);
   }, [demoData, loadViolations]);
 
+  // Reload violations whenever the account selection changes
+  useEffect(() => {
+    void loadViolations();
+    setViolationPage(1);
+  }, [loadViolations]); // loadViolations rebuilds when selectedGlobalId changes
+
   useEffect(() => {
     if (demoData) return;
     supabase.auth.getUser().then(({ data }) => {
@@ -508,6 +533,12 @@ export function RiskManagerPageClient({
         },
         (payload) => {
           const raw = payload.new as Record<string, unknown>;
+          // Filter realtime event by selected account (use ref to avoid stale closure)
+          const currentSel = selectedGlobalIdRef.current;
+          if (currentSel !== "all") {
+            const rawAccountId = raw.account_id != null ? String(raw.account_id) : null;
+            if (rawAccountId !== currentSel) return;
+          }
           const item: ViolationItem = {
             id: String(raw.id ?? ""),
             rule_type: String(raw.rule_type ?? ""),

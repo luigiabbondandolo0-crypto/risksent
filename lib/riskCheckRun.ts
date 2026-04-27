@@ -484,6 +484,8 @@ export async function runRiskCheckForAccount(params: {
         fallbackMessage: `⚠️ Risk alert: ${f.message}`,
         supabase,
         userId,
+        accountNickname: journalCtx?.nickname ?? null,
+        accountId: journalCtx?.id ?? null,
       });
     }
   }
