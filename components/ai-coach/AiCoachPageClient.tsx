@@ -54,11 +54,11 @@ type JournalAccountRow = {
 // ─── Design tokens — calm teal / slate system ─────────────────────────────
 
 const COACH = {
-  accent: "#2dd4bf",
-  accentMuted: "rgba(45,212,191,0.12)",
+  accent: "#6366f1",
+  accentMuted: "rgba(99,102,241,0.10)",
   surface: "rgba(18,23,31,0.92)",
   border: "rgba(255,255,255,0.06)",
-  good: "#34d399",
+  good: "#4ade80",
   warn: "#fbbf24",
   bad: "#f87171",
 } as const;
@@ -135,17 +135,17 @@ type SectionTone = "default" | "critical" | "insight" | "challenge" | "rules" | 
 
 /** Subtle left accent only — rest is flat for readability */
 const sectionToneBorder: Record<SectionTone, string> = {
-  default: "border-l-teal-500/35",
+  default: "border-l-indigo-500/40",
   critical: "border-l-rose-400/45",
-  insight: "border-l-teal-400/35",
+  insight: "border-l-indigo-400/35",
   challenge: "border-l-sky-400/35",
   rules: "border-l-emerald-500/35",
   context: "border-l-slate-500/40",
 };
 
 const CARD_HOVER = {
-  hover: { scale: 1.02 },
-  tap: { scale: 0.99 },
+  hover: {},
+  tap: {},
 } as const;
 
 /** Tween hover so scale follows the cursor without spring lag */
@@ -201,7 +201,7 @@ function CoachSection({
       ].join(" ")}
     >
       <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5 sm:py-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-teal-300/90">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-indigo-300/80">
           <Icon className="h-4 w-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
@@ -245,7 +245,7 @@ function ReportJumpNav({
             x: { delay: i * 0.04, duration: 0.25 },
             scale: HOVER_SCALE_TRANSITION,
           }}
-          className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:border-teal-500/25 hover:bg-teal-500/5 hover:text-teal-100/90 sm:text-xs"
+          className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:border-indigo-500/25 hover:bg-indigo-500/5 hover:text-indigo-100/90 sm:text-xs"
         >
           {item.label}
         </motion.a>
@@ -412,8 +412,8 @@ function InsightCard({
       whileTap={CARD_HOVER.tap}
       className="relative cursor-default overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-5"
     >
-      <div className="border-l-2 border-teal-400/40 pl-3">
-        <span className="inline-block rounded-md bg-teal-500/10 px-2 py-0.5 text-[10px] font-medium text-teal-200/90">
+      <div className="border-l-2 border-indigo-400/40 pl-3">
+        <span className="inline-block rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200/90">
           {insight.category}
         </span>
         <h3 className="mb-1 mt-2 text-sm font-semibold text-slate-100">
@@ -422,8 +422,8 @@ function InsightCard({
         <p className="text-xs leading-relaxed text-slate-500">
           {insight.description}
         </p>
-        <div className="mt-3 rounded-lg border border-teal-500/15 bg-teal-500/[0.06] px-3 py-2.5">
-          <p className="text-xs leading-snug text-teal-100/90">
+        <div className="mt-3 rounded-lg border border-indigo-500/15 bg-indigo-500/[0.06] px-3 py-2.5">
+          <p className="text-xs leading-snug text-indigo-100/90">
             {insight.recommendation}
           </p>
         </div>
@@ -618,7 +618,7 @@ function ChatBubble({
           <motion.div
             whileHover={{ scale: 1.015 }}
             transition={{ scale: HOVER_SCALE_TRANSITION }}
-            className="rounded-2xl rounded-br-md bg-gradient-to-br from-teal-600 via-teal-700 to-slate-900 px-4 py-3 text-sm leading-relaxed text-white shadow-[0_12px_40px_-16px_rgba(13,148,136,0.45)]"
+            className="rounded-2xl rounded-br-md bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 px-4 py-3 text-sm leading-relaxed text-white shadow-[0_12px_40px_-16px_rgba(99,102,241,0.35)]"
           >
             {msg.content}
           </motion.div>
@@ -638,7 +638,7 @@ function ChatBubble({
       className="flex w-full justify-start"
     >
       <div className="flex w-full max-w-[min(96%,40rem)] gap-3 sm:gap-4">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-teal-500/25 bg-teal-950/40 text-[10px] font-semibold text-teal-200/90">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-950/40 text-[10px] font-semibold text-indigo-200/90">
           AI
         </div>
         <div className="min-w-0 flex-1">
@@ -689,8 +689,8 @@ function ReportTab({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-24 text-center"
       >
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-teal-500/15 bg-teal-950/20">
-          <Brain className="h-9 w-9 text-teal-500/50" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+          <Brain className="h-9 w-9 text-indigo-400/50" />
         </div>
         <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-100">
           No report yet
@@ -705,7 +705,7 @@ function ReportTab({
           transition={{ scale: HOVER_SCALE_TRANSITION }}
           disabled={generating || isMock || generateBlocked}
           onClick={onGenerate}
-          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-900/30 transition-colors hover:bg-teal-500 disabled:opacity-50"
+          className="mt-8 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/30 transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {generating ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -723,7 +723,7 @@ function ReportTab({
         {cooldownLabel && generateBlocked && !isMock ? (
           <p className="mt-3 text-center text-xs text-slate-500">
             One report per account every 24 hours. Next in{" "}
-            <span className="font-mono text-teal-400/90">{cooldownLabel}</span>.
+            <span className="font-mono text-indigo-400/90">{cooldownLabel}</span>.
           </p>
         ) : null}
       </motion.div>
@@ -985,8 +985,8 @@ function ReportTab({
                   transition={{ scale: HOVER_SCALE_TRANSITION }}
                   className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
                   style={{
-                    borderColor: isActive ? "rgba(45,212,191,0.35)" : "rgba(255,255,255,0.08)",
-                    background: isActive ? "rgba(45,212,191,0.08)" : "transparent",
+                    borderColor: isActive ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)",
+                    background: isActive ? "rgba(99,102,241,0.08)" : "transparent",
                   }}
                 >
                   <p className="text-xs font-medium text-slate-300">
@@ -1076,8 +1076,8 @@ function ChatTab({
         <div className="shrink-0 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-950/30">
-                <MessageSquare className="h-4 w-4 text-teal-300/90" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03]">
+                <MessageSquare className="h-4 w-4 text-indigo-300/80" />
               </div>
               <div>
                 <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
@@ -1090,7 +1090,7 @@ function ChatTab({
             </div>
             {reportRow ? (
               <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] text-slate-500">
-                <Brain className="h-3 w-3 text-teal-400/70" />
+                <Brain className="h-3 w-3 text-indigo-400/70" />
                 <span className="text-slate-400">
                   {format(parseISO(reportRow.created_at), "MMM d")} · {reportRow.trades_analyzed} trades
                 </span>
@@ -1105,12 +1105,12 @@ function ChatTab({
             ref={scrollAreaRef}
             className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-5"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_40%_at_50%_-8%,rgba(45,212,191,0.06),transparent_50%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_40%_at_50%_-8%,rgba(99,102,241,0.05),transparent_50%)]" />
             <div className="relative space-y-6 sm:space-y-7">
               {messages.length === 0 ? (
                 <div className="mx-auto flex max-w-lg flex-col items-center px-1 py-6 text-center sm:py-10">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-teal-500/20 bg-teal-500/5">
-                    <Sparkles className="h-6 w-6 text-teal-400/80" />
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+                    <Sparkles className="h-6 w-6 text-indigo-400/70" />
                   </div>
                   <p className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
                     Ask something
@@ -1132,7 +1132,7 @@ function ChatTab({
                         whileTap={CARD_HOVER.tap}
                         onClick={() => onSend(q)}
                         disabled={isMock}
-                        className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-teal-500/20 hover:bg-teal-500/[0.06] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-indigo-500/20 hover:bg-indigo-500/[0.05] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {q}
                       </motion.button>
@@ -1155,7 +1155,7 @@ function ChatTab({
                       className="flex justify-start pl-0 sm:pl-1"
                     >
                       <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500/25 bg-teal-950/40 text-[9px] font-semibold text-teal-200/90">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/25 bg-indigo-950/40 text-[9px] font-semibold text-indigo-200/90">
                           AI
                         </div>
                         <div className="flex gap-1.5">
@@ -1189,7 +1189,7 @@ function ChatTab({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 onClick={scrollThreadToBottom}
-                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-[#0c0f14]/95 text-slate-400 shadow-lg backdrop-blur-md transition-colors hover:border-teal-500/25 hover:text-teal-100"
+                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0f14]/95 text-slate-400 shadow-lg backdrop-blur-md transition-colors hover:border-indigo-500/25 hover:text-indigo-100"
               >
                 <ChevronDown className="h-4 w-4" />
               </motion.button>
@@ -1248,7 +1248,7 @@ function ChatTab({
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.94 }}
               transition={{ scale: HOVER_SCALE_TRANSITION }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-[0_8px_24px_-6px_rgba(13,148,136,0.4)] transition-opacity hover:bg-teal-500 disabled:opacity-35"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-[0_8px_24px_-6px_rgba(99,102,241,0.3)] transition-opacity hover:bg-indigo-500 disabled:opacity-35"
             >
               {loading ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1300,23 +1300,24 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
             className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/[0.08] bg-[#12171f]/98 px-8 py-10 shadow-2xl shadow-black/50"
           >
             <div
-              className="pointer-events-none absolute -left-20 top-0 h-52 w-52 rounded-full opacity-[0.2] blur-3xl"
-              style={{ background: "radial-gradient(circle, #2dd4bf, transparent)" }}
+              className="pointer-events-none absolute -left-20 top-0 h-52 w-52 rounded-full opacity-[0.15] blur-3xl"
+              style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
             />
             <div className="relative z-10 flex flex-col items-center text-center">
               <motion.div
-                className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-teal-500/25 bg-teal-950/40"
+                className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl border border-indigo-500/20 bg-indigo-950/30"
                 animate={{ y: [0, -7, 0] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Brain className="relative z-10 h-11 w-11 text-teal-200/95" />
+                <Brain className="relative z-10 h-11 w-11 text-indigo-200/90" />
                 <motion.span
-                  className="absolute inset-0 rounded-2xl border-2 border-teal-400/35"
+                  className="absolute inset-0 rounded-2xl border-2 border-indigo-400/30"
+                  style={{ borderColor: "rgba(99,102,241,0.3)" }}
                   animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0, 0.4] }}
                   transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
                 />
               </motion.div>
-              <p className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-400/80">
+              <p className="font-[family-name:var(--font-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-400/80">
                 AI Coach
               </p>
               <h2 className="mt-1 font-[family-name:var(--font-display)] text-xl font-bold text-white">
@@ -1339,7 +1340,7 @@ function CoachGeneratingOverlay({ active }: { active: boolean }) {
                   <span
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === tipIdx ? "w-5 bg-teal-400" : "w-1.5 bg-white/15"
+                      i === tipIdx ? "w-5 bg-indigo-400" : "w-1.5 bg-white/15"
                     }`}
                   />
                 ))}
@@ -1572,12 +1573,12 @@ export function AiCoachPageClient({
     <div className="relative space-y-6 sm:space-y-7">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
-          className="absolute -top-32 left-1/3 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full opacity-[0.07] blur-3xl"
-          style={{ background: "radial-gradient(circle, #0f766e, transparent 65%)" }}
+          className="absolute -top-32 left-1/3 h-[22rem] w-[22rem] -translate-x-1/2 rounded-full opacity-[0.06] blur-3xl"
+          style={{ background: "radial-gradient(circle, #4f46e5, transparent 65%)" }}
         />
         <div
-          className="absolute bottom-0 right-0 h-64 w-64 rounded-full opacity-[0.05] blur-3xl"
-          style={{ background: "radial-gradient(circle, #134e4a, transparent 70%)" }}
+          className="absolute bottom-0 right-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
+          style={{ background: "radial-gradient(circle, #312e81, transparent 70%)" }}
         />
       </div>
       {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -1677,7 +1678,7 @@ export function AiCoachPageClient({
                   ? `Next report in ${reportCooldownLabel}`
                   : undefined
             }
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-teal-900/25 transition-opacity hover:bg-teal-500 disabled:opacity-50 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-900/25 transition-opacity hover:bg-indigo-500 disabled:opacity-50 sm:w-auto"
             animate={generating ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
           >
             {generating ? (
@@ -1696,7 +1697,7 @@ export function AiCoachPageClient({
           {!isMock && generateBlocked && reportCooldownLabel ? (
             <p className="w-full text-center text-[11px] text-slate-500 sm:text-right">
               Report cooldown:{" "}
-              <span className="font-mono text-teal-400/90">{reportCooldownLabel}</span>{" "}
+              <span className="font-mono text-indigo-400/90">{reportCooldownLabel}</span>{" "}
               left (per account, 24h)
             </p>
           ) : null}
@@ -1720,7 +1721,7 @@ export function AiCoachPageClient({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex flex-col gap-2 rounded-xl border border-teal-500/20 bg-teal-950/25 px-4 py-3 text-sm text-teal-200/80 sm:flex-row sm:items-center sm:gap-3"
+          className="flex flex-col gap-2 rounded-xl border border-indigo-500/20 bg-indigo-950/20 px-4 py-3 text-sm text-indigo-200/80 sm:flex-row sm:items-center sm:gap-3"
         >
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
@@ -1766,7 +1767,7 @@ export function AiCoachPageClient({
                 <motion.span
                   layoutId="coach-tab-pill"
                   className="absolute inset-0 rounded-lg"
-                  style={{ background: "rgba(45,212,191,0.12)", boxShadow: "0 0 0 1px rgba(45,212,191,0.12)" }}
+                  style={{ background: "rgba(99,102,241,0.12)", boxShadow: "0 0 0 1px rgba(99,102,241,0.15)" }}
                   transition={{ type: "spring", damping: 28, stiffness: 380 }}
                 />
               )}
