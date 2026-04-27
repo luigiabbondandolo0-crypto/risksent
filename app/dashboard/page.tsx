@@ -1050,7 +1050,7 @@ export default function DashboardPage() {
                 <div key={d} className="text-[10px] font-mono text-slate-500 font-medium py-1">{d}</div>
               ))}
               {Array.from({ length: startWeekday }, (_, i) => (
-                <div key={`pad-s-${i}`} className="min-h-[64px]" />
+                <div key={`pad-s-${i}`} className="min-h-[48px] sm:min-h-[64px]" />
               ))}
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const day = i + 1;
@@ -1059,7 +1059,7 @@ export default function DashboardPage() {
                 const isFuture = new Date(year, month, day) > now;
                 const isProfit = dayData ? dayData.profit >= 0 : false;
                 const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
-                const cellClass = `min-h-[64px] rounded-xl border relative transition-all ${
+                const cellClass = `min-h-[48px] sm:min-h-[64px] overflow-hidden rounded-xl border relative transition-all ${
                   isFuture ? "border-slate-800/50 bg-slate-900/30" :
                   dayData ? (isProfit
                     ? `border-emerald-500/30 bg-emerald-500/10`
@@ -1067,20 +1067,20 @@ export default function DashboardPage() {
                   : "border-white/[0.04] bg-transparent"
                 }`;
                 const content = (
-                  <div className="relative w-full h-full min-h-[64px] flex flex-col items-center justify-center p-1">
+                  <div className="relative w-full h-full min-h-[48px] sm:min-h-[64px] flex flex-col items-center justify-center p-0.5 sm:p-1">
                     {/* Day number — top right */}
-                    <span className={`absolute top-1 right-1.5 text-[11px] font-mono leading-none font-medium ${dayData ? (isProfit ? "text-emerald-400" : "text-red-400") : "text-slate-600"}`}>
+                    <span className={`absolute top-0.5 right-1 sm:top-1 sm:right-1.5 text-[9px] sm:text-[11px] font-mono leading-none font-medium ${dayData ? (isProfit ? "text-emerald-400" : "text-red-400") : "text-slate-600"}`}>
                       {day}
                     </span>
                     {dayData ? (
                       <div className="flex flex-col items-center gap-0">
-                        <span className={`text-[15px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`text-[9px] sm:text-[12px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
                           {fmtDayPl(dayData.profit, currency)}
                         </span>
-                        <span className="mt-0.5 text-[13px] font-mono leading-tight text-slate-400">
+                        <span className="hidden sm:block mt-0.5 text-[10px] font-mono leading-tight text-slate-400">
                           {dayData.trades === 1 ? "1 trade" : `${dayData.trades} trades`}
                         </span>
-                        <span className="text-[11px] font-mono leading-tight text-slate-400">
+                        <span className="hidden sm:block text-[9px] font-mono leading-tight text-slate-400">
                           {winPct != null ? `WR${winPct.toFixed(0)}%` : "—"}
                         </span>
                       </div>
@@ -1101,7 +1101,7 @@ export default function DashboardPage() {
               })}
               {/* Trailing pads — always reach 42 cells (6 rows) for fixed height */}
               {Array.from({ length: Math.max(0, 42 - startWeekday - daysInMonth) }, (_, i) => (
-                <div key={`pad-e-${i}`} className="min-h-[64px]" />
+                <div key={`pad-e-${i}`} className="min-h-[48px] sm:min-h-[64px]" />
               ))}
             </div>
           </section>

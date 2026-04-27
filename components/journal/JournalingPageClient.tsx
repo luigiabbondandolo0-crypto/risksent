@@ -1222,7 +1222,7 @@ function CalendarTab({
               >
                 {/* Day number — top right */}
                 <span
-                  className="absolute top-1 right-1.5 text-[11px] font-mono leading-none"
+                  className="absolute top-0.5 right-1 sm:top-1 sm:right-1.5 text-[9px] sm:text-[11px] font-mono leading-none"
                   style={{
                     color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#4ADE80" : "#F87171") : "#475569",
                     fontWeight: today ? 700 : 500,
@@ -1234,15 +1234,15 @@ function CalendarTab({
                 {stats && (
                   <div className="flex flex-col items-center gap-0">
                     <span
-                      className="text-[15px] font-mono font-bold leading-tight"
+                      className="text-[9px] sm:text-[13px] font-mono font-bold leading-tight"
                       style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
                     >
                       {fmtDayPl(stats.pl, currency)}
                     </span>
-                    <span className="mt-0.5 text-[13px] font-mono leading-tight text-slate-400">
+                    <span className="hidden sm:block mt-0.5 text-[11px] font-mono leading-tight text-slate-400">
                       {stats.count === 1 ? "1 trade" : `${stats.count} trades`}
                     </span>
-                    <span className="text-[11px] font-mono leading-tight text-slate-400">
+                    <span className="hidden sm:block text-[9px] font-mono leading-tight text-slate-400">
                       {stats.count > 0 ? `WR${Math.round((stats.wins / stats.count) * 100)}%` : "—"}
                     </span>
                   </div>

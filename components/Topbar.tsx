@@ -59,11 +59,11 @@ export function Topbar() {
   return (
     <>
     <header
-      className="sticky top-0 z-50 h-14 border-b backdrop-blur-[20px]"
+      className="sticky top-0 z-50 border-b backdrop-blur-[20px]"
       style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.85)" }}
     >
 
-      <div className="flex h-full min-w-0 w-full max-w-[100vw] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:pl-8 md:pr-5 lg:pl-[58px] lg:pr-6">
+      <div className="flex h-14 min-w-0 w-full max-w-[100vw] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:pl-8 md:pr-5 lg:pl-[58px] lg:pr-6">
 
         {/* Brand wordmark — on lg, the "/" lands roughly under the sidebar logo */}
         <Link

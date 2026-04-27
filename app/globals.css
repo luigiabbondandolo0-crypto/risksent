@@ -719,3 +719,11 @@ aside.lg\:flex {
     background: rgba(8, 8, 9, 0.98) !important;
   }
 }
+/* ── iOS Safari & mobile: prevent viewport zoom on input focus (requires ≥16px) ── */
+@media screen and (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

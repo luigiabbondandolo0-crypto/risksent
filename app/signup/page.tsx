@@ -257,7 +257,7 @@ export default function SignupPage() {
       </div>
 
       {/* Visual RIGHT */}
-      <div className="relative flex flex-1 flex-col justify-center border-b border-white/[0.06] px-8 py-14 lg:basis-[55%] lg:border-b-0 lg:border-l lg:pl-14">
+      <div className="relative flex flex-1 flex-col justify-center border-b border-white/[0.06] px-6 py-8 sm:px-8 sm:py-12 lg:basis-[55%] lg:border-b-0 lg:border-l lg:pl-14 lg:py-14">
         <div
           className="pointer-events-none absolute inset-0 opacity-80"
           style={{
