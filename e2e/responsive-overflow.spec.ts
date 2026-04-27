@@ -10,8 +10,6 @@ const paths = [
   "/login",
   "/mission",
   "/info",
-  /** In-app chrome (demo) — sidebar + scroll region */
-  "/mock/dashboard"
 ];
 
 const viewports = [

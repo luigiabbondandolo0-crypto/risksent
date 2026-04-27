@@ -7,7 +7,7 @@ import type { Session } from "@/lib/backtesting/types";
 type Props = {
   session: Session;
   onDelete: (id: string) => void;
-  /** Base path for session routes, e.g. /app/backtesting or /mock/backtesting */
+  /** Base path for session routes, e.g. /app/backtesting */
   sessionPathPrefix?: string;
 };
 

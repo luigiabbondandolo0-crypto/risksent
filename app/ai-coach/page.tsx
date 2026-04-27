@@ -114,13 +114,6 @@ export default function AiCoachPage() {
                 >
                   Get started <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link
-                  href="/mock/dashboard"
-                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors hover:text-white"
-                  style={{ color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.07)" }}
-                >
-                  View demo
-                </Link>
               </motion.div>
             </div>
 
@@ -497,13 +490,6 @@ export default function AiCoachPage() {
                 style={{ background: ACCENT }}
               >
                 Start for free <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/mock/dashboard"
-                className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-medium transition-colors hover:text-white"
-                style={{ color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.07)" }}
-              >
-                View demo
               </Link>
             </div>
           </motion.div>

@@ -130,11 +130,6 @@ export default function JournalingPage() {
                 style={{ background: "linear-gradient(135deg, #00e676, #22d3ee)", boxShadow: "0 0 30px rgba(0,230,118,0.25)" }}>
                 Start journaling <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/mock/dashboard"
-                className="inline-flex items-center gap-2 rounded-2xl border px-6 py-3 text-sm font-medium text-slate-300 transition-all hover:text-white cursor-pointer"
-                style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)" }}>
-                Live demo
-              </Link>
             </div>
           </div>
         </div>
@@ -395,11 +390,6 @@ export default function JournalingPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-black transition-all hover:scale-[1.03] cursor-pointer"
                   style={{ background: "linear-gradient(135deg, #00e676, #22d3ee)", boxShadow: "0 0 40px rgba(0,230,118,0.3)" }}>
                   Start journaling free <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/mock/dashboard"
-                  className="inline-flex items-center justify-center rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all hover:text-white cursor-pointer"
-                  style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>
-                  View demo
                 </Link>
               </div>
             </div>

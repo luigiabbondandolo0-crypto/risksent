@@ -36,7 +36,7 @@ export default function CookiesPage() {
       <ul>
         <li>
           <strong>Authentication</strong> — session token for{" "}
-          <code>/app</code> and <code>/mock</code>.
+          <code>/app</code>.
         </li>
         <li>
           <strong>Security</strong> — CSRF protection, rate-limiting.

@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { Topbar } from "@/components/Topbar";
 import { AppShell } from "@/components/AppShell";
-import { MockSiteChrome } from "@/components/mock/MockSiteChrome";
 import { isAppShellPath } from "@/components/navConfig";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CommandPalette, useCommandPalette } from "@/components/ui/command-palette";
@@ -21,21 +20,8 @@ function ShellViewportLock({ children }: { children: React.ReactNode }) {
 
 export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMock = pathname?.startsWith("/mock") ?? false;
   const inAppShell = isAppShellPath(pathname);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
-
-  if (isMock) {
-    return (
-      <>
-        <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
-        <ShellViewportLock>
-          <MockSiteChrome>{children}</MockSiteChrome>
-        </ShellViewportLock>
-        <CookieConsentBanner />
-      </>
-    );
-  }
 
   if (inAppShell) {
     return (

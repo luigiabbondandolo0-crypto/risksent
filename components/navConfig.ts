@@ -77,12 +77,6 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
   if (href === "/app/journaling") {
     return pathname === "/app/journaling" || pathname.startsWith("/app/journaling/");
   }
-  if (href === "/mock/journaling") {
-    return (
-      pathname === "/mock/journaling" ||
-      pathname.startsWith("/mock/journaling/")
-    );
-  }
   if (href === "/app/ai-coach") {
     return pathname === "/app/ai-coach" || pathname.startsWith("/app/ai-coach/");
   }
@@ -95,7 +89,6 @@ export function isNavActive(pathname: string | null | undefined, href: string): 
 /** Canonical journal list path for matching sidebar child links. */
 export function journalListNormalizedPath(pathname: string | null): string | null {
   if (pathname === "/app/journaling") return "/app/journaling";
-  if (pathname === "/mock/journaling") return "/mock/journaling";
   return null;
 }
 
@@ -118,7 +111,7 @@ export function isJournalChildNavActive(
 ): boolean {
   const listNorm = journalListNormalizedPath(pathname);
   if (!listNorm) return false;
-  if (pathname !== "/app/journaling" && pathname !== "/mock/journaling") {
+  if (pathname !== "/app/journaling") {
     return false;
   }
   let childPath: string;

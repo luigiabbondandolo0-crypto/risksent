@@ -8,7 +8,6 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   return (
     <BacktestingReplayView
       sessionId={id}
-      mode="api"
       backHref="/app/backtesting"
       resultsHref={`/app/backtesting/session/${id}/results`}
     />

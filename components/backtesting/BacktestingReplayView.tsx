@@ -26,8 +26,6 @@ import { OpenPositions } from "@/components/backtesting/OpenPositions";
 import { fmtPrice, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
 import type { Session, Trade, Candle } from "@/lib/backtesting/types";
 import type { BtTimeframe } from "@/lib/backtesting/types";
-import { buildMockCandlesForSession, getMockSessionById } from "@/lib/demo/mockBacktestingData";
-
 type SessionResponse = { session: Session; trades: Trade[] };
 type OhlcvResponse = { candles: Candle[]; error?: string };
 
@@ -39,12 +37,12 @@ const SPEEDS: ReplaySpeed[] = [1, 2, 5, 10];
 
 const SETTINGS_KEY = "bt_chart_settings";
 
-function lsKey(sessionId: string, mock: boolean) {
-  return mock ? `mock_bt_replay_idx_${sessionId}` : `bt_replay_idx_${sessionId}`;
+function lsKey(sessionId: string) {
+  return `bt_replay_idx_${sessionId}`;
 }
 
-function drawingsKey(sessionId: string, mock: boolean) {
-  return mock ? `mock_bt_drawings_${sessionId}` : `bt_drawings_${sessionId}`;
+function drawingsKey(sessionId: string) {
+  return `bt_drawings_${sessionId}`;
 }
 
 function ChevLeft() {
@@ -55,21 +53,14 @@ function ChevLeft() {
   );
 }
 
-function mockClosePnl(t: Trade, exitPrice: number): number {
-  const sign = t.direction === "BUY" ? 1 : -1;
-  return sign * (exitPrice - t.entry_price) * 100_000 * t.lot_size;
-}
-
 export type BacktestingReplayViewProps = {
   sessionId: string;
-  mode: "api" | "mock";
   backHref: string;
   resultsHref: string;
 };
 
-export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }: BacktestingReplayViewProps) {
+export function BacktestingReplayView({ sessionId, backHref, resultsHref }: BacktestingReplayViewProps) {
   const id = sessionId;
-  const isMock = mode === "mock";
 
   const [session, setSession] = useState<Session | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -105,42 +96,6 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
 
   useEffect(() => { sessionRef.current = session; }, [session]);
 
-  const placeTradeOverride = useCallback(
-    async (body: {
-      session_id: string;
-      direction: "BUY" | "SELL";
-      entry_price: number;
-      stop_loss: number | null;
-      take_profit: number | null;
-      lot_size: number;
-      entry_time: string;
-    }) => {
-      if (!session) return;
-      const t: Trade = {
-        id: `mock-tr-${Date.now()}`,
-        session_id: body.session_id,
-        user_id: "mock",
-        symbol: session.symbol,
-        direction: body.direction,
-        entry_price: body.entry_price,
-        exit_price: null,
-        stop_loss: body.stop_loss,
-        take_profit: body.take_profit,
-        lot_size: body.lot_size,
-        pnl: null,
-        pips: null,
-        risk_reward: null,
-        entry_time: body.entry_time,
-        exit_time: null,
-        status: "open",
-        notes: null,
-        created_at: new Date().toISOString(),
-      };
-      setTrades((ts) => [...ts, t]);
-    },
-    [session]
-  );
-
   // ── Load settings from localStorage ─────────────────────────────────────
   useEffect(() => {
     try {
@@ -154,24 +109,13 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
 
   // ── Load session ─────────────────────────────────────────────────────────
   const loadSession = useCallback(async () => {
-    if (isMock) {
-      const s = getMockSessionById(id);
-      if (!s) {
-        setSession(null);
-        setTrades([]);
-        return null;
-      }
-      setSession(s);
-      setTrades([]);
-      return s;
-    }
     const res = await fetch(`/api/backtesting/sessions/${id}`);
     if (!res.ok) return null;
     const j = await res.json() as SessionResponse;
     setSession(j.session);
     setTrades(j.trades ?? []);
     return j.session;
-  }, [id, isMock]);
+  }, [id]);
 
   // ── Load OHLCV ───────────────────────────────────────────────────────────
   const loadOhlcv = useCallback(async (sess: Session, tf: BtTimeframe) => {
@@ -180,20 +124,6 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
     prevIndexRef.current = -1;
 
     try {
-      if (isMock) {
-        const { preload: pCandles, session: sCandles } = buildMockCandlesForSession(sess, tf);
-        setPreloadCandles(pCandles);
-        setSessionCandles(sCandles);
-        const saved = localStorage.getItem(lsKey(id, isMock));
-        const idx = saved && tf === sess.timeframe
-          ? Math.min(Number(saved), Math.max(0, sCandles.length - 1))
-          : 0;
-        setCurrentIndex(idx);
-        const allCandles = [...pCandles, ...sCandles];
-        chartRef.current?.setCandles(allCandles, pCandles.length + idx);
-        return;
-      }
-
       const preloadQ = new URLSearchParams({
         symbol: sess.symbol,
         timeframe: tf,
@@ -228,7 +158,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
       setPreloadCandles(pCandles);
       setSessionCandles(sCandles);
 
-      const saved = localStorage.getItem(lsKey(id, isMock));
+      const saved = localStorage.getItem(lsKey(id));
       const idx = saved && tf === sess.timeframe
         ? Math.min(Number(saved), Math.max(0, sCandles.length - 1))
         : 0;
@@ -241,7 +171,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
     } finally {
       setLoadingOhlcv(false);
     }
-  }, [id, isMock]);
+  }, [id]);
 
   useEffect(() => {
     loadSession().then((sess) => {
@@ -262,8 +192,8 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
       chartRef.current?.setCandles(all, preloadCandles.length + currentIndex);
     }
     prevIndexRef.current = currentIndex;
-    try { localStorage.setItem(lsKey(id, isMock), String(currentIndex)); } catch { /* */ }
-  }, [preloadCandles, sessionCandles, currentIndex, id, isMock]);
+    try { localStorage.setItem(lsKey(id), String(currentIndex)); } catch { /* */ }
+  }, [preloadCandles, sessionCandles, currentIndex, id]);
 
   // ── Trade price lines ───────────────────────────────────────────────────
   const openTrade = trades.find((t) => t.status === "open") ?? null;
@@ -296,19 +226,6 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
     }
     if (hit) {
       const exitTime = new Date(candle.time * 1000).toISOString();
-      if (isMock) {
-        setTrades((ts) => ts.map((x) => {
-          if (x.id !== ot.id) return x;
-          return {
-            ...x,
-            status: "closed" as const,
-            exit_price: exitPrice,
-            exit_time: exitTime,
-            pnl: mockClosePnl(ot, exitPrice),
-          };
-        }));
-        return;
-      }
       await fetch(`/api/backtesting/trades/${ot.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -316,7 +233,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
       });
       void loadSession();
     }
-  }, [trades, loadSession, isMock]);
+  }, [trades, loadSession]);
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const stepForward = useCallback(() => {
@@ -381,21 +298,6 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
 
   // ── Trade actions ─────────────────────────────────────────────────────────
   async function closeTrade(tradeId: string, exitPrice: number, exitTime: string) {
-    if (isMock) {
-      setClosingTradeId(tradeId);
-      setTrades((ts) => ts.map((t) => {
-        if (t.id !== tradeId) return t;
-        return {
-          ...t,
-          status: "closed" as const,
-          exit_price: exitPrice,
-          exit_time: exitTime,
-          pnl: mockClosePnl(t, exitPrice),
-        };
-      }));
-      setClosingTradeId(null);
-      return;
-    }
     setClosingTradeId(tradeId);
     await fetch(`/api/backtesting/trades/${tradeId}`, {
       method: "PATCH",
@@ -407,10 +309,6 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
   }
 
   async function updateTradeSLTP(tradeId: string, sl: number | null, tp: number | null) {
-    if (isMock) {
-      setTrades((ts) => ts.map((t) => (t.id === tradeId ? { ...t, stop_loss: sl, take_profit: tp } : t)));
-      return;
-    }
     const res = await fetch(`/api/backtesting/trades/${tradeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -441,12 +339,12 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
     if (!drawingsLoadedRef.current) return; // avoid clobbering before first load
     const st = chartRef.current?.getState();
     if (!st) return;
-    try { localStorage.setItem(drawingsKey(id, isMock), JSON.stringify(st)); } catch { /* */ }
-  }, [id, isMock]);
+    try { localStorage.setItem(drawingsKey(id), JSON.stringify(st)); } catch { /* */ }
+  }, [id]);
 
   useEffect(() => {
     drawingsLoadedRef.current = false;
-  }, [id, isMock]);
+  }, [id]);
 
   // Load drawings once after session candles are ready
   useEffect(() => {
@@ -454,7 +352,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
     if (!sessionCandles.length) return;
     if (!chartRef.current) return;
     try {
-      const raw = localStorage.getItem(drawingsKey(id, isMock));
+      const raw = localStorage.getItem(drawingsKey(id));
       if (raw) {
         const st = JSON.parse(raw) as PersistedState;
         chartRef.current.setState(st);
@@ -462,7 +360,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
       }
     } catch { /* */ }
     drawingsLoadedRef.current = true;
-  }, [sessionCandles, id, isMock, refreshObjects]);
+  }, [sessionCandles, id, refreshObjects]);
 
   const openTrades = trades.filter((t) => t.status === "open");
 
@@ -777,8 +675,7 @@ export function BacktestingReplayView({ sessionId, mode, backHref, resultsHref }
               presetTP={tradePanel.presetTP}
               presetLot={tradePanel.presetLot}
               onClose={() => setTradePanel((p) => ({ ...p, open: false }))}
-              onTradeOpened={() => { if (!isMock) void loadSession(); }}
-              placeTradeOverride={isMock ? placeTradeOverride : undefined}
+              onTradeOpened={() => { void loadSession(); }}
             />
           )}
         </div>

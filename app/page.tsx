@@ -402,14 +402,6 @@ export default function HomePage() {
                   Start for free
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link
-                  href="/mock/dashboard"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border px-8 py-4 text-sm font-medium text-slate-300 transition-all duration-200 hover:text-white hover:scale-[1.02] cursor-pointer"
-                  style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}
-                >
-                  Live demo
-                  <ChevronRight className="h-4 w-4 opacity-50" />
-                </Link>
               </div>
             </div>
 
@@ -1409,13 +1401,6 @@ export default function HomePage() {
               />
               Start for free
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              href="/mock/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border px-10 py-5 text-base font-medium text-slate-300 transition-all hover:text-white hover:scale-[1.02] cursor-pointer"
-              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)" }}
-            >
-              View live demo
             </Link>
           </div>
         </div>

@@ -967,7 +967,7 @@ function CalendarTab({
   }, [isMock, allTrades]);
 
   const blockRealLinks = isMock && !mockUseAppRoutes;
-  const tradeLinkBase = blockRealLinks ? "/mock/journaling/trade" : "/app/journaling/trade";
+  const tradeLinkBase = "/app/journaling/trade";
 
   const start = startOfMonth(month);
   const end = endOfMonth(month);
@@ -1442,8 +1442,7 @@ function TradesTab({
 
   const blockRealLinks = isMock && !mockUseAppRoutes;
 
-  // Derive AI coach route from basePath (e.g. `/app/journaling` → `/app/ai-coach`, `/mock/journaling` → `/mock/ai-coach`).
-  const aiCoachHref = `/${basePath.split("/").filter(Boolean)[0] ?? "app"}/ai-coach`;
+  const aiCoachHref = "/app/ai-coach";
 
   const openTrade = (id: string) => {
     if (blockRealLinks) return;
@@ -1933,7 +1932,7 @@ export function JournalingPageClient({
     }
   };
 
-  const journalTradeBase = blockRealLinks ? "/mock/journaling" : "/app/journaling";
+  const journalTradeBase = "/app/journaling";
 
   const load = useCallback(async () => {
     if (isMock) {
@@ -2204,7 +2203,7 @@ export function JournalingPageClient({
         {/* Right actions */}
         <div className="flex items-center gap-2">
           <Link
-            href={blockRealLinks ? "/mock/journaling/settings" : "/app/journaling/settings"}
+            href="/app/journaling/settings"
             className={jn.btnGhost}
             style={{ padding: "6px 10px" }}
           >
@@ -2225,17 +2224,6 @@ export function JournalingPageClient({
         </div>
       </motion.div>
 
-      {/* Mock banner (only on /mock preview — app subscription demo uses global DemoBanner) */}
-      {isMock && !mockUseAppRoutes && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2 rounded-xl border border-[#ff8c00]/30 bg-[#ff8c00]/10 px-4 py-2.5 text-sm text-[#ff8c00] font-mono"
-        >
-          <TrendingDown className="h-4 w-4 flex-shrink-0" />
-          Demo mode — showing sample data. Sign up to connect your real account.
-        </motion.div>
-      )}
 
       {/* Tab switcher */}
       {!loading && (
@@ -2283,7 +2271,7 @@ export function JournalingPageClient({
               rules={rules}
               updateSession={updateSession}
               onFlushSessionSave={flushSessionSave}
-              settingsHref={blockRealLinks ? "/mock/journaling/settings" : "/app/journaling/settings"}
+              settingsHref="/app/journaling/settings"
               onBiasChange={(b) => updateSession({ bias: b })}
               onKeyLevelsChange={(v) => updateSession({ key_levels: v })}
               onWatchlistChange={(tags) => updateSession({ watchlist: tags })}

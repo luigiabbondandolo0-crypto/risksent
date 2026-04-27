@@ -390,12 +390,6 @@ export default function MissionPage() {
               Start your free trial
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/mock/dashboard"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-3 text-[14px] font-medium text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
-            >
-              See it live
-            </Link>
           </div>
         </div>
 
@@ -765,13 +759,6 @@ export default function MissionPage() {
                 >
                   Start your 7-day trial
                   <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/mock/dashboard"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-4 text-[15px] font-medium text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
-                >
-                  <LineChart className="h-4 w-4" />
-                  Explore the demo
                 </Link>
               </div>
 

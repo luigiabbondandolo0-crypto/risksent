@@ -475,11 +475,6 @@ export default function PricingPage() {
                 {subscription !== null && loadingPlan !== "experienced" && <ArrowRight className="h-5 w-5" />}
               </button>
             )}
-            <Link href="/mock/dashboard"
-              className="inline-flex items-center justify-center rounded-2xl border px-10 py-4 text-base font-medium text-slate-300 transition-all hover:text-white cursor-pointer"
-              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>
-              View demo first
-            </Link>
           </div>
         </motion.div>
       </section>
