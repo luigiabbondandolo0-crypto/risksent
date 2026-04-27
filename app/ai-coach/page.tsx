@@ -59,15 +59,24 @@ export default function AiCoachPage() {
 
             {/* Left — headline */}
             <div className="max-w-xl">
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="text-[11px] font-mono uppercase tracking-[0.25em] mb-6"
-                style={{ color: ACCENT }}
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="mb-6"
               >
-                AI Coach
-              </motion.p>
+                <span
+                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-mono font-bold uppercase tracking-[0.2em]"
+                  style={{
+                    color: ACCENT,
+                    borderColor: "rgba(99,102,241,0.35)",
+                    background: "rgba(99,102,241,0.08)",
+                  }}
+                >
+                  <Brain className="h-3 w-3" />
+                  AI Coach
+                </span>
+              </motion.div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 14 }}

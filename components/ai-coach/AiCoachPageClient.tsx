@@ -1589,7 +1589,17 @@ export function AiCoachPageClient({
         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="min-w-0">
-          <h1 className="rs-page-title">AI Coach</h1>
+          <h1
+            className="rs-page-title font-[family-name:var(--font-display)]"
+            style={{
+              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            AI Coach
+          </h1>
           <p className="rs-page-sub">
             Clear feedback from your journal — scores first, detail when you scroll.
           </p>
