@@ -16,6 +16,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.0",
+    date: "April 28, 2026",
+    items: [
+      { type: "feature",     text: "Sentry error tracking — client, server, and edge runtime errors captured with source maps for readable production stack traces" },
+      { type: "feature",     text: "Plausible Analytics — cookieless, GDPR-friendly visit tracking" },
+      { type: "improvement", text: "Server-side subscription gating on AI Coach and Risk Manager API routes — plan enforcement no longer bypassable via direct API calls" },
+      { type: "improvement", text: "Content Security Policy header — restricts script, style, connect, and frame sources across all pages" },
+      { type: "improvement", text: "AI Coach prompt caching — system prompt cached on Anthropic API, significantly reduces cost per report and chat message" },
+      { type: "improvement", text: "Custom 500 error pages (error.tsx and global-error.tsx) — replaces Next.js default error UI" },
+      { type: "improvement", text: "robots.txt and sitemap.xml — dynamic Next.js routes, blocks /app /api /admin from indexing" },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "April 16, 2026",
     items: [
