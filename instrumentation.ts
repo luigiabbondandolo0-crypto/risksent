@@ -1,5 +1,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./sentry.server.config");
+
     const { assertServerSecretsNotLeakedToPublicEnv } = await import("@/lib/security/deployEnv");
     assertServerSecretsNotLeakedToPublicEnv();
 
@@ -14,5 +16,9 @@ export async function register() {
         })
       );
     });
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    await import("./sentry.edge.config");
   }
 }

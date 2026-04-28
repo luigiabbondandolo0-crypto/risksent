@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono, Syne } from "next/font/google";
 import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 import { Toaster } from "@/components/ui/toaster";
+import { AnalyticsScripts } from "@/components/AnalyticsScripts";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: ["400", "500", "600", "700", "800", "900"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["300", "400", "500"] });
@@ -91,6 +92,7 @@ export default function RootLayout({
           <RootLayoutChrome>{children}</RootLayoutChrome>
         </div>
         <Toaster />
+        <AnalyticsScripts />
         {/* JSON-LD structured data */}
         <script
           type="application/ld+json"
