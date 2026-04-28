@@ -52,7 +52,7 @@ export function NoAccountState({ title, description, ctaLabel, onCta, icon: Icon
             transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
           />
           <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[#6366f1]/20 bg-gradient-to-br from-[#6366f1]/15 to-[#4f46e5]/5">
-            <Icon className="h-7 w-7 text-[#818cf8]" strokeWidth={1.5} />
+            <Icon className="h-7 w-7 text-[#818cf8]" />
           </div>
         </div>
 
