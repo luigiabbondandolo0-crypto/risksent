@@ -186,18 +186,21 @@ export default function RiskManagerPage() {
   }, [sub?.isDemoMode, accountReloadToken]);
 
   if (sub?.isDemoMode) {
+    const hasUsedTrial = sub.trialUsed;
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-6 text-center">
         <p className="text-4xl">🛡️</p>
         <h2 className="text-xl font-bold text-white">Risk Manager is not included in your plan</h2>
         <p className="max-w-sm text-sm text-slate-400">
-          Upgrade to the Experienced plan to set risk rules, get live alerts, and protect your account automatically.
+          {hasUsedTrial
+            ? "Upgrade to the Experienced plan to set risk rules, get live alerts, and protect your account automatically."
+            : "Start your free trial to set risk rules, get live alerts, and protect your account automatically. No credit card required."}
         </p>
         <Link
           href="/app/billing"
           className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
         >
-          Upgrade plan
+          {hasUsedTrial ? "Upgrade plan" : "Start free trial"}
         </Link>
       </div>
     );
