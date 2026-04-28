@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
+import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
 
 export async function GET(req: NextRequest) {
   const auth = await requireRouteUser(req);
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode || !caps.canAccessRiskManager) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use Risk Manager." },
+      { status: 403 }
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 20));

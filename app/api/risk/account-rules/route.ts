@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
+import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
 
 function parseBody(body: Record<string, unknown>) {
   const daily_loss_pct = body.daily_loss_pct != null ? Number(body.daily_loss_pct) : undefined;
@@ -16,6 +17,24 @@ export async function GET(request: NextRequest) {
   const auth = await requireRouteUser(request);
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode || !caps.canAccessRiskManager) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use Risk Manager." },
+      { status: 403 }
+    );
+  }
 
   const accountId = request.nextUrl.searchParams.get("account_id")?.trim();
   if (!accountId) {
@@ -59,6 +78,24 @@ async function upsertAccountRules(req: NextRequest) {
   const auth = await requireRouteUser(req);
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode || !caps.canAccessRiskManager) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use Risk Manager." },
+      { status: 403 }
+    );
+  }
 
   let body: Record<string, unknown>;
   try {

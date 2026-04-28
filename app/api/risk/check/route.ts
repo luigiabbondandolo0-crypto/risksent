@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeIanaTimeZone } from "@/lib/journal/calendarBounds";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
+import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
 import {
   fetchRiskLiveSnapshot,
   resolveTradingAccountForUser,
@@ -23,6 +24,24 @@ export async function POST(request: Request) {
   const auth = await requireRouteUser(request);
   if (auth instanceof NextResponse) return auth;
   const { supabase, user } = auth;
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode || !caps.canAccessRiskManager) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use Risk Manager." },
+      { status: 403 }
+    );
+  }
 
   const { data: auTz } = await supabase
     .from("app_user")

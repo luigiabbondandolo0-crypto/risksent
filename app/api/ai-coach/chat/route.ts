@@ -3,6 +3,7 @@ import { checkAiChatRateLimit, rateLimitJsonResponse } from "@/lib/security/apiA
 import { sanitizeText } from "@/lib/security/validation";
 import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { CHAT_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
+import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
 
 const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
 
@@ -19,6 +20,26 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+
+  if (caps.isDemoMode || !caps.canAccessAICoach) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use AI Coach." },
+      { status: 403 }
+    );
   }
 
   const chatLimit = checkAiChatRateLimit(user.id);
@@ -104,11 +125,12 @@ export async function POST(req: NextRequest) {
       "Content-Type": "application/json",
       "x-api-key": anthropicKey,
       "anthropic-version": "2023-06-01",
+      "anthropic-beta": "prompt-caching-2024-07-31",
     },
     body: JSON.stringify({
       model: CLAUDE_COACH_MODEL,
       max_tokens: 800,
-      system: systemWithContext,
+      system: [{ type: "text", text: systemWithContext, cache_control: { type: "ephemeral" } }],
       messages,
     }),
   });

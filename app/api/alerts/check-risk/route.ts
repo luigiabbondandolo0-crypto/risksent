@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { runRiskCheckForAccount } from "@/lib/riskCheckRun";
 import { accountSelectColumns } from "@/lib/tradingApi";
+import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
 
 /**
  * POST /api/alerts/check-risk
@@ -18,6 +19,24 @@ export async function POST(req: NextRequest) {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: subRow } = await supabase
+    .from("subscriptions")
+    .select("plan, status, current_period_end, trial_started_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const caps = capsForPlan(
+    ((subRow?.plan as Plan | "free") ?? "user") as Plan | "free",
+    (subRow?.status as SubStatus) ?? "active",
+    subRow?.current_period_end ?? null,
+    Boolean((subRow as { trial_started_at?: string | null } | null)?.trial_started_at)
+  );
+  if (caps.isDemoMode || !caps.canAccessRiskManager) {
+    return NextResponse.json(
+      { error: "plan_required", message: "Upgrade your plan to use Risk Manager." },
+      { status: 403 }
+    );
   }
 
   let uuid: string | null = null;
