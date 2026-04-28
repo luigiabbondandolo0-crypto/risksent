@@ -8,7 +8,7 @@ type EmailType =
   | "onboarding-mastermail"
   | "marketing-drip-1"
   | "marketing-drip-6"
-  | "marketing-drip-12"
+  | "marketing-drip-10"
   | "weekly-insight-1"
   | "weekly-insight-2"
   | "weekly-insight-3"
@@ -20,7 +20,7 @@ const EMAIL_TYPES: Array<{ id: EmailType; label: string; badge: string; color: s
   { id: "onboarding-mastermail", label: "Onboarding mastermail", badge: "Once", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25", group: "Onboarding" },
   { id: "marketing-drip-1", label: "Drip — Day 1 (Dashboard)", badge: "D+1", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
   { id: "marketing-drip-6", label: "Drip — Day 6 (AI Coach)", badge: "D+6", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
-  { id: "marketing-drip-12", label: "Drip — Day 12 (Affiliate)", badge: "D+12", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
+  { id: "marketing-drip-10", label: "Drip — Day 10 (Affiliate)", badge: "D+10", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
   { id: "weekly-insight-1", label: "Weekly #1 — Daily loss", badge: "W1", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
   { id: "weekly-insight-2", label: "Weekly #2 — FTMO", badge: "W2", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
   { id: "weekly-insight-3", label: "Weekly #3 — Hidden pattern", badge: "W3", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },

@@ -11,7 +11,7 @@ import {
   emailSiteBase,
 } from "./emailBrandHtml";
 
-export const MARKETING_DRIP_TOTAL_STEPS = 12;
+export const MARKETING_DRIP_TOTAL_STEPS = 10;
 
 interface DripStep {
   subject: string;
@@ -165,24 +165,7 @@ const STEPS: DripStep[] = [
     ctaLabel: "Review a trade",
     ctaPath: "/app/journaling",
   },
-  // ── Step 9: FTMO / Challenge Simulator ────────────────────────────────────
-  {
-    subject: "Pass the prop firm challenge — virtually first",
-    preheader: "Simulate FTMO and other challenge rules before you risk the fee.",
-    badge: "Feature spotlight",
-    badgeColor: "#fbbf24",
-    headline: "Don't pay for a failed challenge you could have simulated",
-    subheadline: "Simulator: practice prop firm rules risk-free",
-    body: "Prop firm challenges fail not because of strategy — they fail because of risk management. Traders blow the daily loss limit on day three, or hit the max drawdown with one bad session.\n\nRiskSent's simulator lets you run your strategy against FTMO-style rules on historical data. See exactly where you would have blown the challenge — before you pay the fee.",
-    bullets: [
-      "FTMO-compatible rules: daily loss, max drawdown, profit target",
-      "Simulates evaluation and funded account phases",
-      "What-if sliders: adjust rules and see how results change",
-    ],
-    ctaLabel: "Open simulator",
-    ctaPath: "/simulator",
-  },
-  // ── Step 10: Live Alerts Feed ──────────────────────────────────────────────
+  // ── Step 9: Live Alerts Feed ──────────────────────────────────────────────
   {
     subject: "Your real-time risk radar",
     preheader: "Every rule breach, every account — one live feed.",
@@ -199,24 +182,7 @@ const STEPS: DripStep[] = [
     ctaLabel: "See live alerts",
     ctaPath: "/live-alerts",
   },
-  // ── Step 11: Accounts Manager ─────────────────────────────────────────────
-  {
-    subject: "All your brokers. One place.",
-    preheader: "Connect multiple accounts and manage them without switching platforms.",
-    badge: "Feature spotlight",
-    badgeColor: "#a5b4fc",
-    headline: "Stop switching between platforms to check your positions",
-    subheadline: "Accounts Manager: centralize all your broker connections",
-    body: "Running two MT4 accounts, a funded account, and a personal account across different brokers is a recipe for missed risk. Something always slips through.\n\nRiskSent connects all your accounts in one place. Risk rules, alerts, journal entries, and performance data unified across every account you trade — regardless of broker.",
-    bullets: [
-      "Connect multiple MT4/MT5 accounts from any broker",
-      "Separate risk rules per account or apply global limits",
-      "Unified performance metrics across all connected accounts",
-    ],
-    ctaLabel: "Manage accounts",
-    ctaPath: "/accounts",
-  },
-  // ── Step 12: Affiliate Program ────────────────────────────────────────────
+  // ── Step 10: Affiliate Program ────────────────────────────────────────────
   {
     subject: "Earn while you trade",
     preheader: "Refer other traders. Earn recurring commission. Simple.",
@@ -309,7 +275,7 @@ export function getMarketingDripHtml(step: number, displayName: string): string 
     emailDocumentOpen({
       documentTitle: s.subject,
       preheader: s.preheader,
-      subhead: `Day ${step} — Getting started`,
+      subhead: `Feature ${step} of ${MARKETING_DRIP_TOTAL_STEPS}`,
     }) +
     main +
     emailDocumentFooter(

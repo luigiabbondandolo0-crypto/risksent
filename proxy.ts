@@ -16,9 +16,9 @@ const PROTECTED_PATHS = [
   "/rules",
   "/trades",
   "/backtesting",
-  "/simulator",
+  
   "/add-account",
-  "/accounts",
+  
   "/live-monitoring",
   "/admin",
   "/change-password",

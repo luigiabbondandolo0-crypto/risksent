@@ -984,9 +984,9 @@ function getOnboardingMastermailTemplate(displayName: string): string {
       icon: "1",
       color: "#a5b4fc",
       title: "Connect your broker account",
-      body: "Go to Accounts and link your MT4 or MT5 account. RiskSent pulls live data from your broker to monitor risk in real time.",
+      body: "Go to the Journal, open Accounts, and link your MT4 or MT5 account. RiskSent pulls live data from your broker to monitor risk in real time.",
       linkLabel: "Add account →",
-      linkPath: "/accounts",
+      linkPath: "/app/journaling/accounts",
     },
     {
       icon: "2",
@@ -1031,10 +1031,10 @@ function getOnboardingMastermailTemplate(displayName: string): string {
     {
       icon: "7",
       color: "#22d3ee",
-      title: "Try the prop firm simulator",
-      body: "If you're preparing for an FTMO or similar challenge, the simulator lets you test your strategy against those exact rules on historical data. Find where you'd fail — before you pay the fee.",
-      linkLabel: "Open simulator →",
-      linkPath: "/simulator",
+      title: "Need help? We reply fast.",
+      body: "Reply to this email or write to support@risksent.com. We help you get set up, troubleshoot connections, and answer any questions about risk rules or strategy.",
+      linkLabel: "Contact support →",
+      linkPath: "/support",
     },
   ];
 
@@ -1094,7 +1094,7 @@ export type PreviewEmailType =
   | "onboarding-mastermail"
   | "marketing-drip-1"
   | "marketing-drip-6"
-  | "marketing-drip-12"
+  | "marketing-drip-10"
   | "weekly-insight-1"
   | "weekly-insight-2"
   | "weekly-insight-3"
@@ -1115,8 +1115,8 @@ export function getEmailPreviewHtml(type: PreviewEmailType): string {
       return getMarketingDripHtml(1, "Marco");
     case "marketing-drip-6":
       return getMarketingDripHtml(6, "Marco");
-    case "marketing-drip-12":
-      return getMarketingDripHtml(12, "Marco");
+    case "marketing-drip-10":
+      return getMarketingDripHtml(10, "Marco");
     case "weekly-insight-1":
       return getWeeklyInsightHtml("Marco", 1, WEEKLY_INSIGHT_STORIES[0]!);
     case "weekly-insight-2":

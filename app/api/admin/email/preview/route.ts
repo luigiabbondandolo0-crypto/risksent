@@ -6,7 +6,7 @@ const VALID_TYPES: PreviewEmailType[] = [
   "onboarding-mastermail",
   "marketing-drip-1",
   "marketing-drip-6",
-  "marketing-drip-12",
+  "marketing-drip-10",
   "weekly-insight-1",
   "weekly-insight-2",
   "weekly-insight-3",

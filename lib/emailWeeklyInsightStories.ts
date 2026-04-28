@@ -60,8 +60,8 @@ export const WEEKLY_INSIGHT_STORIES: Story[] = [
       "Passed the evaluation in 19 days. Now trading a €200,000 funded account. He still runs his personal account in parallel with the same risk rules — the discipline carried over.",
     metric: "Evaluation attempts before passing: 3 → 1 (with simulator pre-check)",
     tip: "Before paying for any prop firm challenge, run your last 3 months of trades through the simulator with that firm's exact rules. You'll find where your strategy breaks the rules — usually on specific days or sessions — before it costs you a fee.",
-    tipCtaLabel: "Try the simulator",
-    tipCtaPath: "/simulator",
+    tipCtaLabel: "Run a backtest",
+    tipCtaPath: "/app/backtesting",
   },
   // ── Story 3: The Hidden Pattern ────────────────────────────────────────────
   {
