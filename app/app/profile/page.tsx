@@ -100,6 +100,7 @@ export default function ProfilePage() {
   const [deletePhrase, setDeletePhrase] = useState("");
   const [accountDeleteBusy, setAccountDeleteBusy] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const loadJournal = useCallback(async () => {
     try {
@@ -698,6 +699,54 @@ export default function ProfilePage() {
 
       <motion.section
         custom={4}
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className={glassCard}
+        style={{
+          background: "rgba(99,102,241,0.03)",
+          borderColor: "rgba(99,102,241,0.15)",
+          boxShadow: "0 0 20px rgba(99,102,241,0.06)",
+        }}
+      >
+        <div className="relative z-10">
+        <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Privacy &amp; Data</p>
+        <h2 className="mb-2 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-200">
+          Download your data
+        </h2>
+        <p className="mb-4 text-xs font-mono text-slate-500">
+          Export all your data (profile, journal, alerts, subscription) as a JSON file. Your right under GDPR Article 20.
+        </p>
+        <button
+          type="button"
+          disabled={exportLoading}
+          onClick={async () => {
+            setExportLoading(true);
+            try {
+              const res = await fetch("/api/account/export");
+              if (!res.ok) { alert("Export failed. Try again."); return; }
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `risksent-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch {
+              alert("Export failed. Check your connection and try again.");
+            } finally {
+              setExportLoading(false);
+            }
+          }}
+          className="rounded-xl border border-[#6366f1]/30 px-4 py-2 text-sm font-medium text-indigo-300 hover:bg-[#6366f1]/10 disabled:opacity-50 transition-colors"
+        >
+          {exportLoading ? "Preparing…" : "Download my data"}
+        </button>
+        </div>
+      </motion.section>
+
+      <motion.section
+        custom={5}
         variants={cardVariants}
         initial="hidden"
         animate="show"
