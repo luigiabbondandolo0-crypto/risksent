@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 const TELEGRAM_API = "https://api.telegram.org";
+const LOG_PREFIX = "[Telegram webhook]";
+const DEBUG = process.env.DEBUG === "1";
 
 type TelegramUpdate = {
   message?: {
@@ -14,17 +16,28 @@ type TelegramUpdate = {
  * POST /api/telegram-webhook
  * Webhook ricevuto da Telegram. Su /start [TOKEN] associa chat_id all'utente e risponde.
  * Impostare su BotFather: setwebhook → https://risksent.com/api/telegram-webhook
+ * con secret_token=TELEGRAM_WEBHOOK_SECRET (validato via X-Telegram-Bot-Api-Secret-Token header).
  */
-const LOG_PREFIX = "[Telegram webhook]";
 
 export async function POST(req: NextRequest) {
-  console.log(LOG_PREFIX, "[verbose] webhook POST received", { url: req.url });
+  if (DEBUG) console.log(LOG_PREFIX, "webhook POST received", { url: req.url });
+
+  // Validate Telegram webhook secret token if configured
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
+    if (incomingSecret !== webhookSecret) {
+      if (DEBUG) console.warn(LOG_PREFIX, "rejected: invalid webhook secret token");
+      // Return 200 to avoid leaking that auth failed (Telegram retries on non-200)
+      return NextResponse.json({ ok: true });
+    }
+  }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const channelId = process.env.TELEGRAM_ALERT_CHANNEL_ID?.trim();
   const username = process.env.TELEGRAM_BOT_USERNAME?.trim();
 
-  console.log(LOG_PREFIX, "config check", {
+  if (DEBUG) console.log(LOG_PREFIX, "config check", {
     token: token ? "set" : "missing",
     channelId: channelId ? "set" : "missing",
     botUsername: username || "default"
@@ -39,14 +52,14 @@ export async function POST(req: NextRequest) {
   try {
     update = await req.json();
   } catch (e) {
-    console.warn(LOG_PREFIX, "[verbose] parse body failed", e);
+    if (DEBUG) console.warn(LOG_PREFIX, "parse body failed", e);
     return NextResponse.json({ ok: true });
   }
 
   const chatId = update.message?.chat?.id;
   const rawText = (update.message?.text ?? "").trim();
   const text = rawText.toLowerCase();
-  console.log(LOG_PREFIX, "[verbose] update", { chatId, rawText: rawText.slice(0, 80), hasMessage: !!update.message });
+  if (DEBUG) console.log(LOG_PREFIX, "update", { chatId, rawText: rawText.slice(0, 80), hasMessage: !!update.message });
 
   if (chatId == null) {
     return NextResponse.json({ ok: true });
@@ -71,7 +84,7 @@ export async function POST(req: NextRequest) {
   const parts = rawText.split(/\s+/);
   const startParam = parts[1]; // /start TOKEN
   if (!startParam) {
-    console.log(LOG_PREFIX, "[verbose] /start without token", { chatId });
+    if (DEBUG) console.log(LOG_PREFIX, "/start without token", { chatId });
     await sendTelegramMessage(
       token,
       chatId,
@@ -85,7 +98,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  console.log(LOG_PREFIX, "[verbose] /start with token", { chatId, tokenPrefix: startParam.slice(0, 6) + "..." });
+  if (DEBUG) console.log(LOG_PREFIX, "/start with token", { chatId, tokenPrefix: startParam.slice(0, 6) + "..." });
 
   const supabase = createSupabaseAdmin();
   const { data: linkRow, error: fetchErr } = await supabase
@@ -95,7 +108,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (fetchErr || !linkRow?.user_id) {
-    console.log(LOG_PREFIX, "[verbose] link token not found or expired", {
+    if (DEBUG) console.log(LOG_PREFIX, "link token not found or expired", {
       error: fetchErr?.message,
       code: (fetchErr as { code?: string })?.code,
       chatId,
@@ -116,10 +129,9 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
-  console.log(LOG_PREFIX, "[verbose] app_user update result", {
+  if (DEBUG) console.log(LOG_PREFIX, "app_user update result", {
     updatedRow: !!updatedRow,
     updateError: updateErr?.message,
-    updateCode: (updateErr as { code?: string })?.code,
     userId: linkRow.user_id.slice(0, 8) + "...",
     chatId
   });
@@ -131,7 +143,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!updatedRow) {
-    console.log(LOG_PREFIX, "[verbose] no app_user row, inserting", { userId: linkRow.user_id.slice(0, 8) + "..." });
+    if (DEBUG) console.log(LOG_PREFIX, "no app_user row, inserting", { userId: linkRow.user_id.slice(0, 8) + "..." });
     const { error: insertErr } = await supabase.from("app_user").insert({
       id: linkRow.user_id,
       role: "customer",
@@ -143,15 +155,15 @@ export async function POST(req: NextRequest) {
       updated_at: updatedAt
     });
     if (insertErr) {
-      console.warn(LOG_PREFIX, "[verbose] app_user insert failed", { error: insertErr.message, code: (insertErr as { code?: string })?.code });
+      if (DEBUG) console.warn(LOG_PREFIX, "app_user insert failed", { error: insertErr.message, code: (insertErr as { code?: string })?.code });
       await sendTelegramMessage(token, chatId, "Link failed. Try again from RiskSent.");
       return NextResponse.json({ ok: true });
     }
-    console.log(LOG_PREFIX, "[verbose] app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
+    if (DEBUG) console.log(LOG_PREFIX, "app_user created and chat linked", { userId: linkRow.user_id.slice(0, 8) + "...", chatId });
   }
 
   const { error: delErr } = await supabase.from("telegram_link_token").delete().eq("token", startParam);
-  console.log(LOG_PREFIX, "[verbose] token consumed, chat linked", {
+  if (DEBUG) console.log(LOG_PREFIX, "token consumed, chat linked", {
     userId: linkRow.user_id.slice(0, 8) + "...",
     chatId,
     deleteError: delErr?.message ?? "none"

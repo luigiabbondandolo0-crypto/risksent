@@ -6,6 +6,7 @@ import type { Plan, SubStatus } from "@/lib/subscription/caps";
 import { capsForPlan } from "@/lib/subscription/caps";
 
 const LOG_PREFIX = "[Telegram link]";
+const DEBUG = process.env.DEBUG === "1";
 
 /**
  * POST /api/bot/link-telegram
@@ -46,7 +47,7 @@ export async function POST() {
 
   const botUsername = getTelegramBotLinkUsername();
   const tokenSet = !!process.env.TELEGRAM_BOT_TOKEN;
-  console.log(LOG_PREFIX, "[verbose] config", {
+  if (DEBUG) console.log(LOG_PREFIX, "config", {
     token: tokenSet ? "set" : "missing",
     botUsername,
     userId: user.id.slice(0, 8) + "...",
@@ -61,7 +62,7 @@ export async function POST() {
     .single();
 
   if (error || !row?.token) {
-    console.warn(LOG_PREFIX, "[verbose] create token failed", {
+    if (DEBUG) console.warn(LOG_PREFIX, "create token failed", {
       error: error?.message,
       code: (error as { code?: string })?.code,
       userId: user.id.slice(0, 8) + "..."
@@ -73,7 +74,7 @@ export async function POST() {
   }
 
   const link = `https://t.me/${botUsername.replace(/^@/, "")}?start=${row.token}`;
-  console.log(LOG_PREFIX, "[verbose] link generated", {
+  if (DEBUG) console.log(LOG_PREFIX, "link generated", {
     userId: user.id.slice(0, 8) + "...",
     tokenPrefix: row.token.slice(0, 6) + "...",
     link: link.slice(0, 50) + "..."

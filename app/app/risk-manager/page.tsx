@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
@@ -186,8 +187,18 @@ export default function RiskManagerPage() {
 
   if (sub?.isDemoMode) {
     return (
-      <div className="pointer-events-none select-none opacity-50 blur-[1.5px]">
-        <RiskManagerPageClient subscriptionDemo />
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-6 text-center">
+        <p className="text-4xl">🛡️</p>
+        <h2 className="text-xl font-bold text-white">Risk Manager is not included in your plan</h2>
+        <p className="max-w-sm text-sm text-slate-400">
+          Upgrade to the Experienced plan to set risk rules, get live alerts, and protect your account automatically.
+        </p>
+        <Link
+          href="/app/billing"
+          className="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+        >
+          Upgrade plan
+        </Link>
       </div>
     );
   }

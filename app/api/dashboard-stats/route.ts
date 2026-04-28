@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+const DEBUG = process.env.DEBUG === "1";
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeIanaTimeZone } from "@/lib/journal/calendarBounds";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
@@ -178,7 +179,7 @@ export async function GET(req: NextRequest) {
   const account = accountRow as TradingAccountRow;
 
   try {
-    console.log("[api/dashboard-stats] fetch");
+    if (DEBUG) console.log("[api/dashboard-stats] fetch");
     const [summaryResult, closedResult, openResult] = await Promise.all([
       getAccountSummary(account),
       getClosedOrders(account),

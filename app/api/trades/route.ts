@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+const DEBUG = process.env.DEBUG === "1";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import {
   getAccountSummary,
@@ -169,7 +170,7 @@ export async function GET(req: NextRequest) {
   const account = accountRow as TradingAccountRow;
 
   try {
-    console.log("[api/trades] fetch", { accountIdLen: account.metaapi_account_id?.length });
+    if (DEBUG) console.log("[api/trades] fetch", { accountIdLen: account.metaapi_account_id?.length });
     const [closedResult, summaryResult] = await Promise.all([
       getClosedOrders(account),
       getAccountSummary(account)
@@ -182,7 +183,7 @@ export async function GET(req: NextRequest) {
       );
     }
     const rawArray = closedResult.orders;
-    console.log("[api/trades] ClosedOrders raw count", rawArray.length, "sample:", JSON.stringify(rawArray.slice(0, 2)));
+    if (DEBUG) console.log("[api/trades] ClosedOrders raw count", rawArray.length);
     const trades = parseOrders(rawArray);
     trades.sort(
       (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()

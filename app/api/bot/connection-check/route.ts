@@ -3,6 +3,7 @@ import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 const TELEGRAM_API = "https://api.telegram.org";
 const LOG_PREFIX = "[Telegram connection-check]";
+const DEBUG = process.env.DEBUG === "1";
 
 type CheckStatus = "ok" | "fail" | "warn";
 
@@ -28,12 +29,12 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    console.log(LOG_PREFIX, "[verbose] unauthorized", { error: authError?.message });
+    if (DEBUG) console.log(LOG_PREFIX, "unauthorized", { error: authError?.message });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userId = user.id;
-  console.log(LOG_PREFIX, "[verbose] running checks for", { userId: userId.slice(0, 8) + "..." });
+  if (DEBUG) console.log(LOG_PREFIX, "running checks for", { userId: userId.slice(0, 8) + "..." });
 
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const username = process.env.TELEGRAM_BOT_USERNAME?.trim();
@@ -64,7 +65,7 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
 
-  console.log(LOG_PREFIX, "[verbose] app_user lookup", {
+  if (DEBUG) console.log(LOG_PREFIX, "app_user lookup", {
     userId: userId.slice(0, 8) + "...",
     hasRow: !!appUser,
     error: userError?.message,
@@ -149,7 +150,7 @@ export async function GET() {
   const warnCount = checks.filter((c) => c.status === "warn").length;
   const summary = failCount > 0 ? "fail" : warnCount > 0 ? "partial" : "ok";
 
-  console.log(LOG_PREFIX, "[verbose] result", { summary, failCount, warnCount, checks: checks.map((c) => `${c.id}:${c.status}`) });
+  if (DEBUG) console.log(LOG_PREFIX, "result", { summary, failCount, warnCount, checks: checks.map((c) => `${c.id}:${c.status}`) });
 
   const baseUrl =
     process.env.TELEGRAM_WEBHOOK_BASE_URL ||

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+const DEBUG = process.env.DEBUG === "1";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { sendAlertToTelegram } from "@/lib/telegramAlert";
 import type { PostgrestError } from "@supabase/supabase-js";
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  console.log("[Alerts POST] [verbose] sending to Telegram", {
+  if (DEBUG) console.log("[Alerts POST] sending to Telegram", {
     userId: user.id.slice(0, 8) + "...",
     alertId: alert?.id,
     messageLen: message.length
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
     severity,
     solution
   });
-  console.log("[Alerts POST] [verbose] sendAlertToTelegram done");
+  if (DEBUG) console.log("[Alerts POST] sendAlertToTelegram done");
 
   return NextResponse.json({ alert });
 }

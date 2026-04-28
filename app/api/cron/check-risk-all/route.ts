@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { runRiskCheckForAccount } from "@/lib/riskCheckRun";
+const DEBUG = process.env.DEBUG === "1";
 
 /**
  * GET/POST /api/cron/check-risk-all
@@ -30,7 +31,7 @@ async function runCron(req: NextRequest) {
     }
   }
 
-  console.log("[cron/check-risk-all] starting");
+  if (DEBUG) console.log("[cron/check-risk-all] starting");
 
   const admin = createSupabaseAdmin();
   const { data: accounts, error: accountsError } = await admin
