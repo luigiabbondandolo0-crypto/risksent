@@ -13,6 +13,8 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
+  BarChart2,
+  Bug,
 } from "lucide-react";
 
 type HealthResult = {
@@ -51,6 +53,8 @@ const SERVICES = [
   { name: "Stripe", key: "stripe", endpoint: "/api/health/stripe", icon: CreditCard },
   { name: "Twelve Data", key: "twelvedata", endpoint: "/api/health/twelvedata", icon: TrendingUp },
   { name: "Telegram", key: "telegram", endpoint: "/api/health/telegram", icon: MessageCircle },
+  { name: "Sentry", key: "sentry", endpoint: "/api/health/sentry", icon: Bug },
+  { name: "Plausible", key: "plausible", endpoint: "/api/health/plausible", icon: BarChart2 },
 ] as const;
 
 export default function SystemPage() {
@@ -141,7 +145,7 @@ export default function SystemPage() {
         </button>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {services.map((svc, i) => {
           const Icon = svc.icon;
           const dotClass = statusColor(svc.result, svc.loading);

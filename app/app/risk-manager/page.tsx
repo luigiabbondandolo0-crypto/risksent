@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
 import { useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { RiskManagerPageClient } from "@/components/risk-manager/RiskManagerPageClient";
 import { NoAccountState } from "@/components/shared/NoAccountState";
+import { PlanGateWall } from "@/components/shared/PlanGateWall";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
 import type { JournalAccountPublic } from "@/lib/journal/journalTypes";
 
@@ -165,7 +166,7 @@ export default function RiskManagerPage() {
   const [accountReloadToken, setAccountReloadToken] = useState(0);
 
   useEffect(() => {
-    if (sub?.isDemoMode) return;
+    if (!sub || sub.isDemoMode || !sub.canAccessRiskManager) return;
 
     let cancelled = false;
     (async () => {
@@ -182,13 +183,22 @@ export default function RiskManagerPage() {
     return () => {
       cancelled = true;
     };
-  }, [sub?.isDemoMode, accountReloadToken]);
+  }, [sub?.isDemoMode, sub?.canAccessRiskManager, accountReloadToken]);
 
   if (sub?.isDemoMode) {
     return (
       <div className="pointer-events-none select-none opacity-50 blur-[1.5px]">
         <RiskManagerPageClient subscriptionDemo />
       </div>
+    );
+  }
+
+  if (sub && !sub.canAccessRiskManager) {
+    return (
+      <PlanGateWall
+        feature="Risk Manager"
+        description="Upgrade to the Experienced plan to set risk rules, get live alerts, and protect your account automatically."
+      />
     );
   }
 
