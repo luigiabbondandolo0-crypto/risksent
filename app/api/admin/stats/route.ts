@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -22,6 +23,7 @@ export async function GET() {
       trades: tradesRes.count ?? 0
     });
   } catch (e) {
+    Sentry.captureException(e);
     const msg = e instanceof Error ? e.message : "Failed to load stats";
     return NextResponse.json(
       { error: msg.includes("Missing") ? msg : `Stats: ${msg}. Set SUPABASE_SERVICE_ROLE_KEY and ensure app_user/trading_account/trade tables exist.` },

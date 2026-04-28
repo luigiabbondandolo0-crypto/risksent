@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/encrypt";
 import {
@@ -156,6 +157,7 @@ export async function POST(req: NextRequest) {
       message: "Account linked. Your live balance and stats should appear on the dashboard."
     });
   } catch (e) {
+    Sentry.captureException(e);
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Failed to add account" },
       { status: 500 }

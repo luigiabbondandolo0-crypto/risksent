@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { Resend } from "resend";
 import { getTrialExpiredEmailTemplate } from "@/lib/email";
 
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    Sentry.captureException(err);
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { emailFingerprint, logAuthAttempt } from "@/lib/security/authAudit";
 import { validatePasswordPolicy } from "@/lib/security/passwordPolicy";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
       { headers: res.headers }
     );
   } catch (e) {
+    Sentry.captureException(e);
     securityLog("error", "api.auth.signup.exception", {
       ip,
       message: e instanceof Error ? e.message : "unknown"

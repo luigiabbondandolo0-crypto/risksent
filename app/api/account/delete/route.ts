@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { ACCOUNT_DELETE_CONFIRM_PHRASE } from "@/lib/accountDeleteConstants";
 import { sendAccountDeletedEmail } from "@/lib/email";
 import { purgeUserBillableResources } from "@/lib/purgeUserBillableResources";
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: delErr.message }, { status: 500 });
     }
   } catch (e) {
+    Sentry.captureException(e);
     console.error("[account/delete] admin client:", e);
     return NextResponse.json({ error: "Account deletion is not available." }, { status: 503 });
   }

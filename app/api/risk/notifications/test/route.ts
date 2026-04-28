@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
 import { sendSmartTelegramAlert } from "@/lib/telegram/sendSmartTelegramAlert";
 import { effectiveNotifySettings, notifyFlagForRule, type NotifySettingsLike } from "@/lib/risk/violationEngine";
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
     if (message === "The operation was aborted." || message.includes("abort")) {
       return NextResponse.json({ error: "Telegram request timed out — try again." }, { status: 504 });
     }
+    Sentry.captureException(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

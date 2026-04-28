@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { sendPasswordChangedEmail } from "@/lib/email";
 import { logAuthAttempt } from "@/lib/security/authAudit";
 import { validatePasswordPolicy } from "@/lib/security/passwordPolicy";
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
     logAuthAttempt(req, "auth.change_password", "success", { user_id: user.id });
     return res;
   } catch (e) {
+    Sentry.captureException(e);
     securityLog("error", "api.auth.change_password.exception", {
       ip,
       message: e instanceof Error ? e.message : "unknown"

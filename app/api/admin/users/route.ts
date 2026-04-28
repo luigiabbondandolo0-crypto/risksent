@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -48,6 +49,7 @@ export async function GET() {
 
     return NextResponse.json({ users });
   } catch (e) {
+    Sentry.captureException(e);
     const msg = e instanceof Error ? e.message : "Failed to load users";
     return NextResponse.json(
       { error: msg.includes("Missing") ? msg : `Users: ${msg}. Set SUPABASE_SERVICE_ROLE_KEY and ensure app_user exists.` },
