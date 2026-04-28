@@ -37,8 +37,6 @@ const SUBJECTS: Record<PreviewEmailType, string> = {
   "weekly-insight-2": "[TEST] Weekly Insight #2 — FTMO challenge",
   "weekly-insight-3": "[TEST] Weekly Insight #3 — Hidden pattern",
   "weekly-insight-4": "[TEST] Weekly Insight #4 — Journal habit",
-  "marketing": "[TEST] Marketing broadcast",
-  "promo": "[TEST] Promotional offer",
   "onboarding-1": "[TEST] Onboarding tip D+1",
   "onboarding-2": "[TEST] Onboarding tip D+3",
   "onboarding-3": "[TEST] Onboarding tip D+7",
