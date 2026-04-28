@@ -4,7 +4,7 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
 
-  // Capture 10% of transactions in prod; 100% locally for debugging.
+  // Capture 10% of transactions in prod; 100% locally.
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // Replay 1% of sessions, 100% of sessions with errors.
@@ -13,8 +13,13 @@ Sentry.init({
 
   integrations: [
     Sentry.replayIntegration({
+      // Mask all text and block media for privacy (trading app).
       maskAllText: true,
       blockAllMedia: true,
+    }),
+    Sentry.feedbackIntegration({
+      colorScheme: "dark",
+      autoInject: false,
     }),
   ],
 });

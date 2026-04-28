@@ -22,7 +22,7 @@ const nextConfig = {
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
       "font-src 'self' fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      `connect-src 'self' ${supabaseUrl} https://${supabaseHost} wss://${supabaseHost} https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.agiliumtrade.ai wss://*.agiliumtrade.ai https://*.sentry.io https://plausible.io`,
+      `connect-src 'self' ${supabaseUrl} https://${supabaseHost} wss://${supabaseHost} https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.agiliumtrade.ai wss://*.agiliumtrade.ai https://plausible.io`,
       "frame-src 'self' js.stripe.com hooks.stripe.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -78,19 +78,18 @@ const nextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  // Sentry org/project slugs — set SENTRY_ORG + SENTRY_PROJECT env vars, or hardcode here.
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  // Auth token for source map upload (SENTRY_AUTH_TOKEN env var).
+  org: "risk-sent",
+  project: "javascript-nextjs",
+  // Auth token for source map upload during `next build` (set SENTRY_AUTH_TOKEN in Vercel env).
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  // Upload source maps to Sentry for readable stack traces in prod.
+  // Upload source maps to Sentry for readable prod stack traces.
   widenClientFileUpload: true,
-  // Suppress noisy build output.
-  silent: true,
-  // Disable automatic instrumentation of API routes — we call Sentry.captureException manually.
-  autoInstrumentServerFunctions: false,
-  // Disable the Sentry tunnel (not needed for basic setup).
-  tunnelRoute: undefined,
-  // Don't hide the source maps from the bundle.
+  // Route Sentry traffic through /monitoring to bypass ad-blockers.
+  tunnelRoute: "/monitoring",
+  // Hide source maps from browser devtools (they still upload to Sentry).
   hideSourceMaps: true,
+  // Suppress build output noise.
+  silent: !process.env.CI,
+  // Disable telemetry to Sentry about this setup.
+  telemetry: false,
 });
