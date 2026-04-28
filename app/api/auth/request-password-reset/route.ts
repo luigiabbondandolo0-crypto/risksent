@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const fp = emailFingerprint(email);
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const limiter = checkRateLimit(`auth:reset-request:${ip}:${email}`, RESET_LIMIT, RESET_WINDOW_MS);
+  const limiter = await checkRateLimit(`auth:reset-request:${ip}:${email}`, RESET_LIMIT, RESET_WINDOW_MS);
   if (!limiter.allowed) {
     logAuthAttempt(req, "auth.password_reset_request", "rate_limited", { email_fp: fp });
     const blocked = NextResponse.json(

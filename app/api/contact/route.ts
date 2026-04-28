@@ -19,7 +19,7 @@ const CONTACT_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const limiter = checkRateLimit(`contact:form:${ip}`, CONTACT_LIMIT, CONTACT_WINDOW_MS);
+  const limiter = await checkRateLimit(`contact:form:${ip}`, CONTACT_LIMIT, CONTACT_WINDOW_MS);
   if (!limiter.allowed) {
     const res = NextResponse.json({ error: "Too many submissions. Try again later." }, { status: 429 });
     res.headers.set("Retry-After", String(limiter.retryAfterSeconds));

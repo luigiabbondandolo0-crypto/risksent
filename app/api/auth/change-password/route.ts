@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const limiter = checkRateLimit(`auth:change-password:${ip}`, CHANGE_PASSWORD_LIMIT, CHANGE_PASSWORD_WINDOW_MS);
+  const limiter = await checkRateLimit(`auth:change-password:${ip}`, CHANGE_PASSWORD_LIMIT, CHANGE_PASSWORD_WINDOW_MS);
   if (!limiter.allowed) {
     logAuthAttempt(req, "auth.change_password", "rate_limited", {});
     const blocked = NextResponse.json(

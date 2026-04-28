@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const listLim = checkListApiRateLimit(req, user.id);
+    const listLim = await checkListApiRateLimit(req, user.id);
     if (!listLim.allowed) {
       return rateLimitJsonResponse(listLim);
     }

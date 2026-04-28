@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const fp = emailFingerprint(email);
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const limiter = checkRateLimit(`auth:login:${ip}:${email}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
+  const limiter = await checkRateLimit(`auth:login:${ip}:${email}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
   if (!limiter.allowed) {
     logAuthAttempt(req, "auth.login", "rate_limited", { email_fp: fp });
     const blocked = NextResponse.json(

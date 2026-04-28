@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const chatLimit = checkAiChatRateLimit(user.id);
+  const chatLimit = await checkAiChatRateLimit(user.id);
   if (!chatLimit.allowed) {
     return rateLimitJsonResponse(chatLimit, "Too many AI chat requests. Try again later.");
   }

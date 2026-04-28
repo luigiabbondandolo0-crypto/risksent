@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const limiter = checkRateLimit(`account:delete:${user.id}:${ip}`, 5, 24 * 60 * 60 * 1000);
+  const limiter = await checkRateLimit(`account:delete:${user.id}:${ip}`, 5, 24 * 60 * 60 * 1000);
   if (!limiter.allowed) {
     return NextResponse.json({ error: "Too many attempts." }, { status: 429 });
   }

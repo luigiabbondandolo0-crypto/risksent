@@ -61,7 +61,7 @@ export function applySecurityHeaders(_req: NextRequest, res: NextResponse): Next
  * Per-IP burst limit on /api (scraping / scripted abuse). Webhooks and health excluded.
  * Returns 429 when over limit; logs throttled security events.
  */
-export function enforceGlobalApiRateLimit(req: NextRequest): NextResponse | null {
+export async function enforceGlobalApiRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const path = req.nextUrl.pathname;
   if (!path.startsWith("/api/") || isGlobalApiRateLimitExcluded(path)) {
     return null;
@@ -69,10 +69,10 @@ export function enforceGlobalApiRateLimit(req: NextRequest): NextResponse | null
 
   const limit = globalApiLimitPerMinute();
   const ip = getClientIpFromRequestHeaders(req.headers);
-  const burst = checkRateLimit(`traffic:api-burst:${ip}`, limit, 60_000);
+  const burst = await checkRateLimit(`traffic:api-burst:${ip}`, limit, 60_000);
   if (burst.allowed) return null;
 
-  const logGate = checkRateLimit(`traffic:api-burst:log:${ip}`, 1, SUSPICIOUS_LOG_COOLDOWN_MS);
+  const logGate = await checkRateLimit(`traffic:api-burst:log:${ip}`, 1, SUSPICIOUS_LOG_COOLDOWN_MS);
   if (logGate.allowed) {
     securityLog("warn", "security.suspicious.api_traffic", {
       ip,

@@ -48,7 +48,7 @@ export async function proxy(req: NextRequest) {
     return secure(req, httpsRedirect);
   }
 
-  const apiBlocked = enforceGlobalApiRateLimit(req);
+  const apiBlocked = await enforceGlobalApiRateLimit(req);
   if (apiBlocked) {
     return secure(req, apiBlocked);
   }

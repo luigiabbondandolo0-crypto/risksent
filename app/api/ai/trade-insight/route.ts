@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const lim = checkAiInsightRateLimit(user.id, "trades");
+  const lim = await checkAiInsightRateLimit(user.id, "trades");
   if (!lim.allowed) {
     return rateLimitJsonResponse(lim);
   }

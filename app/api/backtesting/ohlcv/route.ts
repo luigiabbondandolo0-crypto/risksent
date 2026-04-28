@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const burst = checkOhlcvRateLimit(user.id);
+  const burst = await checkOhlcvRateLimit(user.id);
   if (!burst.allowed) {
     return rateLimitJsonResponse(burst, "Too many market data requests. Try again shortly.");
   }

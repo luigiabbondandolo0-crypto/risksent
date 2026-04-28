@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const upLim = checkJournalUploadRateLimit(req, user.id);
+  const upLim = await checkJournalUploadRateLimit(req, user.id);
   if (!upLim.allowed) {
     return rateLimitJsonResponse(upLim, "Too many upload attempts. Try again later.");
   }
