@@ -11,7 +11,7 @@ const syne = Syne({ subsets: ["latin"], variable: "--font-brand", weight: ["500"
 
 const SITE_URL = "https://risksent.com";
 const SITE_NAME = "RiskSent";
-const TITLE = "RiskSent – Backtesting, Journaling & Risk Management for Traders";
+const TITLE = "RiskSent – Risk Management for Traders";
 const DESCRIPTION =
   "All-in-one trading platform: backtest strategies, journal every trade, enforce risk rules with live Telegram alerts. One subscription for disciplined traders.";
 
