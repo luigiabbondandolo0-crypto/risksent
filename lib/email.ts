@@ -19,7 +19,7 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <noreply@risksent.
  * letting user replies land in the support inbox.
  * Override via `RESEND_REPLY_TO`.
  */
-const REPLY_TO = process.env.RESEND_REPLY_TO || "support@risksent.com";
+const REPLY_TO = process.env.RESEND_REPLY_TO || "noreply@risksent.com";
 
 /** Inbox where contact-form inquiries are delivered (Resend → your support queue). */
 const SUPPORT_INBOX = process.env.SUPPORT_INBOX_EMAIL || "support@risksent.com";
@@ -213,6 +213,7 @@ export async function sendSupportContactConfirmationEmail({
     to,
     subject: "We received your message — RiskSent support",
     html: getSupportUserConfirmationTemplate(displayName, topicLabel),
+    replyTo: SUPPORT_INBOX,
     logLabel: "support-user-confirmation",
   });
 }
