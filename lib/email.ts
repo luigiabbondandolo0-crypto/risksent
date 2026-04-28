@@ -590,6 +590,378 @@ export function getTrialExpiredEmailTemplate(userName: string): string {
   );
 }
 
+// ─── Marketing broadcast ────────────────────────────────────────────────────
+
+export interface MarketingEmailParams {
+  to: string;
+  userName?: string;
+  subject: string;
+  headline: string;
+  body: string; // plain text / simple HTML fragment
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+export async function sendMarketingEmail(
+  params: MarketingEmailParams
+): Promise<{ success: boolean; error?: string }> {
+  const displayName = params.userName || params.to.split("@")[0];
+  return deliverEmail({
+    to: params.to,
+    subject: params.subject,
+    html: getMarketingEmailTemplate({ ...params, displayName }),
+    logLabel: "marketing-broadcast",
+  });
+}
+
+// ─── Promotional ─────────────────────────────────────────────────────────────
+
+export interface PromoEmailParams {
+  to: string;
+  userName?: string;
+  headline: string;
+  description: string;
+  promoCode?: string;
+  discountLabel: string; // e.g. "30% off"
+  expiryLabel?: string; // e.g. "Expires May 5"
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+export async function sendPromotionalEmail(
+  params: PromoEmailParams
+): Promise<{ success: boolean; error?: string }> {
+  const displayName = params.userName || params.to.split("@")[0];
+  return deliverEmail({
+    to: params.to,
+    subject: `${params.discountLabel} — ${params.headline}`,
+    html: getPromoEmailTemplate({ ...params, displayName }),
+    logLabel: "promotional",
+  });
+}
+
+// ─── Onboarding tips drip ────────────────────────────────────────────────────
+
+export type OnboardingStep = 1 | 2 | 3;
+
+export interface OnboardingTipEmailParams {
+  to: string;
+  userName?: string;
+  step: OnboardingStep;
+}
+
+export async function sendOnboardingTipEmail(
+  params: OnboardingTipEmailParams
+): Promise<{ success: boolean; error?: string }> {
+  const displayName = params.userName || params.to.split("@")[0];
+  const subjects: Record<OnboardingStep, string> = {
+    1: "Set your first risk rule — RiskSent tip",
+    2: "Try backtesting your strategy — RiskSent tip",
+    3: "Get instant alerts on Telegram — RiskSent tip",
+  };
+  return deliverEmail({
+    to: params.to,
+    subject: subjects[params.step],
+    html: getOnboardingTipTemplate(displayName, params.step),
+    logLabel: `onboarding-tip-${params.step}`,
+  });
+}
+
+// ─── Weekly insight ───────────────────────────────────────────────────────────
+
+export interface WeeklyInsightEmailParams {
+  to: string;
+  userName?: string;
+  issueNumber: number;
+  traderName: string; // anonymised, e.g. "Marco T."
+  story: string; // 2-3 sentence narrative
+  metric: string; // e.g. "–18% max drawdown reduced to –4%"
+  tip: string; // one actionable tip
+  tipCtaLabel?: string;
+  tipCtaUrl?: string;
+}
+
+export async function sendWeeklyInsightEmail(
+  params: WeeklyInsightEmailParams
+): Promise<{ success: boolean; error?: string }> {
+  const displayName = params.userName || params.to.split("@")[0];
+  return deliverEmail({
+    to: params.to,
+    subject: `Weekly Insight #${params.issueNumber} — How a trader used RiskSent`,
+    html: getWeeklyInsightTemplate({ ...params, displayName }),
+    logLabel: `weekly-insight-${params.issueNumber}`,
+  });
+}
+
+// ─── Template builders ────────────────────────────────────────────────────────
+
+function getMarketingEmailTemplate(
+  p: MarketingEmailParams & { displayName: string }
+): string {
+  const base = siteUrl();
+  const ctaBlock =
+    p.ctaLabel && p.ctaUrl
+      ? `<div style="text-align:center; margin:24px 0 8px;">${emailCtaButton(p.ctaUrl, p.ctaLabel)}</div>`
+      : "";
+  const safeBody = p.body
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const main = `
+      <div class="body-pad">
+        <h1 class="h1">${escapeAttrText(p.headline)}</h1>
+        <p style="margin:0 0 20px; font-size:15px; color:#94a3b8;">Hi ${escapeAttrText(p.displayName)},</p>
+        <div style="font-size:15px; color:#cbd5e1; line-height:1.7; white-space:pre-line;">${safeBody}</div>
+        ${ctaBlock}
+        <p style="font-size:12px; color:#64748b; text-align:center; margin:20px 0 0;">
+          Questions? <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>
+        </p>
+      </div>`;
+  return (
+    emailDocumentOpen({
+      documentTitle: p.subject,
+      preheader: p.headline,
+      subhead: "From RiskSent",
+    }) +
+    main +
+    emailDocumentFooter(`You received this as a RiskSent member. <a href="${base}/app/profile" style="color:#818cf8;text-decoration:none;">Manage preferences</a>`)
+  );
+}
+
+function getPromoEmailTemplate(
+  p: PromoEmailParams & { displayName: string }
+): string {
+  const base = siteUrl();
+  const ctaUrl = p.ctaUrl ?? `${base}/pricing`;
+  const ctaLabel = p.ctaLabel ?? "Claim offer";
+  const codeBlock = p.promoCode
+    ? `<div style="margin:20px 0; padding:18px; border-radius:10px; background:#0a0a12; border:1px dashed rgba(99,102,241,0.4); text-align:center;">
+        <p style="margin:0 0 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Promo code</p>
+        <p style="margin:0; font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:800; color:#a5b4fc; letter-spacing:0.08em;">${escapeAttrText(p.promoCode)}</p>
+        ${p.expiryLabel ? `<p style="margin:8px 0 0; font-size:12px; color:#64748b;">${escapeAttrText(p.expiryLabel)}</p>` : ""}
+      </div>`
+    : "";
+  const main = `
+      <div class="body-pad">
+        <div class="hero-section">
+          <span class="badge" style="background:rgba(34,211,238,0.1); border-color:rgba(34,211,238,0.3); color:#22d3ee;">${escapeAttrText(p.discountLabel)}</span>
+          <h1 class="h1" style="margin-top:16px;">${escapeAttrText(p.headline)}</h1>
+          <p style="margin:0; font-size:14px; color:#94a3b8;">Hi ${escapeAttrText(p.displayName)},</p>
+        </div>
+        <p style="font-size:15px; color:#cbd5e1;">${escapeAttrText(p.description)}</p>
+        ${codeBlock}
+        <div style="text-align:center; margin:8px 0;">${emailCtaButton(ctaUrl, ctaLabel)}</div>
+        <p style="font-size:12px; color:#64748b; text-align:center; margin:16px 0 0;">
+          Questions? <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>
+        </p>
+      </div>`;
+  return (
+    emailDocumentOpen({
+      documentTitle: `${p.discountLabel} — ${p.headline}`,
+      preheader: `${p.discountLabel}: ${p.description}`,
+      subhead: "Special offer",
+    }) +
+    main +
+    emailDocumentFooter(`You received this as a RiskSent member. <a href="${base}/app/profile" style="color:#818cf8;text-decoration:none;">Manage preferences</a>`)
+  );
+}
+
+const ONBOARDING_TIPS: Record<
+  OnboardingStep,
+  {
+    badge: string;
+    headline: string;
+    body: string;
+    ctaLabel: string;
+    ctaPath: string;
+    color: string;
+    subTips: string[];
+  }
+> = {
+  1: {
+    badge: "Day 1 tip",
+    headline: "Set your first risk rule",
+    body: "Risk rules are the core of RiskSent. Define a daily loss limit, max drawdown, or exposure cap — the platform will alert you (and optionally block trading) the moment a threshold is breached.",
+    ctaLabel: "Set a risk rule",
+    ctaPath: "/app/risk-manager",
+    color: "#a5b4fc",
+    subTips: [
+      "Start with a daily loss limit equal to 2–3% of your account",
+      "Add an overall drawdown cap to protect against streak losses",
+      "Enable Telegram alerts so you hear about breaches instantly",
+    ],
+  },
+  2: {
+    badge: "Day 3 tip",
+    headline: "Backtest your strategy before you risk real money",
+    body: "RiskSent's backtesting engine lets you replay historical bars and measure your edge with no capital at risk. Run a session, check your win rate, and see if your rules hold up under real market conditions.",
+    ctaLabel: "Open backtesting",
+    ctaPath: "/app/backtesting",
+    color: "#22d3ee",
+    subTips: [
+      "Pick a date range covering at least one volatile period",
+      "Compare results across multiple instruments to spot your edge",
+      "Export the summary and attach it to your trading journal",
+    ],
+  },
+  3: {
+    badge: "Day 7 tip",
+    headline: "Get real-time alerts on Telegram",
+    body: "Connect your Telegram account so RiskSent can notify you the instant a risk rule fires — whether you're at your desk or away from screens. Setup takes under a minute.",
+    ctaLabel: "Connect Telegram",
+    ctaPath: "/app/risk-manager",
+    color: "#4ade80",
+    subTips: [
+      "Search for @RiskSentBot in Telegram and start a chat",
+      "Paste the link code shown in the Risk Manager page",
+      "Test it by triggering a rule manually from the dashboard",
+    ],
+  },
+};
+
+function getOnboardingTipTemplate(displayName: string, step: OnboardingStep): string {
+  const base = siteUrl();
+  const tip = ONBOARDING_TIPS[step];
+  const subTipItems = tip.subTips
+    .map(
+      (t) =>
+        `<li style="color:#cbd5e1; padding:6px 0 6px 22px; position:relative; font-size:14px;">
+          <span style="position:absolute; left:0; color:${tip.color}; font-weight:bold;">→</span>
+          ${escapeAttrText(t)}
+        </li>`
+    )
+    .join("");
+
+  const main = `
+      <div class="body-pad">
+        <div class="hero-section">
+          <span class="badge" style="background:rgba(99,102,241,0.1); border-color:rgba(99,102,241,0.25); color:${tip.color};">${escapeAttrText(tip.badge)}</span>
+          <h1 class="h1" style="margin-top:16px;">${escapeAttrText(tip.headline)}</h1>
+          <p style="margin:0; font-size:14px; color:#94a3b8;">Hi ${escapeAttrText(displayName)},</p>
+        </div>
+        <p style="font-size:15px; color:#cbd5e1; margin:16px 0 20px;">${escapeAttrText(tip.body)}</p>
+        <div style="background:#0a0a12; border-radius:10px; padding:18px; border:1px solid rgba(255,255,255,0.08); margin-bottom:24px;">
+          <p style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#64748b; margin:0 0 10px;">Quick wins</p>
+          <ul style="list-style:none; padding:0; margin:0;">${subTipItems}</ul>
+        </div>
+        <div style="text-align:center;">${emailCtaButton(`${base}${tip.ctaPath}`, tip.ctaLabel)}</div>
+        <p style="font-size:12px; color:#64748b; text-align:center; margin:16px 0 0;">
+          Reply to this email or write to <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>
+        </p>
+      </div>`;
+  return (
+    emailDocumentOpen({
+      documentTitle: tip.headline,
+      preheader: tip.body.slice(0, 90),
+      subhead: tip.badge,
+    }) +
+    main +
+    emailDocumentFooter("You received this as part of your RiskSent onboarding sequence.")
+  );
+}
+
+function getWeeklyInsightTemplate(
+  p: WeeklyInsightEmailParams & { displayName: string }
+): string {
+  const base = siteUrl();
+  const ctaUrl = p.tipCtaUrl ?? `${base}/app/dashboard`;
+  const ctaLabel = p.tipCtaLabel ?? "Open dashboard";
+  const main = `
+      <div class="body-pad">
+        <div class="hero-section">
+          <span class="badge">Weekly Insight #${p.issueNumber}</span>
+          <h1 class="h1" style="margin-top:16px;">How ${escapeAttrText(p.traderName)} used RiskSent</h1>
+          <p style="margin:0; font-size:14px; color:#94a3b8;">Hi ${escapeAttrText(p.displayName)},</p>
+        </div>
+
+        <div style="background:linear-gradient(128deg,rgba(99,102,241,0.08) 0%,#0a0a12 100%); border-radius:12px; padding:22px; border:1px solid rgba(99,102,241,0.2); margin:20px 0;">
+          <p style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#64748b; margin:0 0 12px;">Trader story</p>
+          <p style="font-size:15px; color:#cbd5e1; margin:0; line-height:1.7;">${escapeAttrText(p.story)}</p>
+          <div style="margin-top:18px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.06);">
+            <p style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#64748b; margin:0 0 6px;">Key result</p>
+            <p style="font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:800; color:#a5b4fc; margin:0;">${escapeAttrText(p.metric)}</p>
+          </div>
+        </div>
+
+        <div style="background:#0a0a12; border-radius:10px; padding:18px; border-left:3px solid #22d3ee; margin:20px 0;">
+          <p style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.12em; color:#64748b; margin:0 0 8px;">This week's tip</p>
+          <p style="font-size:15px; color:#cbd5e1; margin:0;">${escapeAttrText(p.tip)}</p>
+        </div>
+
+        <div style="text-align:center; margin:24px 0 8px;">${emailCtaButton(ctaUrl, ctaLabel)}</div>
+        <p style="font-size:12px; color:#64748b; text-align:center; margin:8px 0 0;">
+          Questions? <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>
+        </p>
+      </div>`;
+  return (
+    emailDocumentOpen({
+      documentTitle: `Weekly Insight #${p.issueNumber} — RiskSent`,
+      preheader: `How ${p.traderName} used RiskSent: ${p.metric}`,
+      subhead: `Weekly Insight · Issue #${p.issueNumber}`,
+    }) +
+    main +
+    emailDocumentFooter(`You received this as a RiskSent subscriber. <a href="${base}/app/profile" style="color:#818cf8;text-decoration:none;">Manage preferences</a>`)
+  );
+}
+
+// ─── Preview helper (for /api/admin/email/preview) ───────────────────────────
+
+export type PreviewEmailType =
+  | "marketing"
+  | "promo"
+  | "onboarding-1"
+  | "onboarding-2"
+  | "onboarding-3"
+  | "weekly-insight";
+
+export function getEmailPreviewHtml(type: PreviewEmailType): string {
+  const base = siteUrl();
+  switch (type) {
+    case "marketing":
+      return getMarketingEmailTemplate({
+        to: "demo@risksent.com",
+        displayName: "Marco",
+        subject: "Big news from RiskSent",
+        headline: "Introducing the new AI Coach dashboard",
+        body: `We've just shipped a major upgrade to the AI Coach.\n\nYou can now ask follow-up questions about any trade, get personalised rule suggestions based on your PnL history, and export weekly reports in one click.\n\nLog in and check it out — we'd love your feedback.`,
+        ctaLabel: "Explore AI Coach",
+        ctaUrl: `${base}/app/ai-coach`,
+      });
+    case "promo":
+      return getPromoEmailTemplate({
+        to: "demo@risksent.com",
+        displayName: "Marco",
+        headline: "3 months for the price of 1",
+        description:
+          "For a limited time, upgrade to any paid plan and get your first 3 months at the price of one. No tricks — just our way of saying thanks for being an early adopter.",
+        discountLabel: "67% off",
+        promoCode: "EARLY67",
+        expiryLabel: "Expires May 15, 2026",
+        ctaLabel: "Claim offer",
+        ctaUrl: `${base}/pricing`,
+      });
+    case "onboarding-1":
+      return getOnboardingTipTemplate("Marco", 1);
+    case "onboarding-2":
+      return getOnboardingTipTemplate("Marco", 2);
+    case "onboarding-3":
+      return getOnboardingTipTemplate("Marco", 3);
+    case "weekly-insight":
+      return getWeeklyInsightTemplate({
+        to: "demo@risksent.com",
+        displayName: "Marco",
+        issueNumber: 1,
+        traderName: "Luca B.",
+        story:
+          "Luca had been trading forex for two years but kept blowing through his daily loss limits. After connecting RiskSent to his MT4 account and setting a hard 2% daily loss rule, he received an alert just 40 minutes into a losing session — and walked away before things got worse. Three months later his average monthly drawdown dropped by more than half.",
+        metric: "Max monthly drawdown: –12% → –5%",
+        tip: "Set your daily loss alert at 1.5× your average losing day — tight enough to matter, loose enough not to fire on normal noise.",
+        tipCtaLabel: "Set a rule now",
+        tipCtaUrl: `${base}/app/risk-manager`,
+      });
+  }
+}
+
 function escapeAttrText(s: string): string {
   return s
     .replace(/&/g, "&amp;")

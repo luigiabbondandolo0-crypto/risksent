@@ -229,6 +229,13 @@ export default function AdminPage() {
             Trial reminders
           </Link>
           <Link
+            href="/admin/email-preview"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-indigo-500/40 hover:bg-indigo-500/10"
+          >
+            <Mail className="h-4 w-4 text-indigo-400" />
+            Email preview
+          </Link>
+          <Link
             href="/admin/live-monitoring"
             className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-cyan-500/40 hover:bg-cyan-500/10"
           >
