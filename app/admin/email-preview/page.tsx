@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Mail, RefreshCw, ExternalLink, ChevronRight } from "lucide-react";
+import { AlertCircle, Mail, RefreshCw, ExternalLink, ChevronRight, Send, CheckCircle2, Loader2 } from "lucide-react";
 
 type EmailType =
   | "onboarding-mastermail"
@@ -29,12 +29,21 @@ const EMAIL_TYPES: Array<{ id: EmailType; label: string; badge: string; color: s
   { id: "promo", label: "Promotional offer", badge: "Promo", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/25", group: "Other" },
 ];
 
+type SendState = "idle" | "sending" | "done" | "error";
+
 export default function EmailPreviewPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [selected, setSelected] = useState<EmailType>("marketing");
+  const [selected, setSelected] = useState<EmailType>("onboarding-mastermail");
   const [iframeKey, setIframeKey] = useState(0);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+
+  // Send-test state
+  const [testEmail, setTestEmail] = useState("");
+  const [sendState, setSendState] = useState<SendState>("idle");
+  const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendMode, setSendMode] = useState<"current" | "all">("current");
 
   useEffect(() => {
     (async () => {
@@ -45,6 +54,35 @@ export default function EmailPreviewPage() {
       setIsAdmin(true);
     })();
   }, [router]);
+
+  const handleSendTest = async () => {
+    if (!testEmail.trim() || sendState === "sending") return;
+    setSendState("sending");
+    setSendResult(null);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/admin/email/send-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: testEmail.trim(),
+          types: sendMode === "current" ? [selected] : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSendError(data.error ?? `Error ${res.status}`);
+        setSendState("error");
+        return;
+      }
+      setSendResult({ sent: data.sent, failed: data.failed });
+      setSendState("done");
+      setTimeout(() => setSendState("idle"), 5000);
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : "Request failed");
+      setSendState("error");
+    }
+  };
 
   if (isAdmin === null) {
     return (
@@ -74,7 +112,7 @@ export default function EmailPreviewPage() {
             Email Preview
           </h1>
           <p className="mt-1 font-mono text-sm text-slate-500">
-            Visual preview of all automated email templates.
+            Visual preview + send test emails.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -84,9 +122,7 @@ export default function EmailPreviewPage() {
                 key={m}
                 onClick={() => setViewMode(m)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  viewMode === m
-                    ? "bg-indigo-600/50 text-white"
-                    : "text-slate-400 hover:text-slate-300"
+                  viewMode === m ? "bg-indigo-600/50 text-white" : "text-slate-400 hover:text-slate-300"
                 }`}
               >
                 {m === "desktop" ? "Desktop" : "Mobile"}
@@ -112,6 +148,55 @@ export default function EmailPreviewPage() {
         </div>
       </header>
 
+      {/* Send test panel */}
+      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5">
+        <p className="mb-3 text-sm font-semibold text-white">Send test email</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="email"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="your@email.com"
+            className="w-64 rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-indigo-500/50"
+          />
+          <div className="flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+            {(["current", "all"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setSendMode(m)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  sendMode === m ? "bg-indigo-600/50 text-white" : "text-slate-400 hover:text-slate-300"
+                }`}
+              >
+                {m === "current" ? "This email" : `All ${EMAIL_TYPES.length}`}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleSendTest}
+            disabled={!testEmail.trim() || sendState === "sending"}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-600/20 px-4 py-2 text-sm font-semibold text-indigo-200 transition-colors hover:bg-indigo-600/30 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {sendState === "sending" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : sendState === "done" ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {sendState === "sending" ? "Sending…" : sendState === "done" ? "Sent!" : "Send"}
+          </button>
+        </div>
+        {sendState === "done" && sendResult && (
+          <p className="mt-2 font-mono text-xs text-emerald-400">
+            {sendResult.sent} sent{sendResult.failed > 0 ? `, ${sendResult.failed} failed` : ""}
+          </p>
+        )}
+        {sendState === "error" && sendError && (
+          <p className="mt-2 font-mono text-xs text-red-400">{sendError}</p>
+        )}
+      </div>
+
       <div className="flex gap-6">
         {/* Sidebar */}
         <nav className="w-56 shrink-0 space-y-1">
@@ -127,9 +212,7 @@ export default function EmailPreviewPage() {
             >
               <span className="font-medium leading-tight">{t.label}</span>
               <span className="flex items-center gap-1">
-                <span
-                  className={`rounded-full border px-1.5 py-px font-mono text-[10px] font-semibold ${t.color}`}
-                >
+                <span className={`rounded-full border px-1.5 py-px font-mono text-[10px] font-semibold ${t.color}`}>
                   {t.badge}
                 </span>
                 {selected === t.id && <ChevronRight className="h-3 w-3 text-indigo-400" />}
