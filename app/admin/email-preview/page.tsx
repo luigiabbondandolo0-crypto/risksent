@@ -7,26 +7,46 @@ import { AlertCircle, Mail, RefreshCw, ExternalLink, ChevronRight, Send, CheckCi
 type EmailType =
   | "onboarding-mastermail"
   | "marketing-drip-1"
+  | "marketing-drip-2"
+  | "marketing-drip-3"
+  | "marketing-drip-4"
+  | "marketing-drip-5"
   | "marketing-drip-6"
+  | "marketing-drip-7"
+  | "marketing-drip-8"
+  | "marketing-drip-9"
   | "marketing-drip-10"
   | "weekly-insight-1"
   | "weekly-insight-2"
   | "weekly-insight-3"
-  | "weekly-insight-4"
-  | "marketing"
-  | "promo";
+  | "weekly-insight-4";
+
+const DRIP_LABELS: Record<number, string> = {
+  1: "Dashboard",
+  2: "Risk Rules",
+  3: "Telegram Alerts",
+  4: "Backtesting",
+  5: "Bar-by-bar Replay",
+  6: "AI Coach",
+  7: "Trade Journal",
+  8: "AI Trade Review",
+  9: "Live Alerts",
+  10: "Affiliate",
+};
 
 const EMAIL_TYPES: Array<{ id: EmailType; label: string; badge: string; color: string; group?: string }> = [
   { id: "onboarding-mastermail", label: "Onboarding mastermail", badge: "Once", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25", group: "Onboarding" },
-  { id: "marketing-drip-1", label: "Drip — Day 1 (Dashboard)", badge: "D+1", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
-  { id: "marketing-drip-6", label: "Drip — Day 6 (AI Coach)", badge: "D+6", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
-  { id: "marketing-drip-10", label: "Drip — Day 10 (Affiliate)", badge: "D+10", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
+  ...[1,2,3,4,5,6,7,8,9,10].map((n) => ({
+    id: `marketing-drip-${n}` as EmailType,
+    label: `Day ${n} — ${DRIP_LABELS[n]}`,
+    badge: `D+${n}`,
+    color: "text-violet-400 bg-violet-500/10 border-violet-500/25",
+    group: "Marketing drip",
+  })),
   { id: "weekly-insight-1", label: "Weekly #1 — Daily loss", badge: "W1", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
   { id: "weekly-insight-2", label: "Weekly #2 — FTMO", badge: "W2", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
   { id: "weekly-insight-3", label: "Weekly #3 — Hidden pattern", badge: "W3", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
   { id: "weekly-insight-4", label: "Weekly #4 — Journal habit", badge: "W4", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
-  { id: "marketing", label: "Marketing broadcast", badge: "Broadcast", color: "text-slate-400 bg-slate-500/10 border-slate-500/25", group: "Other" },
-  { id: "promo", label: "Promotional offer", badge: "Promo", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/25", group: "Other" },
 ];
 
 type SendState = "idle" | "sending" | "done" | "error";

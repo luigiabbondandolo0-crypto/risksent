@@ -1093,14 +1093,19 @@ function getOnboardingMastermailTemplate(displayName: string): string {
 export type PreviewEmailType =
   | "onboarding-mastermail"
   | "marketing-drip-1"
+  | "marketing-drip-2"
+  | "marketing-drip-3"
+  | "marketing-drip-4"
+  | "marketing-drip-5"
   | "marketing-drip-6"
+  | "marketing-drip-7"
+  | "marketing-drip-8"
+  | "marketing-drip-9"
   | "marketing-drip-10"
   | "weekly-insight-1"
   | "weekly-insight-2"
   | "weekly-insight-3"
   | "weekly-insight-4"
-  | "marketing"
-  | "promo"
   | "onboarding-1"
   | "onboarding-2"
   | "onboarding-3"
@@ -1111,12 +1116,16 @@ export function getEmailPreviewHtml(type: PreviewEmailType): string {
   switch (type) {
     case "onboarding-mastermail":
       return getOnboardingMastermailTemplate("Marco");
-    case "marketing-drip-1":
-      return getMarketingDripHtml(1, "Marco");
-    case "marketing-drip-6":
-      return getMarketingDripHtml(6, "Marco");
-    case "marketing-drip-10":
-      return getMarketingDripHtml(10, "Marco");
+    case "marketing-drip-1": return getMarketingDripHtml(1, "Marco");
+    case "marketing-drip-2": return getMarketingDripHtml(2, "Marco");
+    case "marketing-drip-3": return getMarketingDripHtml(3, "Marco");
+    case "marketing-drip-4": return getMarketingDripHtml(4, "Marco");
+    case "marketing-drip-5": return getMarketingDripHtml(5, "Marco");
+    case "marketing-drip-6": return getMarketingDripHtml(6, "Marco");
+    case "marketing-drip-7": return getMarketingDripHtml(7, "Marco");
+    case "marketing-drip-8": return getMarketingDripHtml(8, "Marco");
+    case "marketing-drip-9": return getMarketingDripHtml(9, "Marco");
+    case "marketing-drip-10": return getMarketingDripHtml(10, "Marco");
     case "weekly-insight-1":
       return getWeeklyInsightHtml("Marco", 1, WEEKLY_INSIGHT_STORIES[0]!);
     case "weekly-insight-2":
@@ -1125,29 +1134,6 @@ export function getEmailPreviewHtml(type: PreviewEmailType): string {
       return getWeeklyInsightHtml("Marco", 3, WEEKLY_INSIGHT_STORIES[2]!);
     case "weekly-insight-4":
       return getWeeklyInsightHtml("Marco", 4, WEEKLY_INSIGHT_STORIES[3]!);
-    case "marketing":
-      return getMarketingEmailTemplate({
-        to: "demo@risksent.com",
-        displayName: "Marco",
-        subject: "Big news from RiskSent",
-        headline: "Introducing the new AI Coach dashboard",
-        body: `We've just shipped a major upgrade to the AI Coach.\n\nYou can now ask follow-up questions about any trade, get personalised rule suggestions based on your PnL history, and export weekly reports in one click.\n\nLog in and check it out — we'd love your feedback.`,
-        ctaLabel: "Explore AI Coach",
-        ctaUrl: `${base}/app/ai-coach`,
-      });
-    case "promo":
-      return getPromoEmailTemplate({
-        to: "demo@risksent.com",
-        displayName: "Marco",
-        headline: "3 months for the price of 1",
-        description:
-          "For a limited time, upgrade to any paid plan and get your first 3 months at the price of one. No tricks — just our way of saying thanks for being an early adopter.",
-        discountLabel: "67% off",
-        promoCode: "EARLY67",
-        expiryLabel: "Expires May 15, 2026",
-        ctaLabel: "Claim offer",
-        ctaUrl: `${base}/pricing`,
-      });
     case "onboarding-1":
       return getOnboardingTipTemplate("Marco", 1);
     case "onboarding-2":
