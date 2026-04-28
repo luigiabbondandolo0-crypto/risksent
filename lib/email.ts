@@ -12,7 +12,7 @@ import {
  * Override via `RESEND_FROM_EMAIL` (e.g. `"RiskSent <info@risksent.com>"`).
  * The domain MUST be verified in Resend → Domains.
  */
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <info@risksent.com>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <noreply@risksent.com>";
 
 /**
  * Where replies are routed. Keeps the "from" address brand-friendly while
