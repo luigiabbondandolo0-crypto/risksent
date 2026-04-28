@@ -201,13 +201,13 @@ export default function SignupPage() {
               />
               <span>
                 I agree to{" "}
-                <span className="text-slate-300 hover:text-white cursor-pointer">
+                <Link href="/terms" className="text-slate-300 hover:text-white underline underline-offset-2">
                   Terms of Service
-                </span>{" "}
+                </Link>{" "}
                 and{" "}
-                <span className="text-slate-300 hover:text-white cursor-pointer">
+                <Link href="/privacy" className="text-slate-300 hover:text-white underline underline-offset-2">
                   Privacy Policy
-                </span>
+                </Link>
               </span>
             </label>
 

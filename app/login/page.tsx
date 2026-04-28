@@ -315,8 +315,8 @@ function LoginForm() {
           </Link>
           <p className="mt-6 text-center text-[11px] leading-relaxed text-slate-600">
             By signing in you accept our{" "}
-            <span className="text-slate-400">Terms of Service</span> and{" "}
-            <span className="text-slate-400">Privacy Policy</span>.
+            <Link href="/terms" className="text-slate-400 hover:text-white underline underline-offset-2">Terms of Service</Link> and{" "}
+            <Link href="/privacy" className="text-slate-400 hover:text-white underline underline-offset-2">Privacy Policy</Link>.
           </p>
           <div className="mt-4 text-center">
             <Link href="/" className="text-xs font-mono text-slate-500 hover:text-[#a78bfa]">

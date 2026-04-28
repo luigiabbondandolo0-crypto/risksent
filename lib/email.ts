@@ -99,16 +99,17 @@ export async function sendTrialEndingEmail({
   });
 }
 
-/** After signup — account created; user must still verify email (separate Supabase message). */
+/** After signup — account created; includes verification link if provided. */
 export async function sendRegistrationEmail({
   to,
   userName,
-}: WelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
+  verificationUrl,
+}: WelcomeEmailParams & { verificationUrl?: string }): Promise<{ success: boolean; error?: string }> {
   const displayName = userName || to.split("@")[0];
   return deliverEmail({
     to,
-    subject: "You’re registered — confirm your email for RiskSent",
-    html: getRegistrationEmailTemplate(displayName),
+    subject: "Confirm your email — RiskSent",
+    html: getRegistrationEmailTemplate(displayName, verificationUrl),
     logLabel: "registration",
   });
 }
@@ -259,20 +260,21 @@ export async function sendSupportInquiryToTeam({
   });
 }
 
-function getRegistrationEmailTemplate(userName: string): string {
+function getRegistrationEmailTemplate(userName: string, verificationUrl?: string): string {
   const base = siteUrl();
   const loginUrl = `${base}/login`;
+  const ctaUrl = verificationUrl ?? loginUrl;
   const main = `
       <div class="body-pad">
         <h1 class="h1">Thanks for signing up, ${escapeAttrText(userName)}</h1>
         <p style="margin:0 0 16px; font-size:15px; color:#94a3b8;">Your RiskSent account is almost ready.</p>
         <p style="margin:0 0 20px; font-size:15px; color:#cbd5e1;">
-          We&apos;ve sent a <strong>separate email with a verification link</strong>. Open it to confirm your address, then sign in.
+          Click the button below to <strong>verify your email address</strong> and activate your account.
         </p>
-        <p style="margin:0 0 24px; font-size:14px; color:#94a3b8;">
-          Didn&apos;t get it? Check spam or promotions. You can request a new link from the login page.
+        <div style="text-align:center;">${emailCtaButton(ctaUrl, "Verify my email")}</div>
+        <p style="margin:20px 0 0; font-size:13px; color:#64748b; text-align:center;">
+          This link expires in 24 hours. If you didn&apos;t create an account, you can ignore this email.
         </p>
-        <div style="text-align:center;">${emailCtaButton(loginUrl, "Go to sign in")}</div>
       </div>`;
   return (
     emailDocumentOpen({
