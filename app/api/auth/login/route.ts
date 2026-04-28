@@ -54,6 +54,14 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseRouteHandlerClient(req, res);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
+      const msg = error?.message?.toLowerCase() ?? "";
+      if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+        logAuthAttempt(req, "auth.login", "failure", { email_fp: fp, reason: "email_unverified" });
+        return NextResponse.json(
+          { error: "Please verify your email before signing in. Check your inbox for the confirmation link." },
+          { status: 403, headers: res.headers }
+        );
+      }
       logAuthAttempt(req, "auth.login", "failure", { email_fp: fp, reason: "invalid_credentials" });
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401, headers: res.headers });
     }
