@@ -33,12 +33,11 @@ export async function POST(req: NextRequest) {
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // no secret configured → open (matches the other cron)
+  if (!secret) return false;
   const authHeader = req.headers.get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const headerSecret = req.headers.get("x-cron-secret");
-  const querySecret = new URL(req.url).searchParams.get("secret");
-  return bearerToken === secret || headerSecret === secret || querySecret === secret;
+  return bearerToken === secret || headerSecret === secret;
 }
 
 function createServiceClient() {

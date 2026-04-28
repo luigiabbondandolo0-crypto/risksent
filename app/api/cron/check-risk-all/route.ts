@@ -19,16 +19,15 @@ export async function POST(req: NextRequest) {
 
 async function runCron(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authHeader = req.headers.get("authorization");
-    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    const headerSecret = req.headers.get("x-cron-secret");
-    const url = new URL(req.url);
-    const querySecret = url.searchParams.get("secret");
-    const valid = bearerToken === secret || headerSecret === secret || querySecret === secret;
-    if (!valid) {
-      return NextResponse.json({ ok: false, reason: "Unauthorized" }, { status: 401 });
-    }
+  if (!secret) {
+    return NextResponse.json({ ok: false, reason: "CRON_SECRET not configured" }, { status: 401 });
+  }
+  const authHeader = req.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const headerSecret = req.headers.get("x-cron-secret");
+  const valid = bearerToken === secret || headerSecret === secret;
+  if (!valid) {
+    return NextResponse.json({ ok: false, reason: "Unauthorized" }, { status: 401 });
   }
 
   if (DEBUG) console.log("[cron/check-risk-all] starting");
