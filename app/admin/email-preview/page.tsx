@@ -5,20 +5,28 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Mail, RefreshCw, ExternalLink, ChevronRight } from "lucide-react";
 
 type EmailType =
+  | "onboarding-mastermail"
+  | "marketing-drip-1"
+  | "marketing-drip-6"
+  | "marketing-drip-12"
+  | "weekly-insight-1"
+  | "weekly-insight-2"
+  | "weekly-insight-3"
+  | "weekly-insight-4"
   | "marketing"
-  | "promo"
-  | "onboarding-1"
-  | "onboarding-2"
-  | "onboarding-3"
-  | "weekly-insight";
+  | "promo";
 
-const EMAIL_TYPES: Array<{ id: EmailType; label: string; badge: string; color: string }> = [
-  { id: "marketing", label: "Marketing broadcast", badge: "Broadcast", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25" },
-  { id: "promo", label: "Promotional offer", badge: "Promo", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/25" },
-  { id: "onboarding-1", label: "Onboarding tip — Day 1", badge: "D+1", color: "text-violet-400 bg-violet-500/10 border-violet-500/25" },
-  { id: "onboarding-2", label: "Onboarding tip — Day 3", badge: "D+3", color: "text-violet-400 bg-violet-500/10 border-violet-500/25" },
-  { id: "onboarding-3", label: "Onboarding tip — Day 7", badge: "D+7", color: "text-violet-400 bg-violet-500/10 border-violet-500/25" },
-  { id: "weekly-insight", label: "Weekly insight", badge: "Newsletter", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25" },
+const EMAIL_TYPES: Array<{ id: EmailType; label: string; badge: string; color: string; group?: string }> = [
+  { id: "onboarding-mastermail", label: "Onboarding mastermail", badge: "Once", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25", group: "Onboarding" },
+  { id: "marketing-drip-1", label: "Drip — Day 1 (Dashboard)", badge: "D+1", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
+  { id: "marketing-drip-6", label: "Drip — Day 6 (AI Coach)", badge: "D+6", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
+  { id: "marketing-drip-12", label: "Drip — Day 12 (Affiliate)", badge: "D+12", color: "text-violet-400 bg-violet-500/10 border-violet-500/25", group: "Marketing drip" },
+  { id: "weekly-insight-1", label: "Weekly #1 — Daily loss", badge: "W1", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
+  { id: "weekly-insight-2", label: "Weekly #2 — FTMO", badge: "W2", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
+  { id: "weekly-insight-3", label: "Weekly #3 — Hidden pattern", badge: "W3", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
+  { id: "weekly-insight-4", label: "Weekly #4 — Journal habit", badge: "W4", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", group: "Weekly insight" },
+  { id: "marketing", label: "Marketing broadcast", badge: "Broadcast", color: "text-slate-400 bg-slate-500/10 border-slate-500/25", group: "Other" },
+  { id: "promo", label: "Promotional offer", badge: "Promo", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/25", group: "Other" },
 ];
 
 export default function EmailPreviewPage() {

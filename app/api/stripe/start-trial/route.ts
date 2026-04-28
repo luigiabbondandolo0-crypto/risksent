@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sendTrialActivatedEmail } from "@/lib/email";
+import { sendTrialActivatedEmail, sendOnboardingMastermailEmail } from "@/lib/email";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -94,10 +94,17 @@ export async function POST() {
   }
 
   if (user.email) {
-    void sendTrialActivatedEmail({
+    const emailArgs = {
       to: user.email,
       userName: (user.user_metadata?.full_name as string | undefined) || undefined,
-    }).catch((err) => console.error("[start-trial] trial email:", err));
+    };
+    void sendTrialActivatedEmail(emailArgs).catch((err) =>
+      console.error("[start-trial] trial email:", err)
+    );
+    // Small delay so the two emails don't land in the inbox simultaneously
+    void new Promise<void>((resolve) => setTimeout(resolve, 3000))
+      .then(() => sendOnboardingMastermailEmail(emailArgs))
+      .catch((err) => console.error("[start-trial] mastermail:", err));
   }
 
   return NextResponse.json({

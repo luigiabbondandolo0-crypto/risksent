@@ -6,6 +6,17 @@ import {
   emailDocumentOpen,
   emailSiteBase,
 } from "./emailBrandHtml";
+import {
+  getMarketingDripHtml,
+  getMarketingDripSubject,
+  MARKETING_DRIP_TOTAL_STEPS,
+} from "./emailMarketingDrip";
+import {
+  getWeeklyInsightHtml,
+  getWeeklyInsightIssueNumber,
+  getStoryForWeek,
+  WEEKLY_INSIGHT_STORIES,
+} from "./emailWeeklyInsightStories";
 
 /**
  * Sender address used on all transactional emails.
@@ -590,6 +601,66 @@ export function getTrialExpiredEmailTemplate(userName: string): string {
   );
 }
 
+// ─── Onboarding mastermail (single email after welcome) ──────────────────────
+
+export async function sendOnboardingMastermailEmail({
+  to,
+  userName,
+}: WelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
+  const displayName = userName || to.split("@")[0];
+  return deliverEmail({
+    to,
+    subject: "Everything you need to know about RiskSent — start here",
+    html: getOnboardingMastermailTemplate(displayName),
+    logLabel: "onboarding-mastermail",
+  });
+}
+
+// ─── Marketing drip (one feature per day, triggered by cron) ─────────────────
+
+export { MARKETING_DRIP_TOTAL_STEPS };
+
+export async function sendMarketingDripStepEmail({
+  to,
+  userName,
+  step,
+}: {
+  to: string;
+  userName?: string;
+  step: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const displayName = userName || to.split("@")[0];
+  return deliverEmail({
+    to,
+    subject: getMarketingDripSubject(step),
+    html: getMarketingDripHtml(step, displayName),
+    logLabel: `marketing-drip-${step}`,
+  });
+}
+
+// ─── Weekly insight auto (cron every Monday) ─────────────────────────────────
+
+export { getWeeklyInsightIssueNumber, getStoryForWeek };
+
+export async function sendWeeklyInsightAutoEmail({
+  to,
+  userName,
+  weekNumber,
+}: {
+  to: string;
+  userName?: string;
+  weekNumber: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const displayName = userName || to.split("@")[0];
+  const story = getStoryForWeek(weekNumber);
+  return deliverEmail({
+    to,
+    subject: `Weekly Insight #${weekNumber} — ${story.headline.slice(0, 60)}`,
+    html: getWeeklyInsightHtml(displayName, weekNumber, story),
+    logLabel: `weekly-insight-auto-${weekNumber}`,
+  });
+}
+
 // ─── Marketing broadcast ────────────────────────────────────────────────────
 
 export interface MarketingEmailParams {
@@ -906,7 +977,128 @@ function getWeeklyInsightTemplate(
 
 // ─── Preview helper (for /api/admin/email/preview) ───────────────────────────
 
+function getOnboardingMastermailTemplate(displayName: string): string {
+  const base = siteUrl();
+  const sections = [
+    {
+      icon: "1",
+      color: "#a5b4fc",
+      title: "Connect your broker account",
+      body: "Go to Accounts and link your MT4 or MT5 account. RiskSent pulls live data from your broker to monitor risk in real time.",
+      linkLabel: "Add account →",
+      linkPath: "/accounts",
+    },
+    {
+      icon: "2",
+      color: "#22d3ee",
+      title: "Set your first risk rules",
+      body: "In the Risk Manager, define your daily loss limit, maximum drawdown, and position size cap. These are the rules that protect your capital automatically — no manual tracking required.",
+      linkLabel: "Set rules →",
+      linkPath: "/app/risk-manager",
+    },
+    {
+      icon: "3",
+      color: "#4ade80",
+      title: "Connect Telegram for instant alerts",
+      body: "When a rule fires, you get a Telegram message within seconds. Search for @RiskSentBot, start a chat, and paste the link code from the Risk Manager. Takes under a minute.",
+      linkLabel: "Connect Telegram →",
+      linkPath: "/app/risk-manager",
+    },
+    {
+      icon: "4",
+      color: "#fbbf24",
+      title: "Test your strategy with backtesting",
+      body: "Before trading live, replay your strategy on real historical data. The backtesting engine shows win rate, profit factor, and maximum drawdown — so you know your edge is real.",
+      linkLabel: "Run a backtest →",
+      linkPath: "/app/backtesting",
+    },
+    {
+      icon: "5",
+      color: "#f472b6",
+      title: "Log trades in the journal",
+      body: "Once your account is connected, trades import automatically. Add notes and tags. Review weekly — the pattern analysis you get from 30 days of tagged trades is worth more than any course.",
+      linkLabel: "Open journal →",
+      linkPath: "/app/journaling",
+    },
+    {
+      icon: "6",
+      color: "#a5b4fc",
+      title: "Ask AI Coach anything",
+      body: "After a few weeks of data, ask AI Coach specific questions: \"Why do I lose on Fridays?\" or \"Is my position sizing consistent?\" It reads your actual trade history and answers in plain language.",
+      linkLabel: "Ask AI Coach →",
+      linkPath: "/app/ai-coach",
+    },
+    {
+      icon: "7",
+      color: "#22d3ee",
+      title: "Try the prop firm simulator",
+      body: "If you're preparing for an FTMO or similar challenge, the simulator lets you test your strategy against those exact rules on historical data. Find where you'd fail — before you pay the fee.",
+      linkLabel: "Open simulator →",
+      linkPath: "/simulator",
+    },
+  ];
+
+  const sectionItems = sections
+    .map(
+      (s) => `
+    <div style="display:flex; gap:14px; margin-bottom:20px; align-items:flex-start;">
+      <div style="min-width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; background:rgba(255,255,255,0.05); color:${s.color}; border:1px solid rgba(255,255,255,0.08);">${s.icon}</div>
+      <div>
+        <p style="margin:0 0 4px; font-size:14px; font-weight:700; color:#f1f5f9;">${escapeAttrText(s.title)}</p>
+        <p style="margin:0 0 6px; font-size:13px; color:#94a3b8; line-height:1.6;">${escapeAttrText(s.body)}</p>
+        <a href="${base}${s.linkPath}" style="font-size:12px; font-weight:600; color:${s.color}; text-decoration:none;">${escapeAttrText(s.linkLabel)}</a>
+      </div>
+    </div>`
+    )
+    .join("");
+
+  const main = `
+      <div class="body-pad">
+        <div class="hero-section">
+          <span class="badge">Getting started</span>
+          <h1 class="h1" style="margin-top:16px;">Your RiskSent setup guide</h1>
+          <p style="margin:0; font-size:14px; color:#94a3b8;">Everything you need to know, in one place.</p>
+        </div>
+
+        <p style="font-size:14px; color:#94a3b8; margin:4px 0 20px;">Hi ${escapeAttrText(displayName)},</p>
+        <p style="font-size:15px; color:#cbd5e1; margin:0 0 24px; line-height:1.7;">
+          Welcome to RiskSent. Below is everything you need to set up the platform and start protecting your trading capital. Bookmark this email — it covers all the essentials.
+        </p>
+
+        <div style="background:#0a0a12; border-radius:12px; padding:20px 20px 4px; border:1px solid rgba(255,255,255,0.08);">
+          ${sectionItems}
+        </div>
+
+        <div style="height:1px; background:rgba(255,255,255,0.06); margin:24px 0;"></div>
+
+        <p style="font-size:14px; font-weight:700; color:#f1f5f9; margin:0 0 8px;">Stuck at any point?</p>
+        <p style="font-size:14px; color:#94a3b8; margin:0 0 20px; line-height:1.6;">
+          Reply to this email or write to <a href="mailto:support@risksent.com" style="color:#818cf8; text-decoration:none; font-weight:600;">support@risksent.com</a>. We respond fast and help you get set up.
+        </p>
+
+        <div style="text-align:center; margin:8px 0;">${emailCtaButton(`${base}/app/dashboard`, "Go to my dashboard")}</div>
+      </div>`;
+
+  return (
+    emailDocumentOpen({
+      documentTitle: "Your RiskSent setup guide",
+      preheader: "7 steps to set up your risk management system — start here.",
+      subhead: "Getting started",
+    }) +
+    main +
+    emailDocumentFooter("You received this after activating your RiskSent free trial.")
+  );
+}
+
 export type PreviewEmailType =
+  | "onboarding-mastermail"
+  | "marketing-drip-1"
+  | "marketing-drip-6"
+  | "marketing-drip-12"
+  | "weekly-insight-1"
+  | "weekly-insight-2"
+  | "weekly-insight-3"
+  | "weekly-insight-4"
   | "marketing"
   | "promo"
   | "onboarding-1"
@@ -917,6 +1109,22 @@ export type PreviewEmailType =
 export function getEmailPreviewHtml(type: PreviewEmailType): string {
   const base = siteUrl();
   switch (type) {
+    case "onboarding-mastermail":
+      return getOnboardingMastermailTemplate("Marco");
+    case "marketing-drip-1":
+      return getMarketingDripHtml(1, "Marco");
+    case "marketing-drip-6":
+      return getMarketingDripHtml(6, "Marco");
+    case "marketing-drip-12":
+      return getMarketingDripHtml(12, "Marco");
+    case "weekly-insight-1":
+      return getWeeklyInsightHtml("Marco", 1, WEEKLY_INSIGHT_STORIES[0]!);
+    case "weekly-insight-2":
+      return getWeeklyInsightHtml("Marco", 2, WEEKLY_INSIGHT_STORIES[1]!);
+    case "weekly-insight-3":
+      return getWeeklyInsightHtml("Marco", 3, WEEKLY_INSIGHT_STORIES[2]!);
+    case "weekly-insight-4":
+      return getWeeklyInsightHtml("Marco", 4, WEEKLY_INSIGHT_STORIES[3]!);
     case "marketing":
       return getMarketingEmailTemplate({
         to: "demo@risksent.com",
@@ -947,18 +1155,7 @@ export function getEmailPreviewHtml(type: PreviewEmailType): string {
     case "onboarding-3":
       return getOnboardingTipTemplate("Marco", 3);
     case "weekly-insight":
-      return getWeeklyInsightTemplate({
-        to: "demo@risksent.com",
-        displayName: "Marco",
-        issueNumber: 1,
-        traderName: "Luca B.",
-        story:
-          "Luca had been trading forex for two years but kept blowing through his daily loss limits. After connecting RiskSent to his MT4 account and setting a hard 2% daily loss rule, he received an alert just 40 minutes into a losing session — and walked away before things got worse. Three months later his average monthly drawdown dropped by more than half.",
-        metric: "Max monthly drawdown: –12% → –5%",
-        tip: "Set your daily loss alert at 1.5× your average losing day — tight enough to matter, loose enough not to fire on normal noise.",
-        tipCtaLabel: "Set a rule now",
-        tipCtaUrl: `${base}/app/risk-manager`,
-      });
+      return getWeeklyInsightHtml("Marco", 1, WEEKLY_INSIGHT_STORIES[0]!);
   }
 }
 

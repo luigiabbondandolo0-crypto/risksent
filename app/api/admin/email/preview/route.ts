@@ -3,6 +3,14 @@ import { checkAdminRole } from "@/lib/adminAuth";
 import { getEmailPreviewHtml, type PreviewEmailType } from "@/lib/email";
 
 const VALID_TYPES: PreviewEmailType[] = [
+  "onboarding-mastermail",
+  "marketing-drip-1",
+  "marketing-drip-6",
+  "marketing-drip-12",
+  "weekly-insight-1",
+  "weekly-insight-2",
+  "weekly-insight-3",
+  "weekly-insight-4",
   "marketing",
   "promo",
   "onboarding-1",
