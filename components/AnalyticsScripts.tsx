@@ -1,13 +1,8 @@
-import { readServerCookieConsent } from "@/lib/cookieConsent";
-
 /**
- * Server Component — injects Plausible analytics script only when the user
- * has accepted analytics cookies. Loaded on every page via the root layout.
+ * Plausible Analytics — cookieless, no consent required under GDPR.
+ * Loaded unconditionally on every page via the root layout.
  */
-export async function AnalyticsScripts() {
-  const consent = await readServerCookieConsent();
-  if (!consent.analytics) return null;
-
+export function AnalyticsScripts() {
   return (
     <>
       <script async src="https://plausible.io/js/pa-oX9WZUGUqZuP1MVHLh6zv.js" />
