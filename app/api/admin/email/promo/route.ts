@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { sendPromotionalEmail } from "@/lib/email";
 import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     { auth: { persistSession: false } }
   );
 
-  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  const allUsers: User[] = [];
   let listPage = 1;
   while (true) {
     const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page: listPage, perPage: 1000 });
