@@ -5,6 +5,7 @@ import {
   sendWeeklyInsightAutoEmail,
   getWeeklyInsightIssueNumber,
 } from "@/lib/email";
+import { securityLog } from "@/lib/security/structuredLog";
 
 /**
  * GET/POST /api/cron/weekly-insight
@@ -64,9 +65,7 @@ async function runCron(req: NextRequest) {
 
   const recipients = allUsers.filter((u) => u.email);
 
-  console.log(
-    `[cron/weekly-insight] week=${weekNumber} recipients=${recipients.length}`
-  );
+  securityLog("info", "cron.weekly-insight.start", { weekNumber, recipients: recipients.length });
 
   const results: Array<{ email: string; ok: boolean; error?: string }> = [];
 

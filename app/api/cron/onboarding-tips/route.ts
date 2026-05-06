@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import type { User } from "@supabase/supabase-js";
 import { sendOnboardingTipEmail, type OnboardingStep } from "@/lib/email";
+import { securityLog } from "@/lib/security/structuredLog";
 
 /**
  * GET/POST /api/cron/onboarding-tips
@@ -99,9 +100,7 @@ async function runCron(req: NextRequest) {
       return created >= rangeStart.getTime() && created <= rangeEnd.getTime();
     });
 
-    console.log(
-      `[cron/onboarding-tips] step=${step} window=[${rangeStart.toISOString()}, ${rangeEnd.toISOString()}] candidates=${candidates.length}`
-    );
+    securityLog("info", "cron.onboarding-tips.step", { step, windowStart: rangeStart.toISOString(), windowEnd: rangeEnd.toISOString(), candidates: candidates.length });
 
     for (const user of candidates) {
       if (!user.email) continue;

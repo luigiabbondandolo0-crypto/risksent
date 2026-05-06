@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { undeployMetaApiAccount } from "@/lib/metaapi/accountLifecycle";
+import { securityLog } from "@/lib/security/structuredLog";
 
 /**
  * GET/POST /api/cron/disconnect-inactive-accounts
@@ -66,6 +67,6 @@ async function runCron(req: NextRequest) {
     results.push({ accountId: id, ok });
   }
 
-  console.log(`[cron/disconnect-inactive-accounts] processed ${results.length}, ok=${results.filter((r) => r.ok).length}`);
+  securityLog("info", "cron.disconnect-inactive-accounts.done", { processed: results.length, ok: results.filter((r) => r.ok).length });
   return NextResponse.json({ ok: true, processed: results.length, results });
 }

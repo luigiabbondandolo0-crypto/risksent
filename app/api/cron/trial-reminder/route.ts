@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendTrialEndingEmail } from "@/lib/email";
+import { securityLog } from "@/lib/security/structuredLog";
 
 /**
  * GET/POST /api/cron/trial-reminder
@@ -73,7 +74,7 @@ async function runCron(req: NextRequest) {
   }
 
   const candidates = rows ?? [];
-  console.log(`[cron/trial-reminder] ${candidates.length} candidate(s) in next ${REMINDER_WINDOW_HOURS}h`);
+  securityLog("info", "cron.trial-reminder.candidates", { count: candidates.length, windowHours: REMINDER_WINDOW_HOURS });
 
   const results: Array<{ user: string; ok: boolean; reason?: string }> = [];
 

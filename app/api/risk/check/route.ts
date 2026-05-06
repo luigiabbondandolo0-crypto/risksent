@@ -123,6 +123,7 @@ export async function POST(request: Request) {
     journalCtx?.id ?? null
   );
 
+  // journalLive is guaranteed non-null here: line 116 returns early if both snap and journalLive are null
   const live = snap
     ? {
         dailyDdPct: snap.dailyDdPct,
@@ -133,12 +134,12 @@ export async function POST(request: Request) {
         avgTradesPerDay: snap.avgTradesPerDay
       }
     : {
-        dailyDdPct: journalLive!.dailyDdPct,
-        currentExposurePct: journalLive!.currentExposurePct,
-        maxOpenRiskPct: journalLive!.maxOpenRiskPct,
-        consecutiveLossesAtEnd: journalLive!.consecutiveLossesAtEnd,
-        todayTrades: journalLive!.todayTrades,
-        avgTradesPerDay: journalLive!.avgTradesPerDay
+        dailyDdPct: journalLive?.dailyDdPct ?? 0,
+        currentExposurePct: journalLive?.currentExposurePct ?? 0,
+        maxOpenRiskPct: journalLive?.maxOpenRiskPct ?? 0,
+        consecutiveLossesAtEnd: journalLive?.consecutiveLossesAtEnd ?? 0,
+        todayTrades: journalLive?.todayTrades ?? 0,
+        avgTradesPerDay: journalLive?.avgTradesPerDay ?? 0
       };
 
   const { candidates } = await persistRiskViolations({
