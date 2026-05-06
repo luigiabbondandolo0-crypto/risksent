@@ -77,8 +77,34 @@ export async function touchUserAccounts(
 }
 
 /**
+ * Fetch the actual deployment state of an account from MetaApi provisioning API.
+ * Returns "DEPLOYED" | "DEPLOYING" | "UNDEPLOYED" | "UNDEPLOYING" | null on error.
+ */
+async function fetchMetaApiAccountState(accountId: string): Promise<string | null> {
+  const token = getToken();
+  if (!token) return null;
+  const base = provisioningBase();
+  try {
+    const res = await fetch(
+      `${base}/users/current/accounts/${encodeURIComponent(accountId)}`,
+      {
+        headers: { Accept: "application/json", "auth-token": token },
+        cache: "no-store",
+      }
+    );
+    if (!res.ok) return null;
+    const json = await res.json() as { state?: string };
+    return json.state ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Check if the given metaapi account is undeployed; if so, trigger redeploy.
- * Returns { reconnecting: true } when redeployment was triggered or is in progress.
+ * When status is "reconnecting", polls MetaApi directly to detect when it's
+ * back online — avoids the deadlock where DB stays "reconnecting" forever.
+ * Returns { reconnecting: true } while still coming online.
  */
 export async function ensureAccountDeployed(
   supabase: SupabaseClient,
@@ -107,6 +133,16 @@ export async function ensureAccountDeployed(
   }
 
   if (status === "reconnecting") {
+    // Poll MetaApi directly — if it reports DEPLOYED, clear the reconnecting flag
+    const state = await fetchMetaApiAccountState(metaapiAccountId);
+    if (state === "DEPLOYED") {
+      await supabase
+        .from("trading_account")
+        .update({ metaapi_status: "connected" })
+        .eq("metaapi_account_id", metaapiAccountId)
+        .eq("user_id", userId);
+      return { reconnecting: false };
+    }
     return { reconnecting: true };
   }
 
