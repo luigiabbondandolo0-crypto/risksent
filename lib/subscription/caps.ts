@@ -166,7 +166,7 @@ export function capsForPlan(
       canAccessAICoach: true,
       canAccessRiskManager: true,
       canAccessTelegramAlerts: true,
-      maxBrokerAccounts: 5,
+      maxBrokerAccounts: 3,
       maxBacktestingSessions: null,
       trialEndsAt: null,
       trialUsed,

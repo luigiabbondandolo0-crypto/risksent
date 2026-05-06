@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, Mail, X } from "lucide-react";
 import { jn } from "@/lib/journal/jnClasses";
 import {
   POPULAR_BROKER_SERVERS,
@@ -24,6 +24,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
   const [accountNumber, setAccountNumber] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [showContactSupport, setShowContactSupport] = useState(false);
   const [loading, setLoading] = useState(false);
   const [brokerMenuOpen, setBrokerMenuOpen] = useState(false);
   const brokerWrapRef = useRef<HTMLDivElement>(null);
@@ -58,6 +59,69 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
 
   if (!open || typeof document === "undefined") return null;
 
+  // Reset contact-support screen when modal is closed/reopened
+  const handleClose = () => {
+    setShowContactSupport(false);
+    setErr(null);
+    onClose();
+  };
+
+  if (showContactSupport) {
+    const mailto =
+      "mailto:support@risksent.com?subject=" +
+      encodeURIComponent("Request: additional broker accounts") +
+      "&body=" +
+      encodeURIComponent(
+        "Hi RiskSent Support,\n\nI'm on the Experienced plan and I'd like to add more than 3 broker accounts.\n\nPlease let me know how to proceed.\n\nThank you"
+      );
+
+    return createPortal(
+      <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div
+          className={`relative w-full max-w-md ${jn.card} text-center`}
+          style={{ background: "rgba(8,8,9,0.95)" }}
+        >
+          <button
+            type="button"
+            aria-label="Close"
+            className="absolute right-3 top-3 rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200"
+            onClick={handleClose}
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex flex-col items-center gap-4 px-4 py-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400">
+              <Mail className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className={`${jn.h1} text-xl`}>Account limit reached</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Your Experienced plan includes up to 3 broker accounts.
+                To add more, contact our support team — we&apos;ll get you set up manually.
+              </p>
+            </div>
+            <a
+              href={mailto}
+              className={`${jn.btnPrimary} inline-flex items-center gap-2 no-underline`}
+            >
+              <Mail className="h-4 w-4" />
+              Email support
+            </a>
+            <button
+              type="button"
+              className={jn.btnGhost}
+              onClick={handleClose}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
   const submit = async () => {
     setErr(null);
     setLoading(true);
@@ -75,7 +139,11 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
       });
       const j = await res.json();
       if (!res.ok) {
-        setErr(j.error ?? "Failed");
+        if (j.error === "limit_reached_contact_support") {
+          setShowContactSupport(true);
+          return;
+        }
+        setErr(j.message ?? j.error ?? "Failed");
         return;
       }
       if (j.metaapi_sync_pending) {
@@ -108,7 +176,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
           type="button"
           aria-label="Close"
           className="absolute right-3 top-3 rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-200"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <X className="h-4 w-4" />
         </button>
@@ -258,7 +326,7 @@ export function AddAccountModal({ open, onClose, onCreated }: Props) {
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button type="button" className={jn.btnGhost} onClick={onClose}>
+          <button type="button" className={jn.btnGhost} onClick={handleClose}>
             Cancel
           </button>
           <button

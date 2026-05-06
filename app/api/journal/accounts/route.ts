@@ -76,6 +76,13 @@ export async function POST(req: NextRequest) {
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id);
     if ((count ?? 0) >= maxAccounts) {
+      // Experienced traders hit a soft cap of 3 — direct them to support for extras.
+      if (caps.plan === "experienced") {
+        return NextResponse.json(
+          { error: "limit_reached_contact_support" },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
         {
           error: "limit_reached",
