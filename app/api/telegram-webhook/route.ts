@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+function safeCompareSecrets(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 const TELEGRAM_API = "https://api.telegram.org";
 const LOG_PREFIX = "[Telegram webhook]";
@@ -31,8 +37,8 @@ export async function POST(req: NextRequest) {
     // Return 200 so Telegram doesn't retry indefinitely, but log the misconfiguration.
     return NextResponse.json({ ok: false, reason: "misconfigured" });
   }
-  const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
-  if (incomingSecret !== webhookSecret) {
+  const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token") ?? "";
+  if (!safeCompareSecrets(incomingSecret, webhookSecret)) {
     if (DEBUG) console.warn(LOG_PREFIX, "rejected: invalid webhook secret token");
     // Return 200 to avoid leaking that auth failed (Telegram retries on non-200).
     return NextResponse.json({ ok: true });
