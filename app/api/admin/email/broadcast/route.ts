@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { sendMarketingEmail } from "@/lib/email";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 /**
  * POST /api/admin/email/broadcast
@@ -19,6 +20,10 @@ import { sendMarketingEmail } from "@/lib/email";
  * }
  */
 export async function POST(req: NextRequest) {
+  if (!checkCsrfOrigin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { isAdmin } = await checkAdminRole();
   if (!isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -48,13 +53,20 @@ export async function POST(req: NextRequest) {
     { auth: { persistSession: false } }
   );
 
-  // Fetch users via auth admin API
-  const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  if (listErr) {
-    return NextResponse.json({ error: listErr.message }, { status: 500 });
+  // Fetch all users via auth admin API (paginated)
+  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  let listPage = 1;
+  while (true) {
+    const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page: listPage, perPage: 1000 });
+    if (listErr) {
+      return NextResponse.json({ error: listErr.message }, { status: 500 });
+    }
+    allUsers.push(...(usersData?.users ?? []));
+    if ((usersData?.users ?? []).length < 1000) break;
+    listPage++;
   }
 
-  let recipients = usersData.users.filter((u) => u.email);
+  let recipients = allUsers.filter((u) => u.email);
 
   if (segment !== "all") {
     const { data: subs } = await admin

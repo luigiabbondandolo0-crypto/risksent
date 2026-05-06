@@ -39,12 +39,11 @@ export async function POST(req: NextRequest) {
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return false;
   const authHeader = req.headers.get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
   const headerSecret = req.headers.get("x-cron-secret");
-  const querySecret = new URL(req.url).searchParams.get("secret");
-  return bearerToken === secret || headerSecret === secret || querySecret === secret;
+  return bearerToken === secret || headerSecret === secret;
 }
 
 function createServiceClient() {
@@ -76,17 +75,24 @@ async function runCron(req: NextRequest) {
     const rangeStart = new Date(now.getTime() - targetMs - windowMs);
     const rangeEnd = new Date(now.getTime() - targetMs + windowMs);
 
-    // Fetch auth users created in the target window
-    const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({
-      perPage: 1000,
-    });
+    // Fetch all auth users (paginated)
+    const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+    let fetchPage = 1;
+    let fetchError: unknown = null;
+    while (true) {
+      const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page: fetchPage, perPage: 1000 });
+      if (listErr) { fetchError = listErr; break; }
+      allUsers.push(...(usersData?.users ?? []));
+      if ((usersData?.users ?? []).length < 1000) break;
+      fetchPage++;
+    }
 
-    if (listErr) {
-      console.error(`[cron/onboarding-tips] step=${step} list error`, listErr);
+    if (fetchError) {
+      console.error(`[cron/onboarding-tips] step=${step} list error`, fetchError);
       continue;
     }
 
-    const candidates = usersData.users.filter((u) => {
+    const candidates = allUsers.filter((u) => {
       if (!u.email || !u.created_at) return false;
       const created = new Date(u.created_at).getTime();
       return created >= rangeStart.getTime() && created <= rangeEnd.getTime();

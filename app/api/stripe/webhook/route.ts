@@ -84,6 +84,35 @@ async function upsertSubscriptionFromStripe(
   );
 }
 
+/**
+ * Idempotency guard: deduplicates Stripe webhook events so retries never
+ * trigger duplicate emails or double-upserts.
+ *
+ * MIGRATION — run once in Supabase SQL editor:
+ *   CREATE TABLE IF NOT EXISTS stripe_processed_events (
+ *     event_id   TEXT PRIMARY KEY,
+ *     processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+ *   );
+ *   -- Auto-delete events older than 30 days (optional, keeps the table small):
+ *   CREATE INDEX IF NOT EXISTS stripe_processed_events_processed_at_idx
+ *     ON stripe_processed_events (processed_at);
+ */
+async function markEventProcessed(
+  supabase: ReturnType<typeof createServiceClient>,
+  eventId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("stripe_processed_events")
+    .insert({ event_id: eventId });
+  // Unique-constraint violation (code 23505) means already processed.
+  if (error) {
+    if ((error as { code?: string }).code === "23505") return false;
+    // Table may not exist yet — log and continue (fail open until migration runs).
+    console.warn("[stripe/webhook] idempotency insert error:", error.message);
+  }
+  return true;
+}
+
 export async function POST(req: Request) {
   const stripe = createStripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -99,6 +128,11 @@ export async function POST(req: Request) {
   }
 
   const supabase = createServiceClient();
+
+  const isNew = await markEventProcessed(supabase, event.id);
+  if (!isNew) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
 
   switch (event.type) {
     case "checkout.session.completed": {

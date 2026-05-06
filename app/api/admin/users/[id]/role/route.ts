@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 const SELECTABLE_PLANS = ["user", "trial", "new_trader", "experienced", "admin"] as const;
 type SelectablePlan = (typeof SELECTABLE_PLANS)[number];
@@ -20,6 +21,10 @@ export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  if (!checkCsrfOrigin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { isAdmin } = await checkAdminRole();
 
   if (!isAdmin) {

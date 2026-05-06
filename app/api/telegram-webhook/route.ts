@@ -22,15 +22,20 @@ type TelegramUpdate = {
 export async function POST(req: NextRequest) {
   if (DEBUG) console.log(LOG_PREFIX, "webhook POST received", { url: req.url });
 
-  // Validate Telegram webhook secret token if configured
+  // Validate Telegram webhook secret token.
+  // TELEGRAM_WEBHOOK_SECRET must be set; if missing, reject all requests.
+  // Configure it via: botfather → setwebhook with secret_token=<value>.
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
-    if (incomingSecret !== webhookSecret) {
-      if (DEBUG) console.warn(LOG_PREFIX, "rejected: invalid webhook secret token");
-      // Return 200 to avoid leaking that auth failed (Telegram retries on non-200)
-      return NextResponse.json({ ok: true });
-    }
+  if (!webhookSecret) {
+    console.error(LOG_PREFIX, "TELEGRAM_WEBHOOK_SECRET not configured — rejecting all webhook requests");
+    // Return 200 so Telegram doesn't retry indefinitely, but log the misconfiguration.
+    return NextResponse.json({ ok: false, reason: "misconfigured" });
+  }
+  const incomingSecret = req.headers.get("x-telegram-bot-api-secret-token");
+  if (incomingSecret !== webhookSecret) {
+    if (DEBUG) console.warn(LOG_PREFIX, "rejected: invalid webhook secret token");
+    // Return 200 to avoid leaking that auth failed (Telegram retries on non-200).
+    return NextResponse.json({ ok: true });
   }
 
   const token = process.env.TELEGRAM_BOT_TOKEN;

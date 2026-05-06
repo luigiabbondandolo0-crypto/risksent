@@ -22,6 +22,24 @@ function isGlobalApiRateLimitExcluded(pathname: string): boolean {
 }
 
 /**
+ * CSRF origin check for state-changing API routes.
+ *
+ * Validates the `Origin` header against the request host. Blocks cross-origin
+ * requests where the browser would include the header (same-origin fetch and
+ * cross-site form/fetch). Allows requests without `Origin` (non-browser clients,
+ * server-to-server). Combined with SameSite=Lax cookies this stops CSRF attacks.
+ *
+ * Returns true when the request should proceed, false when it should be rejected.
+ */
+export function checkCsrfOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return true; // non-browser or same-origin navigation — allow
+  const host = req.headers.get("host");
+  if (!host) return false;
+  return origin === `https://${host}` || origin === `http://${host}`;
+}
+
+/**
  * Production: redirect HTTP → HTTPS when the edge reports plain HTTP (e.g. misconfigured proxy).
  * Set ENFORCE_HTTPS=false to disable (e.g. local tunnel without forwarded proto).
  */

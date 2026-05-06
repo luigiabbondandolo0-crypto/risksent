@@ -137,14 +137,30 @@ export function emailDocumentFooter(footerNote: string, extraLine?: string): str
   `.trim();
 }
 
+/**
+ * Validates that a URL is safe to embed in an email href.
+ * Only allows https:// to prevent javascript:, data:, and other injection vectors.
+ */
+function safeHref(href: string): string {
+  try {
+    const url = new URL(href);
+    if (url.protocol !== "https:") return "#";
+  } catch {
+    return "#";
+  }
+  return href;
+}
+
 export function emailCtaButton(href: string, label: string): string {
+  const safe = safeHref(href);
   return `
-  <a href="${href}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:${ctaGradient()}; color:#f8fafc !important; text-decoration:none; padding:14px 32px; border-radius:10px; font-weight:800; font-size:15px; letter-spacing:0.01em; text-align:center;">${escapeHtml(label)}</a>
+  <a href="${safe}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:${ctaGradient()}; color:#f8fafc !important; text-decoration:none; padding:14px 32px; border-radius:10px; font-weight:800; font-size:15px; letter-spacing:0.01em; text-align:center;">${escapeHtml(label)}</a>
   `.trim();
 }
 
 export function emailCtaSubLink(href: string, label: string): string {
+  const safe = safeHref(href);
   return `
-  <a href="${href}" style="display:inline-block; margin-top:12px; color:#94a3b8 !important; text-decoration:none; font-size:13px; font-weight:600;">${escapeHtml(label)}</a>
+  <a href="${safe}" style="display:inline-block; margin-top:12px; color:#94a3b8 !important; text-decoration:none; font-size:13px; font-weight:600;">${escapeHtml(label)}</a>
   `.trim();
 }

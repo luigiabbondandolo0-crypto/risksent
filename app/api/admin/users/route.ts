@@ -13,11 +13,17 @@ export async function GET() {
   try {
     const admin = createSupabaseAdmin();
 
-    const { data: authData, error: authErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    if (authErr) {
-      return NextResponse.json({ error: authErr.message }, { status: 500 });
+    const authUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+    let page = 1;
+    while (true) {
+      const { data: authData, error: authErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (authErr) {
+        return NextResponse.json({ error: authErr.message }, { status: 500 });
+      }
+      authUsers.push(...(authData?.users ?? []));
+      if ((authData?.users ?? []).length < 1000) break;
+      page++;
     }
-    const authUsers = authData?.users ?? [];
 
     const { data: appUsers, error: appErr } = await admin
       .from("app_user")

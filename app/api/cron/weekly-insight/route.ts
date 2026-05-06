@@ -48,13 +48,20 @@ async function runCron(req: NextRequest) {
   const weekNumber = getWeeklyInsightIssueNumber();
   const admin = createServiceClient();
 
-  const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  if (listErr) {
-    console.error("[cron/weekly-insight] listUsers error", listErr);
-    return NextResponse.json({ ok: false, reason: listErr.message }, { status: 500 });
+  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  let page = 1;
+  while (true) {
+    const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (listErr) {
+      console.error("[cron/weekly-insight] listUsers error", listErr);
+      return NextResponse.json({ ok: false, reason: listErr.message }, { status: 500 });
+    }
+    allUsers.push(...(usersData?.users ?? []));
+    if ((usersData?.users ?? []).length < 1000) break;
+    page++;
   }
 
-  const recipients = usersData.users.filter((u) => u.email);
+  const recipients = allUsers.filter((u) => u.email);
 
   console.log(
     `[cron/weekly-insight] week=${weekNumber} recipients=${recipients.length}`

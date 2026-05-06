@@ -6,6 +6,7 @@ import { purgeUserBillableResources } from "@/lib/purgeUserBillableResources";
 import { checkRateLimit, getClientIpFromRequestHeaders } from "@/lib/security/rateLimit";
 import { createSupabaseRouteClient } from "@/lib/supabase/server";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 /**
  * POST /api/account/delete
@@ -13,6 +14,10 @@ import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
  * Cancels Stripe + MetaApi broker accounts, then removes the Supabase auth user (DB cascades).
  */
 export async function POST(req: NextRequest) {
+  if (!checkCsrfOrigin(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = await createSupabaseRouteClient();
   const {
     data: { user },

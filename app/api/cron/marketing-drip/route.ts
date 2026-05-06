@@ -53,16 +53,22 @@ async function runCron(req: NextRequest) {
   const now = new Date();
   const DAY_MS = 24 * 60 * 60 * 1000;
 
-  // List all auth users (up to 1000 — paginate if your user base grows beyond this)
-  const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  if (listErr) {
-    console.error("[cron/marketing-drip] listUsers error", listErr);
-    return NextResponse.json({ ok: false, reason: listErr.message }, { status: 500 });
+  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  let page = 1;
+  while (true) {
+    const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (listErr) {
+      console.error("[cron/marketing-drip] listUsers error", listErr);
+      return NextResponse.json({ ok: false, reason: listErr.message }, { status: 500 });
+    }
+    allUsers.push(...(usersData?.users ?? []));
+    if ((usersData?.users ?? []).length < 1000) break;
+    page++;
   }
 
   const results: Array<{ user: string; step: number; ok: boolean; reason?: string }> = [];
 
-  for (const user of usersData.users) {
+  for (const user of allUsers) {
     if (!user.email || !user.created_at) continue;
 
     const daysSinceRegistration = Math.floor(
