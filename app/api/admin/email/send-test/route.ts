@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { getEmailPreviewHtml, type PreviewEmailType } from "@/lib/email";
 import { Resend } from "resend";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 const ALL_TYPES: PreviewEmailType[] = [
   "onboarding-mastermail",
@@ -50,6 +51,7 @@ const SUBJECTS: Record<PreviewEmailType, string> = {
  * Admin-only. Requires RESEND_API_KEY.
  */
 export async function POST(req: NextRequest) {
+  if (!checkCsrfOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { isAdmin } = await checkAdminRole();
   if (!isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

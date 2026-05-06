@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { sendTrialEndingEmail } from "@/lib/email";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 /**
  * /api/admin/trial-reminders
@@ -126,6 +127,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!checkCsrfOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { isAdmin } = await checkAdminRole();
   if (!isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

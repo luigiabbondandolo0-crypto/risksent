@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkAdminRole } from "@/lib/adminAuth";
+import { checkCsrfOrigin } from "@/lib/security/edgeSecurity";
 
 function serviceClient() {
   return createClient(
@@ -23,7 +24,8 @@ export async function GET() {
   return NextResponse.json({ announcements: data ?? [] });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  if (!checkCsrfOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { isAdmin } = await checkAdminRole();
   if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 

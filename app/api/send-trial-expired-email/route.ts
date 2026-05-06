@@ -6,7 +6,20 @@ import { getTrialExpiredEmailTemplate } from "@/lib/email";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "RiskSent <info@risksent.com>";
 const REPLY_TO = process.env.RESEND_REPLY_TO || "support@risksent.com";
 
+function isAuthorized(req: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  const authHeader = req.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const headerSecret = req.headers.get("x-cron-secret");
+  return bearerToken === secret || headerSecret === secret;
+}
+
 export async function POST(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { to, userName } = body as { to?: string; userName?: string };
