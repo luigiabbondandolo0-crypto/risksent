@@ -309,7 +309,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Mark as connected after a successful MetaApi data fetch
-    void markAccountConnected(supabase, user.id, account.metaapi_account_id).catch(() => undefined);
+    void markAccountConnected(supabase, user.id, account.metaapi_account_id!).catch(() => undefined);
 
     return NextResponse.json({
       balance,
