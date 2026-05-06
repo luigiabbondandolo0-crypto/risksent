@@ -3,6 +3,11 @@ const DEBUG = process.env.DEBUG === "1";
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeIanaTimeZone } from "@/lib/journal/calendarBounds";
 import { requireRouteUser } from "@/lib/supabase/requireRouteUser";
+import {
+  touchUserAccounts,
+  ensureAccountDeployed,
+  markAccountConnected
+} from "@/lib/metaapi/accountLifecycle";
 import { buildRealStats, parseOrders, type ClosedOrder } from "@/lib/dashboard/buildRealStats";
 import {
   computeCurrentExposurePct,
@@ -163,6 +168,9 @@ export async function GET(req: NextRequest) {
       ? normalizeIanaTimeZone(paramTz)
       : normalizeIanaTimeZone(auTz?.preference_timezone ?? null);
 
+  // Fire-and-forget: update last_active_at for all user's trading accounts
+  void touchUserAccounts(supabase, user.id).catch(() => undefined);
+
   const accountRow = await resolveStatsTradingRow(supabase, user.id, uuid);
 
   if (!accountRow?.metaapi_account_id) {
@@ -177,6 +185,15 @@ export async function GET(req: NextRequest) {
   }
 
   const account = accountRow as TradingAccountRow;
+
+  // Ensure account is deployed; if it was undeployed, trigger redeploy and return reconnecting state
+  const { reconnecting } = await ensureAccountDeployed(supabase, user.id, account.metaapi_account_id);
+  if (reconnecting) {
+    return NextResponse.json({
+      ...degradedBody("Reconnecting to broker — this takes about 30–60 seconds"),
+      reconnecting: true
+    });
+  }
 
   try {
     if (DEBUG) console.log("[api/dashboard-stats] fetch");
@@ -290,6 +307,9 @@ export async function GET(req: NextRequest) {
       brokerServer: journalCtx?.broker_server ?? null,
       timeZone
     });
+
+    // Mark as connected after a successful MetaApi data fetch
+    void markAccountConnected(supabase, user.id, account.metaapi_account_id).catch(() => undefined);
 
     return NextResponse.json({
       balance,

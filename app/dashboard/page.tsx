@@ -67,6 +67,7 @@ type Stats = {
   initialBalance?: number;
   updatedAt?: string;
   error?: string;
+  reconnecting?: boolean;
 };
 
 type DayStat = { date: string; profit: number; trades: number; wins: number };
@@ -578,6 +579,13 @@ export default function DashboardPage() {
     return { wrLast, wrPrev, diff };
   })();
 
+  // Auto-refresh every 3s while account is reconnecting
+  useEffect(() => {
+    if (!stats?.reconnecting) return;
+    const t = setTimeout(() => void fetchStats(resolvedStatsUuid), 3000);
+    return () => clearTimeout(t);
+  }, [stats?.reconnecting, fetchStats, resolvedStatsUuid]);
+
   const handleSyncTrades = useCallback(async () => {
     if (isSubDemo || syncing) return;
     if (!(journalAccounts ?? []).some((a) => a.metaapi_account_id)) {
@@ -707,6 +715,12 @@ export default function DashboardPage() {
               ✕
             </button>
           </div>
+        </div>
+      )}
+      {stats?.reconnecting && (
+        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+          <span>Reconnecting to your broker — live data will appear in about 30–60 seconds.</span>
         </div>
       )}
       <UpgradeBanner />
