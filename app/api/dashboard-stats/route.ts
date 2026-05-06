@@ -187,7 +187,7 @@ export async function GET(req: NextRequest) {
   const account = accountRow as TradingAccountRow;
 
   // Ensure account is deployed; if it was undeployed, trigger redeploy and return reconnecting state
-  const { reconnecting } = await ensureAccountDeployed(supabase, user.id, account.metaapi_account_id);
+  const { reconnecting } = await ensureAccountDeployed(supabase, user.id, account.metaapi_account_id!);
   if (reconnecting) {
     return NextResponse.json({
       ...degradedBody("Reconnecting to broker — this takes about 30–60 seconds"),
