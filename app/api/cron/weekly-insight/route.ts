@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import {
   sendWeeklyInsightAutoEmail,
   getWeeklyInsightIssueNumber,
@@ -48,7 +49,7 @@ async function runCron(req: NextRequest) {
   const weekNumber = getWeeklyInsightIssueNumber();
   const admin = createServiceClient();
 
-  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  const allUsers: User[] = [];
   let page = 1;
   while (true) {
     const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });

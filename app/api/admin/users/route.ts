@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import type { User } from "@supabase/supabase-js";
 import { checkAdminRole } from "@/lib/adminAuth";
 import { createSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -13,7 +14,7 @@ export async function GET() {
   try {
     const admin = createSupabaseAdmin();
 
-    const authUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+    const authUsers: User[] = [];
     let page = 1;
     while (true) {
       const { data: authData, error: authErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });

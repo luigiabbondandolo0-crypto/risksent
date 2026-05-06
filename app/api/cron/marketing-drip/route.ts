@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { sendMarketingDripStepEmail, MARKETING_DRIP_TOTAL_STEPS } from "@/lib/email";
 
 /**
@@ -53,7 +54,7 @@ async function runCron(req: NextRequest) {
   const now = new Date();
   const DAY_MS = 24 * 60 * 60 * 1000;
 
-  const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+  const allUsers: User[] = [];
   let page = 1;
   while (true) {
     const { data: usersData, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });

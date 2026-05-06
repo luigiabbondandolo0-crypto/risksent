@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { sendOnboardingTipEmail, type OnboardingStep } from "@/lib/email";
 
 /**
@@ -76,7 +77,7 @@ async function runCron(req: NextRequest) {
     const rangeEnd = new Date(now.getTime() - targetMs + windowMs);
 
     // Fetch all auth users (paginated)
-    const allUsers: Awaited<ReturnType<typeof admin.auth.admin.listUsers>>["data"]["users"] = [];
+    const allUsers: User[] = [];
     let fetchPage = 1;
     let fetchError: unknown = null;
     while (true) {
