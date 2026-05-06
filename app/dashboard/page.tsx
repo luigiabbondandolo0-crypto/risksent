@@ -579,8 +579,19 @@ export default function DashboardPage() {
     return { wrLast, wrPrev, diff };
   })();
 
-  // Auto-refresh every 3s while account is reconnecting
+  // Auto-refresh every 3s while account is reconnecting;
+  // fire an immediate fetch when reconnecting clears so data loads without user navigation.
+  const prevReconnecting = useRef<boolean | undefined>(undefined);
   useEffect(() => {
+    const wasReconnecting = prevReconnecting.current;
+    prevReconnecting.current = stats?.reconnecting;
+
+    if (wasReconnecting === true && !stats?.reconnecting) {
+      // Just came back online — fetch real data immediately
+      void fetchStats(resolvedStatsUuid);
+      return;
+    }
+
     if (!stats?.reconnecting) return;
     const t = setTimeout(() => void fetchStats(resolvedStatsUuid), 3000);
     return () => clearTimeout(t);
