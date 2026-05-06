@@ -128,16 +128,27 @@ export async function PATCH(req: NextRequest) {
     if (phone !== undefined) updates.phone = phone || null;
     if (company !== undefined) updates.company = company || null;
     if (preferenceTimezone !== undefined) {
-      updates.preference_timezone =
-        typeof preferenceTimezone === "string" && preferenceTimezone.trim()
-          ? preferenceTimezone.trim()
-          : "UTC";
+      const tz = typeof preferenceTimezone === "string" ? preferenceTimezone.trim() : "";
+      if (tz) {
+        try {
+          Intl.DateTimeFormat(undefined, { timeZone: tz });
+        } catch {
+          return NextResponse.json({ error: "Invalid timezone" }, { status: 400 });
+        }
+      }
+      updates.preference_timezone = tz || "UTC";
     }
     if (preferenceCurrency !== undefined) {
-      updates.preference_currency =
-        typeof preferenceCurrency === "string" && preferenceCurrency.trim()
-          ? preferenceCurrency.trim().toUpperCase()
-          : "USD";
+      const VALID_CURRENCIES = new Set([
+        "USD","EUR","GBP","JPY","AUD","CAD","CHF","CNY","SEK","NZD","MXN","SGD",
+        "HKD","NOK","KRW","TRY","RUB","INR","BRL","ZAR","PLN","DKK","CZK","HUF",
+        "ILS","IDR","MYR","PHP","THB","AED","SAR","EGP","PKR","BGN","RON","UAH","VND"
+      ]);
+      const currency = typeof preferenceCurrency === "string" ? preferenceCurrency.trim().toUpperCase() : "";
+      if (currency && !VALID_CURRENCIES.has(currency)) {
+        return NextResponse.json({ error: "Invalid currency" }, { status: 400 });
+      }
+      updates.preference_currency = currency || "USD";
     }
 
     const { error: updateError } = await supabase

@@ -237,6 +237,12 @@ export async function POST(req: Request) {
         .eq("stripe_subscription_id", subId);
       break;
     }
+
+    case "customer.subscription.trial_will_end": {
+      // Keep DB in sync; trial reminder emails are handled by the cron job
+      await upsertSubscriptionFromStripe(supabase, event.data.object as Stripe.Subscription);
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });

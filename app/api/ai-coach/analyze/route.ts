@@ -4,6 +4,7 @@ import { createSupabaseRouteClient } from "@/lib/supabaseServer";
 import { COACH_SYSTEM_PROMPT } from "@/lib/ai-coach/coachPrompt";
 import { parseCoachReportFromModelText } from "@/lib/ai-coach/parseCoachReport";
 import { capsForPlan, type Plan, type SubStatus } from "@/lib/subscription/caps";
+import { securityLog } from "@/lib/security/structuredLog";
 
 const CLAUDE_COACH_MODEL = "claude-haiku-4-5-20251001";
 
@@ -287,10 +288,8 @@ export async function POST(req: NextRequest) {
   });
   if (!res.ok) {
     const err = await res.text();
-    return NextResponse.json(
-      { error: `Anthropic error: ${err}` },
-      { status: 502 }
-    );
+    securityLog("error", "ai_coach.analyze.anthropic_error", { status: res.status, detail: err.slice(0, 200) });
+    return NextResponse.json({ error: "AI service temporarily unavailable" }, { status: 502 });
   }
   const j = (await res.json()) as {
     content?: Array<{ type?: string; text?: string }>;

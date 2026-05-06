@@ -20,7 +20,15 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json() as { active?: boolean; title?: string; message?: string; type?: string; target_plan?: string };
   const admin = serviceClient();
-  const { error } = await admin.from("announcements").update(body).eq("id", id);
+  // Explicit whitelist — never spread body directly to avoid mass assignment
+  const safe: Record<string, unknown> = {};
+  if (body.active !== undefined) safe.active = Boolean(body.active);
+  if (body.title !== undefined) safe.title = String(body.title).slice(0, 200);
+  if (body.message !== undefined) safe.message = String(body.message).slice(0, 2000);
+  if (body.type !== undefined) safe.type = String(body.type).slice(0, 50);
+  if (body.target_plan !== undefined) safe.target_plan = String(body.target_plan).slice(0, 50);
+  if (Object.keys(safe).length === 0) return NextResponse.json({ error: "No valid fields" }, { status: 400 });
+  const { error } = await admin.from("announcements").update(safe).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

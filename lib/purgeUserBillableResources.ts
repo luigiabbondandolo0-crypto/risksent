@@ -16,7 +16,7 @@ export async function purgeUserBillableResources(
 
   const { data: subRow } = await admin
     .from("subscriptions")
-    .select("stripe_subscription_id")
+    .select("stripe_subscription_id, stripe_customer_id")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -25,15 +25,35 @@ export async function purgeUserBillableResources(
       ? (subRow as { stripe_subscription_id: string }).stripe_subscription_id.trim()
       : "";
 
+  const customerId =
+    subRow && typeof (subRow as { stripe_customer_id?: string }).stripe_customer_id === "string"
+      ? (subRow as { stripe_customer_id: string }).stripe_customer_id.trim()
+      : "";
+
   const stripeSecret = process.env.STRIPE_SECRET_KEY?.trim();
-  if (subId && stripeSecret) {
-    try {
-      const stripe = createStripe(stripeSecret);
-      await stripe.subscriptions.cancel(subId);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!/No such subscription/i.test(msg) && !/already been canceled/i.test(msg)) {
-        warnings.push(`stripe: ${msg}`);
+  if (stripeSecret) {
+    const stripe = createStripe(stripeSecret);
+
+    if (subId) {
+      try {
+        await stripe.subscriptions.cancel(subId);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!/No such subscription/i.test(msg) && !/already been canceled/i.test(msg)) {
+          warnings.push(`stripe subscription: ${msg}`);
+        }
+      }
+    }
+
+    // Delete the Stripe customer to remove stored payment methods
+    if (customerId) {
+      try {
+        await stripe.customers.del(customerId);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!/No such customer/i.test(msg)) {
+          warnings.push(`stripe customer: ${msg}`);
+        }
       }
     }
   }

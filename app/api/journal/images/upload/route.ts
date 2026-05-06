@@ -68,6 +68,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or oversized image" }, { status: 400 });
   }
 
+  // Validate magic bytes to ensure content matches declared extension
+  const validMagic = (() => {
+    const b = buffer;
+    const norm = ext === "jpeg" ? "jpg" : ext;
+    if (norm === "png") return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47;
+    if (norm === "jpg") return b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+    if (norm === "gif") return b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38;
+    if (norm === "webp") {
+      const isRiff = b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46;
+      const isWebp = b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+      return isRiff && isWebp;
+    }
+    return false;
+  })();
+  if (!validMagic) {
+    return NextResponse.json({ error: "File content does not match declared image type" }, { status: 400 });
+  }
+
   const timestamp = Date.now();
   const path = `${user.id}/${timestamp}.${ext === "jpeg" ? "jpg" : ext}`;
 
