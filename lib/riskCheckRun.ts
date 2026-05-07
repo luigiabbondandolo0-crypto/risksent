@@ -5,7 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRiskFindings, type OpenPositionForRisk, type RiskFinding, type RiskRules, type StatsForRisk } from "./riskCheck";
-import { sendSmartTelegramAlert } from "./telegram/sendSmartTelegramAlert";
+import { sendSmartTelegramAlert, ruleTypeToLabel } from "./risk/telegramRisk";
 import { createSupabaseAdmin } from "./supabaseAdmin";
 import { loadMergedRiskRules } from "@/lib/risk/loadMergedRiskRules";
 import { resolveJournalAccountForTradingRow } from "@/lib/risk/resolveJournalForTrading";
@@ -26,15 +26,52 @@ import {
 
 type FindingType = RiskFinding["type"];
 
-const FINDING_TYPE_TO_ALERT: Record<FindingType, string> = {
-  daily_loss: "daily_drawdown",
-  max_drawdown: "max_drawdown",
-  current_exposure: "position_size",
-  max_risk_per_trade: "position_size",
+const FINDING_TO_RULE_TYPE: Record<FindingType, string> = {
+  daily_loss: "daily_dd",
+  max_drawdown: "max_dd",
+  current_exposure: "exposure",
+  max_risk_per_trade: "risk_per_trade",
   revenge_trading: "revenge_trading",
   consecutive_losses: "consecutive_losses",
   overtrading: "overtrading",
 };
+
+function buildCurrentLimit(
+  type: FindingType,
+  alertData: Record<string, unknown>
+): { current: string; limit: string } {
+  switch (type) {
+    case "daily_loss":
+    case "max_drawdown":
+      return {
+        current: `-${alertData.currentDD}%`,
+        limit: `-${alertData.limitDD}%`,
+      };
+    case "current_exposure":
+    case "max_risk_per_trade":
+      return {
+        current: `${alertData.positionSize}%`,
+        limit: `${alertData.limit}%`,
+      };
+    case "revenge_trading":
+      return {
+        current: `${alertData.tradesCount} trades`,
+        limit: `${alertData.minutes} min`,
+      };
+    case "consecutive_losses":
+      return {
+        current: String(alertData.count),
+        limit: "3",
+      };
+    case "overtrading":
+      return {
+        current: String(alertData.tradesCount),
+        limit: `~${alertData.avgTrades}/day`,
+      };
+    default:
+      return { current: "—", limit: "—" };
+  }
+}
 
 function buildAlertData(
   type: FindingType,
@@ -345,6 +382,9 @@ export async function runRiskCheckForAccount(params: {
     return { ok: false, error: "Account not found", findings: [] };
   }
 
+  let currency = "USD";
+  let brokerServer = "";
+
   console.log("[riskCheckRun] runRiskCheckForAccount", { uuidLen: uuid.length });
 
   try {
@@ -356,6 +396,8 @@ export async function runRiskCheckForAccount(params: {
     if (summaryResult.ok && summaryResult.summary) {
       balance = summaryResult.summary.balance;
       equity = summaryResult.summary.equity ?? balance;
+      currency = String(summaryResult.summary.currency ?? "USD");
+      brokerServer = String((summaryResult.summary as Record<string, unknown>).server ?? "");
     }
     if (closedResult.ok) {
       orders = parseOrders(closedResult.orders);
@@ -460,32 +502,55 @@ export async function runRiskCheckForAccount(params: {
     if (skipDup) continue;
 
     const canonicalRule = canonicalAlertRuleType(f.type);
-    const { data: alertRow } = await supabase
-      .from("alert")
-      .insert({
-        user_id: userId,
-        message: f.message,
-        severity: f.severity,
-        solution: f.advice,
-        rule_type: canonicalRule,
-        account_id: journalCtx?.id ?? null,
-        account_nickname: journalCtx?.nickname ?? null
-      })
-      .select("id")
-      .single();
+    const ruleType = FINDING_TO_RULE_TYPE[f.type];
+    const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
+    const { current, limit } = buildCurrentLimit(f.type, alertData);
+    const valueAtViolation = Number(
+      alertData.currentDD ?? alertData.positionSize ?? alertData.count ?? alertData.tradesCount ?? 0
+    ) || 0;
+    const limitValue = Number(
+      alertData.limitDD ?? alertData.limit ?? alertData.avgTrades ?? 0
+    ) || 0;
 
-    if (alertRow && telegramSendChatId) {
-      const alertType = FINDING_TYPE_TO_ALERT[f.type];
-      const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
+    // Insert into risk_violations FIRST — this is the dedupe anchor for Telegram.
+    // hasRecentRuleNotification only checks this table, so concurrent dashboard-stats calls
+    // (via persistViolations) will find this record and skip their alert inserts.
+    await supabase.from("risk_violations").insert({
+      user_id: userId,
+      rule_type: canonicalRule,
+      value_at_violation: valueAtViolation,
+      limit_value: limitValue,
+      message: f.message,
+      notified_telegram: !!telegramSendChatId,
+      account_id: journalCtx?.id ?? null,
+      account_nickname: journalCtx?.nickname ?? null,
+      broker_server: journalCtx?.broker_server ?? brokerServer ?? null,
+    });
+
+    // Insert alert row for UI (badge, alert list).
+    await supabase.from("alert").insert({
+      user_id: userId,
+      message: f.message,
+      severity: f.severity,
+      solution: f.advice,
+      rule_type: canonicalRule,
+      account_id: journalCtx?.id ?? null,
+      account_nickname: journalCtx?.nickname ?? null
+    });
+
+    if (telegramSendChatId) {
       await sendSmartTelegramAlert({
         chatId: telegramSendChatId,
-        alertType,
-        data: alertData,
-        fallbackMessage: `⚠️ Risk alert: ${f.message}`,
-        supabase,
-        userId,
-        accountNickname: journalCtx?.nickname ?? null,
-        accountId: journalCtx?.id ?? null,
+        ruleType,
+        ruleLabel: ruleTypeToLabel(ruleType),
+        current,
+        limit,
+        accountNickname: journalCtx?.nickname ?? accountRow.account_number ?? "",
+        brokerServer: journalCtx?.broker_server ?? brokerServer,
+        currency,
+        todayTrades: stats.todayTrades ?? 0,
+        todayPl: 0,
+        consecutiveLosses: stats.consecutiveLossesAtEnd,
       });
     }
   }

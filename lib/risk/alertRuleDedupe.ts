@@ -61,8 +61,10 @@ export function alertRuleTypeAliases(ruleType: string): string[] {
 }
 
 /**
- * True if this rule already fired on this account recently (either `risk_violations` or `alert`).
- * Cron may only insert `alert`; dashboard inserts both — checks must cover both.
+ * True if this rule already fired a Telegram notification on this account recently.
+ * Checks only `risk_violations` — the table written by riskCheckRun (cron/button).
+ * `persistViolations` (dashboard) writes only to `alert` (UI state) and is excluded
+ * intentionally so dashboard loads do not suppress cron/button Telegram alerts.
  */
 export async function hasRecentRuleNotification(
   supabase: SupabaseClient,
@@ -82,7 +84,21 @@ export async function hasRecentRuleNotification(
     .limit(1);
   vq = journalAccountId ? vq.eq("account_id", journalAccountId) : vq.is("account_id", null);
   const { data: vrows } = await vq;
-  if ((vrows?.length ?? 0) > 0) return true;
+  return (vrows?.length ?? 0) > 0;
+}
+
+/**
+ * True if this rule already created an alert UI row on this account recently.
+ * Used by persistViolations to deduplicate `alert` table inserts from dashboard loads.
+ */
+export async function hasRecentAlertRow(
+  supabase: SupabaseClient,
+  userId: string,
+  ruleType: string,
+  journalAccountId: string | null
+): Promise<boolean> {
+  const since = new Date(Date.now() - RISK_ALERT_DEDUPE_MS).toISOString();
+  const aliases = alertRuleTypeAliases(ruleType);
 
   let aq = supabase
     .from("alert")

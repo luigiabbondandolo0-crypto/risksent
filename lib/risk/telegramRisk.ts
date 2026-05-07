@@ -200,6 +200,9 @@ export function ruleTypeToLabel(ruleType: string): string {
   switch (ruleType) {
     case "daily_dd":
       return "Daily DD limit";
+    case "max_dd":
+    case "max_drawdown":
+      return "Max Drawdown";
     case "exposure":
       return "Max exposure";
     case "revenge":

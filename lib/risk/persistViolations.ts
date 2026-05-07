@@ -1,15 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ymdInTimeZone } from "@/lib/journal/calendarBounds";
 import type { RiskNotificationsRow, RiskRulesDTO, RiskViolationCandidate, LiveStatsForRisk, RiskRuleType } from "./riskTypes";
 import {
   buildViolationCandidates,
-  formatLimitForTelegram,
-  formatValueForTelegram,
   effectiveNotifySettings,
   notifyFlagForRule
 } from "./violationEngine";
-import { ruleTypeToLabel, sendSmartTelegramAlert } from "./telegramRisk";
-import { canonicalAlertRuleType, hasRecentRuleNotification } from "./alertRuleDedupe";
+import { canonicalAlertRuleType, hasRecentAlertRow } from "./alertRuleDedupe";
 
 function solutionForRule(ruleType: RiskRuleType): string {
   switch (ruleType) {
@@ -31,48 +27,6 @@ function solutionForRule(ruleType: RiskRuleType): string {
   }
 }
 
-export type TelegramAlertContext = {
-  todayTrades: number;
-  todayPl: number;
-  currency: string;
-};
-
-async function loadTelegramAlertContext(
-  supabase: SupabaseClient,
-  userId: string,
-  journalAccountId: string,
-  timeZone: string
-): Promise<TelegramAlertContext> {
-  const tz = (timeZone ?? "UTC").trim() || "UTC";
-  const todayYmd = ymdInTimeZone(new Date(), tz);
-  const sinceIso = new Date(Date.now() - 4 * 86400000).toISOString();
-
-  const [accRes, tradesRes] = await Promise.all([
-    supabase
-      .from("journal_account")
-      .select("currency")
-      .eq("id", journalAccountId)
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabase
-      .from("journal_trade")
-      .select("pl, close_time")
-      .eq("user_id", userId)
-      .eq("account_id", journalAccountId)
-      .eq("status", "closed")
-      .gte("close_time", sinceIso)
-  ]);
-
-  const currency = String(accRes.data?.currency ?? "USD");
-  const rows = (tradesRes.data ?? []).filter((r) => {
-    if (r.close_time == null) return false;
-    return ymdInTimeZone(new Date(String(r.close_time)), tz) === todayYmd;
-  });
-  const todayTrades = rows.length;
-  const todayPl = rows.reduce((s, r) => s + Number(r.pl ?? 0), 0);
-  return { todayTrades, todayPl, currency };
-}
-
 async function loadNotificationsDefaults(supabase: SupabaseClient, userId: string): Promise<RiskNotificationsRow | null> {
   const { data } = await supabase.from("risk_notifications").select("*").eq("user_id", userId).maybeSingle();
   return data as RiskNotificationsRow | null;
@@ -87,9 +41,7 @@ export async function persistRiskViolations(params: {
   journalAccountId: string | null;
   accountNickname: string;
   brokerServer: string | null;
-  /** Optional; when omitted and journalAccountId is set, loaded from journal + today's trades */
-  telegramAlertContext?: TelegramAlertContext;
-  /** IANA timezone for "today" in Telegram enrichment and journal today P/L */
+  /** IANA timezone for "today" resolution */
   timeZone?: string;
 }): Promise<{ inserted: number; candidates: RiskViolationCandidate[] }> {
   const {
@@ -100,13 +52,12 @@ export async function persistRiskViolations(params: {
     journalAccountId,
     accountNickname,
     brokerServer,
-    telegramAlertContext: contextOverride,
-    timeZone: timeZoneParam
   } = params;
-  const timeZone = (timeZoneParam ?? "UTC").trim() || "UTC";
   const candidates = buildViolationCandidates(rules, live);
   // This path runs only from GET /api/dashboard-stats and POST /api/risk/check — never from
   // /api/cron/check-risk-all (that uses runRiskCheckForAccount in riskCheckRun.ts only).
+  // Telegram alerts are sent exclusively by riskCheckRun.ts (cron/button) to prevent
+  // duplicate notifications from concurrent dashboard-stats calls.
   console.log("[persistRiskViolations] entry", {
     userId: userId.slice(0, 8) + "...",
     journalAccountId: journalAccountId?.slice(0, 8) ?? null,
@@ -130,34 +81,16 @@ export async function persistRiskViolations(params: {
   console.log("[persistRiskViolations] notif loaded", {
     userId: userId.slice(0, 8) + "...",
     hasRow: !!notif,
-    telegram_enabled: notif?.telegram_enabled ?? null,
     notify_daily_dd: notif?.notify_daily_dd ?? null,
     effective_daily_dd: effectiveNotif.notify_daily_dd,
-    notify_max_dd: (notif as { notify_max_dd?: boolean | null } | null)?.notify_max_dd ?? null,
-    notify_position_size: (notif as { notify_position_size?: boolean | null } | null)?.notify_position_size ?? null,
     notify_consecutive_losses: notif?.notify_consecutive_losses ?? null,
-    notify_weekly_loss: (notif as { notify_weekly_loss?: boolean | null } | null)?.notify_weekly_loss ?? null,
-    notify_overtrading: (notif as { notify_overtrading?: boolean | null } | null)?.notify_overtrading ?? null,
     notify_revenge: notif?.notify_revenge ?? null,
     candidatesCount: candidates.length
   });
 
-  let enrich: TelegramAlertContext = {
-    todayTrades: 0,
-    todayPl: 0,
-    currency: "USD"
-  };
-  if (contextOverride) {
-    enrich = contextOverride;
-  } else if (journalAccountId) {
-    enrich = await loadTelegramAlertContext(supabase, userId, journalAccountId, timeZone);
-  }
-
   let inserted = 0;
   for (const c of candidates) {
-    // User turned off notifications for this rule → don't persist anything.
-    // This suppresses the Telegram message, the violation history entry, AND the
-    // Dashboard / Topbar alert mirror. A disabled rule is fully silent.
+    // User turned off notifications for this rule → fully silent.
     const allowed = notifyFlagForRule(c.rule_type, effectiveNotif);
     console.log("[persistRiskViolations] gate", {
       rule_type: c.rule_type,
@@ -168,57 +101,42 @@ export async function persistRiskViolations(params: {
       continue;
     }
 
-    const skipDup = await hasRecentRuleNotification(supabase, userId, c.rule_type, journalAccountId);
+    // Dedupe: only check alert table (UI state). risk_violations dedupe is owned by riskCheckRun.
+    const skipDup = await hasRecentAlertRow(supabase, userId, c.rule_type, journalAccountId);
+    if (skipDup) continue;
+
     const canonicalType = canonicalAlertRuleType(c.rule_type);
 
-    if (!skipDup) {
-      let notified = false;
-      if (notif?.telegram_enabled && notif.telegram_chat_id) {
-        const send = await sendSmartTelegramAlert({
-          chatId: notif.telegram_chat_id,
-          ruleType: c.rule_type,
-          ruleLabel: ruleTypeToLabel(c.rule_type),
-          current: formatValueForTelegram(c.rule_type, c.value_at_violation),
-          limit: formatLimitForTelegram(c.rule_type, c.limit_value),
-          accountNickname,
-          brokerServer: brokerServer?.trim() ?? "",
-          currency: enrich.currency,
-          todayTrades: enrich.todayTrades,
-          todayPl: enrich.todayPl,
-          consecutiveLosses: live.consecutiveLossesAtEnd
-        });
-        notified = send.ok;
-      }
+    const { error: alertErr } = await supabase.from("alert").insert({
+      user_id: userId,
+      message: c.message,
+      severity: c.severity === "danger" ? "high" : "medium",
+      solution: solutionForRule(c.rule_type),
+      rule_type: canonicalType,
+      account_id: journalAccountId,
+      account_nickname: accountNickname
+    });
+    if (alertErr) {
+      console.error("[persistRiskViolations] alert insert failed", alertErr);
+    } else {
+      inserted += 1;
+    }
 
-      const { error: histErr } = await supabase.from("risk_violations").insert({
-        user_id: userId,
-        rule_type: canonicalType,
-        value_at_violation: c.value_at_violation,
-        limit_value: c.limit_value,
-        message: c.message,
-        notified_telegram: notified,
-        account_id: journalAccountId,
-        account_nickname: accountNickname,
-        broker_server: brokerServer
-      });
-      if (histErr) {
-        console.error("[persistRiskViolations] risk_violations insert failed", histErr);
-      } else {
-        inserted += 1;
-      }
-
-      const { error: alertErr } = await supabase.from("alert").insert({
-        user_id: userId,
-        message: c.message,
-        severity: c.severity === "danger" ? "high" : "medium",
-        solution: solutionForRule(c.rule_type),
-        rule_type: canonicalType,
-        account_id: journalAccountId,
-        account_nickname: accountNickname
-      });
-      if (alertErr) {
-        console.error("[persistRiskViolations] alert mirror failed", alertErr);
-      }
+    // Also mirror to risk_violations for history/audit (notified_telegram=false: Telegram
+    // is sent by riskCheckRun.ts, not here).
+    const { error: histErr } = await supabase.from("risk_violations").insert({
+      user_id: userId,
+      rule_type: canonicalType,
+      value_at_violation: c.value_at_violation,
+      limit_value: c.limit_value,
+      message: c.message,
+      notified_telegram: false,
+      account_id: journalAccountId,
+      account_nickname: accountNickname,
+      broker_server: brokerServer
+    });
+    if (histErr) {
+      console.error("[persistRiskViolations] risk_violations insert failed", histErr);
     }
   }
 
@@ -233,7 +151,6 @@ export async function runDashboardRiskViolationSideEffect(params: {
   journalAccountId: string | null;
   accountNickname: string;
   brokerServer: string | null;
-  telegramAlertContext?: TelegramAlertContext;
   timeZone?: string;
 }): Promise<void> {
   try {
