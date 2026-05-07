@@ -42,7 +42,38 @@ function secure(req: NextRequest, res: NextResponse) {
   return applySecurityHeaders(req, res);
 }
 
+function basicAuthResponse() {
+  return new NextResponse("Unauthorized", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Staging", charset="UTF-8"',
+    },
+  });
+}
+
+function checkBasicAuth(req: NextRequest): boolean {
+  const stagingUser = process.env.STAGING_USER;
+  const stagingPassword = process.env.STAGING_PASSWORD;
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return false;
+  const [scheme, encoded] = authHeader.split(" ");
+  if (scheme !== "Basic" || !encoded) return false;
+  const decoded = Buffer.from(encoded, "base64").toString("utf-8");
+  const [user, password] = decoded.split(":");
+  return user === stagingUser && password === stagingPassword;
+}
+
 export async function proxy(req: NextRequest) {
+  if (process.env.STAGING_BASIC_AUTH === "true") {
+    const skipPaths = ["/api/stripe/", "/api/telegram/", "/api/monitoring/"];
+    const { pathname } = req.nextUrl;
+    if (!skipPaths.some((p) => pathname.startsWith(p))) {
+      if (!checkBasicAuth(req)) {
+        return basicAuthResponse();
+      }
+    }
+  }
+
   const httpsRedirect = httpsUpgradeResponseIfNeeded(req);
   if (httpsRedirect) {
     return secure(req, httpsRedirect);
