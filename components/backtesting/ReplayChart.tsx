@@ -1207,9 +1207,18 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       setCandles(candles: Candle[], upTo: number) {
         const sr = seriesRef.current;
         if (!sr) return;
-        const slice = candles.slice(0, upTo + 1).map((c) => ({
-          time: c.time as UTCTimestamp, open: c.open, high: c.high, low: c.low, close: c.close,
-        }));
+        const slice = candles.slice(0, upTo + 1).flatMap((c) => {
+          if (
+            c == null ||
+            !Number.isFinite(c.time) ||
+            !Number.isFinite(c.open) ||
+            !Number.isFinite(c.high) ||
+            !Number.isFinite(c.low) ||
+            !Number.isFinite(c.close)
+          ) return [];
+          return [{ time: c.time as UTCTimestamp, open: c.open, high: c.high, low: c.low, close: c.close }];
+        });
+        if (slice.length === 0) return;
         sr.setData(slice);
         chartRef.current?.timeScale().scrollToRealTime();
       },
@@ -1217,6 +1226,14 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       appendCandle(candle: Candle) {
         const sr = seriesRef.current;
         if (!sr) return;
+        if (
+          candle == null ||
+          !Number.isFinite(candle.time) ||
+          !Number.isFinite(candle.open) ||
+          !Number.isFinite(candle.high) ||
+          !Number.isFinite(candle.low) ||
+          !Number.isFinite(candle.close)
+        ) return;
         sr.update({ time: candle.time as UTCTimestamp, open: candle.open, high: candle.high, low: candle.low, close: candle.close });
       },
 
