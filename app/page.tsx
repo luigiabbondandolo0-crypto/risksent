@@ -350,7 +350,29 @@ export default function HomePage() {
             className="break-words text-[clamp(36px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Test
+            {["Stop", "trading", "blind."].map((word, i) => (
+              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+                <span className="hero-word inline-block">{word}</span>
+              </span>
+            ))}
+            <br />
+            {["Start", "trading", "with"].map((word, i) => (
+              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+                <span className="hero-word inline-block">{word}</span>
+              </span>
+            ))}
+            <span className="inline-block overflow-hidden mr-[0.2em]">
+              <span
+                className="hero-word inline-block text-[#c4b5fd] md:bg-clip-text md:text-transparent"
+                style={{
+                  backgroundImage: "linear-gradient(135deg, #6366F1 0%, #A78BFA 50%, #6366F1 100%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 2.4s infinite linear",
+                }}
+              >
+                data.
+              </span>
+            </span>
           </h1>
 
           <div className="hero-sub flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
