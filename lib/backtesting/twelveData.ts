@@ -73,7 +73,8 @@ export function parseTwelveDataResponse(body: unknown): Candle[] {
   if (!Array.isArray(values)) return [];
   const out: Candle[] = [];
   for (const v of values) {
-    const t = Date.parse(v.datetime);
+    const normalized = v.datetime.includes("T") ? v.datetime : v.datetime.replace(" ", "T") + "Z";
+    const t = Date.parse(normalized);
     if (!Number.isFinite(t)) continue;
     const time = Math.floor(t / 1000);
     out.push({
