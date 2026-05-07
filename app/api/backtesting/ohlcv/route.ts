@@ -88,9 +88,9 @@ export async function GET(req: NextRequest) {
   }
 
   const cacheKey = ohlcvCacheKey({ symbol, timeframe, from: queryFrom, to: queryTo });
-  const mem = getCachedOhlcv(cacheKey);
-  if (mem) {
-    return NextResponse.json({ candles: mem, cached: true, source: "memory" });
+  const cached = await getCachedOhlcv(cacheKey);
+  if (cached) {
+    return NextResponse.json({ candles: cached, cached: true, source: "supabase" });
   }
 
   const twelveSymbol = normalizeTwelveDataSymbol(symbol);
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
   }
 
   const candles: Candle[] = parseTwelveDataResponse(json as { values?: unknown[] });
-  setCachedOhlcv(cacheKey, candles);
+  void setCachedOhlcv(cacheKey, candles);
 
   return NextResponse.json({ candles, cached: false, source: "twelvedata" });
 }
