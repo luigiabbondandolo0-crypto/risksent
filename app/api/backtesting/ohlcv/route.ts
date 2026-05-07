@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
     `&apikey=${encodeURIComponent(apiKey)}` +
     `&format=JSON` +
     `&order=asc` +
+    `&timezone=UTC` +
     `&outputsize=5000`;
 
   const res = await fetch(tdUrl);

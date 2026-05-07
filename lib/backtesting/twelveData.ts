@@ -92,6 +92,10 @@ export function parseTwelveDataResponse(body: unknown): Candle[] {
       high < open || high < close ||
       low  > open || low  > close
     ) continue;
+    // Drop weekend candles (forex/CFD don't trade Sat/Sun)
+    const dow = new Date(time * 1000).getUTCDay(); // 0=Sun, 6=Sat
+    if (dow === 0 || dow === 6) continue;
+
     seen.add(time);
     out.push({ time, open, high, low, close });
   }
