@@ -120,7 +120,14 @@ export async function GET(req: NextRequest) {
   }
 
   if (json.status === "error" && typeof json.message === "string") {
-    return NextResponse.json({ error: json.message }, { status: 502 });
+    const isRateLimit =
+      json.message.toLowerCase().includes("api credits") ||
+      json.message.toLowerCase().includes("rate limit") ||
+      json.message.toLowerCase().includes("limit being");
+    const userMessage = isRateLimit
+      ? "Market data rate limit reached. Wait a moment and try again."
+      : "Market data unavailable. Try again shortly.";
+    return NextResponse.json({ error: userMessage }, { status: 429 });
   }
 
   const candles: Candle[] = parseTwelveDataResponse(json as { values?: unknown[] });

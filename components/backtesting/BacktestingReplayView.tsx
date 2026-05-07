@@ -525,7 +525,16 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           )}
           {ohlcvErr && !loadingOhlcv && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <div className="font-mono text-sm text-red-400">{ohlcvErr}</div>
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-red-500/20 bg-[#0d0d1a]/90 px-6 py-5 text-center">
+                <p className="font-mono text-sm text-red-400">{ohlcvErr}</p>
+                <button
+                  type="button"
+                  onClick={() => session && void loadOhlcv(session, timeframe)}
+                  className="rounded-lg bg-white/[0.06] px-4 py-1.5 font-mono text-xs text-slate-300 transition hover:bg-white/[0.1]"
+                >
+                  Retry
+                </button>
+              </div>
             </div>
           )}
           <ReplayChart
