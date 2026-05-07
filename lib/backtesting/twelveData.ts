@@ -71,19 +71,29 @@ type TwelveBar = {
 export function parseTwelveDataResponse(body: unknown): Candle[] {
   const values = (body as { values?: TwelveBar[] }).values;
   if (!Array.isArray(values)) return [];
+  const seen = new Set<number>();
   const out: Candle[] = [];
   for (const v of values) {
     const normalized = v.datetime.includes("T") ? v.datetime : v.datetime.replace(" ", "T") + "Z";
     const t = Date.parse(normalized);
     if (!Number.isFinite(t)) continue;
     const time = Math.floor(t / 1000);
-    out.push({
-      time,
-      open: Number(v.open),
-      high: Number(v.high),
-      low: Number(v.low),
-      close: Number(v.close)
-    });
+    if (seen.has(time)) continue;
+    const open  = Number(v.open);
+    const high  = Number(v.high);
+    const low   = Number(v.low);
+    const close = Number(v.close);
+    if (
+      !Number.isFinite(open)  || open  <= 0 ||
+      !Number.isFinite(high)  || high  <= 0 ||
+      !Number.isFinite(low)   || low   <= 0 ||
+      !Number.isFinite(close) || close <= 0 ||
+      high < low ||
+      high < open || high < close ||
+      low  > open || low  > close
+    ) continue;
+    seen.add(time);
+    out.push({ time, open, high, low, close });
   }
   out.sort((a, b) => a.time - b.time);
   return out;

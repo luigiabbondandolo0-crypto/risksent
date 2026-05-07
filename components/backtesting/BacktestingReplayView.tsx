@@ -153,7 +153,11 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
       }
 
       const pCandles = preloadRes.ok ? (preloadJson.candles ?? []) : [];
-      const sCandles = sessionJson.candles ?? [];
+      const rawSCandles = sessionJson.candles ?? [];
+
+      // Deduplicate: session candles may overlap preload at boundary
+      const preloadTimes = new Set(pCandles.map((c) => c.time));
+      const sCandles = rawSCandles.filter((c) => !preloadTimes.has(c.time));
 
       setPreloadCandles(pCandles);
       setSessionCandles(sCandles);
