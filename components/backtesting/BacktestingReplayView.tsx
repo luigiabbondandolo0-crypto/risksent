@@ -11,7 +11,6 @@ import {
   BarChart2,
   SkipBack,
   ChevronRight as ChevronRightIcon,
-  SkipForward,
   Play,
   Pause,
   TrendingUp,
@@ -535,31 +534,44 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
         className="flex shrink-0 flex-col border-t border-white/[0.08] bg-[#0D0D18]/90 backdrop-blur-xl"
         style={{ height: 220, boxShadow: "0 -8px 32px rgba(0,0,0,0.35)" }}
       >
-        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-white/[0.06] bg-[#0D0D18]/80 px-3">
-          <div className="flex items-center gap-0.5">
-            <TBtn title="Reset" onClick={reset} disabled={atStart}>
-              <SkipBack className="h-3.5 w-3.5" />
-            </TBtn>
-            <TBtn title="← Prev" onClick={stepBack} disabled={atStart}>
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0D0D18]/80 px-4">
+          {/* Reset */}
+          <TBtn title="Reset" onClick={reset} disabled={atStart}>
+            <SkipBack className="h-3.5 w-3.5" />
+          </TBtn>
+
+          {/* Core replay controls — hero size */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title="← Prev candle"
+              onClick={stepBack}
+              disabled={atStart}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition-all hover:border-[#6366f1]/40 hover:bg-[#6366f1]/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+            >
               <ChevLeft />
-            </TBtn>
+            </button>
             <button
               type="button"
               onClick={() => setPlaying((p) => !p)}
               disabled={!sessionCandles.length || atEnd}
-              className="mx-1 flex h-7 w-7 items-center justify-center rounded-lg bg-[#6366f1]/20 text-[#818cf8] ring-1 ring-[#6366f1]/30 transition-all hover:bg-[#6366f1]/30 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#6366f1] text-white shadow-lg shadow-[#6366f1]/25 transition-all hover:bg-[#5254cc] hover:shadow-[#6366f1]/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </button>
-            <TBtn title="Next →" onClick={stepForward} disabled={atEnd}>
-              <ChevronRightIcon className="h-3.5 w-3.5" />
-            </TBtn>
-            <TBtn title="Go to End" onClick={goToEnd} disabled={atEnd}>
-              <SkipForward className="h-3.5 w-3.5" />
-            </TBtn>
+            <button
+              type="button"
+              title="Next candle →"
+              onClick={stepForward}
+              disabled={atEnd}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition-all hover:border-[#6366f1]/40 hover:bg-[#6366f1]/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+            >
+              <ChevronRightIcon className="h-4 w-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-2">
+          {/* Speed */}
+          <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-3">
             {SPEEDS.map((s) => (
               <button
                 key={s}
@@ -579,7 +591,8 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             ))}
           </div>
 
-          <div className="flex min-w-0 flex-1 items-center gap-2 border-l border-white/[0.06] pl-2">
+          {/* Progress bar */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 border-l border-white/[0.06] pl-3">
             <div
               className="h-1 flex-1 min-w-0 cursor-pointer rounded-full"
               style={{ background: `linear-gradient(to right, #6366f1 ${progress}%, rgba(255,255,255,0.06) ${progress}%)` }}
@@ -590,7 +603,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           </div>
 
           {currentCandle && (
-            <span className="hidden shrink-0 font-mono text-[11px] text-slate-700 md:block border-l border-white/[0.06] pl-2">
+            <span className="hidden shrink-0 font-mono text-[11px] text-slate-700 md:block border-l border-white/[0.06] pl-3">
               {new Date(currentCandle.time * 1000).toLocaleString(undefined, {
                 month: "short", day: "numeric", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
