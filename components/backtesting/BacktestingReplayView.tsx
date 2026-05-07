@@ -37,7 +37,26 @@ const SPEEDS: ReplaySpeed[] = [1, 2, 5, 10];
 const SETTINGS_KEY = "bt_chart_settings";
 
 function lsKey(sessionId: string) {
-  return `bt_replay_idx_${sessionId}`;
+  return `bt_replay_state_${sessionId}`;
+}
+
+function saveReplayState(sessionId: string, index: number, timeframe: string) {
+  try { localStorage.setItem(lsKey(sessionId), JSON.stringify({ index, timeframe })); } catch { /* */ }
+}
+
+function loadReplayState(sessionId: string): { index: number; timeframe: string } | null {
+  try {
+    const raw = localStorage.getItem(lsKey(sessionId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (typeof parsed === "object" && parsed !== null && "index" in parsed && "timeframe" in parsed) {
+      return parsed as { index: number; timeframe: string };
+    }
+    // Legacy: plain number saved by old code
+    const n = Number(raw);
+    if (Number.isFinite(n)) return { index: n, timeframe: "" };
+    return null;
+  } catch { return null; }
 }
 
 function drawingsKey(sessionId: string) {
@@ -171,9 +190,9 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
         }
         idx = best;
       } else {
-        const saved = localStorage.getItem(lsKey(id));
-        if (saved && tf === sess.timeframe) {
-          idx = Math.min(Number(saved), Math.max(0, sCandles.length - 1));
+        const saved = loadReplayState(id);
+        if (saved && saved.timeframe === tf && sCandles.length > 0) {
+          idx = Math.min(saved.index, sCandles.length - 1);
         }
       }
 
@@ -197,11 +216,15 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   useEffect(() => {
     loadSession().then((sess) => {
       if (!sess) return;
-      const tf = sess.timeframe;
+      const saved = loadReplayState(id);
+      // Restore saved timeframe if valid, else fall back to session default
+      const tf = (saved?.timeframe && (["M1","M5","M15","M30","H1","H4","D1"] as string[]).includes(saved.timeframe))
+        ? saved.timeframe as BtTimeframe
+        : sess.timeframe as BtTimeframe;
       setTimeframe(tf);
       void loadOhlcv(sess, tf);
     }).catch(console.error);
-  }, [loadSession, loadOhlcv]);
+  }, [loadSession, loadOhlcv, id]);
 
   useEffect(() => {
     if (!sessionCandles.length) return;
@@ -213,8 +236,8 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
       chartRef.current?.setCandles(all, preloadCandles.length + currentIndex);
     }
     prevIndexRef.current = currentIndex;
-    try { localStorage.setItem(lsKey(id), String(currentIndex)); } catch { /* */ }
-  }, [preloadCandles, sessionCandles, currentIndex, id]);
+    saveReplayState(id, currentIndex, timeframe);
+  }, [preloadCandles, sessionCandles, currentIndex, id, timeframe]);
 
   // ── Trade price lines ───────────────────────────────────────────────────
   const openTrade = trades.find((t) => t.status === "open") ?? null;
