@@ -117,10 +117,11 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   }, [id]);
 
   // ── Load OHLCV ───────────────────────────────────────────────────────────
-  const loadOhlcv = useCallback(async (sess: Session, tf: BtTimeframe) => {
+  const loadOhlcv = useCallback(async (sess: Session, tf: BtTimeframe, targetTime?: number) => {
     setLoadingOhlcv(true);
     setOhlcvErr(null);
-    prevIndexRef.current = -1;
+    // Reset prevIndexRef so the candle-sync effect won't skip the first render
+    prevIndexRef.current = -2;
 
     try {
       const preloadQ = new URLSearchParams({
@@ -158,17 +159,34 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
       const preloadTimes = new Set(pCandles.map((c) => c.time));
       const sCandles = rawSCandles.filter((c) => !preloadTimes.has(c.time));
 
-      setPreloadCandles(pCandles);
-      setSessionCandles(sCandles);
-
-      const saved = localStorage.getItem(lsKey(id));
-      const idx = saved && tf === sess.timeframe
-        ? Math.min(Number(saved), Math.max(0, sCandles.length - 1))
-        : 0;
-      setCurrentIndex(idx);
+      // Find index: if targetTime provided (TF switch), find closest candle;
+      // else restore saved index for the session's original TF.
+      let idx = 0;
+      if (targetTime != null && sCandles.length > 0) {
+        // Find the last session candle with time <= targetTime
+        let best = 0;
+        for (let i = 0; i < sCandles.length; i++) {
+          if (sCandles[i].time <= targetTime) best = i;
+          else break;
+        }
+        idx = best;
+      } else {
+        const saved = localStorage.getItem(lsKey(id));
+        if (saved && tf === sess.timeframe) {
+          idx = Math.min(Number(saved), Math.max(0, sCandles.length - 1));
+        }
+      }
 
       const allCandles = [...pCandles, ...sCandles];
+
+      // Update chart directly first, then sync React state.
+      // prevIndexRef=-2 ensures the follow-up effect always calls setCandles, not appendCandle.
       chartRef.current?.setCandles(allCandles, pCandles.length + idx);
+      prevIndexRef.current = idx;
+
+      setPreloadCandles(pCandles);
+      setSessionCandles(sCandles);
+      setCurrentIndex(idx);
     } catch {
       setOhlcvErr("Network error loading candles");
     } finally {
@@ -327,9 +345,10 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   function handleTfChange(tf: BtTimeframe) {
     if (tf === timeframe || !session) return;
     setPlaying(false);
-    setCurrentIndex(0);
+    // Capture current timestamp to restore position in new TF
+    const currentTime = sessionCandles[currentIndex]?.time;
     setTimeframe(tf);
-    void loadOhlcv(session, tf);
+    void loadOhlcv(session, tf, currentTime);
   }
 
   const refreshObjects = useCallback(() => {
