@@ -164,6 +164,8 @@ type RawOpenPosition = {
   stop_loss?: number;
   type?: string;
   currentTickValue?: number;
+  positionId?: string;
+  openTime?: string;
 };
 
 function parseOrders(orders: unknown): ClosedOrder[] {
@@ -346,6 +348,104 @@ function buildOpenPositionsForRisk(
   return out;
 }
 
+/** Positions without SL, with position metadata for alert dedupe. */
+type NoSlPosition = {
+  symbol: string;
+  positionId: string;
+  openTime: string | null;
+};
+
+/** How long (ms) a trade must be open before firing the no-SL alert. */
+const NO_SL_GRACE_MS = 2 * 60 * 1000;
+
+/** Dedupe window: don't re-alert for no-SL on the same account more than once per 2 hours. */
+const NO_SL_DEDUPE_MS = 2 * 60 * 60 * 1000;
+
+function buildNoSlCandidates(raw: RawOpenPosition[]): NoSlPosition[] {
+  const out: NoSlPosition[] = [];
+  for (const p of raw) {
+    const symbol = String(p.symbol ?? p.instrument ?? "").trim();
+    if (!symbol) continue;
+    const stopLossRaw = p.stopLoss ?? p.stop_loss;
+    const hasSlSet =
+      stopLossRaw != null && Number(stopLossRaw) > 0 && Number.isFinite(Number(stopLossRaw));
+    if (hasSlSet) continue;
+    const positionId = p.positionId ?? `${symbol}-${p.openPrice ?? 0}`;
+    out.push({ symbol, positionId, openTime: p.openTime ?? null });
+  }
+  return out;
+}
+
+async function checkNoSlPositions(params: {
+  candidates: NoSlPosition[];
+  userId: string;
+  supabase: SupabaseClient;
+  journalAccountId: string | null;
+  telegramChatId: string | null;
+  accountNickname: string;
+  brokerServer: string;
+  currency: string;
+}): Promise<void> {
+  const { candidates, userId, supabase, journalAccountId, telegramChatId, accountNickname, brokerServer, currency } = params;
+  if (!telegramChatId) return;
+
+  // Filter: only positions open for more than the grace period
+  const now = Date.now();
+  const mature = candidates.filter((c) => {
+    if (!c.openTime) return true; // unknown open time → assume mature
+    const openMs = new Date(c.openTime).getTime();
+    if (Number.isNaN(openMs)) return true;
+    return now - openMs >= NO_SL_GRACE_MS;
+  });
+  if (mature.length === 0) return;
+
+  // Dedupe: skip if we already sent a no_stop_loss alert for this account recently
+  const since = new Date(now - NO_SL_DEDUPE_MS).toISOString();
+  let dq = supabase
+    .from("risk_violations")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("rule_type", "no_stop_loss")
+    .gte("created_at", since)
+    .limit(1);
+  dq = journalAccountId ? dq.eq("account_id", journalAccountId) : dq.is("account_id", null);
+  const { data: recent } = await dq;
+  if ((recent?.length ?? 0) > 0) return;
+
+  const symbolList = mature.map((c) => `<code>${c.symbol}</code>`).join(", ");
+  const message =
+    `⛔ <b>No Stop Loss detected</b>\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `📊 Account: <b>${accountNickname.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</b>\n` +
+    (brokerServer ? `🔢 Server: <code>${brokerServer}</code>\n` : "") +
+    `\n` +
+    `Open position${mature.length > 1 ? "s" : ""} without stop loss:\n${symbolList}\n` +
+    `\n` +
+    `⚠️ Set a stop loss immediately to limit your risk.\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `🔗 <a href="https://risksent.com/app/risk-manager">Open Risk Manager</a>`;
+
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "HTML" })
+  });
+
+  const posIds = mature.map((c) => c.positionId).join(",");
+  await supabase.from("risk_violations").insert({
+    user_id: userId,
+    rule_type: "no_stop_loss",
+    value_at_violation: mature.length,
+    limit_value: 0,
+    message: `No SL on: ${posIds}`,
+    notified_telegram: true,
+    account_id: journalAccountId,
+    account_nickname: accountNickname,
+  });
+}
+
 export type RunRiskCheckResult = {
   ok: boolean;
   error?: string;
@@ -367,6 +467,7 @@ export async function runRiskCheckForAccount(params: {
   let equity = 0;
   let orders: ClosedOrder[] = [];
   let openPositions: OpenPositionForRisk[] = [];
+  let rawParsedPositions: RawOpenPosition[] = [];
 
   const { data: rawRow } = await supabase
     .from("trading_account")
@@ -405,6 +506,7 @@ export async function runRiskCheckForAccount(params: {
     const useEquity = equity > 0 ? equity : balance;
     if (openResult.ok && openResult.positions.length > 0) {
       const parsed = parseOpenPositions(openResult.positions);
+      rawParsedPositions = parsed;
       const syms = parsed.map((p) => String(p.symbol ?? p.instrument ?? "").trim()).filter((s) => s.length > 0);
       const tickSizes = await fetchSymbolTickSizes(accountRow, syms);
       openPositions = buildOpenPositionsForRisk(parsed, useEquity, tickSizes);
@@ -498,9 +600,6 @@ export async function runRiskCheckForAccount(params: {
       continue;
     }
 
-    const skipDup = await hasRecentRuleNotification(supabase, userId, f.type, journalCtx?.id ?? null);
-    if (skipDup) continue;
-
     const canonicalRule = canonicalAlertRuleType(f.type);
     const ruleType = FINDING_TO_RULE_TYPE[f.type];
     const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
@@ -508,6 +607,9 @@ export async function runRiskCheckForAccount(params: {
     const valueAtViolation = Number(
       alertData.currentDD ?? alertData.positionSize ?? alertData.count ?? alertData.tradesCount ?? 0
     ) || 0;
+
+    const skipDup = await hasRecentRuleNotification(supabase, userId, f.type, journalCtx?.id ?? null, valueAtViolation);
+    if (skipDup) continue;
     const limitValue = Number(
       alertData.limitDD ?? alertData.limit ?? alertData.avgTrades ?? 0
     ) || 0;
@@ -553,6 +655,21 @@ export async function runRiskCheckForAccount(params: {
         consecutiveLosses: stats.consecutiveLossesAtEnd,
       });
     }
+  }
+
+  // Check for open positions without stop loss
+  if (rawParsedPositions.length > 0) {
+    const noSlCandidates = buildNoSlCandidates(rawParsedPositions);
+    await checkNoSlPositions({
+      candidates: noSlCandidates,
+      userId,
+      supabase,
+      journalAccountId: journalCtx?.id ?? null,
+      telegramChatId: telegramSendChatId,
+      accountNickname: journalCtx?.nickname ?? accountRow.account_number ?? "",
+      brokerServer: journalCtx?.broker_server ?? brokerServer,
+      currency,
+    });
   }
 
   return { ok: true, findings };

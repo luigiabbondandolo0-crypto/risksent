@@ -1,12 +1,42 @@
 /**
  * One Telegram / violation burst per (user, journal account, logical rule) within the dedupe window.
  * Historically `alert` and `risk_violations` mixed naming (e.g. max_risk_per_trade vs risk_per_trade).
+ *
+ * Dedupe strategy by category:
+ *  - "live"   (exposure, risk_per_trade, revenge_trading, overtrading): 45-min cooldown
+ *  - "static" (consecutive_losses, max_dd): 24h window; re-notify only if value worsened
+ *  - "daily"  (daily_dd): same UTC day; re-notify only if value worsened by >0.5%
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** Cooldown after the first alert for a rule on an account (dashboard + cron + refresh-safe). */
+/** Cooldown for live rules (change with open trades). */
 export const RISK_ALERT_DEDUPE_MS = 45 * 60 * 1000;
+
+/** Cooldown for static/daily rules (based on closed-trade history). */
+const STATIC_DEDUPE_MS = 24 * 60 * 60 * 1000;
+
+/** Minimum worsening (absolute) to re-notify within the static window. */
+const STATIC_REWARN_THRESHOLD = 0.5;
+
+function startOfUtcDay(): string {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+function ruleCategory(ruleType: string): "live" | "static" | "daily" {
+  const c = canonicalAlertRuleType(ruleType);
+  switch (c) {
+    case "daily_dd":
+      return "daily";
+    case "max_dd":
+    case "consecutive_losses":
+      return "static";
+    default:
+      return "live";
+  }
+}
 
 /** Normalized key stored on new rows and used for dedupe lookups. */
 export function canonicalAlertRuleType(ruleType: string): string {
@@ -65,26 +95,53 @@ export function alertRuleTypeAliases(ruleType: string): string[] {
  * Checks only `risk_violations` — the table written by riskCheckRun (cron/button).
  * `persistViolations` (dashboard) writes only to `alert` (UI state) and is excluded
  * intentionally so dashboard loads do not suppress cron/button Telegram alerts.
+ *
+ * @param currentValue - current metric value; passed for static/daily rules to detect worsening
  */
 export async function hasRecentRuleNotification(
   supabase: SupabaseClient,
   userId: string,
   ruleType: string,
-  journalAccountId: string | null
+  journalAccountId: string | null,
+  currentValue?: number
 ): Promise<boolean> {
-  const since = new Date(Date.now() - RISK_ALERT_DEDUPE_MS).toISOString();
+  const category = ruleCategory(ruleType);
   const aliases = alertRuleTypeAliases(ruleType);
+
+  let since: string;
+  if (category === "daily") {
+    since = startOfUtcDay();
+  } else if (category === "static") {
+    since = new Date(Date.now() - STATIC_DEDUPE_MS).toISOString();
+  } else {
+    since = new Date(Date.now() - RISK_ALERT_DEDUPE_MS).toISOString();
+  }
 
   let vq = supabase
     .from("risk_violations")
-    .select("id")
+    .select("id, value_at_violation")
     .eq("user_id", userId)
     .in("rule_type", aliases)
     .gte("created_at", since)
+    .order("created_at", { ascending: false })
     .limit(1);
   vq = journalAccountId ? vq.eq("account_id", journalAccountId) : vq.is("account_id", null);
   const { data: vrows } = await vq;
-  return (vrows?.length ?? 0) > 0;
+
+  if (!vrows || vrows.length === 0) return false;
+
+  // For static/daily rules: re-notify if the value worsened beyond the threshold.
+  // "worsened" = higher absolute value (more losses, deeper drawdown).
+  if ((category === "static" || category === "daily") && currentValue !== undefined) {
+    const row = vrows[0] as { value_at_violation?: number | null };
+    const lastValue = typeof row.value_at_violation === "number" ? row.value_at_violation : null;
+    if (lastValue !== null && Math.abs(currentValue) - Math.abs(lastValue) >= STATIC_REWARN_THRESHOLD) {
+      // Situation worsened — not a duplicate
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**

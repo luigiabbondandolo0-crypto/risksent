@@ -392,13 +392,18 @@ export async function getOpenPositions(
     const ctv = p.currentTickValue;
     const currentTickValue =
       ctv != null && Number.isFinite(Number(ctv)) && Number(ctv) > 0 ? Number(ctv) : undefined;
+    // MetaApi position id (ticket) and open time for SL-missing alert
+    const positionId = p.id != null ? String(p.id) : undefined;
+    const openTime = p.time != null ? String(p.time) : p.openTime != null ? String(p.openTime) : undefined;
     return {
       symbol: String(p.symbol ?? ""),
       volume: Number(p.volume) || 0,
       openPrice: Number(p.openPrice) || 0,
       stopLoss,
       type: side,
-      ...(currentTickValue != null ? { currentTickValue } : {})
+      ...(currentTickValue != null ? { currentTickValue } : {}),
+      ...(positionId != null ? { positionId } : {}),
+      ...(openTime != null ? { openTime } : {})
     };
   });
   return { ok: true, positions };
