@@ -768,7 +768,7 @@ export default function ProfilePage() {
           Danger zone
         </h2>
         <p className="mb-4 text-xs font-mono text-slate-500">
-          Cancels your Stripe subscription, removes broker accounts from MetaApi, then deletes your login and data. You
+          Cancels your Stripe subscription, removes all broker accounts, then deletes your login and data. You
           will receive a confirmation email.
         </p>
         <button
