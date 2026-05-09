@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bug, ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isAppShellPath, isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
@@ -254,17 +254,6 @@ export function Topbar() {
                   );
                 })}
               </nav>
-              <div className="mt-4">
-                <button
-                  onClick={() => {
-                    throw new Error("[Sentry test] Manual error triggered from sidebar");
-                  }}
-                  className="flex w-full items-center gap-3 rounded-xl border border-dashed border-red-900/40 px-3 py-2.5 text-sm font-medium text-red-500/60 transition-all hover:border-red-700/50 hover:bg-red-950/20 hover:text-red-400"
-                >
-                  <Bug className="h-4 w-4 shrink-0" />
-                  <span>Test Sentry error</span>
-                </button>
-              </div>
             </motion.aside>
           </>
         )}
