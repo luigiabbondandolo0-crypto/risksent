@@ -46,9 +46,11 @@ export type OpenPositionForRisk = {
   stopLoss?: number | null;
   type?: "buy" | "sell";
   riskPct?: number | null;
+  /** Unique position identifier used for per-position alert dedup. */
+  positionId?: string | null;
 };
 
-const APPROACH_THRESHOLD = 0.8; // consideriamo "in avvicinamento" a 80% del limite
+const APPROACH_THRESHOLD = 0.8; // used for exposure / max_dd (not daily_dd)
 
 export type RiskCheckOptions = {
   openPositions?: OpenPositionForRisk[];
@@ -66,32 +68,42 @@ export function getRiskFindings(
   const { initialBalance, dailyStats, highestDdPct, consecutiveLossesAtEnd } = stats;
   const { openPositions = [], equity, currentExposurePct } = options ?? {};
 
-  // --- Daily loss ---
+  // --- Daily loss — 3-tier: 50% / 75% / 100% of limit ---
+  // Each tier fires at most once per UTC day (dedupe by tier rule type in riskCheckRun).
+  // Only the HIGHEST applicable tier is emitted per cron run to avoid stacking.
   if (initialBalance > 0 && dailyStats.length > 0) {
     const worstDayPct = Math.min(
       ...dailyStats.map((d) => (d.profit / initialBalance) * 100)
     );
     const limit = rules.daily_loss_pct;
-    const approachLimit = -limit * APPROACH_THRESHOLD;
-
-    if (worstDayPct <= -limit) {
-      const ratio = Math.abs(worstDayPct / limit);
-      const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
-      findings.push({
-        type: "daily_loss",
-        level,
-        message: `Daily loss: ${worstDayPct.toFixed(2)}% (limit ${limit}%).`,
-        advice: getDailyLossAdvice(level, worstDayPct, limit),
-        severity: level === "alto" ? "high" : "medium"
-      });
-    } else if (worstDayPct < approachLimit) {
-      findings.push({
-        type: "daily_loss",
-        level: "lieve",
-        message: `Approaching daily loss limit: worst day ${worstDayPct.toFixed(2)}% (limit ${limit}%).`,
-        advice: getDailyLossAdvice("lieve", worstDayPct, limit),
-        severity: "medium"
-      });
+    if (limit > 0 && worstDayPct < 0) {
+      const ratio = Math.abs(worstDayPct) / limit;
+      if (ratio >= 1.0) {
+        const level: RiskLevel = ratio >= 1.5 ? "alto" : "medio";
+        findings.push({
+          type: "daily_loss",
+          level,
+          message: `Daily drawdown limit reached: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice(level, worstDayPct, limit),
+          severity: level === "alto" ? "high" : "medium"
+        });
+      } else if (ratio >= 0.75) {
+        findings.push({
+          type: "daily_loss",
+          level: "medio",
+          message: `Daily drawdown at 75% of limit: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice("lieve", worstDayPct, limit),
+          severity: "medium"
+        });
+      } else if (ratio >= 0.5) {
+        findings.push({
+          type: "daily_loss",
+          level: "lieve",
+          message: `Daily drawdown at 50% of limit: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice("lieve", worstDayPct, limit),
+          severity: "medium"
+        });
+      }
     }
   }
 
@@ -168,25 +180,18 @@ export function getRiskFindings(
     }
   }
 
-  // --- Revenge trading (consecutive losses) ---
+  // --- Revenge trading (consecutive losses >= threshold) ---
+  // Fires exactly once per UTC day when threshold is reached. No "approaching" alert.
   const threshold = rules.revenge_threshold_trades;
   if (threshold > 0 && consecutiveLossesAtEnd >= threshold) {
     const level: RiskLevel =
-      consecutiveLossesAtEnd >= threshold + 2 ? "alto" : consecutiveLossesAtEnd > threshold ? "medio" : "medio";
+      consecutiveLossesAtEnd >= threshold + 2 ? "alto" : "medio";
     findings.push({
       type: "revenge_trading",
       level,
       message: `${consecutiveLossesAtEnd} consecutive losses (threshold ${threshold}). Possible revenge trading.`,
       advice: getRevengeAdvice(level, consecutiveLossesAtEnd, threshold),
       severity: level === "alto" ? "high" : "medium"
-    });
-  } else if (threshold > 0 && consecutiveLossesAtEnd === threshold - 1 && consecutiveLossesAtEnd > 0) {
-    findings.push({
-      type: "revenge_trading",
-      level: "lieve",
-      message: `${consecutiveLossesAtEnd} consecutive losses: one more and you reach the threshold (${threshold}).`,
-      advice: getRevengeAdvice("lieve", consecutiveLossesAtEnd, threshold),
-      severity: "medium"
     });
   }
 

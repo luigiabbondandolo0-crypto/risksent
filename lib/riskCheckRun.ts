@@ -336,13 +336,15 @@ function buildOpenPositionsForRisk(
         ts != null && ts > 0 && Number.isFinite(tv) && tv > 0 ? { tickSize: ts, tickValue: tv } : null;
       riskPct = riskPctOfEquityAtStopLoss(symbol, openPrice, stopLoss, volume, equity, side, metaTicks);
     }
+    const posId = p.positionId ?? `${symbol}-${openPrice}`;
     out.push({
       symbol,
       volume,
       openPrice,
       stopLoss: stopLoss ?? null,
       type: side,
-      riskPct: riskPct ?? null
+      riskPct: riskPct ?? null,
+      positionId: posId
     });
   }
   return out;
@@ -386,7 +388,7 @@ async function checkNoSlPositions(params: {
   brokerServer: string;
   currency: string;
 }): Promise<void> {
-  const { candidates, userId, supabase, journalAccountId, telegramChatId, accountNickname, brokerServer, currency } = params;
+  const { candidates, userId, supabase, journalAccountId, telegramChatId, accountNickname, brokerServer } = params;
   if (!telegramChatId) return;
 
   // Filter: only positions open for more than the grace period
@@ -399,51 +401,126 @@ async function checkNoSlPositions(params: {
   });
   if (mature.length === 0) return;
 
-  // Dedupe: skip if we already sent a no_stop_loss alert for this account recently
-  const since = new Date(now - NO_SL_DEDUPE_MS).toISOString();
-  let dq = supabase
-    .from("risk_violations")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("rule_type", "no_stop_loss")
-    .gte("created_at", since)
-    .limit(1);
-  dq = journalAccountId ? dq.eq("account_id", journalAccountId) : dq.is("account_id", null);
-  const { data: recent } = await dq;
-  if ((recent?.length ?? 0) > 0) return;
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
 
-  const symbolList = mature.map((c) => `<code>${c.symbol}</code>`).join(", ");
-  const message =
-    `⛔ <b>No Stop Loss detected</b>\n` +
-    `━━━━━━━━━━━━━━━\n` +
-    `📊 Account: <b>${accountNickname.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</b>\n` +
-    (brokerServer ? `🔢 Server: <code>${brokerServer}</code>\n` : "") +
-    `\n` +
-    `Open position${mature.length > 1 ? "s" : ""} without stop loss:\n${symbolList}\n` +
-    `\n` +
-    `⚠️ Set a stop loss immediately to limit your risk.\n` +
-    `━━━━━━━━━━━━━━━\n` +
-    `🔗 <a href="https://risksent.com/app/risk-manager">Open Risk Manager</a>`;
+  // Per-position dedupe: one alert per position (identified by positionId), ever.
+  for (const pos of mature) {
+    let dq = supabase
+      .from("risk_violations")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("rule_type", "no_stop_loss")
+      .ilike("message", `%${pos.positionId}%`)
+      .limit(1);
+    dq = journalAccountId ? dq.eq("account_id", journalAccountId) : dq.is("account_id", null);
+    const { data: existing } = await dq;
+    if ((existing?.length ?? 0) > 0) continue; // Already alerted for this position
+
+    const safeNickname = accountNickname
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const message =
+      `⛔ <b>No Stop Loss detected</b>\n` +
+      `━━━━━━━━━━━━━━━\n` +
+      `📊 Account: <b>${safeNickname}</b>\n` +
+      (brokerServer ? `🔢 Server: <code>${brokerServer}</code>\n` : "") +
+      `\n` +
+      `Open position without stop loss: <code>${pos.symbol}</code>\n` +
+      `\n` +
+      `⚠️ Set a stop loss immediately to limit your risk.\n` +
+      `━━━━━━━━━━━━━━━\n` +
+      `🔗 <a href="https://risksent.com/app/risk-manager">Open Risk Manager</a>`;
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "HTML" })
+    });
+
+    await supabase.from("risk_violations").insert({
+      user_id: userId,
+      rule_type: "no_stop_loss",
+      value_at_violation: 1,
+      limit_value: 0,
+      message: `No SL on: ${pos.positionId}`,
+      notified_telegram: true,
+      account_id: journalAccountId,
+      account_nickname: accountNickname,
+    });
+  }
+}
+
+/** Per-position risk-per-trade alert: one alert per position that exceeds the limit, ever. */
+async function checkRiskPerTradePositions(params: {
+  openPositions: OpenPositionForRisk[];
+  limitPct: number;
+  userId: string;
+  supabase: SupabaseClient;
+  journalAccountId: string | null;
+  telegramChatId: string | null;
+  accountNickname: string;
+  brokerServer: string;
+  currency: string;
+}): Promise<void> {
+  const { openPositions, limitPct, userId, supabase, journalAccountId, telegramChatId, accountNickname, brokerServer, currency } = params;
+  if (!telegramChatId || limitPct <= 0) return;
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "HTML" })
-  });
 
-  const posIds = mature.map((c) => c.positionId).join(",");
-  await supabase.from("risk_violations").insert({
-    user_id: userId,
-    rule_type: "no_stop_loss",
-    value_at_violation: mature.length,
-    limit_value: 0,
-    message: `No SL on: ${posIds}`,
-    notified_telegram: true,
-    account_id: journalAccountId,
-    account_nickname: accountNickname,
-  });
+  for (const pos of openPositions) {
+    if (pos.riskPct == null || pos.riskPct <= limitPct) continue;
+
+    const posId = pos.positionId ?? `${pos.symbol}-${pos.openPrice}`;
+
+    // Dedupe: one alert per positionId ever (stored in message field)
+    let dq = supabase
+      .from("risk_violations")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("rule_type", "risk_per_trade")
+      .ilike("message", `%${posId}%`)
+      .limit(1);
+    dq = journalAccountId ? dq.eq("account_id", journalAccountId) : dq.is("account_id", null);
+    const { data: existing } = await dq;
+    if ((existing?.length ?? 0) > 0) continue;
+
+    const safeNickname = accountNickname
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const message =
+      `⚠️ <b>Max Risk Per Trade exceeded</b>\n` +
+      `━━━━━━━━━━━━━━━\n` +
+      `📊 Account: <b>${safeNickname}</b>\n` +
+      (brokerServer ? `🔢 Server: <code>${brokerServer}</code>\n` : "") +
+      `\n` +
+      `Position: <code>${pos.symbol}</code>\n` +
+      `Risk: <b>${pos.riskPct.toFixed(2)}%</b> (limit ${limitPct}% of equity)\n` +
+      `\n` +
+      `⛔ Reduce lot size or tighten stop loss immediately.\n` +
+      `━━━━━━━━━━━━━━━\n` +
+      `🔗 <a href="https://risksent.com/app/risk-manager">Open Risk Manager</a>`;
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: telegramChatId, text: message, parse_mode: "HTML" })
+    });
+
+    await supabase.from("risk_violations").insert({
+      user_id: userId,
+      rule_type: "risk_per_trade",
+      value_at_violation: pos.riskPct,
+      limit_value: limitPct,
+      message: `Risk per trade exceeded on: ${posId} (${pos.riskPct.toFixed(2)}% > ${limitPct}%)`,
+      notified_telegram: true,
+      account_id: journalAccountId,
+      account_nickname: accountNickname,
+    });
+  }
 }
 
 export type RunRiskCheckResult = {
@@ -600,15 +677,29 @@ export async function runRiskCheckForAccount(params: {
       continue;
     }
 
-    const canonicalRule = canonicalAlertRuleType(f.type);
-    const ruleType = FINDING_TO_RULE_TYPE[f.type];
+    // max_risk_per_trade is handled per-position below — skip in the aggregate loop
+    if (f.type === "max_risk_per_trade") continue;
+
+    let canonicalRule = canonicalAlertRuleType(f.type);
+    let ruleType = FINDING_TO_RULE_TYPE[f.type];
     const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
+
+    // Daily DD tier routing: map finding to per-tier rule type for exact-once-daily dedupe
+    if (f.type === "daily_loss") {
+      const currentDD = parseFloat(String(alertData.currentDD ?? 0));
+      const limitDD = parseFloat(String(alertData.limitDD ?? 1));
+      const ratio = limitDD > 0 ? currentDD / limitDD : 0;
+      if (ratio >= 1.0) { canonicalRule = ruleType = "daily_dd_100"; }
+      else if (ratio >= 0.75) { canonicalRule = ruleType = "daily_dd_75"; }
+      else { canonicalRule = ruleType = "daily_dd_50"; }
+    }
+
     const { current, limit } = buildCurrentLimit(f.type, alertData);
     const valueAtViolation = Number(
       alertData.currentDD ?? alertData.positionSize ?? alertData.count ?? alertData.tradesCount ?? 0
     ) || 0;
 
-    const skipDup = await hasRecentRuleNotification(supabase, userId, f.type, journalCtx?.id ?? null, valueAtViolation);
+    const skipDup = await hasRecentRuleNotification(supabase, userId, canonicalRule, journalCtx?.id ?? null, valueAtViolation);
     if (skipDup) continue;
     const limitValue = Number(
       alertData.limitDD ?? alertData.limit ?? alertData.avgTrades ?? 0
@@ -657,7 +748,22 @@ export async function runRiskCheckForAccount(params: {
     }
   }
 
-  // Check for open positions without stop loss
+  // Per-position risk-per-trade alerts (one alert per position, ever)
+  if (openPositions.length > 0 && notifyFlagForRule("risk_per_trade", effectiveNotif)) {
+    await checkRiskPerTradePositions({
+      openPositions,
+      limitPct: rules.max_risk_per_trade_pct,
+      userId,
+      supabase,
+      journalAccountId: journalCtx?.id ?? null,
+      telegramChatId: telegramSendChatId,
+      accountNickname: journalCtx?.nickname ?? accountRow.account_number ?? "",
+      brokerServer: journalCtx?.broker_server ?? brokerServer,
+      currency,
+    });
+  }
+
+  // Check for open positions without stop loss (one alert per position, ever)
   if (rawParsedPositions.length > 0) {
     const noSlCandidates = buildNoSlCandidates(rawParsedPositions);
     await checkNoSlPositions({

@@ -3,9 +3,10 @@
  * Historically `alert` and `risk_violations` mixed naming (e.g. max_risk_per_trade vs risk_per_trade).
  *
  * Dedupe strategy by category:
- *  - "live"   (exposure, risk_per_trade, revenge_trading, overtrading): 45-min cooldown
- *  - "static" (consecutive_losses, max_dd): 24h window; re-notify only if value worsened
- *  - "daily"  (daily_dd): same UTC day; re-notify only if value worsened by >0.5%
+ *  - "live"       (overtrading): 45-min cooldown
+ *  - "static"     (consecutive_losses, max_dd, exposure): 24h window; re-notify only if value worsened
+ *  - "daily"      (daily_dd): same UTC day; re-notify only if value worsened by >0.5%
+ *  - "once_daily" (daily_dd tiers, revenge_trading): same UTC day; fire exactly once, no re-notify
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -25,14 +26,21 @@ function startOfUtcDay(): string {
   return d.toISOString();
 }
 
-function ruleCategory(ruleType: string): "live" | "static" | "daily" {
+function ruleCategory(ruleType: string): "live" | "static" | "daily" | "once_daily" {
   const c = canonicalAlertRuleType(ruleType);
   switch (c) {
     case "daily_dd":
-      return "daily";
+    case "daily_dd_50":
+    case "daily_dd_75":
+    case "daily_dd_100":
+      return "once_daily";
     case "max_dd":
     case "consecutive_losses":
       return "static";
+    case "exposure":
+      return "static"; // 24h cooldown
+    case "revenge_trading":
+      return "once_daily"; // once per UTC day, no re-notify
     default:
       return "live";
   }
@@ -56,6 +64,9 @@ export function canonicalAlertRuleType(ruleType: string): string {
     case "revenge":
       return "revenge_trading";
     case "daily_dd":
+    case "daily_dd_50":
+    case "daily_dd_75":
+    case "daily_dd_100":
     case "exposure":
     case "risk_per_trade":
     case "revenge_trading":
@@ -73,6 +84,12 @@ export function alertRuleTypeAliases(ruleType: string): string[] {
   switch (c) {
     case "daily_dd":
       return ["daily_dd", "daily_loss", "daily_drawdown"];
+    case "daily_dd_50":
+      return ["daily_dd_50"];
+    case "daily_dd_75":
+      return ["daily_dd_75"];
+    case "daily_dd_100":
+      return ["daily_dd_100"];
     case "max_dd":
       return ["max_dd", "max_drawdown"];
     case "exposure":
@@ -109,7 +126,7 @@ export async function hasRecentRuleNotification(
   const aliases = alertRuleTypeAliases(ruleType);
 
   let since: string;
-  if (category === "daily") {
+  if (category === "daily" || category === "once_daily") {
     since = startOfUtcDay();
   } else if (category === "static") {
     since = new Date(Date.now() - STATIC_DEDUPE_MS).toISOString();
@@ -129,6 +146,9 @@ export async function hasRecentRuleNotification(
   const { data: vrows } = await vq;
 
   if (!vrows || vrows.length === 0) return false;
+
+  // "once_daily": fired today → always skip, no worsening re-notify.
+  if (category === "once_daily") return true;
 
   // For static/daily rules: re-notify if the value worsened beyond the threshold.
   // "worsened" = higher absolute value (more losses, deeper drawdown).

@@ -35,17 +35,26 @@ export function buildViolationCandidates(rules: RiskRulesDTO, live: LiveStatsFor
   const out: RiskViolationCandidate[] = [];
 
   const ddR = dailyDdRatio(live.dailyDdPct, rules.daily_loss_pct);
-  if (ddR >= WATCH_RATIO && rules.daily_loss_pct > 0) {
+  if (ddR >= 0.5 && rules.daily_loss_pct > 0) {
     const val = live.dailyDdPct ?? 0;
+    let ddMessage: string;
+    let ddSeverity: "watch" | "danger";
+    if (ddR >= 1) {
+      ddMessage = `Daily drawdown limit reached: ${val.toFixed(2)}% (limit −${rules.daily_loss_pct}%).`;
+      ddSeverity = "danger";
+    } else if (ddR >= 0.75) {
+      ddMessage = `Daily drawdown at 75% of limit: ${val.toFixed(2)}% (limit −${rules.daily_loss_pct}%).`;
+      ddSeverity = "watch";
+    } else {
+      ddMessage = `Daily drawdown at 50% of limit: ${val.toFixed(2)}% (limit −${rules.daily_loss_pct}%).`;
+      ddSeverity = "watch";
+    }
     out.push({
       rule_type: "daily_dd",
       value_at_violation: val,
       limit_value: rules.daily_loss_pct,
-      message:
-        ddR >= 1
-          ? `Daily drawdown ${val.toFixed(2)}% exceeds limit −${rules.daily_loss_pct}%.`
-          : `Daily drawdown ${val.toFixed(2)}% is approaching −${rules.daily_loss_pct}% limit.`,
-      severity: ddR >= 1 ? "danger" : "watch"
+      message: ddMessage,
+      severity: ddSeverity
     });
   }
 
@@ -79,24 +88,14 @@ export function buildViolationCandidates(rules: RiskRulesDTO, live: LiveStatsFor
 
   const thr = rules.revenge_threshold_trades;
   const consec = live.consecutiveLossesAtEnd;
-  if (thr > 0 && consec > 0) {
-    if (consec >= thr) {
-      out.push({
-        rule_type: "revenge_trading",
-        value_at_violation: consec,
-        limit_value: thr,
-        message: `${consec} consecutive losses reached threshold ${thr}. Possible revenge trading.`,
-        severity: "danger"
-      });
-    } else if (thr > 1 && consec >= thr - 1) {
-      out.push({
-        rule_type: "revenge_trading",
-        value_at_violation: consec,
-        limit_value: thr,
-        message: `${consec} consecutive losses approaching threshold ${thr}.`,
-        severity: "watch"
-      });
-    }
+  if (thr > 0 && consec >= thr) {
+    out.push({
+      rule_type: "revenge_trading",
+      value_at_violation: consec,
+      limit_value: thr,
+      message: `${consec} consecutive losses reached threshold ${thr}. Possible revenge trading.`,
+      severity: "danger"
+    });
   }
 
   // --- Consecutive losses (softer signal, independent of user's revenge threshold) ---

@@ -199,7 +199,12 @@ function escapeHtml(s: string): string {
 export function ruleTypeToLabel(ruleType: string): string {
   switch (ruleType) {
     case "daily_dd":
-      return "Daily DD limit";
+    case "daily_dd_50":
+      return "Daily DD — 50% of limit";
+    case "daily_dd_75":
+      return "Daily DD — 75% of limit";
+    case "daily_dd_100":
+      return "Daily DD — limit reached";
     case "max_dd":
     case "max_drawdown":
       return "Max Drawdown";
