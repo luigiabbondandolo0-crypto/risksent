@@ -684,14 +684,25 @@ export async function runRiskCheckForAccount(params: {
     let ruleType = FINDING_TO_RULE_TYPE[f.type];
     const alertData = buildAlertData(f.type, { balance, equity, rules, stats, openPositions, currentExposurePct });
 
-    // Daily DD tier routing: map finding to per-tier rule type for exact-once-daily dedupe
+    // Tier routing: map finding.tier to per-tier rule type for once_daily dedupe
     if (f.type === "daily_loss") {
-      const currentDD = parseFloat(String(alertData.currentDD ?? 0));
-      const limitDD = parseFloat(String(alertData.limitDD ?? 1));
-      const ratio = limitDD > 0 ? currentDD / limitDD : 0;
-      if (ratio >= 1.0) { canonicalRule = ruleType = "daily_dd_100"; }
-      else if (ratio >= 0.75) { canonicalRule = ruleType = "daily_dd_75"; }
-      else { canonicalRule = ruleType = "daily_dd_50"; }
+      switch (f.tier) {
+        case "150": canonicalRule = ruleType = "daily_dd_150"; break;
+        case "100": canonicalRule = ruleType = "daily_dd_100"; break;
+        case "75":  canonicalRule = ruleType = "daily_dd_75";  break;
+        default:    canonicalRule = ruleType = "daily_dd_50";  break;
+      }
+    }
+    if (f.type === "current_exposure") {
+      switch (f.tier) {
+        case "150": canonicalRule = ruleType = "exposure_150"; break;
+        case "100": canonicalRule = ruleType = "exposure_100"; break;
+        default:    canonicalRule = ruleType = "exposure";     break; // approaching, static 24h
+      }
+    }
+    if (f.type === "revenge_trading") {
+      if (f.tier === "exceeded") canonicalRule = ruleType = "revenge_trading_exceeded";
+      else canonicalRule = ruleType = "revenge_trading";
     }
 
     const { current, limit } = buildCurrentLimit(f.type, alertData);

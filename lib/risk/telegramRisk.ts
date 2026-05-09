@@ -205,14 +205,22 @@ export function ruleTypeToLabel(ruleType: string): string {
       return "Daily DD — 75% of limit";
     case "daily_dd_100":
       return "Daily DD — limit reached";
+    case "daily_dd_150":
+      return "Daily DD — severely exceeded";
     case "max_dd":
     case "max_drawdown":
       return "Max Drawdown";
     case "exposure":
-      return "Max exposure";
+      return "Max exposure approaching";
+    case "exposure_100":
+      return "Max exposure reached";
+    case "exposure_150":
+      return "Max exposure severely exceeded";
     case "revenge":
     case "revenge_trading":
-      return "Revenge trading";
+      return "Revenge trading — threshold reached";
+    case "revenge_trading_exceeded":
+      return "Revenge trading — threshold exceeded";
     case "risk_per_trade":
       return "Risk per trade";
     case "consecutive_losses":

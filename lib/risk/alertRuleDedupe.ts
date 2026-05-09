@@ -33,13 +33,18 @@ function ruleCategory(ruleType: string): "live" | "static" | "daily" | "once_dai
     case "daily_dd_50":
     case "daily_dd_75":
     case "daily_dd_100":
+    case "daily_dd_150":
       return "once_daily";
     case "max_dd":
     case "consecutive_losses":
       return "static";
     case "exposure":
-      return "static"; // 24h cooldown
+      return "static"; // 24h cooldown, re-notify on worsening (approaching alert)
+    case "exposure_100":
+    case "exposure_150":
+      return "once_daily";
     case "revenge_trading":
+    case "revenge_trading_exceeded":
       return "once_daily"; // once per UTC day, no re-notify
     default:
       return "live";
@@ -67,9 +72,13 @@ export function canonicalAlertRuleType(ruleType: string): string {
     case "daily_dd_50":
     case "daily_dd_75":
     case "daily_dd_100":
+    case "daily_dd_150":
     case "exposure":
+    case "exposure_100":
+    case "exposure_150":
     case "risk_per_trade":
     case "revenge_trading":
+    case "revenge_trading_exceeded":
     case "consecutive_losses":
     case "overtrading":
       return t;
@@ -90,6 +99,14 @@ export function alertRuleTypeAliases(ruleType: string): string[] {
       return ["daily_dd_75"];
     case "daily_dd_100":
       return ["daily_dd_100"];
+    case "daily_dd_150":
+      return ["daily_dd_150"];
+    case "exposure_100":
+      return ["exposure_100"];
+    case "exposure_150":
+      return ["exposure_150"];
+    case "revenge_trading_exceeded":
+      return ["revenge_trading_exceeded"];
     case "max_dd":
       return ["max_dd", "max_drawdown"];
     case "exposure":

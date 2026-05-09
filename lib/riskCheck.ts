@@ -36,6 +36,8 @@ export type RiskFinding = {
   message: string;
   advice: string;
   severity: "medium" | "high";
+  /** Tier label for multi-tier alerts. Used by riskCheckRun to pick tier-specific rule type for dedupe. */
+  tier?: string;
 };
 
 /** Open position with optional stop loss for max risk per trade check. riskPct = risk if SL hits as % of equity (caller should set). */
@@ -68,9 +70,8 @@ export function getRiskFindings(
   const { initialBalance, dailyStats, highestDdPct, consecutiveLossesAtEnd } = stats;
   const { openPositions = [], equity, currentExposurePct } = options ?? {};
 
-  // --- Daily loss — 3-tier: 50% / 75% / 100% of limit ---
-  // Each tier fires at most once per UTC day (dedupe by tier rule type in riskCheckRun).
-  // Only the HIGHEST applicable tier is emitted per cron run to avoid stacking.
+  // --- Daily loss — 4-tier: 50% / 75% / 100% (raggiunto) / 150% (superato) of limit ---
+  // ALL applicable tiers are emitted per cron run; riskCheckRun dedupes per tier (once_daily each).
   if (initialBalance > 0 && dailyStats.length > 0) {
     const worstDayPct = Math.min(
       ...dailyStats.map((d) => (d.profit / initialBalance) * 100)
@@ -78,30 +79,44 @@ export function getRiskFindings(
     const limit = rules.daily_loss_pct;
     if (limit > 0 && worstDayPct < 0) {
       const ratio = Math.abs(worstDayPct) / limit;
-      if (ratio >= 1.0) {
-        const level: RiskLevel = ratio >= 1.5 ? "alto" : "medio";
+      if (ratio >= 0.5) {
         findings.push({
           type: "daily_loss",
-          level,
-          message: `Daily drawdown limit reached: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
-          advice: getDailyLossAdvice(level, worstDayPct, limit),
-          severity: level === "alto" ? "high" : "medium"
+          level: "lieve",
+          tier: "50",
+          message: `Daily drawdown at 50% of limit: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice("lieve", worstDayPct, limit),
+          severity: "medium"
         });
-      } else if (ratio >= 0.75) {
+      }
+      if (ratio >= 0.75) {
         findings.push({
           type: "daily_loss",
           level: "medio",
+          tier: "75",
           message: `Daily drawdown at 75% of limit: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
           advice: getDailyLossAdvice("lieve", worstDayPct, limit),
           severity: "medium"
         });
-      } else if (ratio >= 0.5) {
+      }
+      if (ratio >= 1.0) {
         findings.push({
           type: "daily_loss",
-          level: "lieve",
-          message: `Daily drawdown at 50% of limit: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
-          advice: getDailyLossAdvice("lieve", worstDayPct, limit),
+          level: "medio",
+          tier: "100",
+          message: `Daily drawdown limit reached: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice("medio", worstDayPct, limit),
           severity: "medium"
+        });
+      }
+      if (ratio >= 1.5) {
+        findings.push({
+          type: "daily_loss",
+          level: "alto",
+          tier: "150",
+          message: `Daily drawdown severely exceeded: ${worstDayPct.toFixed(2)}% (limit −${limit}%).`,
+          advice: getDailyLossAdvice("alto", worstDayPct, limit),
+          severity: "high"
         });
       }
     }
@@ -129,27 +144,39 @@ export function getRiskFindings(
     }
   }
 
-  // --- Current exposure (from open positions) — distinct type so Telegram gets both exposure + historical drawdown ---
+  // --- Current exposure — tiers: approaching (75%) / reached (100%) / exceeded (150%) ---
+  // ALL applicable tiers emitted; riskCheckRun routes to tier-specific rule types for once_daily dedupe.
   if (currentExposurePct != null && currentExposurePct > 0 && rules.max_exposure_pct > 0) {
     const limit = rules.max_exposure_pct;
-    const approachLimit = limit * APPROACH_THRESHOLD;
-    if (currentExposurePct >= limit) {
-      const ratio = currentExposurePct / limit;
-      const level: RiskLevel = ratio >= 1.5 ? "alto" : ratio >= 1.1 ? "medio" : "medio";
-      findings.push({
-        type: "current_exposure",
-        level,
-        message: `Open positions exposure: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
-        advice: getDrawdownAdvice(level, currentExposurePct, limit),
-        severity: level === "alto" ? "high" : "medium"
-      });
-    } else if (currentExposurePct >= approachLimit) {
+    const ratio = currentExposurePct / limit;
+    if (ratio >= 0.75) {
       findings.push({
         type: "current_exposure",
         level: "lieve",
+        tier: "approaching",
         message: `Open positions exposure approaching limit: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
         advice: getDrawdownAdvice("lieve", currentExposurePct, limit),
         severity: "medium"
+      });
+    }
+    if (ratio >= 1.0) {
+      findings.push({
+        type: "current_exposure",
+        level: "medio",
+        tier: "100",
+        message: `Open positions exposure reached limit: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
+        advice: getDrawdownAdvice("medio", currentExposurePct, limit),
+        severity: "medium"
+      });
+    }
+    if (ratio >= 1.5) {
+      findings.push({
+        type: "current_exposure",
+        level: "alto",
+        tier: "150",
+        message: `Open positions exposure severely exceeded: ${currentExposurePct.toFixed(2)}% (limit ${limit}%).`,
+        advice: getDrawdownAdvice("alto", currentExposurePct, limit),
+        severity: "high"
       });
     }
   }
@@ -180,19 +207,28 @@ export function getRiskFindings(
     }
   }
 
-  // --- Revenge trading (consecutive losses >= threshold) ---
-  // Fires exactly once per UTC day when threshold is reached. No "approaching" alert.
+  // --- Revenge trading — two tiers: reached (>= threshold) + exceeded (> threshold) ---
+  // Each fires once per UTC day independently via tier-specific rule types.
   const threshold = rules.revenge_threshold_trades;
   if (threshold > 0 && consecutiveLossesAtEnd >= threshold) {
-    const level: RiskLevel =
-      consecutiveLossesAtEnd >= threshold + 2 ? "alto" : "medio";
     findings.push({
       type: "revenge_trading",
-      level,
-      message: `${consecutiveLossesAtEnd} consecutive losses (threshold ${threshold}). Possible revenge trading.`,
-      advice: getRevengeAdvice(level, consecutiveLossesAtEnd, threshold),
-      severity: level === "alto" ? "high" : "medium"
+      level: "medio",
+      tier: "reached",
+      message: `${consecutiveLossesAtEnd} consecutive losses reached threshold ${threshold}. Possible revenge trading.`,
+      advice: getRevengeAdvice("medio", consecutiveLossesAtEnd, threshold),
+      severity: "medium"
     });
+    if (consecutiveLossesAtEnd > threshold) {
+      findings.push({
+        type: "revenge_trading",
+        level: "alto",
+        tier: "exceeded",
+        message: `${consecutiveLossesAtEnd} consecutive losses exceeded threshold ${threshold}. Stop trading now.`,
+        advice: getRevengeAdvice("alto", consecutiveLossesAtEnd, threshold),
+        severity: "high"
+      });
+    }
   }
 
   // --- Consecutive losses (softer signal, below revenge threshold to avoid duplication) ---
