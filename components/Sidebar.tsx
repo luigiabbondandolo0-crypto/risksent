@@ -168,19 +168,17 @@ export function Sidebar({
         </Suspense>
       </div>
 
-      {process.env.NEXT_PUBLIC_VERCEL_ENV !== "production" && (
-        <div className="mt-4 px-0">
-          <button
-            onClick={() => {
-              throw new Error("[Sentry test] Manual error triggered from sidebar");
-            }}
-            className="flex w-full items-center gap-3 rounded-xl border border-dashed border-red-900/40 px-3 py-2.5 text-sm font-medium text-red-500/60 transition-all duration-200 hover:border-red-700/50 hover:bg-red-950/20 hover:text-red-400"
-          >
-            <Bug className="h-4 w-4 flex-shrink-0" />
-            <span className="truncate">Test Sentry error</span>
-          </button>
-        </div>
-      )}
+      <div className="mt-4 px-0">
+        <button
+          onClick={() => {
+            throw new Error("[Sentry test] Manual error triggered from sidebar");
+          }}
+          className="flex w-full items-center gap-3 rounded-xl border border-dashed border-red-900/40 px-3 py-2.5 text-sm font-medium text-red-500/60 transition-all duration-200 hover:border-red-700/50 hover:bg-red-950/20 hover:text-red-400"
+        >
+          <Bug className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">Test Sentry error</span>
+        </button>
+      </div>
     </aside>
   );
 }
