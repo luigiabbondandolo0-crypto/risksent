@@ -39,22 +39,20 @@ const SECTIONS = [
 ];
 
 /**
- * Returns true for devices/browsers where fixed full-viewport WebGL + backdrop-filter
+ * Returns true for devices where fixed full-viewport WebGL + backdrop-filter
  * causes white flicker or compositing artefacts:
  *  - iOS (any browser): WebKit scroll compositing issues
  *  - iPadOS 13+ (desktop UA): same WebKit engine
- *  - macOS Safari: fixed canvas + backdrop-filter creates white stripe on scroll
+ * macOS (Safari and Chrome) keeps WebGL — mountain scroll animation requires it.
+ * Diagonal stripe / flicker on macOS is handled via CSS (scan-card opacity:0,
+ * animated-border animation-play-state:paused).
  */
 function isProblematicWebGL(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
-  // iOS / iPadOS
   if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ desktop UA
   if (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return true;
-  // macOS Safari (not Chrome/Firefox which use a different engine on macOS)
-  const isMacOS = /Macintosh/.test(ua);
-  const isSafari = /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Firefox\//.test(ua);
-  if (isMacOS && isSafari) return true;
   return false;
 }
 
