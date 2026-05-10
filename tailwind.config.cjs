@@ -35,8 +35,9 @@ module.exports = {
           "50%": { boxShadow: "0 0 24px rgba(255,60,60,0.3)" },
         },
         "scan-sweep": {
-          "0%":   { transform: "translateX(-120%) skewX(-15deg)" },
-          "100%": { transform: "translateX(220%)  skewX(-15deg)" },
+          "0%":   { transform: "translateX(-120%) skewX(-15deg)", opacity: "1" },
+          "80%":  { opacity: "1" },
+          "100%": { transform: "translateX(220%)  skewX(-15deg)", opacity: "0" },
         },
         "alarm-pulse": {
           "0%,100%": { opacity: "0", transform: "scale(1)" },

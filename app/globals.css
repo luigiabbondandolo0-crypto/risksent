@@ -315,9 +315,15 @@ aside.lg\:flex {
 }
 
 /* ── SCAN-LINE sweep on card hover ── */
+/*
+ * Rest state uses opacity:0 (not just translateX) — macOS Safari/Chrome Metal
+ * compositor doesn't reliably clip skewed pseudo-elements via overflow:hidden,
+ * causing a persistent diagonal white stripe at rest on macOS.
+ */
 @keyframes scan-sweep {
-  0%   { transform: translateX(-120%) skewX(-15deg); }
-  100% { transform: translateX(220%)  skewX(-15deg); }
+  0%   { transform: translateX(-120%) skewX(-15deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(220%)  skewX(-15deg); opacity: 0; }
 }
 .scan-card {
   position: relative;
@@ -334,6 +340,7 @@ aside.lg\:flex {
     transparent 80%
   );
   transform: translateX(-120%) skewX(-15deg);
+  opacity: 0; /* hidden at rest — prevents macOS compositor artifact */
   pointer-events: none;
   transition: none;
 }
@@ -405,7 +412,12 @@ aside.lg\:flex {
     rgba(255,60,60,0.6)
   );
   background-size: 400% 400%;
+  /*
+   * animation-play-state: paused when invisible — stops the infinite GPU animation
+   * from creating compositor layer flicker on macOS at opacity:0.
+   */
   animation: border-gradient-spin 4s ease infinite;
+  animation-play-state: paused;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -416,6 +428,7 @@ aside.lg\:flex {
 }
 .animated-border:hover::before {
   opacity: 1;
+  animation-play-state: running;
 }
 
 /* ── ALARM PULSE (risk-manager) ── */
@@ -711,6 +724,7 @@ aside.lg\:flex {
     forced-color-adjust: none;
   }
 }
+
 
 @media (max-width: 767px) {
   header.sticky.z-50 {

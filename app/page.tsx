@@ -38,13 +38,24 @@ const SECTIONS = [
   { id: "EXECUTE", sub: "Discipline at every entry" },
 ];
 
-/** iOS (any browser) uses WebKit; full-viewport WebGL + fixed layers causes white flicker during scroll/composite. */
-function isIOSDevice(): boolean {
+/**
+ * Returns true for devices/browsers where fixed full-viewport WebGL + backdrop-filter
+ * causes white flicker or compositing artefacts:
+ *  - iOS (any browser): WebKit scroll compositing issues
+ *  - iPadOS 13+ (desktop UA): same WebKit engine
+ *  - macOS Safari: fixed canvas + backdrop-filter creates white stripe on scroll
+ */
+function isProblematicWebGL(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
+  // iOS / iPadOS
   if (/iPad|iPhone|iPod/.test(ua)) return true;
-  // iPadOS 13+ desktop UA
-  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  if (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return true;
+  // macOS Safari (not Chrome/Firefox which use a different engine on macOS)
+  const isMacOS = /Macintosh/.test(ua);
+  const isSafari = /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Firefox\//.test(ua);
+  if (isMacOS && isSafari) return true;
+  return false;
 }
 
 const HOME_STATIC_BACKDROP_STYLE: CSSProperties = {
@@ -62,7 +73,7 @@ export default function HomePage() {
   const [useWebGLBackdrop, setUseWebGLBackdrop] = useState(false);
 
   useEffect(() => {
-    setUseWebGLBackdrop(!isIOSDevice());
+    setUseWebGLBackdrop(!isProblematicWebGL());
   }, []);
 
   useEffect(() => {
