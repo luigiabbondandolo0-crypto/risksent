@@ -102,7 +102,7 @@ export function JournalTradesPageClient({
 
   const totalPages = Math.max(1, Math.ceil(displayTotal / pageSize));
 
-  const shellClass = embedded ? "scroll-mt-28 space-y-6 border-t border-white/[0.06] pt-8" : `${jn.page} space-y-6`;
+  const shellClass = embedded ? "scroll-mt-28 space-y-6 border-t border-slate-200 pt-8" : `${jn.page} space-y-6`;
 
   return (
     <div className={shellClass} id={embedded ? "journal-trades" : undefined}>
@@ -166,10 +166,10 @@ export function JournalTradesPageClient({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b border-white/[0.07] text-[11px] uppercase tracking-wider text-slate-500 font-mono">
+            <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500 font-mono">
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Symbol</th>
               <th className="px-4 py-3">Dir</th>
@@ -200,7 +200,7 @@ export function JournalTradesPageClient({
                     key={t.id}
                     role="link"
                     tabIndex={0}
-                    className={`cursor-pointer border-b border-white/[0.04] transition hover:bg-white/[0.05] ${rowTint}`}
+                    className={`cursor-pointer border-b border-slate-100 transition hover:bg-slate-50 ${rowTint}`}
                     onClick={() => router.push(`${linkBase}/trade/${t.id}`)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -212,7 +212,7 @@ export function JournalTradesPageClient({
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">
                       {format(parseISO(t.open_time), "MMM d, HH:mm")}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-white">{t.symbol}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">{t.symbol}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-md px-2 py-0.5 text-xs font-mono ${
@@ -224,7 +224,7 @@ export function JournalTradesPageClient({
                         {t.direction}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-300">{t.lot_size}</td>
+                    <td className="px-4 py-3 font-mono text-slate-700">{t.lot_size}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">{t.open_price}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">{t.close_price ?? "—"}</td>
                     <td className="px-4 py-3 font-mono text-slate-400">{t.pips ?? "—"}</td>

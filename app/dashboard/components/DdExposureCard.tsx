@@ -80,7 +80,7 @@ function SemiGauge({
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
-            stroke="#1e1e1e"
+            stroke="#e2e8f0"
             strokeWidth="10"
             strokeLinecap="round"
           />
@@ -111,7 +111,7 @@ function SemiGauge({
           />
         </svg>
         {over > 0 && (
-          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-mono text-red-300">
+          <span className="absolute right-0 top-0 rounded-full border border-red-500/40 bg-red-50 px-1.5 py-0.5 text-[9px] font-mono text-red-700">
             +{(over * 100).toFixed(0)}%
           </span>
         )}
@@ -130,7 +130,7 @@ function SemiGauge({
         limit {limitPct}%
       </span>
 
-      <div className="w-full mt-1 h-[2px] rounded-full bg-[#1e1e1e] overflow-hidden" style={{ width: "144px" }}>
+      <div className="w-full mt-1 h-[2px] rounded-full bg-slate-200 overflow-hidden" style={{ width: "144px" }}>
         <motion.div
           initial={{ width: 0 }}
           animate={isInView ? { width: `${Math.min(100, ratio * 100)}%` } : {}}
@@ -154,7 +154,7 @@ export function DdExposureCard({
     <section className="rs-card-accent p-5 sm:p-6 shadow-rs-soft">
       <div className="mb-6 flex items-center justify-between gap-2">
         <div>
-          <div className="text-base font-semibold font-display tracking-tight text-slate-100">
+          <div className="text-base font-semibold font-display tracking-tight text-slate-800">
             Daily DD & exposure
           </div>
           <p className="mt-0.5 text-xs font-mono text-slate-500">
@@ -162,7 +162,7 @@ export function DdExposureCard({
           </p>
         </div>
         {isMock && (
-          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-500/15 px-2 py-1 text-[10px] font-mono font-medium text-amber-200">
+          <span className="shrink-0 rounded-md border border-amber-500/35 bg-amber-50 px-2 py-1 text-[10px] font-mono font-medium text-amber-700">
             Sample data
           </span>
         )}

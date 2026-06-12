@@ -29,7 +29,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
         disabled={syncing}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
-        className={`${base} border-cyan-500/40 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`${base} border-cyan-500/40 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50`}
       >
         <RefreshCw className={`h-4 w-4 shrink-0 ${syncing ? "animate-spin" : ""}`} />
         Sync trades
@@ -39,7 +39,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
         <Link
           href="/app/risk-manager"
-          className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
+          className={`${base} border-slate-200 bg-slate-100 text-slate-700 hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900`}
         >
           <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-400" />
           Edit rules
@@ -50,7 +50,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
         <Link
           href="/app/ai-coach"
-          className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
+          className={`${base} border-slate-200 bg-slate-100 text-slate-700 hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900`}
         >
           <Sparkles className="h-4 w-4 shrink-0 text-slate-400" />
           AI Coach
@@ -61,7 +61,7 @@ export function QuickActions({ onSyncTrades, syncing }: QuickActionsProps) {
       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
         <Link
           href="/app/risk-manager#telegram"
-          className={`${base} border-slate-600/80 bg-slate-900/40 text-slate-200 hover:border-slate-500 hover:bg-slate-800/70 hover:text-white`}
+          className={`${base} border-slate-200 bg-slate-100 text-slate-700 hover:border-slate-300 hover:bg-slate-200 hover:text-slate-900`}
         >
           <MessageCircle className="h-4 w-4 shrink-0 text-slate-400" />
           Telegram setup

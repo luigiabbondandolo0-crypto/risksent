@@ -22,9 +22,9 @@ type AccountHealthCardProps = {
 };
 
 function healthColor(score: number): string {
-  if (score >= 70) return "text-emerald-400";
-  if (score >= 40) return "text-amber-400";
-  return "text-red-400";
+  if (score >= 70) return "text-emerald-600";
+  if (score >= 40) return "text-amber-600";
+  return "text-red-600";
 }
 
 function healthBg(score: number): string {
@@ -75,7 +75,7 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
         <button
           type="button"
           onClick={() => setInfoOpen(true)}
-          className="rounded-full p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 transition-colors"
+          className="rounded-full p-1 text-slate-500 hover:text-cyan-700 hover:bg-slate-100 transition-colors"
           title="How is Account Health calculated?"
           aria-label="Info"
         >
@@ -92,22 +92,22 @@ export function AccountHealthCard({ winRate, highestDdPct }: AccountHealthCardPr
       {infoOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setInfoOpen(false)}>
           <div
-            className="rounded-xl border border-slate-700 bg-slate-900 shadow-xl w-full max-w-md p-5"
+            className="rounded-xl border border-slate-200 bg-white shadow-xl w-full max-w-md p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold text-slate-100">How Account Health is calculated</h3>
-              <button type="button" onClick={() => setInfoOpen(false)} className="p-1 rounded text-slate-400 hover:text-slate-200" aria-label="Close">
+              <h3 className="text-base font-semibold text-slate-800">How Account Health is calculated</h3>
+              <button type="button" onClick={() => setInfoOpen(false)} className="p-1 rounded text-slate-500 hover:text-slate-700" aria-label="Close">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-sm text-slate-300 mb-3">
+            <p className="text-sm text-slate-700 mb-3">
               Account Health (0–100) is updated from three factors:
             </p>
-            <ul className="text-sm text-slate-400 space-y-2 list-disc list-inside">
-              <li><strong className="text-slate-200">Win rate</strong> — up to 35 points (higher WR = more points)</li>
-              <li><strong className="text-slate-200">Drawdown</strong> — up to 35 points (lower max DD = more points)</li>
-              <li><strong className="text-slate-200">Rules compliance</strong> — up to 30 points (fewer unread alerts = more points; high-severity alerts reduce the score more)</li>
+            <ul className="text-sm text-slate-600 space-y-2 list-disc list-inside">
+              <li><strong className="text-slate-800">Win rate</strong> — up to 35 points (higher WR = more points)</li>
+              <li><strong className="text-slate-800">Drawdown</strong> — up to 35 points (lower max DD = more points)</li>
+              <li><strong className="text-slate-800">Rules compliance</strong> — up to 30 points (fewer unread alerts = more points; high-severity alerts reduce the score more)</li>
             </ul>
             <p className="text-xs text-slate-500 mt-3">
               The score refreshes when dashboard stats or alerts are loaded.

@@ -70,7 +70,7 @@ export function EmptyState({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.22 }}
-        className={`font-bold text-slate-100 tracking-tight mb-2 ${sz.title}`}
+        className={`font-bold text-slate-800 tracking-tight mb-2 ${sz.title}`}
         style={{ fontFamily: "var(--font-display)" }}
       >
         {title}

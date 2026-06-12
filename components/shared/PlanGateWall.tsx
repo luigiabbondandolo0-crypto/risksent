@@ -30,8 +30,8 @@ export function PlanGateWall({ feature, description }: Props) {
       </div>
 
       <div
-        className="relative z-[1] w-full max-w-lg overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 text-center shadow-[0_24px_80px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl sm:p-10"
-        style={{ boxShadow: "0 0 0 1px rgba(99,102,241,0.12), 0 24px 80px -24px rgba(0,0,0,0.75)" }}
+        className="relative z-[1] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-[0_24px_80px_-24px_rgba(0,0,0,0.08)] backdrop-blur-xl sm:p-10"
+        style={{ boxShadow: "0 0 0 1px rgba(99,102,241,0.12), 0 24px 80px -24px rgba(0,0,0,0.08)" }}
       >
         <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center">
           <motion.div
@@ -44,7 +44,7 @@ export function PlanGateWall({ feature, description }: Props) {
           </div>
         </div>
 
-        <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white sm:text-[1.65rem]">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.65rem]">
           {feature} requires Experienced
         </h2>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-slate-400 font-[family-name:var(--font-mono)]">

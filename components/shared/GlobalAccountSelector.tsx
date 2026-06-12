@@ -46,7 +46,7 @@ function AddAccountToolbarButton({ onClick }: { onClick: () => void }) {
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       title="Add account"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.02] text-slate-400 transition-all hover:border-white/[0.15] hover:bg-white/[0.05] hover:text-white"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-500 transition-all hover:border-slate-300 hover:bg-slate-200 hover:text-slate-800"
     >
       <Plus className="h-3.5 w-3.5" />
     </motion.button>
@@ -84,9 +84,9 @@ export function GlobalAccountSelector({
 
   if (isMock) {
     return withAddToolbar(
-      <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2">
         <span className={`h-2 w-2 shrink-0 rounded-full ${statusDotClass("active")}`} />
-        <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-100">
+        <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-800">
           Demo Account (IC Markets)
         </span>
       </div>,
@@ -107,9 +107,9 @@ export function GlobalAccountSelector({
   if (accounts.length === 1) {
     const a = accounts[0];
     return withAddToolbar(
-      <div className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2">
         <span className={`h-2 w-2 shrink-0 rounded-full ${statusDotClass(a.status)}`} />
-        <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-100">
+        <span className="font-[family-name:var(--font-mono)] text-sm font-medium text-slate-800">
           {a.nickname}
         </span>
       </div>,
@@ -134,7 +134,7 @@ export function GlobalAccountSelector({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex min-w-[180px] max-w-[min(100vw-2rem,280px)] items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-black/35 px-3 py-2 text-left transition-colors hover:border-white/[0.12] hover:bg-black/45"
+        className="flex min-w-[180px] max-w-[min(100vw-2rem,280px)] items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-left transition-colors hover:border-slate-300 hover:bg-slate-200"
       >
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -142,7 +142,7 @@ export function GlobalAccountSelector({
               selected ? statusDotClass(selected.status) : "bg-cyan-400/80"
             }`}
           />
-          <span className="truncate font-[family-name:var(--font-mono)] text-sm font-medium text-slate-100">
+          <span className="truncate font-[family-name:var(--font-mono)] text-sm font-medium text-slate-800">
             {label}
           </span>
         </div>
@@ -158,21 +158,21 @@ export function GlobalAccountSelector({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 32 }}
-            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(100vw-2rem,300px)] overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e]/95 py-1 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.85)] backdrop-blur-xl"
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(100vw-2rem,300px)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.12)] backdrop-blur-xl"
           >
             {allowAll ? (
               <>
                 <button
                   type="button"
                   onClick={() => pick("all")}
-                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-[family-name:var(--font-mono)] transition-colors hover:bg-white/[0.05] ${
-                    selectedId === "all" ? "text-cyan-300" : "text-slate-300"
+                  className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm font-[family-name:var(--font-mono)] transition-colors hover:bg-slate-50 ${
+                    selectedId === "all" ? "text-cyan-700" : "text-slate-700"
                   }`}
                 >
                   <span className="h-2 w-2 rounded-full bg-cyan-400/80" />
                   All accounts
                 </button>
-                <div className="mx-2 my-1 h-px bg-white/[0.06]" />
+                <div className="mx-2 my-1 h-px bg-slate-200" />
               </>
             ) : null}
             {accounts.map((a) => (
@@ -180,15 +180,15 @@ export function GlobalAccountSelector({
                 key={a.id}
                 type="button"
                 onClick={() => pick(a.id)}
-                className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.05] ${
-                  selectedId === a.id ? "bg-white/[0.04]" : ""
+                className={`flex w-full flex-col gap-0.5 px-3 py-2.5 text-left transition-colors hover:bg-slate-50 ${
+                  selectedId === a.id ? "bg-slate-50" : ""
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${statusDotClass(a.status)}`} />
-                  <span className="truncate font-medium text-slate-100">{a.nickname}</span>
+                  <span className="truncate font-medium text-slate-800">{a.nickname}</span>
                   {a.platform && (
-                    <span className="rounded border border-white/[0.08] px-1.5 py-0.5 text-[10px] font-mono uppercase text-slate-400">
+                    <span className="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-slate-500">
                       {a.platform}
                     </span>
                   )}

@@ -172,115 +172,139 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
       <div
         className={`mx-auto w-full ${
           isApp ? "max-w-[1600px] px-4 sm:px-6 lg:px-8" : "max-w-7xl px-6 lg:px-16"
-        } py-12 lg:py-16`}
+        } ${isApp ? "py-8" : "py-12 lg:py-16"}`}
       >
-        {/* Top grid */}
-        <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-12 lg:gap-12">
-          {/* Brand */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-4">
-            <Link href="/" className="inline-flex items-center">
-              <span
-                className={`text-xl font-black tracking-tight ${isApp ? "text-slate-900" : "text-white"}`}
-                style={{ fontFamily: "'Syne', var(--font-display, sans-serif)" }}
-              >
-                RiskSent
-              </span>
-            </Link>
-            <p className={`mt-4 max-w-sm text-[13px] leading-relaxed ${isApp ? "text-slate-500" : "text-slate-400"}`}>
-              The all-in-one trading platform: backtest strategies, journal
-              every trade and enforce your risk rules with live alerts — one
-              subscription, zero chaos.
-            </p>
-
-            <div className="mt-6 flex items-center gap-2">
-              <a
-                href="https://x.com/risksent"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="RiskSent on X"
-                className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
-                  isApp
-                    ? "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700"
-                    : "border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-                }`}
-              >
-                <XLogo className="h-[14px] w-[14px]" />
-              </a>
-              <a
-                href="https://instagram.com/risksent"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="RiskSent on Instagram"
-                className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
-                  isApp
-                    ? "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700"
-                    : "border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-                }`}
-              >
-                <Instagram className="h-4 w-4" />
-              </a>
+        {isApp ? (
+          /* ── App footer: minimal ── */
+          <>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+              {/* Brand + social */}
+              <div>
+                <Link href="/dashboard" className="inline-flex items-center">
+                  <span className="text-lg font-black tracking-tight text-slate-900" style={{ fontFamily: "'Syne', var(--font-display, sans-serif)" }}>
+                    RiskSent
+                  </span>
+                </Link>
+                <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500">
+                  Backtest, journal and enforce your risk rules — one platform for disciplined traders.
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <a href="https://x.com/risksent" target="_blank" rel="noopener noreferrer" aria-label="RiskSent on X"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700 transition-all">
+                    <XLogo className="h-[13px] w-[13px]" />
+                  </a>
+                  <a href="https://instagram.com/risksent" target="_blank" rel="noopener noreferrer" aria-label="RiskSent on Instagram"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700 transition-all">
+                    <Instagram className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Link columns */}
-          <div className="lg:col-span-2">
-            <FooterColumn title="Product" links={PRODUCT_LINKS} isApp={isApp} />
-          </div>
-          <div className="lg:col-span-2">
-            <FooterColumn title="Resources" links={RESOURCES_LINKS} isApp={isApp} />
-          </div>
-          <div className="lg:col-span-2">
-            <FooterColumn title="Company" links={COMPANY_LINKS} isApp={isApp} />
-          </div>
-          <div className="lg:col-span-2">
-            <FooterColumn title="Legal" links={LEGAL_LINKS} isApp={isApp} />
-          </div>
-        </div>
+            {/* Risk warning */}
+            <div className="mt-6">
+              <RiskDisclaimer isApp />
+            </div>
 
-        {/* Risk disclaimer */}
-        <div className="mt-12">
-          <RiskDisclaimer isApp={isApp} />
-        </div>
+            {/* Divider */}
+            <div className="my-5 h-px w-full" style={{ background: "rgba(0,0,0,0.06)" }} />
 
-        {/* Divider */}
-        <div
-          className="my-8 h-px w-full"
-          style={{ background: isApp ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)" }}
-        />
+            {/* Bottom strip */}
+            <div className="flex flex-col gap-3 text-[11px] font-mono text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+              <p>© {year} RiskSent · All rights reserved.</p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                {[
+                  { href: "/terms", label: "Terms" },
+                  { href: "/privacy", label: "Privacy" },
+                  { href: "/cookies", label: "Cookies" },
+                  { href: "/risk-disclosure", label: "Risk" },
+                  { href: "/support", label: "Support" },
+                ].map((l) => (
+                  <Link key={l.href} href={l.href} className="transition-colors hover:text-slate-700">
+                    {l.label}
+                  </Link>
+                ))}
+                <button type="button" onClick={() => openCookiePreferences()} className="transition-colors hover:text-slate-700">
+                  Cookie preferences
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ── Marketing footer: full ── */
+          <>
+            {/* Top grid */}
+            <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:grid-cols-12 lg:gap-12">
+              {/* Brand */}
+              <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+                <Link href="/" className="inline-flex items-center">
+                  <span className="text-xl font-black tracking-tight text-white" style={{ fontFamily: "'Syne', var(--font-display, sans-serif)" }}>
+                    RiskSent
+                  </span>
+                </Link>
+                <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-slate-400">
+                  The all-in-one trading platform: backtest strategies, journal
+                  every trade and enforce your risk rules with live alerts — one
+                  subscription, zero chaos.
+                </p>
+                <div className="mt-6 flex items-center gap-2">
+                  <a href="https://x.com/risksent" target="_blank" rel="noopener noreferrer" aria-label="RiskSent on X"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white transition-all">
+                    <XLogo className="h-[14px] w-[14px]" />
+                  </a>
+                  <a href="https://instagram.com/risksent" target="_blank" rel="noopener noreferrer" aria-label="RiskSent on Instagram"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white transition-all">
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+              {/* Link columns */}
+              <div className="lg:col-span-2">
+                <FooterColumn title="Product" links={PRODUCT_LINKS} />
+              </div>
+              <div className="lg:col-span-2">
+                <FooterColumn title="Resources" links={RESOURCES_LINKS} />
+              </div>
+              <div className="lg:col-span-2">
+                <FooterColumn title="Company" links={COMPANY_LINKS} />
+              </div>
+              <div className="lg:col-span-2">
+                <FooterColumn title="Legal" links={LEGAL_LINKS} />
+              </div>
+            </div>
 
-        {/* Bottom strip */}
-        <div className={`flex flex-col gap-4 text-[11px] font-mono sm:flex-row sm:items-center sm:justify-between ${isApp ? "text-slate-400" : "text-slate-500"}`}>
-          <p>
-            © {year} RiskSent · All rights reserved. Built for disciplined
-            traders.
-          </p>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            {[
-              { href: "/terms", label: "Terms" },
-              { href: "/privacy", label: "Privacy" },
-              { href: "/cookies", label: "Cookies" },
-              { href: "/risk-disclosure", label: "Risk" },
-              { href: "/support", label: "Support" },
-            ].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`transition-colors ${isApp ? "hover:text-slate-700" : "hover:text-slate-300"}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <button
-              type="button"
-              onClick={() => openCookiePreferences()}
-              className={`transition-colors ${isApp ? "hover:text-slate-700" : "hover:text-slate-300"}`}
-            >
-              Cookie preferences
-            </button>
-            <span className={`hidden sm:inline ${isApp ? "text-slate-300" : "text-slate-700"}`}>·</span>
-            <span className={isApp ? "text-slate-400" : "text-slate-600"}>v1.0</span>
-          </div>
-        </div>
+            {/* Risk disclaimer */}
+            <div className="mt-12">
+              <RiskDisclaimer />
+            </div>
+
+            {/* Divider */}
+            <div className="my-8 h-px w-full" style={{ background: "rgba(255,255,255,0.06)" }} />
+
+            {/* Bottom strip */}
+            <div className="flex flex-col gap-4 text-[11px] font-mono text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <p>© {year} RiskSent · All rights reserved. Built for disciplined traders.</p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                {[
+                  { href: "/terms", label: "Terms" },
+                  { href: "/privacy", label: "Privacy" },
+                  { href: "/cookies", label: "Cookies" },
+                  { href: "/risk-disclosure", label: "Risk" },
+                  { href: "/support", label: "Support" },
+                ].map((l) => (
+                  <Link key={l.href} href={l.href} className="transition-colors hover:text-slate-300">
+                    {l.label}
+                  </Link>
+                ))}
+                <button type="button" onClick={() => openCookiePreferences()} className="transition-colors hover:text-slate-300">
+                  Cookie preferences
+                </button>
+                <span className="hidden sm:inline text-slate-700">·</span>
+                <span className="text-slate-600">v1.0</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </footer>
   );

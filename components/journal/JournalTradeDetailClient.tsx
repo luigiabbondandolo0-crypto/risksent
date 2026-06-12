@@ -236,7 +236,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
     return (
       <div className={jn.page}>
         <p className="text-red-400">Trade not found.</p>
-        <Link href={`${linkBase}/trades`} className="mt-4 inline-block text-[#6366f1] underline text-sm">
+        <Link href={`${linkBase}/trades`} className="mt-4 inline-block text-indigo-600 underline text-sm">
           Back to trades
         </Link>
       </div>
@@ -249,7 +249,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
     <div className={`${jn.page} space-y-6`}>
       <Link
         href={`${linkBase}/trades`}
-        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 font-mono"
+        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 font-mono"
       >
         <ChevronLeft className="h-3 w-3" />
         Trades
@@ -277,29 +277,29 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
             <dl className="mt-6 grid gap-3 sm:grid-cols-2 font-mono text-sm">
               <div>
                 <dt className={jn.label}>Open</dt>
-                <dd className="text-slate-300">{format(parseISO(trade.open_time), "PPpp")}</dd>
+                <dd className="text-slate-700">{format(parseISO(trade.open_time), "PPpp")}</dd>
               </div>
               <div>
                 <dt className={jn.label}>Close</dt>
-                <dd className="text-slate-300">
+                <dd className="text-slate-700">
                   {trade.close_time ? format(parseISO(trade.close_time), "PPpp") : "—"}
                 </dd>
               </div>
               <div>
                 <dt className={jn.label}>Open price</dt>
-                <dd className="text-slate-300">{trade.open_price}</dd>
+                <dd className="text-slate-700">{trade.open_price}</dd>
               </div>
               <div>
                 <dt className={jn.label}>Close price</dt>
-                <dd className="text-slate-300">{trade.close_price ?? "—"}</dd>
+                <dd className="text-slate-700">{trade.close_price ?? "—"}</dd>
               </div>
               <div>
                 <dt className={jn.label}>Lots</dt>
-                <dd className="text-slate-300">{trade.lot_size}</dd>
+                <dd className="text-slate-700">{trade.lot_size}</dd>
               </div>
               <div>
                 <dt className={jn.label}>Pips</dt>
-                <dd className="text-slate-300">{trade.pips ?? "—"}</dd>
+                <dd className="text-slate-700">{trade.pips ?? "—"}</dd>
               </div>
               <div>
                 <dt className={jn.label}>P&amp;L</dt>
@@ -323,7 +323,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
               {tags.map((t) => (
                 <span
                   key={t}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-black/30 px-3 py-1 text-xs text-slate-200 font-mono"
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 font-mono"
                 >
                   {t}
                   <button type="button" aria-label={`Remove ${t}`} onClick={() => removeTag(t)}>
@@ -356,7 +356,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                 <button
                   key={p}
                   type="button"
-                  className="rounded-md border border-white/[0.06] px-2 py-0.5 text-[10px] text-slate-500 hover:border-[#ff3c3c]/30 hover:text-slate-300"
+                  className="rounded-md border border-slate-200 px-2 py-0.5 text-[10px] text-slate-500 hover:border-[#ff3c3c]/30 hover:text-slate-700"
                   onClick={() => addTag(p)}
                 >
                   +{p}
@@ -388,7 +388,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
           </div>
 
           <div className={jn.card}>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
               Screenshots
             </p>
             <p className="mb-3 text-[11px] text-slate-500 font-mono">
@@ -428,8 +428,8 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
               onClick={() => !isSeed && shotFileRef.current?.click()}
               className={`mt-1 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
                 shotDragOver
-                  ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
-                  : "border-white/25 bg-white/[0.06] text-slate-200"
+                  ? "border-[#ff8c00]/60 bg-amber-50 text-amber-800"
+                  : "border-slate-300 bg-slate-100 text-slate-700"
               } ${isSeed ? "pointer-events-none opacity-50" : ""}`}
             >
               <span className="text-sm font-medium">
@@ -467,7 +467,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
           {/* Trade stats */}
           <div className={jn.card}>
             <p className={jn.label}>Trade stats</p>
-            <ul className="mt-3 space-y-2 font-mono text-sm text-slate-300">
+            <ul className="mt-3 space-y-2 font-mono text-sm text-slate-700">
               <li className="flex justify-between">
                 <span className="text-slate-500">R:R</span>
                 <span>{trade.risk_reward?.toFixed(2) ?? "—"}</span>
@@ -565,8 +565,8 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                   {checklist.map((item) => {
                     const yes = !!review.checklist_results?.[item.id];
                     return (
-                      <div key={item.id} className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                        <span className="text-xs text-slate-300">{item.text}</span>
+                      <div key={item.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <span className="text-xs text-slate-700">{item.text}</span>
                         <div className="flex gap-1">
                           {["YES", "NO"].map((v) => (
                             <button
@@ -604,8 +604,8 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                   {rules.map((rule) => {
                     const followed = !!review.rules_followed?.[rule.id];
                     return (
-                      <div key={rule.id} className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
-                        <span className="text-xs text-slate-300">{rule.text}</span>
+                      <div key={rule.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <span className="text-xs text-slate-700">{rule.text}</span>
                         <div className="flex gap-1">
                           {["YES", "NO"].map((v) => (
                             <button
@@ -653,7 +653,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                 <li key={r.id}>
                   <Link
                     href={`${linkBase}/trade/${r.id}`}
-                    className="flex justify-between rounded-lg border border-white/[0.05] bg-black/20 px-3 py-2 text-xs font-mono hover:border-[#ff3c3c]/20"
+                    className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono hover:border-[#ff3c3c]/20"
                   >
                     <span className="text-slate-400">{format(parseISO(r.close_time ?? r.open_time), "MMM d")}</span>
                     <span style={{ color: netPl(r) >= 0 ? jn.green : jn.accentRed }}>

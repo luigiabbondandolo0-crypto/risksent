@@ -222,7 +222,7 @@ function BiasButton({
               boxShadow: `0 0 14px ${color}30`,
             }
           : {
-              borderColor: "rgba(255,255,255,0.06)",
+              borderColor: "rgba(0,0,0,0.07)",
               color: "#64748b",
               background: "transparent",
             }
@@ -266,10 +266,10 @@ function TradeCard({
   return (
     <motion.button
       type="button"
-      whileHover={{ scale: 1.01, borderColor: "rgba(255,255,255,0.12)" }}
+      whileHover={{ scale: 1.01, borderColor: "rgba(99,102,241,0.3)" }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className="w-full rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-left transition-all hover:bg-white/[0.04]"
+      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition-all hover:bg-slate-100"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -283,7 +283,7 @@ function TradeCard({
           >
             {trade.direction}
           </span>
-          <span className="font-semibold text-white">{trade.symbol}</span>
+          <span className="font-semibold text-slate-900">{trade.symbol}</span>
         </div>
         <div className="text-right">
           <p
@@ -466,12 +466,12 @@ function TodayTab({
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.25 }}
       className="relative rounded-2xl p-4 lg:p-6"
-      style={{ background: "rgba(7,7,16,0.85)", border: "1px solid rgba(99,102,241,0.1)" }}
+      style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.1)" }}
     >
       <Link
         {...settingsLinkProps}
         title="Manage checklist, rules & strategies"
-        className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white lg:right-5 lg:top-5"
+        className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-900 lg:right-5 lg:top-5"
         aria-label="Journal settings"
       >
         <Settings2 className="h-4 w-4" />
@@ -486,7 +486,7 @@ function TodayTab({
           transition={{ duration: 0.35, delay: 0 }}
         >
           <div className="space-y-2">
-            <p className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <p className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               {format(new Date(), "EEEE, MMMM d")}
             </p>
             <motion.p
@@ -510,7 +510,7 @@ function TodayTab({
           >
             <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-25 blur-2xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-slate-800">
                 Pre-trade checklist
               </h3>
               <Link
@@ -539,7 +539,7 @@ function TodayTab({
                       {checklistCompleted}/{checklistTotal} completed
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
                     <motion.div
                       className="h-full rounded-full"
                       style={{ background: progressColor }}
@@ -571,7 +571,7 @@ function TodayTab({
                               },
                             })
                           }
-                          className="flex w-full items-start gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+                          className="flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left transition-colors hover:bg-slate-100"
                         >
                           <span
                             className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 font-mono text-xs"
@@ -590,8 +590,8 @@ function TodayTab({
                             )}
                           </span>
                           <span
-                            className={`text-sm text-slate-200 ${
-                              yes ? "line-through decoration-slate-600" : ""
+                            className={`text-sm text-slate-700 ${
+                              yes ? "line-through decoration-slate-400" : ""
                             }`}
                           >
                             {item.text}
@@ -616,7 +616,7 @@ function TodayTab({
           >
             <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-slate-800">
                 Today&apos;s rules
               </h3>
               <Link
@@ -740,7 +740,7 @@ function TodayTab({
                 {(session.watchlist ?? []).map((sym) => (
                   <span
                     key={sym}
-                    className="flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-0.5 text-xs font-mono text-slate-200"
+                    className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-mono text-slate-700"
                   >
                     {sym}
                     {!isMock && (
@@ -796,7 +796,7 @@ function TodayTab({
           >
             <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-white">Session notes</h2>
+              <h2 className="text-sm font-semibold text-slate-800">Session notes</h2>
               <SavedIndicator saving={saving} saved={saved} />
             </div>
             <textarea
@@ -809,7 +809,7 @@ function TodayTab({
               }
               readOnly={isMock}
             />
-            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200">
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
               Screenshots
             </p>
             <input
@@ -846,8 +846,8 @@ function TodayTab({
               onClick={() => !isMock && fileRef.current?.click()}
               className={`mt-2 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
                 dragOver
-                  ? "border-[#ff8c00]/60 bg-[#ff8c00]/15 text-slate-100"
-                  : "border-white/25 bg-white/[0.06] text-slate-200"
+                  ? "border-[#ff8c00]/60 bg-amber-50 text-amber-800"
+                  : "border-slate-300 bg-slate-100 text-slate-700"
               } ${isMock ? "pointer-events-none opacity-50" : ""}`}
             >
               <span className="text-sm font-medium">
@@ -895,7 +895,7 @@ function TodayTab({
           >
             <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-slate-800">
                 Today&apos;s Trades
               </h2>
               <button
@@ -914,7 +914,7 @@ function TodayTab({
 
             {todayTrades.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
                   <Sun className="h-5 w-5 text-slate-600" />
                 </div>
                 <p className="text-sm text-slate-500">No trades today yet</p>
@@ -1058,7 +1058,7 @@ function CalendarTab({
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <h2 className="font-display text-base font-bold text-white">
+          <h2 className="font-display text-base font-bold text-slate-900">
             {format(month, "MMMM yyyy")}
           </h2>
           <button
@@ -1095,7 +1095,7 @@ function CalendarTab({
               label: "Total P&L",
               value:
                 monthTrades.length > 0 ? fmtDayPl(monthPl, currency) : "—",
-              color: monthPl >= 0 ? "#4ADE80" : "#F87171",
+              color: monthPl >= 0 ? "#16a34a" : "#dc2626",
               glowColor: monthPl >= 0 ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
               borderColor: monthPl >= 0 ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)",
             },
@@ -1224,7 +1224,7 @@ function CalendarTab({
                 <span
                   className="absolute top-0.5 right-1 sm:top-1 sm:right-1.5 text-[9px] sm:text-[11px] font-mono leading-none"
                   style={{
-                    color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#4ADE80" : "#F87171") : "#475569",
+                    color: today ? "#fff" : stats ? (stats.pl >= 0 ? "#16a34a" : "#dc2626") : "#64748b",
                     fontWeight: today ? 700 : 500,
                   }}
                 >
@@ -1235,7 +1235,7 @@ function CalendarTab({
                   <div className="flex flex-col items-center gap-0">
                     <span
                       className="text-[9px] sm:text-[13px] font-mono font-bold leading-tight"
-                      style={{ color: stats.pl >= 0 ? "#4ADE80" : "#F87171" }}
+                      style={{ color: stats.pl >= 0 ? "#16a34a" : "#dc2626" }}
                     >
                       {fmtDayPl(stats.pl, currency)}
                     </span>
@@ -1263,15 +1263,15 @@ function CalendarTab({
               transition={{ duration: 0.28, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="mt-5 border-t border-white/[0.06] pt-5">
+              <div className="mt-5 border-t border-slate-200 pt-5">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-display text-sm font-bold text-white">
+                  <h3 className="font-display text-sm font-bold text-slate-900">
                     {format(parseISO(selectedDay), "EEEE, MMMM d")}
                   </h3>
                   <span
                     className="font-mono text-sm font-bold"
                     style={{
-                      color: selectedDayPl >= 0 ? "#4ADE80" : "#F87171",
+                      color: selectedDayPl >= 0 ? "#16a34a" : "#dc2626",
                     }}
                   >
                     {fmtDayPl(selectedDayPl, currency)}
@@ -1287,7 +1287,7 @@ function CalendarTab({
                         <Link
                           key={t.id}
                           href={`${tradeLinkBase}/${t.id}`}
-                          className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
+                          className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 hover:bg-slate-100 transition-colors"
                         >
                           <div className="flex items-center gap-2">
                             <span
@@ -1306,7 +1306,7 @@ function CalendarTab({
                             >
                               {t.direction}
                             </span>
-                            <span className="text-sm font-medium text-slate-200">
+                            <span className="text-sm font-medium text-slate-800">
                               {t.symbol}
                             </span>
                             {t.pips != null && (
@@ -1319,7 +1319,7 @@ function CalendarTab({
                           <span
                             className="font-mono text-sm font-semibold"
                             style={{
-                              color: net >= 0 ? "#4ADE80" : "#F87171",
+                              color: net >= 0 ? "#16a34a" : "#dc2626",
                             }}
                           >
                             {net >= 0 ? "+" : ""}
@@ -1452,13 +1452,13 @@ function TradesTab({
   const pillBtn = (on: boolean) =>
     `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
       on
-        ? "border border-[#6366f1]/40 bg-[#6366f1]/15 text-white"
-        : "border border-white/[0.08] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06]"
+        ? "border border-[#6366f1]/40 bg-[#6366f1]/15 text-indigo-700"
+        : "border border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200"
     }`;
 
   const statCard =
     "relative overflow-hidden rounded-xl p-3 backdrop-blur-sm";
-  const statCardBg = { background: "rgba(255,255,255,0.02)" } as const;
+  const statCardBg = { background: "rgba(255,255,255,1)" } as const;
 
   return (
     <motion.div
@@ -1475,7 +1475,7 @@ function TradesTab({
       >
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-[0.07] blur-3xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-base font-bold text-white">
+          <h2 className="font-display text-base font-bold text-slate-900">
             All trades
           </h2>
           {blockRealLinks ? (
@@ -1486,7 +1486,7 @@ function TradesTab({
           ) : (
             <Link
               href={aiCoachHref}
-              className="group inline-flex items-center gap-2 rounded-xl border border-[#6366f1]/40 bg-gradient-to-r from-[#6366f1]/20 to-[#a855f7]/20 px-4 py-2 font-mono text-xs font-semibold text-[#c7d2fe] shadow-[0_0_0_1px_rgba(99,102,241,0.15)] transition-all hover:border-[#6366f1]/70 hover:from-[#6366f1]/30 hover:to-[#a855f7]/30 hover:text-white"
+              className="group inline-flex items-center gap-2 rounded-xl border border-[#6366f1]/40 bg-gradient-to-r from-[#6366f1]/10 to-[#a855f7]/10 px-4 py-2 font-mono text-xs font-semibold text-indigo-600 shadow-[0_0_0_1px_rgba(99,102,241,0.15)] transition-all hover:border-[#6366f1]/70 hover:from-[#6366f1]/20 hover:to-[#a855f7]/20 hover:text-indigo-800"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#a855f7] transition-transform group-hover:rotate-12" />
               AI INSIGHTS
@@ -1580,7 +1580,7 @@ function TradesTab({
         >
           <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: "radial-gradient(circle, #94a3b8, transparent)" }} />
           <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Total trades</p>
-          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-white">{stats.count}</p>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-semibold text-slate-800">{stats.count}</p>
         </div>
         <div
           className={statCard}
@@ -1602,7 +1602,7 @@ function TradesTab({
         >
           <div className="pointer-events-none absolute right-0 top-0 h-10 w-10 rounded-full opacity-25 blur-xl" style={{ background: `radial-gradient(circle, ${stats.totalPl >= 0 ? "#4ade80" : "#f87171"}, transparent)` }} />
           <p className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Total P&amp;L</p>
-          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold" style={{ color: stats.totalPl >= 0 ? "#4ade80" : "#f87171" }}>
+          <p className="mt-1 font-[family-name:var(--font-mono)] text-lg font-bold" style={{ color: stats.totalPl >= 0 ? "#16a34a" : "#dc2626" }}>
             {stats.count === 0 && stats.totalPl === 0 ? "—" : `${stats.totalPl >= 0 ? "+" : ""}${stats.totalPl.toFixed(2)}`}
           </p>
         </div>
@@ -1620,7 +1620,7 @@ function TradesTab({
 
       <div
         className={`${jn.card} overflow-hidden p-0`}
-        style={{ background: "rgba(255,255,255,0.02)" }}
+        style={{ background: "rgba(255,255,255,1)" }}
       >
         {allTrades.length === 0 ? (
           <p className="p-8 text-center text-sm text-slate-500">
@@ -1634,7 +1634,7 @@ function TradesTab({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.07] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-slate-200 text-[10px] font-mono uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 font-medium">Date</th>
                   <th className="px-4 py-3 font-medium">Symbol</th>
                   <th className="px-4 py-3 font-medium">Dir</th>
@@ -1670,7 +1670,7 @@ function TradesTab({
                           openTrade(t.id);
                         }
                       }}
-                      className={`cursor-pointer border-b border-white/[0.04] transition-colors hover:bg-white/[0.04] ${
+                      className={`cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 ${
                         win
                           ? "border-l-2 border-l-[#00e676]/40"
                           : loss
@@ -1678,13 +1678,13 @@ function TradesTab({
                             : ""
                       }`}
                     >
-                      <td className="whitespace-nowrap px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-300">
+                      <td className="whitespace-nowrap px-4 py-3 font-[family-name:var(--font-mono)] text-xs text-slate-500">
                         {format(
                           parseISO(t.close_time ?? t.open_time),
                           "MMM d, HH:mm"
                         )}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-white">
+                      <td className="px-4 py-3 font-semibold text-slate-900">
                         {t.symbol}
                       </td>
                       <td className="px-4 py-3">
@@ -1721,9 +1721,9 @@ function TradesTab({
                             t.pips == null
                               ? "#64748b"
                               : t.pips > 0
-                                ? "#00e676"
+                                ? "#16a34a"
                                 : t.pips < 0
-                                  ? "#ff3c3c"
+                                  ? "#dc2626"
                                   : "#94a3b8",
                         }}
                       >
@@ -1734,7 +1734,7 @@ function TradesTab({
                       <td
                         className="px-4 py-3 font-[family-name:var(--font-mono)] text-sm font-bold"
                         style={{
-                          color: net >= 0 ? "#00e676" : "#ff3c3c",
+                          color: net >= 0 ? "#16a34a" : "#dc2626",
                         }}
                       >
                         {net >= 0 ? "+" : ""}
@@ -1750,7 +1750,7 @@ function TradesTab({
                           {tags.slice(0, 2).map((tag) => (
                             <span
                               key={tag}
-                              className="rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] text-slate-400"
+                              className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500"
                             >
                               {tag}
                             </span>
@@ -1764,7 +1764,7 @@ function TradesTab({
                       </td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         {blockRealLinks ? (
-                          <span className="inline-flex cursor-not-allowed rounded-lg border border-white/[0.08] px-3 py-1 text-xs text-slate-600 opacity-60">
+                          <span className="inline-flex cursor-not-allowed rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-500 opacity-60">
                             Review
                           </span>
                         ) : (
@@ -1785,7 +1785,7 @@ function TradesTab({
         )}
 
         {allTrades.length > 0 && filtered.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3">
             <p className="text-xs font-mono text-slate-500">
               Showing {pageStart + 1}–{Math.min(pageStart + TRADES_PAGE_SIZE, filtered.length)} of{" "}
               {filtered.length} trades
@@ -1832,10 +1832,10 @@ function EmptyState({ onConnected }: { onConnected: () => void }) {
         transition={{ duration: 0.4 }}
         className="max-w-sm"
       >
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#6366f1]/10 to-transparent">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-gradient-to-br from-[#6366f1]/10 to-transparent">
           <TrendingUp className="h-7 w-7 text-[#6366f1]" />
         </div>
-        <h2 className="font-display text-2xl font-bold text-white">
+        <h2 className="font-display text-2xl font-bold text-slate-900">
           Start your trading journal
         </h2>
         <p className="mt-2 text-sm text-slate-500">
@@ -2161,7 +2161,7 @@ export function JournalingPageClient({
           <h1
             className={jn.h1}
             style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -2227,7 +2227,7 @@ export function JournalingPageClient({
 
       {/* Tab switcher */}
       {!loading && (
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.02] p-1 w-fit backdrop-blur-sm" style={{ boxShadow: "0 0 20px rgba(99,102,241,0.06)" }}>
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 w-fit backdrop-blur-sm" style={{ boxShadow: "0 0 20px rgba(99,102,241,0.06)" }}>
           {(
             [
               { id: "today" as const, label: "Today", Icon: Sun },
@@ -2240,7 +2240,7 @@ export function JournalingPageClient({
               type="button"
               onClick={() => goTab(tid)}
               className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-              style={{ color: tab === tid ? "#fff" : "#64748b" }}
+              style={{ color: tab === tid ? "#4338ca" : "#64748b" }}
             >
               {tab === tid && (
                 <motion.span

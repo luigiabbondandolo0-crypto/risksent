@@ -908,7 +908,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.05, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.09) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.22)", boxShadow: "0 0 32px -8px rgba(99,102,241,0.14), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.09) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(99,102,241,0.22)", boxShadow: "0 0 32px -8px rgba(99,102,241,0.14), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-25 blur-2xl" style={{ background: "#6366f1" }} />
               <div className="rs-kpi-label">Balance</div>
@@ -926,7 +926,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.10, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(56,189,248,0.2)", boxShadow: "0 0 32px -8px rgba(56,189,248,0.12), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(56,189,248,0.2)", boxShadow: "0 0 32px -8px rgba(56,189,248,0.12), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-20 blur-2xl" style={{ background: "#38bdf8" }} />
               <div className="rs-kpi-label">Equity</div>
@@ -944,7 +944,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.15, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#4ade80" }} />
               <div className="flex items-center justify-between">
@@ -999,7 +999,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.20, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#4ade80" }} />
               <div className="rs-kpi-label">Avg win</div>
@@ -1017,7 +1017,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.25, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#f87171" }} />
               <div className="rs-kpi-label">Avg loss</div>
@@ -1035,7 +1035,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.30, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
+              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#f87171" }} />
               <div className="rs-kpi-label">Max drawdown</div>
@@ -1085,21 +1085,21 @@ export default function DashboardPage() {
                 const isProfit = dayData ? dayData.profit >= 0 : false;
                 const winPct = dayData && dayData.trades > 0 ? (dayData.wins / dayData.trades) * 100 : null;
                 const cellClass = `min-h-[48px] sm:min-h-[64px] overflow-hidden rounded-xl border relative transition-all ${
-                  isFuture ? "border-slate-800/50 bg-slate-900/30" :
+                  isFuture ? "border-slate-200 bg-slate-50" :
                   dayData ? (isProfit
                     ? `border-emerald-500/30 bg-emerald-500/10`
                     : `border-red-500/30 bg-red-500/10`)
-                  : "border-white/[0.04] bg-transparent"
+                  : "border-slate-100 bg-transparent"
                 }`;
                 const content = (
                   <div className="relative w-full h-full min-h-[48px] sm:min-h-[64px] flex flex-col items-center justify-center p-0.5 sm:p-1">
                     {/* Day number — top right */}
-                    <span className={`absolute top-0.5 right-1 sm:top-1 sm:right-1.5 text-[9px] sm:text-[11px] font-mono leading-none font-medium ${dayData ? (isProfit ? "text-emerald-400" : "text-red-400") : "text-slate-600"}`}>
+                    <span className={`absolute top-0.5 right-1 sm:top-1 sm:right-1.5 text-[9px] sm:text-[11px] font-mono leading-none font-medium ${dayData ? (isProfit ? "text-emerald-600" : "text-red-600") : "text-slate-500"}`}>
                       {day}
                     </span>
                     {dayData ? (
                       <div className="flex flex-col items-center gap-0">
-                        <span className={`text-[9px] sm:text-[12px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
+                        <span className={`text-[9px] sm:text-[12px] font-mono font-bold leading-tight ${isProfit ? "text-emerald-600" : "text-red-600"}`}>
                           {fmtDayPl(dayData.profit, currency)}
                         </span>
                         <span className="hidden sm:block mt-0.5 text-[10px] font-mono leading-tight text-slate-400">
@@ -1141,18 +1141,18 @@ export default function DashboardPage() {
 
           {/* Equity curve */}
           <section className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
-            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.07)" }}>
+            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,1) 100%)", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.07)" }}>
             <div className="pointer-events-none absolute -top-16 right-16 h-32 w-48 rounded-full opacity-[0.07] blur-3xl" style={{ background: "#6366f1" }} />
             <div className="mb-1 flex items-center gap-2">
               <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
-              <span className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-300">Equity growth</span>
+              <span className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-600">Equity growth</span>
             </div>
             <p className="mb-4 mt-1 pl-6 text-xs font-mono text-slate-600 leading-relaxed">
               % from start · balance in {currency} · drag brush to zoom
             </p>
-            {stats?.error && <p className="mb-3 text-sm font-mono text-amber-400/95">{stats.error}</p>}
+            {stats?.error && <p className="mb-3 text-sm font-mono text-amber-700">{stats.error}</p>}
             {curve.length === 0 && !stats?.error && (
-              <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 text-center text-sm font-mono text-slate-500">
+              <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 text-center text-sm font-mono text-slate-500">
                 {noLinkedAccount ? "No data" : kpiLoading ? "Loading…" : "No data yet. Link an account and place trades to see the curve."}
               </div>
             )}
@@ -1183,9 +1183,9 @@ export default function DashboardPage() {
                         if (!active || !payload || !payload[0]?.payload) return null;
                         const row = payload[0].payload as { displayDate: string; pctFromStart: number; value: number };
                         return (
-                          <div className="rounded-lg border border-[#1e1e1e] bg-[#111] px-3 py-2 shadow-[0_0_18px_rgba(99,102,241,0.15)]">
-                            <p className="text-[11px] font-mono text-slate-400">{row.displayDate}</p>
-                            <p className="text-sm font-semibold font-mono text-slate-100">
+                          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-[0_0_18px_rgba(99,102,241,0.15)]">
+                            <p className="text-[11px] font-mono text-slate-500">{row.displayDate}</p>
+                            <p className="text-sm font-semibold font-mono text-slate-800">
                               {row.pctFromStart.toFixed(2)}% · {row.value.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
                             </p>
                           </div>
@@ -1196,7 +1196,7 @@ export default function DashboardPage() {
                       <ReferenceLine y={-riskRules.daily_loss_pct} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} />
                     )}
                     <Area type="monotone" dataKey="pctFromStart" stroke="#6366f1" strokeWidth={2.5} fill="url(#equityGrad)" isAnimationActive animationDuration={900} animationEasing="ease-out" />
-                    <Brush dataKey="displayDate" height={24} stroke="#475569" fill="#1e293b" tickFormatter={(v: string) => v} />
+                    <Brush dataKey="displayDate" height={24} stroke="#cbd5e1" fill="#f8fafc" tickFormatter={(v: string) => v} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
