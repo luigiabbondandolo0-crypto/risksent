@@ -23,17 +23,17 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 const PLAN_COLOR: Record<string, string> = {
-  user: "text-slate-400 bg-slate-500/15 border-slate-500/30",
-  trial: "text-amber-300 bg-amber-500/15 border-amber-500/30",
-  new_trader: "text-indigo-300 bg-[#6366f1]/15 border-[#6366f1]/30",
-  experienced: "text-[#6366f1] bg-[#6366f1]/10 border-[#6366f1]/30",
+  user: "text-slate-600 bg-slate-100 border-slate-300",
+  trial: "text-amber-700 bg-amber-100 border-amber-300",
+  new_trader: "text-indigo-700 bg-indigo-100 border-indigo-300",
+  experienced: "text-indigo-700 bg-indigo-100 border-indigo-300",
 };
 
 function TrialActiveNotice() {
   const searchParams = useSearchParams();
   if (searchParams.get("notice") !== "trial-active") return null;
   return (
-    <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-mono text-amber-200">
+    <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-mono text-amber-700">
       You already have an active trial.
     </div>
   );
@@ -113,7 +113,7 @@ function PlanChoiceGrid({
               style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
             />
             <div className="relative z-10 mb-1 flex flex-wrap items-center gap-2">
-              <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-white">
+              <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-wide text-slate-900">
                 {p.name}
               </p>
               {p.highlight && (
@@ -123,7 +123,7 @@ function PlanChoiceGrid({
               )}
             </div>
             <div className="relative z-10 flex flex-1 flex-col">
-            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
+            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-slate-900">
               ${p.price}
               <span className="text-sm font-normal text-slate-500">/mo</span>
             </p>
@@ -294,18 +294,9 @@ export default function BillingPage() {
         />
       </div>
       <header>
-        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-          <CreditCard className="h-6 w-6 shrink-0 text-amber-400" />
-          <span
-            style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Billing
-          </span>
+        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+          <CreditCard className="h-6 w-6 shrink-0 text-amber-500" />
+          Billing
         </h1>
         <p className="mt-1 text-sm font-mono text-slate-500">
           Manage your subscription and payment details.
@@ -344,11 +335,11 @@ export default function BillingPage() {
               </span>
             </div>
             {isAdmin ? (
-              <p className="mt-3 text-sm font-mono leading-relaxed text-slate-400">
+              <p className="mt-3 text-sm font-mono leading-relaxed text-slate-600">
                 Full product access as an administrator. Any trial or plan shown in Stripe/DB is for testing only.
               </p>
             ) : (
-              <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
+              <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-slate-900">
                 ${PLAN_PRICES[plan] ?? 0}
                 <span className="text-base font-normal text-slate-500">/mo</span>
               </p>
@@ -361,7 +352,7 @@ export default function BillingPage() {
               type="button"
               onClick={() => void openPortal()}
               disabled={portalLoading}
-              className="flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-slate-200 transition-all hover:border-slate-600 hover:bg-white/[0.06] disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
             >
               {portalLoading ? "Opening…" : "Manage subscription"}
             </button>
@@ -384,7 +375,7 @@ export default function BillingPage() {
 
         {/* Trial expired notice */}
         {trialExpired && !isAdmin && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-500/20 bg-slate-500/[0.06] px-4 py-3 text-sm text-slate-300">
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <Clock className="h-4 w-4 shrink-0 text-slate-500" />
             {sub?.current_period_end ? (
               <>Your 7-day trial ended on {new Date(sub.current_period_end).toLocaleDateString()}. Pick a plan to restore full access.</>
@@ -396,7 +387,7 @@ export default function BillingPage() {
 
         {/* Renewal / cancellation notice (paid plans only) */}
         {sub?.current_period_end && !isTrialingActive && !trialExpired && rawPlan !== "user" && rawPlan !== "free" && (
-          <div className="mt-4 flex flex-col gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 text-sm text-slate-400">
+          <div className="mt-4 flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 shrink-0 text-slate-500" />
               {sub.cancel_at_period_end
@@ -436,17 +427,17 @@ export default function BillingPage() {
           <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-5 w-5 text-amber-400" />
-            <p className="font-semibold text-amber-200">You&rsquo;re in demo mode</p>
+            <p className="font-semibold text-amber-700">You&rsquo;re in demo mode</p>
           </div>
 
           {hasUsedTrial ? (
-            <p className="text-sm text-slate-400 font-mono mb-4">
+            <p className="text-sm text-slate-600 font-mono mb-4">
               Your 7-day free trial has ended. Choose a plan below to unlock full access —
               each account is eligible for one trial only.
             </p>
           ) : (
             <>
-              <p className="text-sm text-slate-400 font-mono mb-4">
+              <p className="text-sm text-slate-600 font-mono mb-4">
                 Start your 7-day free trial to access all features with your real trading data.
                 No credit card required.
               </p>
@@ -504,7 +495,7 @@ export default function BillingPage() {
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm font-mono text-amber-100 backdrop-blur-sm"
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-mono text-amber-700 backdrop-blur-sm"
             >
               {trialDaysLeft === 0
                 ? "Your trial ends today."
@@ -526,7 +517,7 @@ export default function BillingPage() {
             />
             <div className="relative z-10">
             <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Upgrade</p>
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-1">
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900 mb-1">
               Choose a plan
             </h2>
             <p className="font-mono text-xs text-slate-500 mb-4">
@@ -573,7 +564,7 @@ export default function BillingPage() {
             style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
           />
           <div className="relative z-10">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white mb-4">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900 mb-4">
             Upgrade to Experienced
           </h2>
           <UpgradeCard
@@ -605,11 +596,11 @@ export default function BillingPage() {
           <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle className="h-5 w-5 text-[#6366f1]" />
-            <p className="font-semibold text-slate-200">
+            <p className="font-semibold text-slate-900">
               You have the full RiskSent experience
             </p>
           </div>
-          <p className="text-sm text-slate-400 font-mono">
+          <p className="text-sm text-slate-600 font-mono">
             Unlimited AI Coach, Risk Manager, priority support, advanced analytics, and everything else.
           </p>
           </div>
@@ -664,14 +655,14 @@ function UpgradeCard({
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-white">{name}</p>
+            <p className="font-semibold text-slate-900">{name}</p>
             {highlight && (
               <span className="rounded-full border border-[#6366f1]/40 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-mono text-[#6366f1]">
                 Most popular
               </span>
             )}
           </div>
-          <p className="mt-1 font-mono text-sm text-slate-400">${price}/month</p>
+          <p className="mt-1 font-mono text-sm text-slate-600">${price}/month</p>
           <ul className="mt-2 space-y-1">
             {features.map((f) => (
               <li key={f} className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">

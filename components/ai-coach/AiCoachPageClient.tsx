@@ -194,18 +194,18 @@ function CoachSection({
         y: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
       }}
       className={[
-        "scroll-mt-24 rounded-2xl border border-white/[0.07] bg-[#12171f]/95 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] sm:scroll-mt-28",
+        "scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm sm:scroll-mt-28",
         "border-l-[3px]",
         sectionToneBorder[tone],
         className,
       ].join(" ")}
     >
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5 sm:py-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-indigo-300/80">
+      <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-4 sm:px-5 sm:py-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
           <Icon className="h-4 w-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-slate-100 sm:text-lg">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
             {title}
           </h2>
           {description ? (
@@ -245,7 +245,7 @@ function ReportJumpNav({
             x: { delay: i * 0.04, duration: 0.25 },
             scale: HOVER_SCALE_TRANSITION,
           }}
-          className="shrink-0 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:border-indigo-500/25 hover:bg-indigo-500/5 hover:text-indigo-100/90 sm:text-xs"
+          className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 sm:text-xs"
         >
           {item.label}
         </motion.a>
@@ -291,7 +291,7 @@ function CircularScore({
             cy="40"
             r={r}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="rgba(148,163,184,0.25)"
             strokeWidth="6"
           />
           <circle
@@ -369,14 +369,14 @@ function ErrorCard({
           >
             {cfg.label}
           </span>
-          <span className="text-xs font-semibold text-slate-300">
+          <span className="text-xs font-semibold text-slate-700">
             {errorTypeLabel(err.type)}
           </span>
         </div>
-        <p className="text-sm leading-relaxed text-slate-400">
+        <p className="text-sm leading-relaxed text-slate-600">
           {err.description}
         </p>
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-500">
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-slate-600">
           <span style={{ color: cfg.color }} className="font-mono">
             ~${err.estimated_cost_usd.toFixed(0)} est.
           </span>
@@ -410,20 +410,20 @@ function InsightCard({
       }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
-      className="relative cursor-default overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-5"
+      className="relative cursor-default overflow-hidden rounded-xl border border-slate-200 bg-white p-5"
     >
       <div className="border-l-2 border-indigo-400/40 pl-3">
-        <span className="inline-block rounded-md bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200/90">
+        <span className="inline-block rounded-md bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
           {insight.category}
         </span>
-        <h3 className="mb-1 mt-2 text-sm font-semibold text-slate-100">
+        <h3 className="mb-1 mt-2 text-sm font-semibold text-slate-900">
           {insight.title}
         </h3>
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className="text-xs leading-relaxed text-slate-600">
           {insight.description}
         </p>
-        <div className="mt-3 rounded-lg border border-indigo-500/15 bg-indigo-500/[0.06] px-3 py-2.5">
-          <p className="text-xs leading-snug text-indigo-100/90">
+        <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5">
+          <p className="text-xs leading-snug text-indigo-700">
             {insight.recommendation}
           </p>
         </div>
@@ -457,7 +457,7 @@ function ChallengeCard({
       }}
       whileHover={CARD_HOVER.hover}
       whileTap={CARD_HOVER.tap}
-      className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-6"
+      className="cursor-default rounded-xl border border-slate-200 bg-white p-6"
       style={{
         borderColor: result.would_pass
           ? "rgba(52,211,153,0.2)"
@@ -465,7 +465,7 @@ function ChallengeCard({
       }}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-[family-name:var(--font-display)] text-sm font-bold text-white">
+        <h3 className="font-[family-name:var(--font-display)] text-sm font-bold text-slate-900">
           {title}
         </h3>
         <span
@@ -501,7 +501,7 @@ function ChallengeCard({
           size={72}
         />
         <div>
-          <p className="text-xs leading-relaxed text-slate-400">
+          <p className="text-xs leading-relaxed text-slate-600">
             {result.reason}
           </p>
           {result.estimated_days_to_fail !== null && (
@@ -515,7 +515,7 @@ function ChallengeCard({
       {result.critical_issues.length > 0 && (
         <div className="space-y-1.5">
           {result.critical_issues.map((issue, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs text-slate-500">
+            <div key={i} className="flex items-start gap-2 text-xs text-slate-600">
               <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-rose-400/80" />
               {issue}
             </div>
@@ -572,12 +572,12 @@ function AdaptationCard({
         >
           {adapt.priority}
         </span>
-        <p className="text-sm font-semibold text-white">{adapt.rule}</p>
+        <p className="text-sm font-semibold text-slate-900">{adapt.rule}</p>
       </div>
       <p className="mb-3 text-xs text-slate-500">{adapt.reason}</p>
-      <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-3">
-        <p className="mb-1 text-[10px] font-medium text-slate-600">How</p>
-        <p className="text-xs text-slate-400">{adapt.implementation}</p>
+      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <p className="mb-1 text-[10px] font-medium text-slate-500">How</p>
+        <p className="text-xs text-slate-600">{adapt.implementation}</p>
       </div>
     </motion.div>
   );
@@ -638,19 +638,19 @@ function ChatBubble({
       className="flex w-full justify-start"
     >
       <div className="flex w-full max-w-[min(96%,40rem)] gap-3 sm:gap-4">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-950/40 text-[10px] font-semibold text-indigo-200/90">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-semibold text-indigo-600">
           AI
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-slate-400">
+            <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
               Coach
             </span>
-            <span className="font-mono text-[10px] text-slate-600">
+            <span className="font-mono text-[10px] text-slate-500">
               {format(parseISO(msg.created_at), "HH:mm")}
             </span>
           </div>
-          <div className="rounded-2xl rounded-tl-md border border-white/[0.08] bg-[#161c26] px-4 py-3.5 text-sm leading-relaxed text-slate-200">
+          <div className="rounded-2xl rounded-tl-md border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm leading-relaxed text-slate-700">
             <span className="whitespace-pre-wrap">{displayed}</span>
           </div>
         </div>
@@ -689,10 +689,10 @@ function ReportTab({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-24 text-center"
       >
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03]">
-          <Brain className="h-9 w-9 text-indigo-400/50" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
+          <Brain className="h-9 w-9 text-indigo-400" />
         </div>
-        <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-100">
+        <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold text-slate-900">
           No report yet
         </h2>
         <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">
@@ -796,12 +796,12 @@ function ReportTab({
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_minmax(0,14rem)] lg:items-start">
-          <p className="max-w-2xl text-[15px] leading-[1.65] text-slate-400">
+          <p className="max-w-2xl text-[15px] leading-[1.65] text-slate-600">
             {report.summary}
           </p>
-          <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div className="text-center">
-              <p className="text-[10px] text-slate-600">Blend</p>
+              <p className="text-[10px] text-slate-500">Blend</p>
               <p
                 className="font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums"
                 style={{ color: scoreColor(overallScore) }}
@@ -809,14 +809,14 @@ function ReportTab({
                 {overallScore}
               </p>
             </div>
-            <div className="border-t border-white/[0.06] pt-3 text-xs leading-snug text-slate-500">
-              <span className="text-emerald-400/90">{report.best_session}</span>
-              <span className="text-slate-600"> · </span>
-              <span className="text-rose-300/90">{report.worst_pattern}</span>
+            <div className="border-t border-slate-200 pt-3 text-xs leading-snug text-slate-600">
+              <span className="text-emerald-600">{report.best_session}</span>
+              <span className="text-slate-400"> · </span>
+              <span className="text-rose-500">{report.worst_pattern}</span>
             </div>
-            <div className="border-t border-white/[0.06] pt-3">
-              <p className="text-[10px] text-amber-200/80">Focus</p>
-              <p className="mt-1 text-xs leading-snug text-slate-400">
+            <div className="border-t border-slate-200 pt-3">
+              <p className="text-[10px] text-amber-700">Focus</p>
+              <p className="mt-1 text-xs leading-snug text-slate-600">
                 {report.one_thing_to_fix_this_week}
               </p>
             </div>
@@ -875,9 +875,9 @@ function ReportTab({
             whileHover={CARD_HOVER.hover}
             whileTap={CARD_HOVER.tap}
             transition={{ scale: HOVER_SCALE_TRANSITION }}
-            className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
+            className="cursor-default rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
           >
-            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-600">
               <Clock className="h-3.5 w-3.5 opacity-70" /> Sessions
             </p>
             <div className="space-y-2">
@@ -887,7 +887,7 @@ function ReportTab({
               ].map(({ label, value, color }) => (
                 <div
                   key={label}
-                  className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-black/20 px-3 py-2.5"
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-100 px-3 py-2.5"
                 >
                   <span className="text-xs text-slate-500">{label} session</span>
                   <span
@@ -920,9 +920,9 @@ function ReportTab({
             whileHover={CARD_HOVER.hover}
             whileTap={CARD_HOVER.tap}
             transition={{ scale: HOVER_SCALE_TRANSITION }}
-            className="cursor-default rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5"
+            className="cursor-default rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
           >
-            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-400">
+            <p className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-600">
               <TrendingDown className="h-3.5 w-3.5 opacity-70" /> Symbols
             </p>
             <div className="space-y-3">
@@ -957,9 +957,9 @@ function ReportTab({
         </div>
 
         {report.weekly_summary ? (
-          <div className="mt-6 border-t border-white/[0.06] pt-6">
+          <div className="mt-6 border-t border-slate-200 pt-6">
             <p className="mb-2 text-xs font-medium text-slate-500">Week recap</p>
-            <p className="max-w-3xl text-sm leading-relaxed text-slate-400">{report.weekly_summary}</p>
+            <p className="max-w-3xl text-sm leading-relaxed text-slate-600">{report.weekly_summary}</p>
           </div>
         ) : null}
       </CoachSection>
@@ -983,13 +983,13 @@ function ReportTab({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ scale: HOVER_SCALE_TRANSITION }}
-                  className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-white/[0.04]"
+                  className="rounded-xl border px-3 py-2 text-left transition-colors hover:bg-slate-50"
                   style={{
-                    borderColor: isActive ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)",
+                    borderColor: isActive ? "rgba(99,102,241,0.35)" : "rgba(226,232,240,1)",
                     background: isActive ? "rgba(99,102,241,0.08)" : "transparent",
                   }}
                 >
-                  <p className="text-xs font-medium text-slate-300">
+                  <p className="text-xs font-medium text-slate-700">
                     {format(parseISO(r.created_at), "MMM d, HH:mm")}
                   </p>
                   <p className="font-mono text-[10px] text-slate-600">
@@ -1072,15 +1072,15 @@ function ChatTab({
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="flex w-full min-h-0 flex-col"
     >
-      <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0f1319] shadow-[0_24px_80px_-32px_rgba(0,0,0,0.75)] sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
-        <div className="shrink-0 border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
+      <div className="flex h-[min(42rem,calc(100dvh-11rem))] min-h-[20rem] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:h-[min(44rem,calc(100dvh-10rem))] sm:min-h-[22rem]">
+        <div className="shrink-0 border-b border-slate-200 px-4 py-3.5 sm:px-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.03]">
-                <MessageSquare className="h-4 w-4 text-indigo-300/80" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+                <MessageSquare className="h-4 w-4 text-indigo-500" />
               </div>
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
+                <h3 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-900">
                   Chat
                 </h3>
                 <p className="text-[11px] text-slate-500 sm:text-xs">
@@ -1089,9 +1089,9 @@ function ChatTab({
               </div>
             </div>
             {reportRow ? (
-              <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] text-slate-500">
-                <Brain className="h-3 w-3 text-indigo-400/70" />
-                <span className="text-slate-400">
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-600">
+                <Brain className="h-3 w-3 text-indigo-500" />
+                <span className="text-slate-600">
                   {format(parseISO(reportRow.created_at), "MMM d")} · {reportRow.trades_analyzed} trades
                 </span>
               </div>
@@ -1109,10 +1109,10 @@ function ChatTab({
             <div className="relative space-y-6 sm:space-y-7">
               {messages.length === 0 ? (
                 <div className="mx-auto flex max-w-lg flex-col items-center px-1 py-6 text-center sm:py-10">
-                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03]">
-                    <Sparkles className="h-6 w-6 text-indigo-400/70" />
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
+                    <Sparkles className="h-6 w-6 text-indigo-500" />
                   </div>
-                  <p className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-100">
+                  <p className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-900">
                     Ask something
                   </p>
                   <p className="mt-1.5 text-sm text-slate-500">Or tap a starter below.</p>
@@ -1132,7 +1132,7 @@ function ChatTab({
                         whileTap={CARD_HOVER.tap}
                         onClick={() => onSend(q)}
                         disabled={isMock}
-                        className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-left text-xs leading-snug text-slate-400 transition-colors hover:border-indigo-500/20 hover:bg-indigo-500/[0.05] hover:text-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-xs leading-snug text-slate-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {q}
                       </motion.button>
@@ -1154,8 +1154,8 @@ function ChatTab({
                       animate={{ opacity: 1, y: 0 }}
                       className="flex justify-start pl-0 sm:pl-1"
                     >
-                      <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] px-4 py-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-500/25 bg-indigo-950/40 text-[9px] font-semibold text-indigo-200/90">
+                      <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-[9px] font-semibold text-indigo-600">
                           AI
                         </div>
                         <div className="flex gap-1.5">
@@ -1189,7 +1189,7 @@ function ChatTab({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.85 }}
                 onClick={scrollThreadToBottom}
-                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0f14]/95 text-slate-400 shadow-lg backdrop-blur-md transition-colors hover:border-indigo-500/25 hover:text-indigo-100"
+                className="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-lg backdrop-blur-md transition-colors hover:border-indigo-300 hover:text-indigo-600"
               >
                 <ChevronDown className="h-4 w-4" />
               </motion.button>
@@ -1198,7 +1198,7 @@ function ChatTab({
         </div>
 
         {/* Composer */}
-        <div className="shrink-0 border-t border-white/[0.06] bg-[#0c0f14]/90 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-4">
+        <div className="shrink-0 border-t border-slate-200 bg-white/90 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-4">
           {messages.length > 0 && messages.length < 5 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {SUGGESTED_QUESTIONS.slice(0, 3).map((q) => (
@@ -1210,18 +1210,18 @@ function ChatTab({
                   transition={{ scale: HOVER_SCALE_TRANSITION }}
                   onClick={() => onSend(q)}
                   disabled={loading || isMock}
-                  className="rounded-full border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-[11px] text-slate-500 transition-colors hover:border-white/15 hover:text-slate-200 disabled:opacity-40"
+                  className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 disabled:opacity-40"
                 >
                   {q}
                 </motion.button>
               ))}
             </div>
           )}
-          <div className="flex items-end gap-2 rounded-2xl border border-white/[0.1] bg-white/[0.04] p-2 shadow-inner shadow-black/40">
+          <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2">
             <textarea
               ref={textareaRef}
               rows={1}
-              className="max-h-[120px] min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-slate-100 outline-none placeholder:text-slate-600"
+              className="max-h-[120px] min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-relaxed text-slate-900 outline-none placeholder:text-slate-400"
               placeholder={
                 isMock
                   ? "Chat disabled in demo mode"
@@ -1589,15 +1589,7 @@ export function AiCoachPageClient({
         className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="min-w-0">
-          <h1
-            className="rs-page-title font-[family-name:var(--font-display)]"
-            style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+          <h1 className="rs-page-title font-[family-name:var(--font-display)] text-slate-900">
             AI Coach
           </h1>
           <p className="rs-page-sub">
@@ -1634,7 +1626,7 @@ export function AiCoachPageClient({
               type="button"
               disabled={isMock}
               onClick={() => setWindowOpen((o) => !o)}
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-xs text-slate-300 transition-colors hover:bg-white/[0.04] disabled:opacity-50 sm:w-auto sm:justify-start"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 sm:w-auto sm:justify-start"
             >
               <span className="truncate">
                 {ANALYSIS_WINDOWS.find((w) => w.value === analysisWindow)?.label}
@@ -1647,13 +1639,13 @@ export function AiCoachPageClient({
                   initial={{ opacity: 0, y: 4, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                  className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0e] shadow-2xl sm:right-0 sm:left-auto sm:w-36"
+                  className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg sm:right-0 sm:left-auto sm:w-36"
                 >
                   {ANALYSIS_WINDOWS.map((w) => (
                     <button
                       key={w.value}
                       type="button"
-                      className="w-full px-3 py-2.5 text-left text-xs text-slate-300 transition-colors hover:bg-white/[0.04]"
+                      className="w-full px-3 py-2.5 text-left text-xs text-slate-700 transition-colors hover:bg-slate-50"
                       onClick={() => {
                         setAnalysisWindow(w.value);
                         setWindowOpen(false);
@@ -1716,7 +1708,7 @@ export function AiCoachPageClient({
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-amber-500/25 bg-amber-950/20 px-4 py-3 text-sm text-amber-200/90"
+          className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700"
         >
           Add a broker account in the journal to run AI Coach reports and chat for that
           account.
@@ -1729,7 +1721,7 @@ export function AiCoachPageClient({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex flex-col gap-2 rounded-xl border border-indigo-500/20 bg-indigo-950/20 px-4 py-3 text-sm text-indigo-200/80 sm:flex-row sm:items-center sm:gap-3"
+          className="flex flex-col gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700 sm:flex-row sm:items-center sm:gap-3"
         >
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
@@ -1757,7 +1749,7 @@ export function AiCoachPageClient({
       {/* Tab switcher */}
       {isMock ||
       (!accountsLoading && journalAccounts.length > 0 && coachAccountId) ? (
-        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 sm:inline-flex sm:w-auto sm:grid-cols-none">
           {(
             [
               { id: "report", label: "Report", Icon: Brain },
@@ -1769,7 +1761,7 @@ export function AiCoachPageClient({
               type="button"
               onClick={() => setTab(id)}
               className="relative flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium sm:min-h-0 sm:justify-start"
-              style={{ color: tab === id ? "#fff" : "#64748b" }}
+              style={{ color: tab === id ? "#1e293b" : "#64748b" }}
             >
               {tab === id && (
                 <motion.span
@@ -1796,9 +1788,9 @@ export function AiCoachPageClient({
           aria-busy
           aria-label="Loading coach"
         >
-          <div className="h-4 w-48 max-w-full animate-pulse rounded-lg bg-white/[0.06]" />
-          <div className="h-32 rounded-2xl animate-pulse bg-white/[0.04]" />
-          <div className="h-24 rounded-2xl animate-pulse bg-white/[0.04]" />
+          <div className="h-4 w-48 max-w-full animate-pulse rounded-lg bg-slate-200/70" />
+          <div className="h-32 rounded-2xl animate-pulse bg-slate-200/70" />
+          <div className="h-24 rounded-2xl animate-pulse bg-slate-200/70" />
         </motion.div>
       ) : (
         <AnimatePresence mode="wait">
