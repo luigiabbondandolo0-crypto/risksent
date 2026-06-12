@@ -21,13 +21,6 @@ const PROTECTED_PATHS = [
   "/admin",
   "/change-password",
   "/profile",
-  // Clean app URLs (app subdomain only, but protected globally)
-  "/journaling",
-  "/risk-manager",
-  "/ai-coach",
-  "/billing",
-  "/affiliate",
-  "/settings",
 ];
 
 const ADMIN_PATHS = ["/admin"];
@@ -75,7 +68,14 @@ function checkBasicAuth(req: NextRequest): boolean {
 const MAIN_DOMAIN = process.env.MAIN_DOMAIN || "risksent.com";
 const APP_DOMAIN = process.env.APP_DOMAIN || "app.risksent.com";
 
-/** Paths that live exclusively on the app subdomain */
+/**
+ * Paths that live exclusively on the app subdomain.
+ * Visiting these on risksent.com → 301 to app.risksent.com.
+ *
+ * NOTE: /journaling, /risk-manager, /ai-coach, /billing, /affiliate, /settings
+ * are intentionally NOT listed here because they are also marketing pages on
+ * risksent.com. On app.risksent.com they are handled by CLEAN_APP_REWRITES.
+ */
 const APP_SUBDOMAIN_PATHS = [
   "/app",
   "/dashboard",
@@ -91,12 +91,6 @@ const APP_SUBDOMAIN_PATHS = [
   "/trades",
   "/orders",
   "/live-monitoring",
-  "/journaling",
-  "/risk-manager",
-  "/ai-coach",
-  "/billing",
-  "/affiliate",
-  "/settings",
 ];
 
 /**
