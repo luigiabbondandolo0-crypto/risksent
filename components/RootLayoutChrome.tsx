@@ -18,10 +18,31 @@ function ShellViewportLock({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Pages that own their full layout — no topbar, no footer */
+const CHROMELESS_PATHS = [
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/change-password",
+  "/onboarding",
+];
+
+function isChromelessPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return CHROMELESS_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
+
 export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const inAppShell = isAppShellPath(pathname);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
+
+  // Login / signup / auth pages own their full viewport — no chrome
+  if (isChromelessPath(pathname)) {
+    return <>{children}</>;
+  }
 
   if (inAppShell) {
     return (

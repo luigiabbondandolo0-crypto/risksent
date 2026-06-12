@@ -91,7 +91,6 @@ const APP_SUBDOMAIN_PATHS = [
   "/trades",
   "/orders",
   "/live-monitoring",
-  "/live-alerts",
   "/journaling",
   "/risk-manager",
   "/ai-coach",
@@ -190,6 +189,7 @@ export async function proxy(req: NextRequest) {
         // Rewrite clean paths to /app/* internally (URL stays clean)
         const rewriteTarget = getCleanAppRewrite(pathname);
         if (rewriteTarget) {
+
           const dest = req.nextUrl.clone();
           dest.pathname = rewriteTarget;
           // Auth will be checked below via PROTECTED_PATHS which includes clean paths
@@ -244,6 +244,14 @@ export async function proxy(req: NextRequest) {
             return secure(req, rewriteRes);
           }
           return NextResponse.rewrite(dest);
+        }
+
+        // Any path not belonging to the app → redirect to main domain
+        // (marketing pages like /backtest, /live-alerts, /pricing must stay on risksent.com)
+        if (!isAppOnlyPath(pathname)) {
+          const dest = req.nextUrl.clone();
+          dest.host = MAIN_DOMAIN;
+          return NextResponse.redirect(dest, { status: 301 });
         }
       }
     }
