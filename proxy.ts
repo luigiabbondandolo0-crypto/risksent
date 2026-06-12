@@ -109,8 +109,8 @@ function skipSubdomainRouting(pathname: string): boolean {
 }
 
 export async function proxy(req: NextRequest) {
-  // --- Subdomain routing (production only) ---
-  if (process.env.NODE_ENV === "production") {
+  // --- Subdomain routing (production only, requires ENABLE_SUBDOMAIN_ROUTING=true) ---
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_SUBDOMAIN_ROUTING === "true") {
     const hostname = req.headers.get("host") || "";
     const { pathname } = req.nextUrl;
 
