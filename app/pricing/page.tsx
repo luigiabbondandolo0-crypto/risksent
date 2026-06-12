@@ -223,13 +223,13 @@ export default function PricingPage() {
           <h1 className="text-[clamp(48px,8vw,100px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-6"
             style={{ fontFamily: "var(--font-display, 'Syne', sans-serif)" }}>
             {["Simple", "plans."].map((w, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+              <span key={i} className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
                 <motion.span className="inline-block" custom={i} variants={heroWordVariants}
                   initial="hidden" animate="visible">{w}</motion.span>
               </span>
             ))}
             <br />
-            <span className="inline-block overflow-hidden">
+            <span className="inline-block overflow-hidden pb-[0.12em]">
               <motion.span className="inline-block bg-clip-text text-transparent"
                 style={{ backgroundImage: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
                 custom={2} variants={heroWordVariants} initial="hidden" animate="visible">

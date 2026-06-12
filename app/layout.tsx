@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono, Syne } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { RootLayoutChrome } from "@/components/RootLayoutChrome";
 import { Toaster } from "@/components/ui/toaster";
@@ -69,18 +70,27 @@ export const viewport: Viewport = {
   themeColor: "#F8FAFC",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const host = headersList.get("host") ?? "";
+  const appDomain = process.env.APP_DOMAIN ?? "app.risksent.com";
+  const isAppDomain =
+    host === appDomain ||
+    // localhost / preview envs: treat as app domain when path hint present
+    host.startsWith("localhost") ||
+    host.startsWith("127.0.0.1");
+
   return (
     <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable} ${syne.variable}`}>
       <body
         className={`${outfit.className} flex min-h-screen min-w-0 flex-col overflow-x-clip bg-background text-slate-900 antialiased`}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <RootLayoutChrome>{children}</RootLayoutChrome>
+          <RootLayoutChrome isAppDomain={isAppDomain}>{children}</RootLayoutChrome>
         </div>
         <Toaster />
         <AnalyticsScripts />

@@ -3,20 +3,11 @@
 import { usePathname } from "next/navigation";
 import { Topbar } from "@/components/Topbar";
 import { AppShell } from "@/components/AppShell";
-import { isAppShellPath } from "@/components/navConfig";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CommandPalette, useCommandPalette } from "@/components/ui/command-palette";
 import { Footer } from "@/components/Footer";
 import { CookieConsentBanner } from "@/components/CookieConsent";
-
-/** Fills the viewport; sidebar stays put while only main scrolls. */
-function ShellViewportLock({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-dvh max-h-dvh min-h-0 w-full min-w-0 max-w-[100vw] flex-col overflow-hidden">
-      {children}
-    </div>
-  );
-}
+import { AppDomainProvider, useIsAppShell } from "@/lib/AppDomainContext";
 
 /** Pages that own their full layout — no topbar, no footer */
 const CHROMELESS_PATHS = [
@@ -34,9 +25,18 @@ function isChromelessPath(pathname: string | null): boolean {
   );
 }
 
-export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
+/** Fills the viewport; sidebar stays put while only main scrolls. */
+function ShellViewportLock({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-dvh max-h-dvh min-h-0 w-full min-w-0 max-w-[100vw] flex-col overflow-hidden">
+      {children}
+    </div>
+  );
+}
+
+function RootLayoutChromeInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const inAppShell = isAppShellPath(pathname);
+  const inAppShell = useIsAppShell(pathname);
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
 
   // Login / signup / auth pages own their full viewport — no chrome
@@ -68,5 +68,19 @@ export function RootLayoutChrome({ children }: { children: React.ReactNode }) {
       </div>
       <CookieConsentBanner />
     </>
+  );
+}
+
+export function RootLayoutChrome({
+  children,
+  isAppDomain = false,
+}: {
+  children: React.ReactNode;
+  isAppDomain?: boolean;
+}) {
+  return (
+    <AppDomainProvider isAppDomain={isAppDomain}>
+      <RootLayoutChromeInner>{children}</RootLayoutChromeInner>
+    </AppDomainProvider>
   );
 }

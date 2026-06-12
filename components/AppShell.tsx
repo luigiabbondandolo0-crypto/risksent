@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Sidebar } from "@/components/Sidebar";
-import { isAppShellPath } from "@/components/navConfig";
+import { useIsAppShell } from "@/lib/AppDomainContext";
 import { SubscriptionProvider, useSubscription } from "@/lib/subscription/SubscriptionContext";
 import { DemoBanner } from "@/components/demo/DemoBanner";
 import { Footer } from "@/components/Footer";
@@ -188,7 +188,7 @@ function TrialBanner() {
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isApp = isAppShellPath(pathname);
+  const isApp = useIsAppShell(pathname);
   const isAdminArea = pathname?.startsWith("/admin") ?? false;
 
   const sub = useSubscription();

@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
-import { isAppShellPath, isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
+import { isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
+import { useIsAppShell } from "@/lib/AppDomainContext";
 import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 import { BrandLogo, BrandWordmark } from "@/components/Brand";
@@ -30,7 +31,7 @@ export function Topbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isLoginPage = pathname === "/login";
   const isAdminArea = pathname?.startsWith("/admin");
-  const inApp = isAppShellPath(pathname);
+  const inApp = useIsAppShell(pathname);
 
   useEffect(() => {
     const loadUserData = async () => {

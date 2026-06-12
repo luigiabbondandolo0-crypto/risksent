@@ -110,17 +110,17 @@ export default function BacktestMarketingPage() {
           <h1 className="text-[clamp(48px,8vw,120px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
             style={{ fontFamily: "'Syne', sans-serif" }}>
             {["Know", "your", "edge"].map((w, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+              <span key={i} className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
                 <span className="bt-hero-word inline-block">{w}</span>
               </span>
             ))}
             <br />
             {["before", "the"].map((w, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+              <span key={i} className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
                 <span className="bt-hero-word inline-block">{w}</span>
               </span>
             ))}
-            <span className="inline-block overflow-hidden">
+            <span className="inline-block overflow-hidden pb-[0.12em]">
               <span className="bt-hero-word inline-block bg-clip-text text-transparent"
                 style={{ backgroundImage: "linear-gradient(135deg, #22d3ee, #6366f1)" }}>
                 market does.
