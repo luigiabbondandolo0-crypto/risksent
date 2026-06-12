@@ -15,18 +15,14 @@ export function DemoBanner() {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
-      style={{
-        borderColor: "rgba(99,102,241,0.3)",
-        background: "linear-gradient(90deg, rgba(99,102,241,0.08) 0%, rgba(129,140,248,0.05) 100%)",
-      }}
+      className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 shadow-sm"
     >
       <div className="flex items-center gap-2 font-mono text-sm">
-        <Zap className="h-4 w-4 shrink-0 text-[#818cf8]" />
-        <span className="font-semibold text-slate-200">
+        <Zap className="h-4 w-4 shrink-0 text-indigo-500" />
+        <span className="font-semibold text-indigo-800">
           Preview mode — sample data only.
         </span>
-        <span className="hidden text-slate-500 sm:inline">
+        <span className="hidden text-indigo-500 sm:inline">
           Start a free trial to connect your live account.
         </span>
       </div>
@@ -43,7 +39,7 @@ export function DemoBanner() {
         <button
           onClick={() => setDismissed(true)}
           aria-label="Dismiss"
-          className="text-slate-500 hover:text-slate-300 transition-colors"
+          className="text-indigo-400 hover:text-indigo-600 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>

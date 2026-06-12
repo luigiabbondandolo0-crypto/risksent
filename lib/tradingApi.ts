@@ -34,11 +34,7 @@ function humanizeMetaApiErrorBody(status: number, rawBody: string): string {
     (status === 504 && /region|connected to broker|timeout/i.test(trimmed));
 
   if (isTimeoutRegion) {
-    const detail = messageFromJson || trimmed.slice(0, 400);
-    return `${detail} — Set env METAAPI_BASE_URL to the MetaApi client REST API URL for this account's region (see ${METAAPI_API_URLS_PAGE}). If the URL is already correct, open the MetaApi app and wait until the account is connected to the broker, then retry.`.slice(
-      0,
-      2500
-    );
+    return "Account reconnecting to broker. This usually takes less than a minute — please wait and try again.";
   }
   return trimmed.slice(0, 1500);
 }

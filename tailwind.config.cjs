@@ -13,18 +13,27 @@ module.exports = {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"]
       },
       colors: {
-        background: "#050509",
-        surface: "#0B0B10",
+        background: "#F8FAFC",
+        surface: "#FFFFFF",
         accent: {
-          DEFAULT: "#22C55E",
-          muted: "#16A34A"
+          DEFAULT: "#6366F1",
+          muted: "#4F46E5"
         },
         danger: "#EF4444",
-        border: "#1F2933"
+        border: "#E2E8F0",
+        "rs-text": {
+          primary: "#0F172A",
+          secondary: "#475569",
+          muted: "#94A3B8"
+        }
       },
       boxShadow: {
         "rs-soft":
-          "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 32px -12px rgba(0,0,0,0.45)"
+          "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)",
+        "rs-card":
+          "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)",
+        "rs-card-hover":
+          "0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.05)"
       },
       borderRadius: {
         "4xl": "2rem"

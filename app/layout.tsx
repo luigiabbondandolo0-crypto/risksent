@@ -66,7 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#070710",
+  themeColor: "#F8FAFC",
 };
 
 export default function RootLayout({
@@ -75,9 +75,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${outfit.variable} ${jetbrainsMono.variable} ${syne.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable} ${syne.variable}`}>
       <body
-        className={`${outfit.className} flex min-h-screen min-w-0 flex-col overflow-x-clip bg-background text-slate-100 antialiased`}
+        className={`${outfit.className} flex min-h-screen min-w-0 flex-col overflow-x-clip bg-background text-slate-900 antialiased`}
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <RootLayoutChrome>{children}</RootLayoutChrome>

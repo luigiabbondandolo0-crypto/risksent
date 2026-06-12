@@ -63,7 +63,78 @@ function checkBasicAuth(req: NextRequest): boolean {
   return user === stagingUser && password === stagingPassword;
 }
 
+// ---------------------------------------------------------------------------
+// Subdomain routing helpers
+// ---------------------------------------------------------------------------
+
+const MAIN_DOMAIN = process.env.MAIN_DOMAIN || "risksent.com";
+const APP_DOMAIN = process.env.APP_DOMAIN || "app.risksent.com";
+
+/** Paths that live exclusively on the app subdomain */
+const APP_SUBDOMAIN_PATHS = [
+  "/app",
+  "/dashboard",
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/change-password",
+  "/onboarding",
+  "/add-account",
+  "/admin",
+  "/profile",
+  "/rules",
+  "/trades",
+  "/orders",
+  "/live-monitoring",
+  "/live-alerts",
+];
+
+function isAppOnlyPath(pathname: string): boolean {
+  return APP_SUBDOMAIN_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
+}
+
+function skipSubdomainRouting(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/monitoring") ||
+    pathname.startsWith("/charting_library") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  );
+}
+
 export async function proxy(req: NextRequest) {
+  // --- Subdomain routing (production only) ---
+  if (process.env.NODE_ENV === "production") {
+    const hostname = req.headers.get("host") || "";
+    const { pathname } = req.nextUrl;
+
+    if (!skipSubdomainRouting(pathname)) {
+      const isMainDomain =
+        hostname === MAIN_DOMAIN || hostname === `www.${MAIN_DOMAIN}`;
+      const isAppDomain = hostname === APP_DOMAIN;
+
+      // On main domain: redirect app-only paths to app subdomain
+      if (isMainDomain && isAppOnlyPath(pathname)) {
+        const dest = req.nextUrl.clone();
+        dest.host = APP_DOMAIN;
+        return NextResponse.redirect(dest, { status: 301 });
+      }
+
+      // On app subdomain: redirect root "/" to login
+      if (isAppDomain && pathname === "/") {
+        const dest = req.nextUrl.clone();
+        dest.pathname = "/login";
+        return secure(req, NextResponse.redirect(dest));
+      }
+    }
+  }
+
   if (process.env.STAGING_BASIC_AUTH === "true") {
     const skipPaths = ["/api/stripe/", "/api/telegram/", "/api/monitoring/"];
     const { pathname } = req.nextUrl;

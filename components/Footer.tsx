@@ -52,10 +52,18 @@ const LEGAL_LINKS: LinkItem[] = [
   { href: "/risk-disclosure", label: "Risk Disclosure" },
 ];
 
-function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
+function FooterColumn({ title, links, isApp }: { title: string; links: LinkItem[]; isApp?: boolean }) {
+  const labelClass = isApp ? "text-slate-400" : "text-slate-500";
+  const linkClass = isApp
+    ? "inline-block text-[13px] text-slate-400 transition-colors hover:text-slate-700"
+    : "inline-block text-[13px] text-slate-400 transition-colors hover:text-white";
+  const externalLinkClass = isApp
+    ? "group inline-flex items-center gap-1.5 text-[13px] text-slate-400 transition-colors hover:text-slate-700"
+    : "group inline-flex items-center gap-1.5 text-[13px] text-slate-400 transition-colors hover:text-white";
+
   return (
     <div className="min-w-0">
-      <h3 className="mb-4 text-[11px] font-mono font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <h3 className={`mb-4 text-[11px] font-mono font-semibold uppercase tracking-[0.16em] ${labelClass}`}>
         {title}
       </h3>
       <ul className="space-y-2.5">
@@ -66,7 +74,7 @@ function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
                 href={l.href}
                 target={l.href.startsWith("mailto:") ? undefined : "_blank"}
                 rel={l.href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
-                className="group inline-flex items-center gap-1.5 text-[13px] text-slate-400 transition-colors hover:text-white"
+                className={externalLinkClass}
               >
                 <span className="truncate">{l.label}</span>
                 {!l.href.startsWith("mailto:") && (
@@ -74,10 +82,7 @@ function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
                 )}
               </a>
             ) : (
-              <Link
-                href={l.href}
-                className="inline-block text-[13px] text-slate-400 transition-colors hover:text-white"
-              >
+              <Link href={l.href} className={linkClass}>
                 {l.label}
               </Link>
             )}
@@ -88,27 +93,35 @@ function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
   );
 }
 
-function RiskDisclaimer() {
+function RiskDisclaimer({ isApp }: { isApp?: boolean }) {
   return (
     <div
       className="flex gap-3 rounded-2xl border px-4 py-4 sm:px-5 sm:py-5"
-      style={{
-        borderColor: "rgba(255,60,60,0.18)",
-        background:
-          "linear-gradient(135deg, rgba(255,60,60,0.06), rgba(255,140,0,0.04))",
-      }}
+      style={
+        isApp
+          ? {
+              borderColor: "rgba(239,68,68,0.15)",
+              background: "rgba(239,68,68,0.04)",
+            }
+          : {
+              borderColor: "rgba(255,60,60,0.18)",
+              background:
+                "linear-gradient(135deg, rgba(255,60,60,0.06), rgba(255,140,0,0.04))",
+            }
+      }
     >
       <div
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
-        style={{
-          borderColor: "rgba(255,60,60,0.35)",
-          background: "rgba(255,60,60,0.08)",
-        }}
+        style={
+          isApp
+            ? { borderColor: "rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.07)" }
+            : { borderColor: "rgba(255,60,60,0.35)", background: "rgba(255,60,60,0.08)" }
+        }
       >
-        <Shield className="h-4 w-4 text-[#ff6b6b]" />
+        <Shield className={`h-4 w-4 ${isApp ? "text-red-400" : "text-[#ff6b6b]"}`} />
       </div>
-      <p className="text-[11.5px] leading-relaxed text-slate-400 font-mono">
-        <span className="font-semibold text-slate-200">Risk warning. </span>
+      <p className={`text-[11.5px] leading-relaxed font-mono ${isApp ? "text-slate-500" : "text-slate-400"}`}>
+        <span className={`font-semibold ${isApp ? "text-slate-700" : "text-slate-200"}`}>Risk warning. </span>
         Trading financial instruments — including forex, CFDs, futures, crypto
         and stocks — involves substantial risk and may not be suitable for every
         investor. Past performance, backtests and simulated results do not
@@ -125,18 +138,27 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
   const year = new Date().getFullYear();
   const isApp = variant === "app" || variant === "mock";
 
-  return (
-    <footer
-      role="contentinfo"
-      className="relative mt-16 border-t"
-      style={{
+  const footerStyle = isApp
+    ? {
+        zIndex: 1,
+        borderColor: "rgba(0,0,0,0.06)",
+        background: "#F1F5F9",
+      }
+    : {
         zIndex: 1,
         borderColor: "rgba(255,255,255,0.06)",
         background: "rgba(8,8,9,0.96)",
         backdropFilter: "blur(20px)",
-      }}
+      };
+
+  return (
+    <footer
+      role="contentinfo"
+      className="relative mt-16 border-t"
+      style={footerStyle}
     >
-      {/* Soft orange/red accent line under top border */}
+      {/* Soft accent line under top border */}
+      {!isApp && (
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px opacity-60"
@@ -145,6 +167,7 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
             "linear-gradient(90deg, transparent 0%, rgba(255,60,60,0.35) 20%, rgba(255,140,0,0.35) 80%, transparent 100%)",
         }}
       />
+      )}
 
       <div
         className={`mx-auto w-full ${
@@ -157,13 +180,13 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
           <div className="col-span-2 sm:col-span-3 lg:col-span-4">
             <Link href="/" className="inline-flex items-center">
               <span
-                className="text-xl font-black tracking-tight text-white"
+                className={`text-xl font-black tracking-tight ${isApp ? "text-slate-900" : "text-white"}`}
                 style={{ fontFamily: "'Syne', var(--font-display, sans-serif)" }}
               >
                 RiskSent
               </span>
             </Link>
-            <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-slate-400">
+            <p className={`mt-4 max-w-sm text-[13px] leading-relaxed ${isApp ? "text-slate-500" : "text-slate-400"}`}>
               The all-in-one trading platform: backtest strategies, journal
               every trade and enforce your risk rules with live alerts — one
               subscription, zero chaos.
@@ -175,7 +198,11 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="RiskSent on X"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
+                  isApp
+                    ? "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700"
+                    : "border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                }`}
               >
                 <XLogo className="h-[14px] w-[14px]" />
               </a>
@@ -184,7 +211,11 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="RiskSent on Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-slate-400 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
+                  isApp
+                    ? "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700"
+                    : "border-white/[0.08] bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                }`}
               >
                 <Instagram className="h-4 w-4" />
               </a>
@@ -193,76 +224,61 @@ export function Footer({ variant = "marketing" }: { variant?: FooterVariant }) {
 
           {/* Link columns */}
           <div className="lg:col-span-2">
-            <FooterColumn title="Product" links={PRODUCT_LINKS} />
+            <FooterColumn title="Product" links={PRODUCT_LINKS} isApp={isApp} />
           </div>
           <div className="lg:col-span-2">
-            <FooterColumn title="Resources" links={RESOURCES_LINKS} />
+            <FooterColumn title="Resources" links={RESOURCES_LINKS} isApp={isApp} />
           </div>
           <div className="lg:col-span-2">
-            <FooterColumn title="Company" links={COMPANY_LINKS} />
+            <FooterColumn title="Company" links={COMPANY_LINKS} isApp={isApp} />
           </div>
           <div className="lg:col-span-2">
-            <FooterColumn title="Legal" links={LEGAL_LINKS} />
+            <FooterColumn title="Legal" links={LEGAL_LINKS} isApp={isApp} />
           </div>
         </div>
 
         {/* Risk disclaimer */}
         <div className="mt-12">
-          <RiskDisclaimer />
+          <RiskDisclaimer isApp={isApp} />
         </div>
 
         {/* Divider */}
         <div
           className="my-8 h-px w-full"
-          style={{ background: "rgba(255,255,255,0.06)" }}
+          style={{ background: isApp ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)" }}
         />
 
         {/* Bottom strip */}
-        <div className="flex flex-col gap-4 text-[11px] font-mono text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className={`flex flex-col gap-4 text-[11px] font-mono sm:flex-row sm:items-center sm:justify-between ${isApp ? "text-slate-400" : "text-slate-500"}`}>
           <p>
             © {year} RiskSent · All rights reserved. Built for disciplined
             traders.
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link
-              href="/terms"
-              className="transition-colors hover:text-slate-300"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/privacy"
-              className="transition-colors hover:text-slate-300"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/cookies"
-              className="transition-colors hover:text-slate-300"
-            >
-              Cookies
-            </Link>
-            <Link
-              href="/risk-disclosure"
-              className="transition-colors hover:text-slate-300"
-            >
-              Risk
-            </Link>
-            <Link
-              href="/support"
-              className="transition-colors hover:text-slate-300"
-            >
-              Support
-            </Link>
+            {[
+              { href: "/terms", label: "Terms" },
+              { href: "/privacy", label: "Privacy" },
+              { href: "/cookies", label: "Cookies" },
+              { href: "/risk-disclosure", label: "Risk" },
+              { href: "/support", label: "Support" },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`transition-colors ${isApp ? "hover:text-slate-700" : "hover:text-slate-300"}`}
+              >
+                {l.label}
+              </Link>
+            ))}
             <button
               type="button"
               onClick={() => openCookiePreferences()}
-              className="transition-colors hover:text-slate-300"
+              className={`transition-colors ${isApp ? "hover:text-slate-700" : "hover:text-slate-300"}`}
             >
               Cookie preferences
             </button>
-            <span className="hidden text-slate-700 sm:inline">·</span>
-            <span className="text-slate-600">v1.0</span>
+            <span className={`hidden sm:inline ${isApp ? "text-slate-300" : "text-slate-700"}`}>·</span>
+            <span className={isApp ? "text-slate-400" : "text-slate-600"}>v1.0</span>
           </div>
         </div>
       </div>
