@@ -308,7 +308,7 @@ export function AppHeaderBar({
               </div>
               <div className="py-1">
                 <Link
-                  href="/profile"
+                  href="/app/profile"
                   className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
                   onClick={() => setUserOpen(false)}
                 >
