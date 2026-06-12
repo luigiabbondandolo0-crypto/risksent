@@ -1,232 +1,387 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Send } from "lucide-react";
 
-const APPROACH_S = 3.6;
-const ALERT_HOLD_S = 5.6;
+// ─── Timing ────────────────────────────────────────────────────────────────
+const PHASE_CHART_S   = 3.8;   // chart candles play / price approaches SL
+const PHASE_HIT_S     = 0.35;  // flash when SL is hit
+const PHASE_NOTIF_S   = 5.8;   // notification is visible
+const PHASE_RESET_S   = 0.8;   // brief pause before loop
+
+type Phase = "chart" | "hit" | "notif" | "reset";
+
+// ─── Static chart candles (viewBox 0 0 100 100) ────────────────────────────
+// x = center, o = open%, c = close% (percent from top, so 0=top, 100=bottom)
+// SL line at y=72
+const CANDLES = [
+  { x: 10, o: 52, c: 46, h: 44, l: 54, bull: true  },
+  { x: 18, o: 48, c: 43, h: 41, l: 50, bull: true  },
+  { x: 26, o: 43, c: 49, h: 41, l: 51, bull: false },
+  { x: 34, o: 49, c: 44, h: 42, l: 51, bull: true  },
+  { x: 42, o: 44, c: 50, h: 42, l: 52, bull: false },
+  { x: 50, o: 52, c: 57, h: 50, l: 60, bull: false },
+  { x: 58, o: 58, c: 65, h: 56, l: 67, bull: false },
+  { x: 66, o: 65, c: 71, h: 63, l: 73, bull: false },
+  // SL hit candle — close pierces SL (y=72)
+  { x: 74, o: 71, c: 77, h: 69, l: 79, bull: false, slHit: true },
+];
+
+const SL_Y = 72;
+const SL_PRICE = "1.08219";
+const PRICE_BEFORE = "1.08246";
+const PRICE_AFTER  = "1.08198";
 
 export function HomeLiveAlertsPhone() {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const [dotTravel, setDotTravel] = useState(52);
+  const [phase, setPhase] = useState<Phase>("chart");
   const [cycle, setCycle] = useState(0);
-  const [showAlert, setShowAlert] = useState(false);
   const reduceMotion = useReducedMotion();
+  const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  useLayoutEffect(() => {
-    const el = chartRef.current;
-    if (!el) return;
-    const update = () => {
-      const h = el.clientHeight;
-      setDotTravel(Math.max(40, Math.round(h * 0.22)));
+  const clearTimers = () => {
+    timerRef.current.forEach(clearTimeout);
+    timerRef.current = [];
+  };
+
+  useEffect(() => {
+    setPhase("chart");
+    clearTimers();
+
+    if (reduceMotion) {
+      setPhase("notif");
+      return;
+    }
+
+    const push = (fn: () => void, ms: number) => {
+      timerRef.current.push(setTimeout(fn, ms));
     };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
-  useEffect(() => {
-    setShowAlert(false);
-    const hit = window.setTimeout(() => setShowAlert(true), APPROACH_S * 1000);
-    return () => window.clearTimeout(hit);
-  }, [cycle]);
+    const chartMs   = PHASE_CHART_S   * 1000;
+    const hitMs     = PHASE_HIT_S     * 1000;
+    const notifMs   = PHASE_NOTIF_S   * 1000;
+    const resetMs   = PHASE_RESET_S   * 1000;
 
-  useEffect(() => {
-    if (!showAlert) return;
-    const t = window.setTimeout(() => {
-      setShowAlert(false);
+    push(() => setPhase("hit"),   chartMs);
+    push(() => setPhase("notif"), chartMs + hitMs);
+    push(() => setPhase("reset"), chartMs + hitMs + notifMs);
+    push(() => {
+      setPhase("chart");
       setCycle((c) => c + 1);
-    }, ALERT_HOLD_S * 1000);
-    return () => window.clearTimeout(t);
-  }, [showAlert]);
+    }, chartMs + hitMs + notifMs + resetMs);
+
+    return clearTimers;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cycle, reduceMotion]);
+
+  const slHit = phase === "hit" || phase === "notif" || phase === "reset";
+  const showNotif = phase === "notif";
 
   return (
-    <div className="relative mx-auto flex w-full max-w-[280px] flex-col items-center sm:max-w-[300px]">
-      {/* Reserved space so the Telegram card stays inside layout (parent overflow-hidden won’t clip it). */}
-      <div className="relative z-20 mb-1 min-h-[128px] w-[108%] max-w-[340px] px-1">
-        <AnimatePresence mode="wait">
-          {showAlert && (
-            <motion.div
-              key="tg"
-              initial={{ opacity: 0, y: 10, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 420, damping: 28 }}
-              className="w-full"
-            >
-            <div
-              className="rounded-2xl border border-white/[0.12] p-3 shadow-2xl"
-              style={{
-                background: "linear-gradient(145deg, rgba(30,32,40,0.98), rgba(14,14,18,0.98))",
-                boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(56,189,248,0.12)"
-              }}
-            >
-              <div className="flex gap-2.5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#229ED9] text-white shadow-lg shadow-[#229ED9]/30">
-                  <Send className="h-5 w-5" strokeWidth={2.2} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-white">RiskSent · Risk desk</p>
-                  <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[#ff3c3c]">
-                    Mandatory directive
-                  </p>
-                  <p className="mt-1.5 text-[11px] leading-snug text-slate-300 font-mono">
-                    Second loss logged this session. Effective immediately:{" "}
-                    <span className="font-semibold text-white">do not open or add positions</span> until the next
-                    session. This is not discretionary.
-                  </p>
-                  <p className="mt-1.5 text-[11px] leading-snug text-slate-400 font-mono">
-                    Ignoring this order compounds drawdown, breach risk (limits / prop rules), and revenge trading.
-                    Stand down and acknowledge.
-                  </p>
-                  <p className="mt-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">
-                    Priority alert · execute now
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+    <div className="relative mx-auto flex w-full max-w-[260px] flex-col items-center select-none sm:max-w-[280px]">
 
+      {/* ── Phone shell ── */}
       <motion.div
         className="relative w-full"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        whileHover={{ scale: 1.015 }}
+        transition={{ type: "spring", stiffness: 280, damping: 24 }}
       >
+        {/* Outer frame */}
         <div
-          className="relative overflow-hidden rounded-[2.2rem] border border-white/[0.12] bg-[#0a0a0c] p-2 shadow-2xl"
+          className="relative overflow-hidden rounded-[2.6rem] p-[3px]"
           style={{
-            boxShadow:
-              "0 40px 80px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.04), 0 0 60px rgba(255,60,60,0.06)"
+            background: "linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.10) 100%)",
+            boxShadow: "0 48px 100px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.12)",
           }}
         >
-          <div className="absolute left-1/2 top-2 z-10 h-5 w-[32%] -translate-x-1/2 rounded-full bg-black/90 ring-1 ring-white/10" />
+          <div
+            className="relative overflow-hidden rounded-[2.35rem]"
+            style={{ background: "#0a0a0c" }}
+          >
+            {/* Dynamic island */}
+            <div className="absolute left-1/2 top-2.5 z-20 h-[18px] w-[80px] -translate-x-1/2 rounded-full bg-black" />
 
-          <div className="relative mt-6 overflow-hidden rounded-[1.65rem] bg-[#0e0f12] ring-1 ring-white/[0.06]">
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-2">
-              <span className="text-[10px] font-mono font-bold text-slate-400">Trading terminal</span>
-              <div className="flex gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
-                <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
-                <span className="h-1.5 w-1.5 rounded-full bg-[#00e676]" />
+            {/* Status bar */}
+            <div className="flex items-center justify-between px-6 pt-3 pb-1" style={{ paddingTop: "14px" }}>
+              <span className="text-[9px] font-semibold text-white/70 font-mono">9:41</span>
+              <div className="flex items-center gap-1.5">
+                <svg width="15" height="10" viewBox="0 0 15 10" fill="none">
+                  <rect x="0" y="3" width="3" height="7" rx="0.6" fill="white" fillOpacity="0.4"/>
+                  <rect x="4" y="2" width="3" height="8" rx="0.6" fill="white" fillOpacity="0.6"/>
+                  <rect x="8" y="0.5" width="3" height="9.5" rx="0.6" fill="white" fillOpacity="0.85"/>
+                  <rect x="12.5" y="3.5" width="2" height="3" rx="0.4" fill="white" fillOpacity="0.5"/>
+                </svg>
+                <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+                  <path d="M7 1.2C9.5 1.2 11.8 2.3 13.3 4.1L14 3.3C12.2 1.2 9.8 0 7 0C4.2 0 1.8 1.2 0 3.3L0.7 4.1C2.2 2.3 4.5 1.2 7 1.2Z" fill="white" fillOpacity="0.45"/>
+                  <path d="M7 3.8C8.6 3.8 10.1 4.5 11.1 5.7L11.9 4.9C10.6 3.5 8.9 2.6 7 2.6C5.1 2.6 3.4 3.5 2.1 4.9L2.9 5.7C3.9 4.5 5.4 3.8 7 3.8Z" fill="white" fillOpacity="0.65"/>
+                  <path d="M7 6.5C7.9 6.5 8.8 6.9 9.4 7.6L10.2 6.8C9.3 5.8 8.2 5.3 7 5.3C5.8 5.3 4.7 5.8 3.8 6.8L4.6 7.6C5.2 6.9 6.1 6.5 7 6.5Z" fill="white" fillOpacity="0.85"/>
+                  <circle cx="7" cy="9" r="1" fill="white"/>
+                </svg>
+                <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+                  <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="white" strokeOpacity="0.35"/>
+                  <rect x="2" y="2" width="17" height="8" rx="2" fill="white" fillOpacity="0.85"/>
+                  <path d="M22.5 4.5C23.3 4.5 23.8 5 23.8 5.7V6.3C23.8 7 23.3 7.5 22.5 7.5V4.5Z" fill="white" fillOpacity="0.4"/>
+                </svg>
               </div>
             </div>
 
-            <div className="border-b border-white/[0.05] px-3 py-1.5">
-              <p className="text-center text-[11px] font-mono font-bold text-slate-200">EURUSD,M5</p>
-              <p className="text-center text-[9px] font-mono text-slate-500">Bid 1.08218 · Ask 1.08220</p>
-            </div>
-
-            <div
-              ref={chartRef}
-              className="relative aspect-[9/16] max-h-[320px] min-h-[260px] w-full bg-gradient-to-b from-[#12141a] to-[#0a0b0e]"
+            {/* Trading terminal UI */}
+            <div className="mx-2 mb-2 overflow-hidden rounded-[1.6rem]"
+              style={{
+                background: "linear-gradient(180deg, #0d0f14 0%, #090a0e 100%)",
+                border: "1px solid rgba(255,255,255,0.05)"
+              }}
             >
-              <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                {[20, 35, 50, 65, 80].map((x) => (
-                  <line
-                    key={x}
-                    x1={x}
-                    y1="8"
-                    x2={x}
-                    y2="92"
-                    stroke="rgba(255,255,255,0.03)"
-                    strokeWidth="0.3"
+              {/* Terminal header */}
+              <div
+                className="flex items-center justify-between border-b px-3 py-2"
+                style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-sm" style={{ background: "linear-gradient(135deg, #6366f1, #38bdf8)" }} />
+                  <span className="text-[10px] font-mono font-bold text-slate-300">MT5 Terminal</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                  <div
+                    className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
+                    style={{ background: slHit ? "#ef4444" : "#22c55e" }}
                   />
-                ))}
-                {[22, 38, 54, 70].map((y) => (
+                </div>
+              </div>
+
+              {/* Pair info */}
+              <div className="flex items-center justify-between border-b px-3 py-1.5"
+                style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                <span className="text-[11px] font-mono font-bold text-white">EUR/USD · M5</span>
+                <motion.span
+                  className="text-[10px] font-mono font-semibold"
+                  animate={{ color: slHit ? "#ef4444" : "#94a3b8" }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {slHit ? PRICE_AFTER : PRICE_BEFORE}
+                </motion.span>
+              </div>
+
+              {/* Chart area */}
+              <div className="relative" style={{ height: "200px" }}>
+                {/* Screen flash on SL hit */}
+                <AnimatePresence>
+                  {phase === "hit" && (
+                    <motion.div
+                      className="pointer-events-none absolute inset-0 z-10"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.45, 0] }}
+                      transition={{ duration: 0.35, times: [0, 0.3, 1] }}
+                      style={{ background: "rgba(239,68,68,0.6)" }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                <svg
+                  className="absolute inset-0 h-full w-full"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  {/* Grid lines */}
+                  {[20, 40, 60, 80].map((y) => (
+                    <line key={y} x1="0" y1={y} x2="100" y2={y}
+                      stroke="rgba(255,255,255,0.025)" strokeWidth="0.4" />
+                  ))}
+                  {[25, 50, 75].map((x) => (
+                    <line key={x} x1={x} y1="0" x2={x} y2="100"
+                      stroke="rgba(255,255,255,0.025)" strokeWidth="0.4" />
+                  ))}
+
+                  {/* Candles */}
+                  {CANDLES.map((c, i) => {
+                    const isHitCandle = !!c.slHit;
+                    const showHitCandle = isHitCandle && slHit;
+                    const showNormalCandle = !isHitCandle || slHit;
+                    if (!showNormalCandle && isHitCandle && !slHit) return null;
+
+                    const color = isHitCandle && slHit ? "#ef4444"
+                      : c.bull ? "#22c55e" : "#ef4444";
+                    const bodyTop = Math.min(c.o, c.c);
+                    const bodyH   = Math.max(0.8, Math.abs(c.o - c.c));
+
+                    return (
+                      <g key={i}>
+                        {/* Wick */}
+                        <line x1={c.x} y1={c.h} x2={c.x} y2={c.l}
+                          stroke={color} strokeWidth="0.4" opacity={0.9} />
+                        {/* Body */}
+                        <rect
+                          x={c.x - 1.6} y={bodyTop}
+                          width="3.2" height={bodyH}
+                          rx="0.2"
+                          fill={color}
+                          opacity={isHitCandle && !slHit ? 0 : 0.88}
+                        />
+                      </g>
+                    );
+                  })}
+
+                  {/* SL line */}
                   <line
-                    key={y}
-                    x1="8"
-                    y1={y}
-                    x2="92"
-                    y2={y}
-                    stroke="rgba(255,255,255,0.03)"
-                    strokeWidth="0.3"
+                    x1="0" y1={SL_Y} x2="100" y2={SL_Y}
+                    stroke={slHit ? "#ef4444" : "rgba(239,68,68,0.7)"}
+                    strokeWidth={slHit ? "0.7" : "0.55"}
+                    strokeDasharray="2.5 1.8"
                   />
-                ))}
+                  <rect x="55" y={SL_Y - 5.5} width="25" height="5" rx="0.8"
+                    fill={slHit ? "rgba(239,68,68,0.25)" : "rgba(239,68,68,0.12)"}
+                  />
+                  <text x="57.5" y={SL_Y - 2} fill={slHit ? "#ef4444" : "rgba(239,68,68,0.85)"}
+                    fontSize="3" fontFamily="ui-monospace, monospace" fontWeight="600">
+                    SL · {SL_PRICE}
+                  </text>
+                </svg>
 
-                {[
-                  [16, 32, 28, 30],
-                  [24, 30, 32, 29],
-                  [32, 34, 36, 32],
-                  [40, 31, 35, 33],
-                  [48, 36, 40, 34],
-                  [56, 38, 42, 36],
-                  [64, 42, 46, 40],
-                  [72, 46, 50, 44],
-                  [80, 50, 54, 48],
-                  [88, 54, 58, 52]
-                ].map(([x, openY, highY, lowY], i) => {
-                  const up = lowY > openY;
-                  const top = Math.min(openY, lowY);
-                  const h = Math.max(0.6, Math.abs(openY - lowY));
-                  return (
-                    <g key={i}>
-                      <line
-                        x1={x}
-                        y1={highY}
-                        x2={x}
-                        y2={lowY}
-                        stroke={up ? "#00e676" : "#ff3c3c"}
-                        strokeWidth="0.35"
-                      />
-                      <rect
-                        x={x - 1.2}
-                        y={top}
-                        width="2.4"
-                        height={h}
-                        rx="0.15"
-                        fill={up ? "#00e676" : "#ff3c3c"}
-                        opacity={0.88}
-                      />
-                    </g>
-                  );
-                })}
+                {/* Approaching price dot */}
+                <AnimatePresence>
+                  {phase === "chart" && (
+                    <motion.div
+                      key={`dot-${cycle}`}
+                      className="pointer-events-none absolute z-[5]"
+                      style={{
+                        left: "calc(58% + 4px)",
+                        top: "48%",
+                        width: 8, height: 8,
+                        borderRadius: "50%",
+                        background: "#38bdf8",
+                        boxShadow: "0 0 10px 3px rgba(56,189,248,0.7)",
+                        transform: "translate(-50%, -50%)",
+                      }}
+                      initial={{ opacity: 1, y: 0 }}
+                      animate={{ opacity: 1, y: "52px" }}
+                      transition={{ duration: PHASE_CHART_S * 0.85, ease: [0.45, 0, 0.55, 1] }}
+                    />
+                  )}
+                </AnimatePresence>
 
-                <line
-                  x1="8"
-                  y1="72"
-                  x2="92"
-                  y2="72"
-                  stroke="#ff3c3c"
-                  strokeWidth="0.5"
-                  strokeDasharray="2 1.5"
-                  opacity={0.95}
-                />
-                <text x="54" y="69.5" fill="#ff3c3c" fontSize="3" fontFamily="ui-monospace, monospace">
-                  SL 1.0822
-                </text>
-              </svg>
+                {/* Status label */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                  <span className="text-[8px] font-mono text-slate-600">Vol: 1.2K</span>
+                  <motion.span
+                    className="text-[8px] font-mono font-semibold"
+                    animate={{
+                      color: slHit ? "#ef4444" : "#64748b",
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {slHit ? "▼ Stop Loss Hit" : phase === "chart" ? "⚠ Approaching SL" : ""}
+                  </motion.span>
+                </div>
+              </div>
 
-              <motion.div
-                key={cycle}
-                className="pointer-events-none absolute left-1/2 top-[52%] z-[5] h-2 w-2 -translate-x-1/2 rounded-full bg-[#38bdf8] shadow-[0_0_12px_rgba(56,189,248,0.9)] ring-2 ring-[#38bdf8]/40 will-change-transform"
-                initial={{ y: reduceMotion ? dotTravel : 0 }}
-                animate={{ y: dotTravel }}
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { duration: APPROACH_S, ease: [0.45, 0, 0.55, 1] }
-                }
-              />
-
-              <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[8px] font-mono text-slate-500">
-                <span>Vol</span>
-                <span className={showAlert ? "animate-pulse text-[#ff3c3c]" : "text-slate-400"}>
-                  {showAlert ? "Stop loss" : "Approaching stop"}
+              {/* Bottom bar */}
+              <div className="flex items-center justify-between border-t px-3 py-2"
+                style={{ borderColor: "rgba(255,255,255,0.04)", background: "rgba(255,255,255,0.01)" }}>
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ background: slHit ? "#ef4444" : "#22c55e" }} />
+                  <span className="text-[8px] font-mono text-slate-500">
+                    {slHit ? "Position closed" : "Long · 0.10 lot"}
+                  </span>
+                </div>
+                <span
+                  className="text-[9px] font-mono font-bold"
+                  style={{ color: slHit ? "#ef4444" : "#22c55e" }}
+                >
+                  {slHit ? "-$28.40" : "+$14.20"}
                 </span>
               </div>
             </div>
+
+            {/* ── In-screen iOS notification ── */}
+            <AnimatePresence>
+              {showNotif && (
+                <motion.div
+                  key="notif"
+                  initial={{ y: -120, opacity: 0, scale: 0.92 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: -110, opacity: 0, scale: 0.94 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  className="absolute left-2 right-2 z-30"
+                  style={{ top: "14px" }}
+                >
+                  <div
+                    className="overflow-hidden rounded-2xl"
+                    style={{
+                      background: "rgba(18,18,24,0.97)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      boxShadow: "0 20px 50px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 30px rgba(239,68,68,0.15)",
+                      backdropFilter: "blur(24px)",
+                    }}
+                  >
+                    {/* Notification header */}
+                    <div className="flex items-center gap-2 border-b px-3 py-2"
+                      style={{ borderColor: "rgba(239,68,68,0.15)", background: "rgba(239,68,68,0.06)" }}>
+                      {/* Telegram icon */}
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                        style={{ background: "#229ED9", boxShadow: "0 0 12px rgba(34,158,217,0.4)" }}>
+                        <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
+                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.02 9.52c-.146.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.883.701z"/>
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-white">Telegram</span>
+                          <span className="text-[9px] font-mono text-slate-500">now</span>
+                        </div>
+                        <span className="text-[9px] text-slate-500">RiskSent · Risk Desk</span>
+                      </div>
+                    </div>
+
+                    {/* Notification body */}
+                    <div className="px-3 py-2.5 space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-red-400 uppercase tracking-wide">🚨 Stop Loss Hit</span>
+                        <span className="rounded px-1 py-0.5 text-[8px] font-mono font-bold uppercase"
+                          style={{ background: "rgba(239,68,68,0.18)", color: "#f87171" }}>
+                          EURUSD
+                        </span>
+                      </div>
+                      <p className="text-[10px] leading-snug text-slate-300 font-mono">
+                        Loss #2 this session.{" "}
+                        <span className="font-semibold text-white">Daily limit at 80%.</span>
+                      </p>
+                      <p className="text-[10px] leading-snug font-mono" style={{ color: "#fb923c" }}>
+                        → No new positions until tomorrow's session.
+                      </p>
+                      <p className="text-[9px] font-mono text-slate-600 pt-0.5">
+                        Review your journal · protect your account
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                      <button className="flex-1 py-2 text-[10px] font-semibold text-indigo-400 hover:bg-white/[0.03] transition-colors">
+                        View Risk Manager
+                      </button>
+                      <div className="w-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+                      <button className="flex-1 py-2 text-[10px] font-mono text-slate-500 hover:bg-white/[0.03] transition-colors">
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           </div>
         </div>
+
+        {/* Glow under phone */}
+        <div
+          className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 h-16 w-[70%] rounded-full blur-2xl opacity-40"
+          style={{ background: slHit ? "radial-gradient(ellipse, rgba(239,68,68,0.5), transparent)" : "radial-gradient(ellipse, rgba(99,102,241,0.4), transparent)" }}
+        />
       </motion.div>
 
-      <p className="mt-4 text-center text-[10px] font-mono uppercase tracking-wider text-slate-600">
-        Mobile terminal · policy alert via Telegram
+      {/* Caption */}
+      <p className="mt-5 text-center text-[10px] font-mono uppercase tracking-[0.22em] text-slate-600">
+        Live alert · delivered via Telegram
       </p>
     </div>
   );

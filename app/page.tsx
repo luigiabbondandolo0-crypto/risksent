@@ -356,21 +356,21 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1
-            className="break-words text-[clamp(36px,9vw,130px)] font-black leading-[0.9] tracking-[-0.04em] text-white mb-8"
+            className="break-words text-[clamp(36px,9vw,130px)] font-black leading-[0.92] tracking-[-0.04em] text-white mb-8"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {["Stop", "trading", "blind."].map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+              <span key={i} className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
                 <span className="hero-word inline-block">{word}</span>
               </span>
             ))}
             <br />
             {["Start", "trading", "with"].map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden mr-[0.2em]">
+              <span key={i} className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
                 <span className="hero-word inline-block">{word}</span>
               </span>
             ))}
-            <span className="inline-block overflow-hidden mr-[0.2em]">
+            <span className="inline-block overflow-hidden pb-[0.12em] mr-[0.2em]">
               <span
                 className="hero-word inline-block text-[#c4b5fd] md:bg-clip-text md:text-transparent"
                 style={{
@@ -474,7 +474,7 @@ export default function HomePage() {
               {String(i + 1).padStart(2, "0")} / 03
             </p>
             <h2
-              className="break-words text-[clamp(36px,10vw,140px)] font-black leading-none tracking-[-0.04em]"
+              className="break-words text-[clamp(36px,10vw,140px)] font-black leading-[0.92] tracking-[-0.04em] pb-[0.08em]"
               style={{
                 fontFamily: "var(--font-display)",
                 background: i === 0
@@ -614,7 +614,7 @@ export default function HomePage() {
                         </div>
                         <div className="overflow-hidden">
                           <h2
-                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line pb-[0.1em]"
                             style={{ fontFamily: "var(--font-display)" }}
                           >
                             {feature.heading}
@@ -656,7 +656,7 @@ export default function HomePage() {
                         </div>
                         <div className="overflow-hidden">
                           <h2
-                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                            className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line pb-[0.1em]"
                             style={{ fontFamily: "var(--font-display)" }}
                           >
                             {feature.heading}
@@ -778,7 +778,7 @@ export default function HomePage() {
                       </div>
                       <div className="overflow-hidden">
                         <h2
-                          className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line"
+                          className="feature-heading text-[clamp(36px,5vw,72px)] font-black leading-[0.95] tracking-[-0.03em] text-white whitespace-pre-line pb-[0.1em]"
                           style={{ fontFamily: "var(--font-display)" }}
                         >
                           {feature.heading}
