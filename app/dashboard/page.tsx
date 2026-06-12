@@ -83,9 +83,9 @@ function getRuleStatus(current: number | null, limit: number): RuleStatus {
 }
 
 function ruleStatusPill(status: RuleStatus) {
-  if (status === "high") return "border-red-500/40 bg-red-500/15 text-red-300";
-  if (status === "watch") return "border-orange-500/40 bg-orange-500/15 text-orange-300";
-  return "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+  if (status === "high") return "border-red-500/40 bg-red-50 text-red-700";
+  if (status === "watch") return "border-orange-500/40 bg-orange-50 text-orange-700";
+  return "border-emerald-500/40 bg-emerald-50 text-emerald-700";
 }
 
 function AnimatedNumber({
@@ -171,12 +171,12 @@ function UpgradeBannerInner() {
           exit={{ opacity: 0, y: -12, scale: 0.97 }}
           className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm"
         >
-          <span className="text-emerald-300 font-medium">
+          <span className="text-emerald-700 font-medium">
             🎉 You&apos;re now on <strong>{upgradeBanner}</strong> — welcome to the full RiskSent experience!
           </span>
           <button
             onClick={() => setUpgradeBanner(null)}
-            className="text-slate-500 hover:text-slate-300 transition-colors"
+            className="text-slate-500 hover:text-slate-600 transition-colors"
             aria-label="Dismiss"
           >
             ✕
@@ -666,10 +666,10 @@ export default function DashboardPage() {
       <div className={`${bt.page} space-y-6 lg:space-y-8 animate-fade-in`}>
         <div className="rs-card overflow-hidden p-6" aria-hidden>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-200 animate-pulse" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-48 max-w-full rounded bg-slate-800/80 animate-pulse" />
-              <div className="h-3 w-full max-w-md rounded bg-slate-800/60 animate-pulse" />
+              <div className="h-4 w-48 max-w-full rounded bg-slate-200 animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-slate-200 animate-pulse" />
             </div>
           </div>
         </div>
@@ -707,20 +707,20 @@ export default function DashboardPage() {
         <div className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
       </div>
       {!onboardingDone && !bannerDismissed && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3 text-sm">
-          <span className="text-slate-300">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/20 bg-indigo-50 px-4 py-3 text-sm">
+          <span className="text-slate-700">
             Complete your profile setup to get the most out of RiskSent.
           </span>
           <div className="flex shrink-0 items-center gap-3">
             <Link
               href="/onboarding"
-              className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
             >
               Continue setup →
             </Link>
             <button
               onClick={() => setBannerDismissed(true)}
-              className="text-slate-500 hover:text-slate-300 transition-colors"
+              className="text-slate-500 hover:text-slate-600 transition-colors"
               aria-label="Dismiss"
             >
               ✕
@@ -729,7 +729,7 @@ export default function DashboardPage() {
         </div>
       )}
       {stats?.reconnecting && (
-        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 text-sm text-amber-700">
           <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
           <span>Reconnecting to your broker — live data will appear in about 30–60 seconds.</span>
         </div>
@@ -738,7 +738,7 @@ export default function DashboardPage() {
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl"
-            style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            style={{ background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
             Dashboard
           </h1>
           <p className="mt-1.5 text-sm font-mono text-slate-400">
@@ -755,7 +755,7 @@ export default function DashboardPage() {
             type="button"
             onClick={() => void handleSyncTrades()}
             disabled={syncing || !hasAnyBrokerMeta}
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs font-mono text-slate-300 transition-colors hover:border-indigo-500/30 hover:text-slate-100 disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-mono text-slate-600 transition-colors hover:border-indigo-500/30 hover:text-slate-800 disabled:opacity-40"
             title="Import closed trades from MetaApi into your journal"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
@@ -778,15 +778,15 @@ export default function DashboardPage() {
       {!pageReady && (
         <div className="rs-card overflow-hidden p-6" aria-hidden>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-800/80 animate-pulse" />
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-slate-200 animate-pulse" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-48 max-w-full rounded bg-slate-800/80 animate-pulse" />
-              <div className="h-3 w-full max-w-md rounded bg-slate-800/60 animate-pulse" />
+              <div className="h-4 w-48 max-w-full rounded bg-slate-200 animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-slate-200 animate-pulse" />
             </div>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-xl bg-slate-800/50 animate-pulse" />
+              <div key={i} className="h-24 rounded-xl bg-slate-200 animate-pulse" />
             ))}
           </div>
         </div>
@@ -796,7 +796,7 @@ export default function DashboardPage() {
         <>
           {showBrokerSyncBanner && (
             <div
-              className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-4 py-3 text-sm leading-relaxed text-amber-100/95 font-[family-name:var(--font-mono)]"
+              className="rounded-xl border border-amber-500/25 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-800 font-[family-name:var(--font-mono)]"
               role="status"
             >
               Account connected — sync pending. Data will appear once your broker connection is active.
@@ -805,15 +805,15 @@ export default function DashboardPage() {
           {/* Active risk rules */}
           <section className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
             style={{
-              background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(255,255,255,0.01) 100%)",
+              background: "linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(255,255,255,1) 100%)",
               borderColor: "rgba(99,102,241,0.2)",
-              boxShadow: "0 0 40px -10px rgba(99,102,241,0.15), 0 8px 32px -8px rgba(0,0,0,0.5)",
+              boxShadow: "0 0 40px -10px rgba(99,102,241,0.15), 0 8px 32px -8px rgba(0,0,0,0.07)",
             }}>
             <div className="pointer-events-none absolute -top-12 right-12 h-24 w-32 rounded-full opacity-20 blur-3xl" style={{ background: "#6366f1" }} />
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
                 <span className="h-1 w-5 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
-                <h3 className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-300">
+                <h3 className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-600">
                   Active risk rules
                 </h3>
               </div>
@@ -821,14 +821,14 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRulesPopupOpen(true)}
-                  className="rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/10 px-3 py-1.5 text-xs font-mono font-medium text-indigo-200 transition-colors hover:bg-[#6366f1]/20"
+                  className="rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/10 px-3 py-1.5 text-xs font-mono font-medium text-indigo-700 transition-colors hover:bg-[#6366f1]/20"
                 >
                   Edit
                 </button>
               ) : (
                 <Link
                   href="/app/risk-manager"
-                  className="inline-flex items-center rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/15 px-3 py-1.5 text-xs font-mono font-medium text-indigo-200 transition-colors hover:bg-[#6366f1]/25"
+                  className="inline-flex items-center rounded-lg border border-[#6366f1]/35 bg-[#6366f1]/15 px-3 py-1.5 text-xs font-mono font-medium text-indigo-700 transition-colors hover:bg-[#6366f1]/25"
                 >
                   Set your risk rules
                 </Link>
@@ -875,12 +875,12 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06, duration: 0.3, ease: "easeOut" }}
-                    className="rounded-xl border border-slate-700/50 bg-slate-950/40 px-4 py-3"
+                    className="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3"
                   >
                     <div className="rs-kpi-label">{label}</div>
                     <div className="mt-2 inline-flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-slate-600" />
-                      <span className="rounded-full border border-slate-600/60 bg-slate-800/60 px-2 py-0.5 text-xs font-mono font-semibold text-slate-400">
+                      <span className="rounded-full border border-slate-300 bg-slate-200 px-2 py-0.5 text-xs font-mono font-semibold text-slate-500">
                         {label === "Revenge" ? "0 losses" : "0% limit"}
                       </span>
                     </div>
@@ -908,14 +908,14 @@ export default function DashboardPage() {
               transition={{ delay: 0.05, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.09) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.22)", boxShadow: "0 0 32px -8px rgba(99,102,241,0.14), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.09) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.22)", boxShadow: "0 0 32px -8px rgba(99,102,241,0.14), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-25 blur-2xl" style={{ background: "#6366f1" }} />
               <div className="rs-kpi-label">Balance</div>
-              <div className="mt-1 text-2xl font-bold font-display text-white">
+              <div className="mt-1 text-2xl font-bold font-display text-slate-900">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.balancePct} suffix="%" />}
               </div>
-              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.balancePct ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
             </motion.div>
@@ -926,14 +926,14 @@ export default function DashboardPage() {
               transition={{ delay: 0.10, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(56,189,248,0.2)", boxShadow: "0 0 32px -8px rgba(56,189,248,0.12), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(56,189,248,0.2)", boxShadow: "0 0 32px -8px rgba(56,189,248,0.12), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-20 blur-2xl" style={{ background: "#38bdf8" }} />
               <div className="rs-kpi-label">Equity</div>
-              <div className="mt-1 text-2xl font-bold font-display text-white">
+              <div className="mt-1 text-2xl font-bold font-display text-slate-900">
                 {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.equityPct} suffix="%" />}
               </div>
-              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-sm font-semibold font-mono ${noKpi || kpiLoading ? "text-slate-500" : (stats?.equityPct ?? 0) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                 {noKpi ? "No data" : kpiLoading ? "Loading…" : `${stats!.equity.toLocaleString(undefined, { minimumFractionDigits: 2 })} ${currency}`}
               </div>
             </motion.div>
@@ -944,7 +944,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.15, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#4ade80" }} />
               <div className="flex items-center justify-between">
@@ -952,7 +952,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setRrTableOpen(true)}
-                  className="rounded-full p-1 text-slate-500 hover:text-[#6366f1] hover:bg-slate-700/50 transition-colors"
+                  className="rounded-full p-1 text-slate-500 hover:text-[#6366f1] hover:bg-slate-100 transition-colors"
                   title="Risk:Reward & Win Rate"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -962,19 +962,19 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-start justify-between gap-3 mt-1">
                 <div>
-                  <div className="text-2xl font-bold font-display text-white">
+                  <div className="text-2xl font-bold font-display text-slate-900">
                     {noKpi ? <span>No data</span> : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.winRate} decimals={1} suffix="%" />}
                   </div>
                   {!noKpi && !kpiLoading && winRateTrend != null && (
                     <p className="mt-0.5 text-xs font-mono text-slate-400">
                       {winRateTrend.diff >= 0
-                        ? <span className="text-emerald-400">↑ +{winRateTrend.diff.toFixed(1)}%</span>
-                        : <span className="text-red-400">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
+                        ? <span className="text-emerald-600">↑ +{winRateTrend.diff.toFixed(1)}%</span>
+                        : <span className="text-red-600">↓ {winRateTrend.diff.toFixed(1)}%</span>} vs last week
                     </p>
                   )}
-                  <div className="mt-2 pt-2 border-t border-slate-700/50">
+                  <div className="mt-2 pt-2 border-t border-slate-200">
                     <span className="text-xs font-mono text-slate-500">Avg R:R </span>
-                    <span className="text-lg font-bold font-display text-white">
+                    <span className="text-lg font-bold font-display text-slate-900">
                       {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgRiskReward} />}
                     </span>
                   </div>
@@ -999,11 +999,11 @@ export default function DashboardPage() {
               transition={{ delay: 0.20, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(74,222,128,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(74,222,128,0.18)", boxShadow: "0 0 32px -8px rgba(74,222,128,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#4ade80" }} />
               <div className="rs-kpi-label">Avg win</div>
-              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-400"}`}>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-emerald-600"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgWin} suffix={` ${currency}`} />}
               </div>
               <div className="mt-1 text-xs font-mono text-slate-500">
@@ -1017,11 +1017,11 @@ export default function DashboardPage() {
               transition={{ delay: 0.25, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#f87171" }} />
               <div className="rs-kpi-label">Avg loss</div>
-              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-600"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : <AnimatedNumber value={stats?.avgLoss} suffix={` ${currency}`} forceNegative />}
               </div>
               <div className="mt-1 text-xs font-mono text-slate-500">
@@ -1035,11 +1035,11 @@ export default function DashboardPage() {
               transition={{ delay: 0.30, duration: 0.35, ease: [0.22,1,0.36,1] }}
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
               className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl"
-              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.5)" }}
+              style={{ background: "linear-gradient(135deg, rgba(248,113,113,0.07) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(248,113,113,0.2)", boxShadow: "0 0 32px -8px rgba(248,113,113,0.1), 0 8px 32px -8px rgba(0,0,0,0.07)" }}
             >
               <div className="pointer-events-none absolute -top-8 -right-4 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "#f87171" }} />
               <div className="rs-kpi-label">Max drawdown</div>
-              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-400"}`}>
+              <div className={`mt-1 text-2xl font-bold font-display ${noKpi || kpiLoading ? "text-slate-400" : "text-red-600"}`}>
                 {noKpi ? "No data" : kpiLoading ? <span className="text-slate-500">Loading…</span> : (
                   <AnimatedNumber value={stats?.highestDdPct != null ? -Math.abs(stats.highestDdPct) : null} suffix="%" />
                 )}
@@ -1054,20 +1054,20 @@ export default function DashboardPage() {
 
           {/* Calendar */}
           <section className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
-            style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)" }}>
+            style={{ background: "white", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.07)" }}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
-                  <span className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-300 capitalize">{monthLabel}</span>
+                  <span className="text-sm font-semibold font-mono uppercase tracking-[0.1em] text-slate-600 capitalize">{monthLabel}</span>
                 </div>
                 <div className="mt-1 text-xs font-mono text-slate-600 pl-6">
                   Tap a day to open its trades
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-mono text-slate-400 transition-all hover:border-indigo-500/30 hover:text-slate-200">←</button>
-                <button type="button" onClick={goNextMonth} className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-mono text-slate-400 transition-all hover:border-indigo-500/30 hover:text-slate-200">→</button>
+                <button type="button" onClick={goPrevMonth} className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs font-mono text-slate-500 transition-all hover:border-indigo-500/30 hover:text-slate-700">←</button>
+                <button type="button" onClick={goNextMonth} className="rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-xs font-mono text-slate-500 transition-all hover:border-indigo-500/30 hover:text-slate-700">→</button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 text-center">
@@ -1141,7 +1141,7 @@ export default function DashboardPage() {
 
           {/* Equity curve */}
           <section className="relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl sm:p-6"
-            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)" }}>
+            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.05) 0%, rgba(255,255,255,0.01) 100%)", borderColor: "rgba(99,102,241,0.15)", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.07)" }}>
             <div className="pointer-events-none absolute -top-16 right-16 h-32 w-48 rounded-full opacity-[0.07] blur-3xl" style={{ background: "#6366f1" }} />
             <div className="mb-1 flex items-center gap-2">
               <span className="h-1 w-4 rounded-full" style={{ background: "linear-gradient(90deg, #6366f1, #a78bfa)" }} />
