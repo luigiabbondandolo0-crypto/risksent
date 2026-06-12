@@ -59,7 +59,7 @@ export const adminOnlySidebarItems: readonly NavItem[] = [
 export const mobileNavItems: readonly NavItem[] = [...primaryNavItems] as const;
 
 /** Routes that use the app shell (sidebar + padded main). */
-export const APP_SHELL_PREFIXES = ["/app", "/admin", "/dashboard", "/journaling", "/risk-manager", "/ai-coach", "/billing", "/affiliate", "/settings"] as const;
+export const APP_SHELL_PREFIXES = ["/app", "/admin", "/dashboard"] as const;
 
 export function isAppShellPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
