@@ -16,13 +16,18 @@ const PROTECTED_PATHS = [
   "/rules",
   "/trades",
   "/backtesting",
-  
   "/add-account",
-  
   "/live-monitoring",
   "/admin",
   "/change-password",
   "/profile",
+  // Clean app URLs (app subdomain only, but protected globally)
+  "/journaling",
+  "/risk-manager",
+  "/ai-coach",
+  "/billing",
+  "/affiliate",
+  "/settings",
 ];
 
 const ADMIN_PATHS = ["/admin"];
@@ -87,7 +92,47 @@ const APP_SUBDOMAIN_PATHS = [
   "/orders",
   "/live-monitoring",
   "/live-alerts",
+  "/journaling",
+  "/risk-manager",
+  "/ai-coach",
+  "/billing",
+  "/affiliate",
+  "/settings",
 ];
+
+/**
+ * On app subdomain, these clean paths rewrite internally to /app/* equivalents.
+ * URL stays clean; the Next.js page at /app/* is served.
+ */
+const CLEAN_APP_REWRITES: Array<[string, string]> = [
+  ["/journaling", "/app/journaling"],
+  ["/risk-manager", "/app/risk-manager"],
+  ["/ai-coach", "/app/ai-coach"],
+  ["/billing", "/app/billing"],
+  ["/affiliate", "/app/affiliate"],
+  ["/settings", "/app/settings"],
+];
+
+function getCleanAppRewrite(pathname: string): string | null {
+  for (const [clean, target] of CLEAN_APP_REWRITES) {
+    if (pathname === clean || pathname.startsWith(clean + "/")) {
+      return target + pathname.slice(clean.length);
+    }
+  }
+  return null;
+}
+
+/** Returns the clean equivalent for /app/* paths on app subdomain */
+function getAppToCleanRedirect(pathname: string): string | null {
+  // /app/dashboard → /dashboard
+  if (pathname === "/app/dashboard") return "/dashboard";
+  for (const [clean, target] of CLEAN_APP_REWRITES) {
+    if (pathname === target || pathname.startsWith(target + "/")) {
+      return clean + pathname.slice(target.length);
+    }
+  }
+  return null;
+}
 
 function isAppOnlyPath(pathname: string): boolean {
   return APP_SUBDOMAIN_PATHS.some(
@@ -133,11 +178,73 @@ export async function proxy(req: NextRequest) {
         return secure(req, NextResponse.redirect(dest));
       }
 
-      // On app subdomain: redirect /app/dashboard → /dashboard
-      if (isAppDomain && pathname === "/app/dashboard") {
-        const dest = req.nextUrl.clone();
-        dest.pathname = "/dashboard";
-        return NextResponse.redirect(dest, { status: 301 });
+      if (isAppDomain) {
+        // Redirect /app/* → clean equivalent (e.g. /app/journaling → /journaling)
+        const cleanRedirect = getAppToCleanRedirect(pathname);
+        if (cleanRedirect) {
+          const dest = req.nextUrl.clone();
+          dest.pathname = cleanRedirect;
+          return NextResponse.redirect(dest, { status: 301 });
+        }
+
+        // Rewrite clean paths to /app/* internally (URL stays clean)
+        const rewriteTarget = getCleanAppRewrite(pathname);
+        if (rewriteTarget) {
+          const dest = req.nextUrl.clone();
+          dest.pathname = rewriteTarget;
+          // Auth will be checked below via PROTECTED_PATHS which includes clean paths
+          // We must fall through to auth checks — but NextResponse.rewrite returns early.
+          // So we handle auth here before rewriting.
+          // (Supabase client created below; duplicate logic for this case)
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+          if (supabaseUrl && supabaseAnonKey) {
+            let rewriteRes = NextResponse.next({ request: { headers: req.headers } });
+            const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+              cookies: {
+                getAll() { return req.cookies.getAll(); },
+                setAll(cookiesToSet) {
+                  cookiesToSet.forEach(({ name, value, options }) => {
+                    req.cookies.set(name, value);
+                    rewriteRes.cookies.set(name, value, options);
+                  });
+                },
+              },
+            });
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+              const loginUrl = req.nextUrl.clone();
+              loginUrl.pathname = "/login";
+              loginUrl.searchParams.set("redirectedFrom", pathname);
+              return secure(req, NextResponse.redirect(loginUrl));
+            }
+            // Session activity
+            const timeoutSeconds = getSessionInactivityTimeoutSeconds();
+            const now = Math.floor(Date.now() / 1000);
+            const rawLastActivity = req.cookies.get(SESSION_ACTIVITY_COOKIE)?.value;
+            const lastActivity = rawLastActivity ? Number.parseInt(rawLastActivity, 10) : NaN;
+            if (Number.isFinite(lastActivity) && now - lastActivity > timeoutSeconds) {
+              await supabase.auth.signOut();
+              const expiredRedirect = req.nextUrl.clone();
+              expiredRedirect.pathname = "/login";
+              expiredRedirect.searchParams.set("sessionExpired", "1");
+              const redirectRes = NextResponse.redirect(expiredRedirect);
+              redirectRes.cookies.delete(SESSION_ACTIVITY_COOKIE);
+              return secure(req, redirectRes);
+            }
+            // Do the rewrite, carry cookies
+            rewriteRes = NextResponse.rewrite(dest, { request: { headers: req.headers } });
+            rewriteRes.cookies.set(SESSION_ACTIVITY_COOKIE, String(now), {
+              httpOnly: true,
+              sameSite: "lax",
+              secure: true,
+              path: "/",
+              maxAge: timeoutSeconds,
+            });
+            return secure(req, rewriteRes);
+          }
+          return NextResponse.rewrite(dest);
+        }
       }
     }
   }
