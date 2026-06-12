@@ -1948,7 +1948,21 @@ export function JournalingPageClient({
     setLoading(true);
     try {
       const today = getTodayStr();
-      const aRes = await fetch("/api/journal/accounts");
+      const { from: todayCloseFrom, to: todayCloseTo } = localDayBoundsIso(today);
+      const sinceClose = localYearsAgoStartIso(3);
+
+      // Fire all independent fetches in parallel — don't wait for accounts before fetching other data
+      const [aRes, sRes, tTodayRes, strRes, clRes, rRes] = await Promise.all([
+        fetch("/api/journal/accounts"),
+        fetch(`/api/journal/sessions?date=${today}`),
+        fetch(
+          `/api/journal/trades?status=closed&close_from=${encodeURIComponent(todayCloseFrom)}&close_to=${encodeURIComponent(todayCloseTo)}&sort=close_time&pageSize=200`
+        ),
+        fetch("/api/journal/strategies"),
+        fetch("/api/journal/checklist"),
+        fetch("/api/journal/rules"),
+      ]);
+
       let accs: JournalAccountPublic[] = [];
       if (aRes.ok) {
         const j = await aRes.json();
@@ -1969,20 +1983,8 @@ export function JournalingPageClient({
         }
       }
 
-      await syncAllJournalMetaAccounts(accs);
-
-      const { from: todayCloseFrom, to: todayCloseTo } = localDayBoundsIso(today);
-      const sinceClose = localYearsAgoStartIso(3);
-
-      const [sRes, tTodayRes, strRes, clRes, rRes] = await Promise.all([
-        fetch(`/api/journal/sessions?date=${today}`),
-        fetch(
-          `/api/journal/trades?status=closed&close_from=${encodeURIComponent(todayCloseFrom)}&close_to=${encodeURIComponent(todayCloseTo)}&sort=close_time&pageSize=200`
-        ),
-        fetch("/api/journal/strategies"),
-        fetch("/api/journal/checklist"),
-        fetch("/api/journal/rules"),
-      ]);
+      // Fire MetaAPI sync in the background — don't block UI render on it
+      void syncAllJournalMetaAccounts(accs);
       if (sRes.ok) {
         const j = await sRes.json();
         if (j.session) {
@@ -2257,9 +2259,16 @@ export function JournalingPageClient({
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading skeleton */}
       {loading ? (
-        <p className="font-mono text-sm text-slate-500">Loading…</p>
+        <div className="space-y-4 animate-pulse">
+          <div className="h-28 rounded-2xl bg-slate-200/70" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[1,2,3,4].map(i => <div key={i} className="h-20 rounded-2xl bg-slate-200/70" />)}
+          </div>
+          <div className="h-40 rounded-2xl bg-slate-200/70" />
+          <div className="h-32 rounded-2xl bg-slate-200/70" />
+        </div>
       ) : (
         <AnimatePresence mode="wait">
           {tab === "today" ? (

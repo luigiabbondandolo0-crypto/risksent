@@ -14,9 +14,8 @@ export default function AiCoachPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [accountReloadToken, setAccountReloadToken] = useState(0);
 
+  // Fetch accounts immediately on mount — don't wait for subscription
   useEffect(() => {
-    if (!sub || sub.isDemoMode || !sub.canAccessAICoach) return;
-
     let cancelled = false;
     (async () => {
       try {
@@ -30,9 +29,23 @@ export default function AiCoachPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [sub?.isDemoMode, sub?.canAccessAICoach, accountReloadToken]);
+  }, [accountReloadToken]);
 
-  if (sub?.isDemoMode) {
+  // Still loading subscription or accounts
+  if (sub === null || accounts === null) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-24 rounded-2xl bg-slate-200/70" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="h-48 rounded-2xl bg-slate-200/70" />
+          <div className="h-48 rounded-2xl bg-slate-200/70" />
+        </div>
+        <div className="h-64 rounded-2xl bg-slate-200/70" />
+      </div>
+    );
+  }
+
+  if (sub.isDemoMode) {
     return (
       <div className="pointer-events-none select-none opacity-50 blur-[1.5px]">
         <AiCoachPageClient isMock />
@@ -40,20 +53,12 @@ export default function AiCoachPage() {
     );
   }
 
-  if (sub && !sub.canAccessAICoach) {
+  if (!sub.canAccessAICoach) {
     return (
       <PlanGateWall
         feature="AI Coach"
         description="Upgrade to the Experienced plan to get personalised trading psychology reports and chat with your data."
       />
-    );
-  }
-
-  if (accounts === null) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm font-[family-name:var(--font-mono)] text-slate-500">Loading…</p>
-      </div>
     );
   }
 
