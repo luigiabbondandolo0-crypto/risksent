@@ -156,7 +156,7 @@ export function AppHeaderBar({
     <div className="flex items-center gap-2">
       {isAdminArea && (
         <Link
-          href="/app/dashboard"
+          href="/dashboard"
           className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-[family-name:var(--font-mono)] text-slate-600 shadow-sm transition-colors hover:bg-slate-50 sm:flex"
         >
           Dashboard

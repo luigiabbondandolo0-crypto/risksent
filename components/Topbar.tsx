@@ -51,7 +51,7 @@ export function Topbar() {
     loadUserData();
   }, []);
 
-  const logoHref = inApp ? "/app/dashboard" : "/";
+  const logoHref = inApp ? "/dashboard" : "/";
 
   // App topbar — light glass; marketing topbar — dark glass
   const headerStyle = inApp

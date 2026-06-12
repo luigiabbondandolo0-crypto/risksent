@@ -30,7 +30,7 @@ export type NavItem = {
 };
 
 export const primaryNavItems: readonly NavItem[] = [
-  { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/app/journaling", label: "Journal", icon: BookOpen },
   { href: "/app/risk-manager", label: "Risk Manager", icon: ShieldAlert },
@@ -52,14 +52,14 @@ export const adminOnlySidebarItems: readonly NavItem[] = [
   { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
   { href: "/admin/system", label: "System", icon: Activity },
   { href: "/admin/announcements", label: "Announcements", icon: Bell },
-  { href: "/app/dashboard", label: "Back to app", icon: ArrowLeft },
+  { href: "/dashboard", label: "Back to app", icon: ArrowLeft },
 ] as const;
 
 /** Horizontal scroll nav on small screens (full app map). */
 export const mobileNavItems: readonly NavItem[] = [...primaryNavItems] as const;
 
 /** Routes that use the app shell (sidebar + padded main). */
-export const APP_SHELL_PREFIXES = ["/app", "/admin"] as const;
+export const APP_SHELL_PREFIXES = ["/app", "/admin", "/dashboard"] as const;
 
 export function isAppShellPath(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
@@ -70,7 +70,7 @@ export function isAppShellPath(pathname: string | null | undefined): boolean {
 
 export function isNavActive(pathname: string | null | undefined, href: string): boolean {
   if (!pathname) return false;
-  if (href === "/app/dashboard") return pathname === "/app/dashboard";
+  if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/app/dashboard";
   if (href === "/app/backtesting") {
     return pathname === "/app/backtesting" || pathname.startsWith("/app/backtesting/");
   }

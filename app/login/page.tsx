@@ -56,7 +56,7 @@ function LoginForm() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   const redirectTo = useMemo(
-    () => searchParams.get("redirectedFrom") ?? "/app/dashboard",
+    () => searchParams.get("redirectedFrom") ?? "/dashboard",
     [searchParams]
   );
   const sessionExpired = searchParams.get("sessionExpired") === "1";
@@ -132,7 +132,7 @@ function LoginForm() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => {
-                window.location.href = "/app/dashboard";
+                window.location.href = "/dashboard";
               }}
               className="w-full rounded-xl py-3 text-sm font-semibold text-white"
               style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}

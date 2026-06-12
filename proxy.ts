@@ -132,6 +132,13 @@ export async function proxy(req: NextRequest) {
         dest.pathname = "/login";
         return secure(req, NextResponse.redirect(dest));
       }
+
+      // On app subdomain: redirect /app/dashboard → /dashboard
+      if (isAppDomain && pathname === "/app/dashboard") {
+        const dest = req.nextUrl.clone();
+        dest.pathname = "/dashboard";
+        return NextResponse.redirect(dest, { status: 301 });
+      }
     }
   }
 
@@ -258,24 +265,24 @@ export async function proxy(req: NextRequest) {
 
       if (roleError && roleError.code !== "PGRST116") {
         const url = req.nextUrl.clone();
-        url.pathname = "/app/dashboard";
+        url.pathname = "/dashboard";
         return secure(req, NextResponse.redirect(url));
       }
 
       if (!appUser) {
         const url = req.nextUrl.clone();
-        url.pathname = "/app/dashboard";
+        url.pathname = "/dashboard";
         return secure(req, NextResponse.redirect(url));
       }
 
       if (appUser.role !== "admin") {
         const url = req.nextUrl.clone();
-        url.pathname = "/app/dashboard";
+        url.pathname = "/dashboard";
         return secure(req, NextResponse.redirect(url));
       }
     } catch {
       const url = req.nextUrl.clone();
-      url.pathname = "/app/dashboard";
+      url.pathname = "/dashboard";
       return secure(req, NextResponse.redirect(url));
     }
   }
@@ -298,7 +305,7 @@ export async function proxy(req: NextRequest) {
     }
 
     const url = req.nextUrl.clone();
-    url.pathname = "/app/dashboard";
+    url.pathname = "/dashboard";
     return secure(req, NextResponse.redirect(url));
   }
 

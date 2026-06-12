@@ -89,7 +89,7 @@ export function MarketingUserMenu({
               <p className="truncate text-xs font-mono text-slate-500">{email}</p>
             </div>
             <Link
-              href="/app/dashboard"
+              href="/dashboard"
               className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[0.04]"
               onClick={() => setOpen(false)}
             >

@@ -152,7 +152,7 @@ export function Sidebar({
   return (
     <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-r border-slate-200/80 bg-white px-4 py-7 lg:flex">
       <Link
-        href="/app/dashboard"
+        href="/dashboard"
         className="group mb-8 flex items-center justify-center px-1 py-2"
         aria-label="RiskSent dashboard"
       >
