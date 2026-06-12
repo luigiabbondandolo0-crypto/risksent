@@ -80,18 +80,18 @@ function AdminTestPanel() {
   };
 
   return (
-    <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+    <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2.5">
-          <FlaskConical className="h-4 w-4 text-amber-400" />
-          <span className="text-sm font-semibold text-slate-200 font-[family-name:var(--font-mono)]">
+          <FlaskConical className="h-4 w-4 text-amber-500" />
+          <span className="text-sm font-semibold text-slate-700 font-[family-name:var(--font-mono)]">
             Test Alerts
           </span>
-          <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
             admin
           </span>
         </div>
@@ -112,7 +112,7 @@ function AdminTestPanel() {
             transition={{ duration: 0.22, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-white/[0.06] px-5 pb-5 pt-4">
+            <div className="border-t border-slate-200 px-5 pb-5 pt-4">
               <p className="mb-4 text-xs text-slate-500 font-[family-name:var(--font-mono)]">
                 Fires an AI-generated Telegram alert for each type using sample data. Requires a saved chat ID.
               </p>
@@ -128,12 +128,12 @@ function AdminTestPanel() {
                         className={[
                           "w-full rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all font-[family-name:var(--font-mono)]",
                           state === "ok"
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                             : state === "error"
-                            ? "border-red-500/30 bg-red-500/10 text-red-300"
+                            ? "border-red-200 bg-red-50 text-red-700"
                             : state === "loading"
-                            ? "border-white/[0.06] bg-white/[0.03] text-slate-500 cursor-wait"
-                            : "border-white/[0.08] bg-white/[0.04] text-slate-300 hover:border-amber-400/30 hover:bg-amber-400/5 hover:text-amber-300",
+                            ? "border-slate-200 bg-slate-100 text-slate-500 cursor-wait"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700",
                         ].join(" ")}
                       >
                         {state === "loading"
@@ -143,7 +143,7 @@ function AdminTestPanel() {
                           : label}
                       </button>
                       {state === "error" && errors[alertType] && (
-                        <p className="mt-1 text-[10px] text-red-400 font-[family-name:var(--font-mono)] leading-tight">
+                        <p className="mt-1 text-[10px] text-red-600 font-[family-name:var(--font-mono)] leading-tight">
                           {errors[alertType]}
                         </p>
                       )}

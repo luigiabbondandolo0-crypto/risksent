@@ -65,10 +65,10 @@ type ProfileData = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
 
 const glassCard =
-  "relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl";
+  "relative overflow-hidden rounded-2xl border bg-white p-6";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -356,31 +356,22 @@ export default function ProfilePage() {
           {ini}
           <button
             type="button"
-            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.15] bg-[#0e0e12] text-slate-400 transition-colors hover:text-white"
+            className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-slate-900"
             title="Avatar upload coming soon"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
         </div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">
-          <span
-            style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            {profile.fullName || "Your profile"}
-          </span>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+          {profile.fullName || "Your profile"}
         </h1>
         <p className="mt-1 font-[family-name:var(--font-mono)] text-sm text-slate-500">{profile.email}</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           <span
             className={`rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wide ${
               profile.role === "admin"
-                ? "border-amber-500/40 bg-amber-500/15 text-amber-200"
-                : "border-white/[0.1] bg-white/[0.05] text-slate-400"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-slate-200 bg-slate-100 text-slate-500"
             }`}
           >
             {profile.role}
@@ -390,10 +381,10 @@ export default function ProfilePage() {
       </motion.header>
 
       {error && (
-        <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</p>
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
       )}
       {info && !error && (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
           {info}
         </p>
       )}
@@ -406,18 +397,16 @@ export default function ProfilePage() {
         onSubmit={handlePersonal}
         className={glassCard}
         style={{
-          background: "rgba(99,102,241,0.04)",
           borderColor: "rgba(99,102,241,0.2)",
-          boxShadow: "0 0 24px rgba(99,102,241,0.08)",
         }}
       >
         <div
-          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-10 blur-2xl"
           style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
         />
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Profile</p>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
           Personal info
         </h2>
         <div className="space-y-4">
@@ -437,7 +426,7 @@ export default function ProfilePage() {
               Email
             </label>
             <input id="email" type="email" value={profile.email} disabled className={`${inputClass} opacity-50`} />
-            <p className="mt-1 text-[10px] font-mono text-slate-600">Email cannot be changed</p>
+            <p className="mt-1 text-[10px] font-mono text-slate-500">Email cannot be changed</p>
           </div>
           <div>
             <label className="mb-1 block text-xs font-mono text-slate-500" htmlFor="phone">
@@ -483,18 +472,16 @@ export default function ProfilePage() {
         onSubmit={handleChangePassword}
         className={glassCard}
         style={{
-          background: "rgba(167,139,250,0.04)",
-          borderColor: "rgba(167,139,250,0.2)",
-          boxShadow: "0 0 24px rgba(167,139,250,0.08)",
+          borderColor: "rgba(167,139,250,0.25)",
         }}
       >
         <div
-          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-10 blur-2xl"
           style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
         />
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Account</p>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
           Security
         </h2>
         <div className="space-y-4">
@@ -521,10 +508,10 @@ export default function ProfilePage() {
               <p
                 className={`mt-1 text-[10px] font-mono ${
                   strength === "strong"
-                    ? "text-emerald-400"
+                    ? "text-emerald-700"
                     : strength === "fair"
-                      ? "text-amber-400"
-                      : "text-red-400"
+                      ? "text-amber-700"
+                      : "text-red-700"
                 }`}
               >
                 {strength === "strong" ? "Strong" : strength === "fair" ? "Fair" : "Weak"}
@@ -542,14 +529,14 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        {passwordError && <p className="mt-3 text-xs text-red-400">{passwordError}</p>}
-        {passwordInfo && <p className="mt-3 text-xs text-emerald-400">{passwordInfo}</p>}
+        {passwordError && <p className="mt-3 text-xs text-red-700">{passwordError}</p>}
+        {passwordInfo && <p className="mt-3 text-xs text-emerald-700">{passwordInfo}</p>}
         <motion.button
           type="submit"
           disabled={passwordLoading}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="mt-6 w-full rounded-xl border border-white/[0.12] bg-white/[0.04] py-3 text-sm font-semibold text-white hover:bg-white/[0.07] disabled:opacity-50"
+          className="mt-6 w-full rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-50"
         >
           {passwordLoading ? "Updating…" : "Update password"}
         </motion.button>
@@ -564,18 +551,16 @@ export default function ProfilePage() {
         onSubmit={handlePrefs}
         className={glassCard}
         style={{
-          background: "rgba(56,189,248,0.04)",
-          borderColor: "rgba(56,189,248,0.2)",
-          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+          borderColor: "rgba(56,189,248,0.25)",
         }}
       >
         <div
-          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-10 blur-2xl"
           style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
         />
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Display</p>
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
           Preferences
         </h2>
         <div className="space-y-4">
@@ -632,19 +617,17 @@ export default function ProfilePage() {
         animate="show"
         className={glassCard}
         style={{
-          background: "rgba(56,189,248,0.04)",
-          borderColor: "rgba(56,189,248,0.2)",
-          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+          borderColor: "rgba(56,189,248,0.25)",
         }}
       >
         <div
-          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-10 blur-2xl"
           style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
         />
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Brokers</p>
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
             Connected accounts
           </h2>
           <motion.button
@@ -652,7 +635,7 @@ export default function ProfilePage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setAddOpen(true)}
-            className="inline-flex items-center gap-1 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-1.5 text-xs font-mono text-indigo-300"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-mono text-indigo-600"
           >
             <Plus className="h-3.5 w-3.5" />
             Add account
@@ -665,18 +648,18 @@ export default function ProfilePage() {
             journalAccounts.map((a) => (
               <li
                 key={a.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-100">{a.nickname}</p>
+                  <p className="truncate font-medium text-slate-800">{a.nickname}</p>
                   <p className="truncate text-xs font-mono text-slate-500">{a.broker_server}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="rounded border border-white/[0.1] px-1.5 py-0.5 text-[10px] font-mono uppercase text-slate-400">
+                    <span className="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-mono uppercase text-slate-500">
                       {a.platform}
                     </span>
                     <span
                       className={`h-2 w-2 rounded-full ${
-                        a.status === "active" ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "bg-slate-500"
+                        a.status === "active" ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "bg-slate-400"
                       }`}
                     />
                   </div>
@@ -685,7 +668,7 @@ export default function ProfilePage() {
                   type="button"
                   disabled={deleteBusy}
                   onClick={() => void removeJournalAccount(a.id)}
-                  className="shrink-0 rounded-lg border border-red-500/30 p-2 text-red-400 hover:bg-red-500/10"
+                  className="shrink-0 rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
                   aria-label="Remove account"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -704,14 +687,12 @@ export default function ProfilePage() {
         animate="show"
         className={glassCard}
         style={{
-          background: "rgba(99,102,241,0.03)",
-          borderColor: "rgba(99,102,241,0.15)",
-          boxShadow: "0 0 20px rgba(99,102,241,0.06)",
+          borderColor: "rgba(99,102,241,0.2)",
         }}
       >
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Privacy &amp; Data</p>
-        <h2 className="mb-2 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-200">
+        <h2 className="mb-2 font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
           Download your data
         </h2>
         <p className="mb-4 text-xs font-mono text-slate-500">
@@ -738,7 +719,7 @@ export default function ProfilePage() {
               setExportLoading(false);
             }
           }}
-          className="rounded-xl border border-[#6366f1]/30 px-4 py-2 text-sm font-medium text-indigo-300 hover:bg-[#6366f1]/10 disabled:opacity-50 transition-colors"
+          className="rounded-xl border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
         >
           {exportLoading ? "Preparing…" : "Download my data"}
         </button>
@@ -752,18 +733,16 @@ export default function ProfilePage() {
         animate="show"
         className={glassCard}
         style={{
-          background: "rgba(248,113,113,0.04)",
-          borderColor: "rgba(248,113,113,0.2)",
-          boxShadow: "0 0 24px rgba(248,113,113,0.08)",
+          borderColor: "rgba(248,113,113,0.3)",
         }}
       >
         <div
-          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl"
+          className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-10 blur-2xl"
           style={{ background: "radial-gradient(circle, #f87171, transparent)" }}
         />
         <div className="relative z-10">
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Irreversible</p>
-        <h2 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg font-semibold text-red-400">
+        <h2 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg font-semibold text-red-700">
           <AlertTriangle className="h-5 w-5" />
           Danger zone
         </h2>
@@ -778,15 +757,15 @@ export default function ProfilePage() {
             setDeleteAccountError(null);
             setDeleteOpen(true);
           }}
-          className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
+          className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
         >
           Delete account
         </button>
         </div>
       </motion.section>
 
-      <p className="text-center text-xs font-mono text-slate-600">
-        <Link href="/app/dashboard" className="text-slate-400 hover:text-white">
+      <p className="text-center text-xs font-mono text-slate-500">
+        <Link href="/dashboard" className="text-slate-500 hover:text-slate-900">
           ← Back to dashboard
         </Link>
       </p>
@@ -801,16 +780,16 @@ export default function ProfilePage() {
       />
 
       {deleteOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md rounded-2xl border border-white/[0.1] bg-[#0c0c0e] p-6"
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
           >
-            <p className="text-sm font-semibold text-red-300">Delete your RiskSent account?</p>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="text-sm font-semibold text-red-700">Delete your RiskSent account?</p>
+            <p className="mt-2 text-sm text-slate-600">
               This cannot be undone. Type{" "}
-              <span className="font-mono text-slate-200">{ACCOUNT_DELETE_CONFIRM_PHRASE}</span> below to confirm.
+              <span className="font-mono text-slate-800">{ACCOUNT_DELETE_CONFIRM_PHRASE}</span> below to confirm.
             </p>
             <input
               type="text"
@@ -818,10 +797,10 @@ export default function ProfilePage() {
               onChange={(e) => setDeletePhrase(e.target.value)}
               autoComplete="off"
               placeholder={ACCOUNT_DELETE_CONFIRM_PHRASE}
-              className="mt-4 w-full rounded-xl border border-white/[0.12] bg-[#0e0e12] px-3 py-2.5 font-mono text-sm text-slate-100 outline-none focus:border-red-500/40"
+              className="mt-4 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 outline-none focus:border-red-400"
             />
             {deleteAccountError ? (
-              <p className="mt-2 text-xs text-red-400" role="alert">
+              <p className="mt-2 text-xs text-red-700" role="alert">
                 {deleteAccountError}
               </p>
             ) : null}
@@ -844,7 +823,7 @@ export default function ProfilePage() {
                   setDeletePhrase("");
                   setDeleteAccountError(null);
                 }}
-                className="rounded-xl bg-white/[0.08] py-2.5 text-sm text-white hover:bg-white/[0.12]"
+                className="rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
               >
                 Cancel
               </button>

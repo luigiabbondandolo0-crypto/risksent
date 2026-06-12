@@ -680,7 +680,7 @@ export function RiskManagerPageClient({
   const revDisplay = `${live.consecutiveLossesAtEnd}`;
 
   return (
-    <div className="relative min-h-0 text-slate-100">
+    <div className="relative min-h-0 text-slate-800">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
           className="absolute -top-40 left-1/4 h-96 w-96 rounded-full opacity-[0.06] blur-3xl"
@@ -702,10 +702,11 @@ export function RiskManagerPageClient({
             animate={{ opacity: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, y: -12, x: 10 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="fixed right-6 top-20 z-[100] max-w-sm rounded-xl border border-white/[0.1] px-4 py-3 text-sm font-[family-name:var(--font-mono)] shadow-xl backdrop-blur-md"
+            className="fixed right-6 top-20 z-[100] max-w-sm rounded-xl border px-4 py-3 text-sm font-[family-name:var(--font-mono)] shadow-xl"
             style={{
-              background: toast.ok ? "rgba(0,230,118,0.12)" : "rgba(255,60,60,0.12)",
-              color: toast.ok ? "#b9f6ca" : "#ffcdd2"
+              background: toast.ok ? "#f0fdf4" : "#fef2f2",
+              color: toast.ok ? "#166534" : "#991b1b",
+              borderColor: toast.ok ? "#bbf7d0" : "#fecaca"
             }}
           >
             {toast.text}
@@ -714,7 +715,7 @@ export function RiskManagerPageClient({
       </AnimatePresence>
 
       {previewChrome && (
-        <div className="mb-6 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-2 text-center text-sm font-[family-name:var(--font-mono)] text-amber-200">
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-[family-name:var(--font-mono)] text-amber-700">
           Demo mode — sample data, no account changes.
         </div>
       )}
@@ -724,7 +725,7 @@ export function RiskManagerPageClient({
           <h1
             className="rs-page-title font-[family-name:var(--font-display)]"
             style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -732,7 +733,7 @@ export function RiskManagerPageClient({
           >
             Risk Manager
           </h1>
-          <p className="rs-page-sub">Set your rules. Monitor your limits. Stay protected.</p>
+          <p className="rs-page-sub text-slate-600">Set your rules. Monitor your limits. Stay protected.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {!previewChrome && journalAccounts.length > 0 && (
@@ -787,7 +788,6 @@ export function RiskManagerPageClient({
         initial="hidden"
         animate="show"
         className="rs-card-accent relative z-0 mb-8 overflow-hidden p-6 sm:p-8"
-        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)" }}
       >
         <div
           className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl"
@@ -797,7 +797,7 @@ export function RiskManagerPageClient({
           <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Rule limits</p>
           <p className="rs-kpi-label mb-1">Your rules</p>
           {!previewChrome && rulesScopeLabel ? (
-            <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-cyan-300/90">
+            <p className="mb-4 text-xs font-[family-name:var(--font-mono)] text-cyan-700">
               {rulesScopeLabel}
             </p>
           ) : (
@@ -853,9 +853,7 @@ export function RiskManagerPageClient({
         animate="show"
         className="rs-card relative mb-8 overflow-hidden p-6 sm:p-8"
         style={{
-          background: "rgba(56,189,248,0.04)",
-          borderColor: "rgba(56,189,248,0.2)",
-          boxShadow: "0 0 24px rgba(56,189,248,0.08)",
+          borderColor: "rgba(56,189,248,0.3)",
         }}
       >
         <div
@@ -867,7 +865,7 @@ export function RiskManagerPageClient({
         </p>
         <div className="relative z-10 mb-6 flex items-center gap-2">
           <Activity className="h-5 w-5 text-[#6366f1]" />
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Live monitor</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-slate-900">Live monitor</h2>
         </div>
         <p className="relative z-10 rs-page-sub mb-6 !mt-0 text-xs">
           Compared to your rule limits · refreshes every 30s from dashboard stats.
@@ -920,9 +918,7 @@ export function RiskManagerPageClient({
         animate="show"
         className="rs-card relative mb-8 scroll-mt-28 overflow-hidden p-6 sm:p-8"
         style={{
-          background: "rgba(248,113,113,0.04)",
-          borderColor: "rgba(248,113,113,0.2)",
-          boxShadow: "0 0 24px rgba(248,113,113,0.08)",
+          borderColor: "rgba(248,113,113,0.25)",
         }}
       >
         <div
@@ -933,10 +929,10 @@ export function RiskManagerPageClient({
         <div className="relative z-10 mb-6 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-[#ff3c3c]" />
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-white">Violation history</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-slate-900">Violation history</h2>
           </div>
           {violations.length > 0 ? (
-            <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-400">
+            <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-500">
               {violations.length} total
             </span>
           ) : null}
@@ -944,7 +940,7 @@ export function RiskManagerPageClient({
             type="button"
             onClick={() => void clearViolations()}
             disabled={clearingViolations || violations.length === 0}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-slate-300 transition hover:border-[#ff3c3c]/40 hover:bg-[#ff3c3c]/10 hover:text-[#ff7070] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03] disabled:hover:text-slate-300"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-[family-name:var(--font-mono)] font-medium text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-white disabled:hover:text-slate-600"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {clearingViolations ? "Clearing…" : "Clear all"}
@@ -953,7 +949,7 @@ export function RiskManagerPageClient({
         <div className="relative z-10">
         <ViolationTimeline violations={pagedViolations} />
         {totalViolationPages > 1 ? (
-          <div className="mt-6 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-4">
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
             <span className="text-[11px] font-[family-name:var(--font-mono)] text-slate-500">
               Page {currentViolationPage} of {totalViolationPages}
             </span>
@@ -962,7 +958,7 @@ export function RiskManagerPageClient({
                 type="button"
                 onClick={() => setViolationPage((p) => Math.max(1, p - 1))}
                 disabled={currentViolationPage <= 1}
-                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03]"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-white"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -980,7 +976,7 @@ export function RiskManagerPageClient({
                     className={
                       isActive
                         ? "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md px-2 text-xs font-[family-name:var(--font-mono)] font-semibold text-white"
-                        : "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-white/[0.08] bg-white/[0.03] px-2 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06]"
+                        : "inline-flex h-7 min-w-[28px] items-center justify-center rounded-md border border-slate-200 bg-white px-2 text-xs font-[family-name:var(--font-mono)] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                     }
                     style={
                       isActive
@@ -1002,7 +998,7 @@ export function RiskManagerPageClient({
                   setViolationPage((p) => Math.min(totalViolationPages, p + 1))
                 }
                 disabled={currentViolationPage >= totalViolationPages}
-                className="inline-flex items-center gap-1 rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-300 transition hover:border-white/[0.16] hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/[0.08] disabled:hover:bg-white/[0.03]"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-[family-name:var(--font-mono)] text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-white"
                 aria-label="Next page"
               >
                 Next
@@ -1021,9 +1017,7 @@ export function RiskManagerPageClient({
         animate="show"
         className="rs-card relative overflow-hidden p-6 sm:p-8"
         style={{
-          background: "rgba(167,139,250,0.04)",
-          borderColor: "rgba(167,139,250,0.2)",
-          boxShadow: "0 0 24px rgba(167,139,250,0.08)",
+          borderColor: "rgba(167,139,250,0.3)",
         }}
       >
         <div
@@ -1031,7 +1025,7 @@ export function RiskManagerPageClient({
           style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }}
         />
         <p className="relative z-10 mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">Notifications</p>
-        <h2 className="relative z-10 mb-6 font-[family-name:var(--font-display)] text-lg font-bold text-white">Telegram alerts</h2>
+        <h2 className="relative z-10 mb-6 font-[family-name:var(--font-display)] text-lg font-bold text-slate-900">Telegram alerts</h2>
         <div className="relative z-10">
         <TelegramSetup
           settings={tg}

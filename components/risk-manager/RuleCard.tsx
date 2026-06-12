@@ -32,7 +32,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
       layout
       whileHover={{ scale: 1.015 }}
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
+      className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5"
       style={{
         boxShadow: `0 0 0 1px ${borderFor[status]}, 0 0 24px ${status === "danger" ? "rgba(248,113,113,0.09)" : status === "watch" ? "rgba(245,158,11,0.09)" : "rgba(74,222,128,0.09)"}, 0 8px 32px -12px rgba(0,0,0,0.55)`,
         transition: "box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1)"
@@ -44,13 +44,13 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
       />
       <div className="relative z-10 flex items-start gap-3">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-black/30"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50"
           style={{ color: blobFor[status] }}
         >
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-slate-100">
+          <p className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-slate-900">
             {label}
           </p>
           <p className="mt-1 text-xs leading-relaxed font-[family-name:var(--font-mono)] text-slate-500">

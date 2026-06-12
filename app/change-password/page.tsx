@@ -9,7 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 
 export default function ChangePasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#080809]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
       <ChangePasswordForm />
     </Suspense>
   );
@@ -28,7 +28,7 @@ function passwordStrength(pw: string): "weak" | "fair" | "strong" {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-[#6366f1] font-[family-name:var(--font-mono)]";
 
 function ChangePasswordForm() {
   const router = useRouter();
@@ -107,14 +107,14 @@ function ChangePasswordForm() {
 
   if (checkingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#080809]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
         <p className="font-mono text-sm text-slate-500">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#080809] px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 py-12">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,13 +124,13 @@ function ChangePasswordForm() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/">
-            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-white">
+            <p className="font-[family-name:var(--font-display)] text-2xl font-black text-slate-900">
               RiskSent
             </p>
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 backdrop-blur-xl">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
           {done ? (
             <motion.div
@@ -145,16 +145,16 @@ function ChangePasswordForm() {
               >
                 <CheckCircle className="h-14 w-14 text-[#00e676]" />
               </motion.div>
-              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
                 Password updated
               </h1>
-              <p className="font-[family-name:var(--font-mono)] text-sm text-slate-400">
+              <p className="font-[family-name:var(--font-mono)] text-sm text-slate-500">
                 Redirecting to dashboard…
               </p>
             </motion.div>
           ) : (
             <>
-              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
                 Change password
               </h1>
               <p className="mt-2 font-[family-name:var(--font-mono)] text-sm text-slate-500">
@@ -243,7 +243,7 @@ function ChangePasswordForm() {
                 </div>
 
                 {error && (
-                  <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                     {error}
                   </p>
                 )}
@@ -261,10 +261,10 @@ function ChangePasswordForm() {
               </form>
 
               <div className="mt-6 flex items-center justify-between text-xs font-mono text-slate-500">
-                <Link href="/app/dashboard" className="hover:text-white transition-colors">
+                <Link href="/app/dashboard" className="hover:text-slate-900 transition-colors">
                   ← Back to dashboard
                 </Link>
-                <Link href="/profile" className="hover:text-white transition-colors">
+                <Link href="/profile" className="hover:text-slate-900 transition-colors">
                   Profile settings
                 </Link>
               </div>

@@ -40,11 +40,11 @@ function ToggleRow({
       type="button"
       disabled={disabled}
       onClick={onToggle}
-      className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 text-left transition hover:bg-white/[0.04] disabled:opacity-50"
+      className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:bg-slate-50 disabled:opacity-50"
     >
-      <span className="text-sm text-slate-200">{label}</span>
+      <span className="text-sm text-slate-700">{label}</span>
       <motion.div
-        className="relative h-7 w-12 shrink-0 rounded-full border border-white/[0.1]"
+        className="relative h-7 w-12 shrink-0 rounded-full border border-slate-200"
         style={{ background: on ? "rgba(0,230,118,0.2)" : "rgba(255,255,255,0.06)" }}
         whileTap={{ scale: 0.92 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -74,8 +74,8 @@ export function TelegramSetup({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-white/[0.06] bg-black/25 p-4">
-        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-300">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
           <li>Open Telegram</li>
           <li>
             Search for{" "}
@@ -83,13 +83,13 @@ export function TelegramSetup({
               href="https://t.me/RiskSentConnectBot"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-[family-name:var(--font-mono)] text-cyan-300 underline decoration-cyan-300/40 underline-offset-2 hover:text-cyan-200"
+              className="font-[family-name:var(--font-mono)] text-cyan-700 underline decoration-cyan-300/40 underline-offset-2 hover:text-cyan-800"
             >
               @RiskSentConnectBot
             </a>
           </li>
           <li>
-            Press <span className="font-[family-name:var(--font-mono)] text-slate-200">Start</span>
+            Press <span className="font-[family-name:var(--font-mono)] text-slate-800">Start</span>
           </li>
           <li>Copy the Chat ID it sends you</li>
           <li>Paste it below</li>

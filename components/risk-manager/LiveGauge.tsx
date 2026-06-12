@@ -70,7 +70,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-5 backdrop-blur-xl"
+      className="relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-white px-4 py-5"
       style={
         status === "danger"
           ? {
@@ -95,7 +95,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
-            stroke="#1e1e1e"
+            stroke="#e2e8f0"
             strokeWidth="10"
             strokeLinecap="round"
           />
@@ -119,7 +119,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
           />
         </svg>
         {over > 0 && (
-          <span className="absolute right-1 top-0 rounded-md border border-red-500/40 bg-red-500/15 px-1.5 py-0.5 text-[9px] font-[family-name:var(--font-mono)] text-red-300">
+          <span className="absolute right-1 top-0 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-[family-name:var(--font-mono)] text-red-700">
             +{(over * 100).toFixed(0)}%
           </span>
         )}
@@ -149,7 +149,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
         {labelStatus}
       </motion.span>
 
-      <div className="relative z-10 mt-1 h-1 w-full max-w-[160px] overflow-hidden rounded-full bg-[#1e1e1e]">
+      <div className="relative z-10 mt-1 h-1 w-full max-w-[160px] overflow-hidden rounded-full bg-slate-200">
         <motion.div
           initial={{ width: 0 }}
           animate={isInView ? { width: `${Math.min(100, ratio * 100)}%` } : {}}

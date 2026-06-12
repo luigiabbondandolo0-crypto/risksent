@@ -70,8 +70,8 @@ function SelectCard({
       whileTap={{ scale: 0.98 }}
       className="relative w-full rounded-2xl border p-4 text-left transition-all duration-200"
       style={{
-        background: selected ? "rgba(255,60,60,0.06)" : "rgba(255,255,255,0.02)",
-        borderColor: selected ? "rgba(255,60,60,0.5)" : "rgba(255,255,255,0.07)",
+        background: selected ? "rgba(255,60,60,0.06)" : "#ffffff",
+        borderColor: selected ? "rgba(255,60,60,0.5)" : "#e2e8f0",
         boxShadow: selected ? "0 0 20px rgba(255,60,60,0.08)" : undefined,
       }}
     >
@@ -91,7 +91,7 @@ function SelectCard({
 function StepLabel({ label, description }: { label: string; description: string }) {
   return (
     <div>
-      <p className="font-bold text-white" style={{ fontFamily: "'Syne', sans-serif", fontSize: 15 }}>
+      <p className="font-bold text-slate-900" style={{ fontFamily: "'Syne', sans-serif", fontSize: 15 }}>
         {label}
       </p>
       <p className="mt-0.5 text-xs text-slate-500">{description}</p>
@@ -112,7 +112,7 @@ function Input({
       )}
       <input
         {...props}
-        className="w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-700 focus:border-[#ff3c3c]/40 focus:ring-2 focus:ring-[#ff3c3c]/12"
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#ff3c3c]/60 focus:ring-2 focus:ring-[#ff3c3c]/20"
         style={{ fontFamily: "'JetBrains Mono', monospace" }}
       />
     </div>
@@ -142,7 +142,7 @@ function Slider({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-300">{label}</span>
+        <span className="text-sm font-medium text-slate-700">{label}</span>
         <span
           className="font-mono text-sm font-bold"
           style={{ color: "#ff3c3c" }}
@@ -150,7 +150,7 @@ function Slider({
           {display}
         </span>
       </div>
-      <div className="relative h-2 rounded-full bg-white/[0.06]">
+      <div className="relative h-2 rounded-full bg-slate-200">
         <div
           className="absolute left-0 top-0 h-full rounded-full transition-all duration-150"
           style={{ width: `${pct}%`, background: "linear-gradient(90deg, #ff3c3c, #ff8c00)" }}
@@ -165,7 +165,7 @@ function Slider({
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </div>
-      <div className="flex justify-between text-[10px] font-mono text-slate-600">
+      <div className="flex justify-between text-[10px] font-mono text-slate-500">
         <span>{min}%</span>
         <span>{max}%</span>
       </div>
@@ -192,7 +192,7 @@ function Step1({
     <div className="space-y-6">
       <div>
         <h1
-          className="text-3xl font-black tracking-tight text-white"
+          className="text-3xl font-black tracking-tight text-slate-900"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
           Welcome to RiskSent.
@@ -251,7 +251,7 @@ function Step2({
     <div className="space-y-6">
       <div>
         <h1
-          className="text-3xl font-black tracking-tight text-white"
+          className="text-3xl font-black tracking-tight text-slate-900"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
           What&apos;s your main goal?
@@ -313,7 +313,7 @@ function Step3({
         </motion.div>
         <div>
           <h2
-            className="text-2xl font-black text-white"
+            className="text-2xl font-black text-slate-900"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             Account saved!
@@ -330,7 +330,7 @@ function Step3({
     <div className="space-y-5">
       <div>
         <h1
-          className="text-3xl font-black tracking-tight text-white"
+          className="text-3xl font-black tracking-tight text-slate-900"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
           Connect your broker
@@ -358,9 +358,9 @@ function Step3({
                 onClick={() => setState({ broker_platform: p })}
                 className="flex-1 rounded-xl border py-2.5 text-sm font-mono font-semibold transition-all"
                 style={{
-                  borderColor: state.broker_platform === p ? "rgba(255,60,60,0.5)" : "rgba(255,255,255,0.07)",
-                  background: state.broker_platform === p ? "rgba(255,60,60,0.08)" : "rgba(255,255,255,0.02)",
-                  color: state.broker_platform === p ? "#fff" : "#64748b",
+                  borderColor: state.broker_platform === p ? "rgba(255,60,60,0.5)" : "#e2e8f0",
+                  background: state.broker_platform === p ? "rgba(255,60,60,0.08)" : "#ffffff",
+                  color: state.broker_platform === p ? "#1e293b" : "#64748b",
                 }}
               >
                 {p}
@@ -405,7 +405,7 @@ function Step3({
       <button
         type="button"
         onClick={onSkip}
-        className="w-full text-center text-sm text-slate-600 transition hover:text-slate-400"
+        className="w-full text-center text-sm text-slate-500 transition hover:text-slate-800"
       >
         Skip for now →
       </button>
@@ -426,7 +426,7 @@ function Step4({
     <div className="space-y-6">
       <div>
         <h1
-          className="text-3xl font-black tracking-tight text-white"
+          className="text-3xl font-black tracking-tight text-slate-900"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
           Set your risk limits
@@ -438,7 +438,7 @@ function Step4({
 
       <div
         className="rounded-2xl border p-5 space-y-6"
-        style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+        style={{ background: "#ffffff", borderColor: "#e2e8f0" }}
       >
         <Slider
           label="Daily max drawdown"
@@ -448,7 +448,7 @@ function Step4({
           step={0.5}
           onChange={(v) => setState({ daily_dd_limit: v })}
         />
-        <div className="h-px bg-white/[0.05]" />
+        <div className="h-px bg-slate-200" />
         <Slider
           label="Total max drawdown"
           value={state.total_dd_limit}
@@ -471,7 +471,7 @@ function Step4({
       <button
         type="button"
         onClick={onSkip}
-        className="w-full text-center text-sm text-slate-600 transition hover:text-slate-400"
+        className="w-full text-center text-sm text-slate-500 transition hover:text-slate-800"
       >
         Skip for now →
       </button>
@@ -509,7 +509,7 @@ function Step5({ name }: { name: string }) {
 
       <div>
         <h1
-          className="text-3xl font-black tracking-tight text-white"
+          className="text-3xl font-black tracking-tight text-slate-900"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
           You&apos;re all set{name ? `, ${name.split(" ")[0]}` : ""}! 🎉
@@ -525,10 +525,10 @@ function Step5({ name }: { name: string }) {
             key={href}
             href={href}
             className="flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all hover:scale-[1.03]"
-            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+            style={{ background: "#ffffff", borderColor: "#e2e8f0" }}
           >
             <Icon className="h-6 w-6" style={{ color }} />
-            <span className="text-center text-[11px] font-mono text-slate-400 leading-tight">
+            <span className="text-center text-[11px] font-mono text-slate-600 leading-tight">
               {label}
             </span>
           </Link>
@@ -565,7 +565,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
           animate={{
             background: i < step
               ? "linear-gradient(90deg, #ff3c3c, #ff8c00)"
-              : "rgba(255,255,255,0.08)",
+              : "#e2e8f0",
           }}
           transition={{ duration: 0.3 }}
         />
@@ -705,13 +705,13 @@ export default function OnboardingPage() {
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center px-4 py-12"
-      style={{ background: "#080809" }}
+      style={{ background: "#F8FAFC" }}
     >
       <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="mb-8 text-center">
           <span
-            className="text-xl font-extrabold tracking-tight text-white"
+            className="text-xl font-extrabold tracking-tight text-slate-900"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             RiskSent
@@ -720,13 +720,13 @@ export default function OnboardingPage() {
 
         {/* Progress bar */}
         <div className="mb-8">
-          <div className="mb-2 flex justify-between text-[10px] font-mono text-slate-600">
+          <div className="mb-2 flex justify-between text-[10px] font-mono text-slate-500">
             <span>Step {step} of 5</span>
             {(step === 3 || step === 4) && (
               <button
                 type="button"
                 onClick={() => void skipStep()}
-                className="text-slate-600 transition hover:text-slate-400"
+                className="text-slate-500 transition hover:text-slate-700"
               >
                 Skip →
               </button>
@@ -738,7 +738,7 @@ export default function OnboardingPage() {
         {/* Step card */}
         <div
           className="relative overflow-hidden rounded-3xl border p-7 sm:p-8"
-          style={{ background: "rgba(255,255,255,0.015)", borderColor: "rgba(255,255,255,0.07)" }}
+          style={{ background: "#ffffff", borderColor: "#e2e8f0" }}
         >
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
@@ -766,7 +766,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={goBack}
-                className="flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300"
+                className="flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-800"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Back

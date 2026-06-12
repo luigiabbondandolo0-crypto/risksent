@@ -58,31 +58,31 @@ export default function AddAccountPage() {
     <div className="mt-4 max-w-xl space-y-4">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-50">Add trading account</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className="text-xl font-semibold text-slate-900">Add trading account</h1>
+          <p className="mt-1 text-sm text-slate-600">
             Enter your MetaTrader credentials. We create the connection on{" "}
             <a
               href="https://metaapi.cloud"
               target="_blank"
               rel="noreferrer"
-              className="text-sky-400 hover:text-sky-300"
+              className="text-sky-600 hover:text-sky-700"
             >
               MetaApi.cloud
             </a>{" "}
             and start tracking. Use the exact server name from your broker (as in MetaTrader).
           </p>
         </div>
-        <Link href="/app/dashboard" className="shrink-0 text-xs text-slate-400 hover:text-slate-200">
+        <Link href="/app/dashboard" className="shrink-0 text-xs text-slate-500 hover:text-slate-800">
           Back to dashboard
         </Link>
       </header>
 
       <form
         onSubmit={onSubmit}
-        className="rounded-xl border border-slate-800 bg-surface p-6 space-y-4 text-sm text-slate-300"
+        className="rounded-xl border border-slate-200 bg-white p-6 space-y-4 text-sm text-slate-700"
       >
         <div>
-          <label htmlFor="acc-name" className="block text-slate-200 font-medium mb-1">
+          <label htmlFor="acc-name" className="block text-slate-700 font-medium mb-1">
             Account name
           </label>
           <input
@@ -92,20 +92,20 @@ export default function AddAccountPage() {
             placeholder="My live account"
             value={accountName}
             onChange={(e) => setAccountName(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="platform" className="block text-slate-200 font-medium mb-1">
+          <label htmlFor="platform" className="block text-slate-700 font-medium mb-1">
             Platform
           </label>
           <select
             id="platform"
             value={platform}
             onChange={(e) => setPlatform(e.target.value as "MT5" | "MT4")}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
           >
             <option value="MT5">MetaTrader 5</option>
             <option value="MT4">MetaTrader 4</option>
@@ -113,7 +113,7 @@ export default function AddAccountPage() {
         </div>
 
         <div>
-          <label htmlFor="server" className="block text-slate-200 font-medium mb-1">
+          <label htmlFor="server" className="block text-slate-700 font-medium mb-1">
             Broker server
           </label>
           <input
@@ -123,13 +123,13 @@ export default function AddAccountPage() {
             placeholder="e.g. ICMarketsSC-Demo"
             value={server}
             onChange={(e) => setServer(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="login" className="block text-slate-200 font-medium mb-1">
+          <label htmlFor="login" className="block text-slate-700 font-medium mb-1">
             Account number
           </label>
           <input
@@ -140,13 +140,13 @@ export default function AddAccountPage() {
             placeholder="Login / account number"
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="pwd" className="block text-slate-200 font-medium mb-1">
+          <label htmlFor="pwd" className="block text-slate-700 font-medium mb-1">
             Password
           </label>
           <input
@@ -156,7 +156,7 @@ export default function AddAccountPage() {
             placeholder="Trading password (or investor password for read-only)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
             required
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -165,7 +165,7 @@ export default function AddAccountPage() {
         </div>
 
         {message ? (
-          <p className={message.type === "ok" ? "text-emerald-400" : "text-red-400"}>{message.text}</p>
+          <p className={message.type === "ok" ? "text-emerald-700" : "text-red-700"}>{message.text}</p>
         ) : null}
 
         <button
@@ -177,17 +177,17 @@ export default function AddAccountPage() {
         </button>
       </form>
 
-      <div className="rounded-xl border border-slate-800 bg-surface/50 p-4 text-xs text-slate-500 leading-relaxed space-y-2">
-        <p className="text-slate-400 font-medium">Tips</p>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 leading-relaxed space-y-2">
+        <p className="text-slate-700 font-medium">Tips</p>
         <ul className="list-disc pl-4 space-y-1">
           <li>
             Server name must match MetaTrader (copy from login dialog). Wrong server returns a MetaApi error with
             suggestions.
           </li>
           <li>
-            Set <code className="text-slate-400">METAAPI_TOKEN</code>, provisioning URL, and client API URL for your
+            Set <code className="text-slate-600">METAAPI_TOKEN</code>, provisioning URL, and client API URL for your
             region on{" "}
-            <a href="https://app.metaapi.cloud/token" className="text-sky-500 hover:underline" target="_blank" rel="noreferrer">
+            <a href="https://app.metaapi.cloud/token" className="text-sky-600 hover:underline" target="_blank" rel="noreferrer">
               app.metaapi.cloud/token
             </a>
             .

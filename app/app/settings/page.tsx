@@ -19,15 +19,7 @@ export default function AppSettingsPage() {
       </div>
       <div>
         <p className="mb-2 text-[11px] font-mono uppercase tracking-[0.12em] text-slate-500">App</p>
-        <h1
-          className="font-[family-name:var(--font-display)] text-2xl font-bold"
-          style={{
-            background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
           Settings
         </h1>
         <p className="mt-1 text-sm font-[family-name:var(--font-mono)] text-slate-500">
@@ -35,7 +27,7 @@ export default function AppSettingsPage() {
         </p>
       </div>
       <div
-        className="relative overflow-hidden space-y-3 rounded-2xl border p-5 backdrop-blur-xl"
+        className="relative overflow-hidden space-y-3 rounded-2xl border p-5"
         style={{
           background: "rgba(99,102,241,0.04)",
           borderColor: "rgba(99,102,241,0.2)",
@@ -49,13 +41,13 @@ export default function AppSettingsPage() {
         <div className="relative z-10 space-y-3">
           <Link
             href="/profile"
-            className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#6366f1]/40 hover:text-white"
+            className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:border-[#6366f1]/40 hover:text-slate-900"
           >
             Profile & preferences →
           </Link>
           <Link
-            href="/app/journaling/settings"
-            className="block rounded-xl border border-white/[0.08] bg-black/20 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-[#6366f1]/40 hover:text-white"
+            href="/journaling/settings"
+            className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:border-[#6366f1]/40 hover:text-slate-900"
           >
             Journal settings →
           </Link>
