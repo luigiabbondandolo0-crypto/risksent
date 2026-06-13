@@ -95,7 +95,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
                     {v.account_nickname}
                   </span>
                 ) : null}
-                <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-300">
+                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-[family-name:var(--font-mono)] font-semibold uppercase tracking-wide text-slate-600">
                   {badge(v.rule_type)}
                 </span>
               </div>
@@ -148,7 +148,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
                     {format(parseISO(v.created_at), "MMM d, yyyy · HH:mm")}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-slate-200">{v.message}</p>
+                <p className="mt-2 text-sm text-slate-700">{v.message}</p>
                 <p className="mt-1 text-xs font-[family-name:var(--font-mono)] text-slate-500">
                   Value: {Number(v.value_at_violation).toFixed(2)} · Limit: {Number(v.limit_value).toFixed(2)}
                 </p>
