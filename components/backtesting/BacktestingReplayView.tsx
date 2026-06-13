@@ -14,6 +14,8 @@ import {
   Pause,
   TrendingUp,
   TrendingDown,
+  Globe,
+  X,
 } from "lucide-react";
 import { ReplayChart, type ReplayChartHandle, type CandleOhlc, type ChartSettings, type ChartObject, type PersistedState, DEFAULT_SETTINGS } from "@/components/backtesting/ReplayChart";
 import { DrawingToolbar, type DrawingTool } from "@/components/backtesting/DrawingToolbar";
@@ -35,6 +37,53 @@ type ReplaySpeed = 1 | 2 | 5 | 10;
 const SPEEDS: ReplaySpeed[] = [1, 2, 5, 10];
 
 const SETTINGS_KEY = "bt_chart_settings";
+
+const TZ_LIST: { value: string; label: string }[] = [
+  { value: "UTC", label: "UTC" },
+  // Europe
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Lisbon", label: "Lisbon" },
+  { value: "Europe/Paris", label: "Paris (CET)" },
+  { value: "Europe/Rome", label: "Rome / Milan (CET)" },
+  { value: "Europe/Berlin", label: "Berlin / Frankfurt" },
+  { value: "Europe/Zurich", label: "Zurich" },
+  { value: "Europe/Madrid", label: "Madrid" },
+  { value: "Europe/Amsterdam", label: "Amsterdam" },
+  { value: "Europe/Warsaw", label: "Warsaw" },
+  { value: "Europe/Athens", label: "Athens" },
+  { value: "Europe/Stockholm", label: "Stockholm" },
+  { value: "Europe/Istanbul", label: "Istanbul" },
+  { value: "Europe/Moscow", label: "Moscow" },
+  // Africa & Middle East
+  { value: "Africa/Cairo", label: "Cairo" },
+  { value: "Africa/Johannesburg", label: "Johannesburg" },
+  { value: "Africa/Lagos", label: "Lagos" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Riyadh", label: "Riyadh" },
+  { value: "Asia/Tehran", label: "Tehran" },
+  // Asia
+  { value: "Asia/Kolkata", label: "Mumbai / New Delhi (IST)" },
+  { value: "Asia/Bangkok", label: "Bangkok (ICT)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Asia/Hong_Kong", label: "Hong Kong (HKT)" },
+  { value: "Asia/Shanghai", label: "Shanghai / Beijing (CST)" },
+  { value: "Asia/Seoul", label: "Seoul (KST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  // Australia & Pacific
+  { value: "Australia/Sydney", label: "Sydney / Melbourne (AEDT)" },
+  { value: "Pacific/Auckland", label: "Auckland (NZST)" },
+  { value: "Pacific/Honolulu", label: "Honolulu (HST)" },
+  // Americas
+  { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (ART)" },
+  { value: "America/New_York", label: "New York (ET)" },
+  { value: "America/Chicago", label: "Chicago (CT)" },
+  { value: "America/Denver", label: "Denver (MT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PT)" },
+  { value: "America/Mexico_City", label: "Mexico City (CST)" },
+  { value: "America/Toronto", label: "Toronto" },
+  { value: "America/Vancouver", label: "Vancouver" },
+];
 
 function lsKey(sessionId: string) {
   return `bt_replay_state_${sessionId}`;
@@ -102,6 +151,9 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const [closingTradeId, setClosingTradeId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
+  const [tzPickerOpen, setTzPickerOpen] = useState(false);
+  const [tzSearch, setTzSearch] = useState("");
+  const tzPickerRef = useRef<HTMLDivElement>(null);
   const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
   const [drawingMenu, setDrawingMenu] = useState<{ id: string; kind: string; x: number; y: number } | null>(null);
   const [closeMenu, setCloseMenu] = useState<{ x: number; y: number; step: 1 | 2 } | null>(null);
@@ -115,6 +167,18 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const drawingsLoadedRef = useRef(false);
 
   useEffect(() => { sessionRef.current = session; }, [session]);
+
+  // Close tz picker on outside click
+  useEffect(() => {
+    if (!tzPickerOpen) return;
+    function onDown(e: MouseEvent) {
+      if (tzPickerRef.current && !tzPickerRef.current.contains(e.target as Node)) {
+        setTzPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [tzPickerOpen]);
 
   // ── Load settings from localStorage (seed chart timezone from user profile if not overridden) ─
   useEffect(() => {
@@ -714,13 +778,94 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               })}
             </span>
           )}
-          <span
-            className="hidden shrink-0 font-mono text-[10px] lg:block border-l pl-3"
-            style={{ borderColor: "#E1E3EA", color: "#64748B" }}
-            title="Active timezone — change in right-click chart menu"
-          >
-            {chartSettings.timezone && chartSettings.timezone !== "local" ? chartSettings.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone}
-          </span>
+          {/* Timezone picker */}
+          <div ref={tzPickerRef} className="relative border-l pl-3" style={{ borderColor: "#E1E3EA" }}>
+            <button
+              type="button"
+              onClick={() => { setTzPickerOpen((v) => !v); setTzSearch(""); }}
+              title="Set chart timezone"
+              className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition-all"
+              style={{
+                borderColor: "#2962FF40",
+                background: "#2962FF0A",
+                color: "#2962FF",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#2962FF18"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#2962FF0A"; }}
+            >
+              <Globe className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:block max-w-[140px] truncate">
+                {chartSettings.timezone && chartSettings.timezone !== "local"
+                  ? (TZ_LIST.find((t) => t.value === chartSettings.timezone)?.label ?? chartSettings.timezone)
+                  : Intl.DateTimeFormat().resolvedOptions().timeZone}
+              </span>
+            </button>
+
+            {tzPickerOpen && (
+              <div
+                className="absolute bottom-full right-0 z-50 mb-2 w-72 rounded-xl border bg-white shadow-2xl"
+                style={{ borderColor: "#E1E3EA" }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "#E1E3EA" }}>
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                    Chart timezone
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setTzPickerOpen(false)}
+                    className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                {/* Search */}
+                <div className="border-b p-2" style={{ borderColor: "#E1E3EA" }}>
+                  <input
+                    type="text"
+                    value={tzSearch}
+                    onChange={(e) => setTzSearch(e.target.value)}
+                    placeholder="Search timezone…"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 font-mono text-[11px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#2962FF]"
+                    autoFocus
+                  />
+                </div>
+                {/* List */}
+                <ul className="max-h-64 overflow-y-auto py-1">
+                  {TZ_LIST.filter((t) =>
+                    !tzSearch.trim() ||
+                    t.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
+                    t.value.toLowerCase().includes(tzSearch.toLowerCase())
+                  ).map((tz) => {
+                    const active = chartSettings.timezone === tz.value;
+                    return (
+                      <li key={tz.value}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChartSettings((prev) => ({ ...prev, timezone: tz.value }));
+                            setTzPickerOpen(false);
+                            setTzSearch("");
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors"
+                          style={{
+                            background: active ? "#2962FF0F" : undefined,
+                            color: active ? "#2962FF" : "#374151",
+                          }}
+                          onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "#F8FAFC"; }}
+                          onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = ""; }}
+                        >
+                          {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2962FF]" />}
+                          {!active && <span className="h-1.5 w-1.5 shrink-0" />}
+                          <span className="font-mono text-[11px]">{tz.label}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Tab bar + BUY/SELL */}
