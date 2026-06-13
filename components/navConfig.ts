@@ -31,7 +31,7 @@ export type NavItem = {
 
 export const primaryNavItems: readonly NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/app/backtesting", label: "Backtesting", icon: FlaskConical },
+  { href: "/backtesting", label: "Backtesting", icon: FlaskConical },
   { href: "/journaling", label: "Journal", icon: BookOpen },
   { href: "/risk-manager", label: "Risk Manager", icon: ShieldAlert },
   { href: "/ai-coach", label: "AI Coach", icon: Sparkles },
@@ -71,8 +71,9 @@ export function isAppShellPath(pathname: string | null | undefined): boolean {
 export function isNavActive(pathname: string | null | undefined, href: string): boolean {
   if (!pathname) return false;
   if (href === "/dashboard") return pathname === "/dashboard" || pathname === "/app/dashboard";
-  if (href === "/app/backtesting") {
-    return pathname === "/app/backtesting" || pathname.startsWith("/app/backtesting/");
+  if (href === "/backtesting") {
+    return pathname === "/backtesting" || pathname.startsWith("/backtesting/") ||
+           pathname === "/app/backtesting" || pathname.startsWith("/app/backtesting/");
   }
   if (href === "/journaling") {
     return pathname === "/journaling" || pathname.startsWith("/journaling/") ||

@@ -60,13 +60,12 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Broker / data connections:</strong> read-only account
-          information, trade history and metadata retrieved from third-party
-          providers (e.g. MetaApi, MetaTrader accounts) strictly for the
-          features you enable.
+          information, trade history and metadata retrieved from connected
+          trading accounts strictly for the features you enable.
         </li>
         <li>
-          <strong>Alerts and integrations:</strong> Telegram chat IDs, webhook
-          URLs and similar identifiers required to send you alerts.
+          <strong>Alerts and integrations:</strong> messaging identifiers,
+          webhook URLs and similar data required to send you alerts.
         </li>
       </ul>
 
@@ -133,32 +132,30 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          <strong>Cloud hosting & database</strong> (e.g. Supabase, Vercel,
-          AWS) for running the Platform.
+          <strong>Cloud hosting & database</strong> for running the Platform.
         </li>
         <li>
-          <strong>Payment processor</strong> (e.g. Stripe) for billing.
+          <strong>Payment processor</strong> — PCI-compliant, for billing.
         </li>
         <li>
           <strong>Email provider</strong> for transactional and — with
           consent — marketing emails.
         </li>
         <li>
-          <strong>Analytics & error monitoring</strong> (e.g. Sentry) for
-          performance and debugging.
+          <strong>Analytics & error monitoring</strong> for performance
+          and debugging.
         </li>
         <li>
-          <strong>AI provider</strong> (e.g. OpenAI / Anthropic) for the AI
-          Coach feature — prompts are sent to process your request and are
-          not used to train third-party models under our agreements.
+          <strong>AI provider</strong> for the AI Coach feature — your
+          prompts are processed to fulfil your request and are not used
+          to train third-party models under our agreements.
         </li>
         <li>
-          <strong>Broker / data APIs</strong> (e.g. MetaApi) when you
-          explicitly connect an account.
+          <strong>Broker / data APIs</strong> when you explicitly connect
+          a trading account.
         </li>
         <li>
-          <strong>Messaging</strong> (e.g. Telegram) when you enable live
-          alerts.
+          <strong>Messaging provider</strong> when you enable live alerts.
         </li>
       </ul>
       <p>

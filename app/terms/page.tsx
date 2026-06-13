@@ -58,8 +58,8 @@ export default function TermsPage() {
       <h2>3. Accounts and security</h2>
       <p>
         You are responsible for maintaining the confidentiality of your
-        credentials, API keys and any third-party integrations (for example
-        Telegram, brokers or data providers) connected to your account. You
+        credentials, API keys and any third-party integrations (brokers,
+        messaging services, data providers) connected to your account. You
         agree to notify us immediately at{" "}
         <a href="mailto:support@risksent.com">support@risksent.com</a> of any
         unauthorized access. We are not liable for losses resulting from
@@ -138,7 +138,7 @@ export default function TermsPage() {
       <h2>7. Third-party services</h2>
       <p>
         The Platform integrates with third parties (brokers, data vendors,
-        MetaApi, Telegram, payment processors, AI providers, analytics, etc.).
+        payment processors, AI providers, analytics, messaging services, etc.).
         Those services are governed by their own terms and privacy notices.
         We are not responsible for outages, data accuracy or changes on the
         side of those providers.

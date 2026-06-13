@@ -72,7 +72,7 @@ export default function RiskDisclosurePage() {
 
       <h2>4. Live alerts and automation</h2>
       <p>
-        Live monitoring and Telegram alerts depend on external services
+        Live monitoring and real-time alerts depend on external services
         (brokers, data APIs, messaging networks) that can be delayed,
         unavailable or provide inaccurate data. Alerts should be treated as
         support tools, not as a primary circuit-breaker. You remain fully
