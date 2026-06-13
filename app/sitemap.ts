@@ -14,10 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/live-alerts`, lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     { url: `${base}/mission`,     lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/changelog`,   lastModified: now, changeFrequency: "weekly",  priority: 0.6 },
-    { url: `${base}/contact`,     lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
-    { url: `${base}/support`,     lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
-    { url: `${base}/privacy`,     lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
-    { url: `${base}/terms`,       lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
-    { url: `${base}/cookies`,     lastModified: now, changeFrequency: "yearly",  priority: 0.2 },
+    { url: `${base}/info`,            lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/contact`,         lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
+    { url: `${base}/support`,         lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
+    { url: `${base}/privacy`,         lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${base}/terms`,           lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${base}/risk-disclosure`, lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${base}/cookies`,         lastModified: now, changeFrequency: "yearly",  priority: 0.2 },
   ];
 }

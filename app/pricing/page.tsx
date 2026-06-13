@@ -65,22 +65,31 @@ const plans = [
 // ─── Simple accordion FAQ item ─────────────────────────────────────────────────
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
+  const id = q.replace(/\s+/g, "-").toLowerCase();
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-2xl overflow-hidden cursor-pointer"
+      className="rounded-2xl overflow-hidden"
       style={{ background: "rgba(14,14,18,0.85)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(12px)" }}
-      onClick={() => setOpen((v) => !v)}
     >
-      <div className="flex items-center justify-between px-5 py-4 gap-4">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 gap-4 text-left cursor-pointer"
+      >
         <p className="text-sm font-bold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>{q}</p>
         <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25 }}>
           <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
         </motion.div>
-      </div>
+      </button>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
+            id={id}
+            role="region"
+            aria-label={q}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
