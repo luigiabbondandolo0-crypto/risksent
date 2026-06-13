@@ -23,7 +23,7 @@ export function StrategyCard({
   onDeleteStrategy,
   onDeleteSession,
   onEditStrategy,
-  sessionPathPrefix = "/app/backtesting",
+  sessionPathPrefix = "/backtesting",
 }: Props) {
   const [expanded, setExpanded] = useState(true);
 
@@ -47,20 +47,20 @@ export function StrategyCard({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="relative z-10 flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+        className="relative z-10 flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-slate-50"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#6366f1]/15">
           <Layers className="h-4 w-4 text-[#818cf8]" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-base font-bold text-white truncate">{strategy.name}</p>
+          <p className="font-display text-base font-bold text-slate-900 truncate">{strategy.name}</p>
           {strategy.description && (
             <p className="mt-0.5 font-mono text-[11px] text-slate-500 truncate">{strategy.description}</p>
           )}
         </div>
         <div className="hidden md:flex items-center gap-4 mr-3">
           <div className="text-right">
-            <p className="font-mono text-sm font-semibold text-slate-200">{sessionCount}</p>
+            <p className="font-mono text-sm font-semibold text-slate-700">{sessionCount}</p>
             <p className="font-mono text-[10px] text-slate-600">sessions</p>
           </div>
         </div>
@@ -68,7 +68,7 @@ export function StrategyCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onEditStrategy(strategy); }}
-            className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-white/[0.06] hover:text-slate-300"
+            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
@@ -94,7 +94,7 @@ export function StrategyCard({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="relative z-10 border-t border-white/[0.05] px-4 pb-3 pt-2">
+            <div className="relative z-10 border-t border-slate-200 px-4 pb-3 pt-2">
               {sessions.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-6 text-center">
                   <p className="font-mono text-sm text-slate-600">No sessions yet</p>
@@ -116,7 +116,7 @@ export function StrategyCard({
               <button
                 type="button"
                 onClick={() => onNewSession(strategy.id)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/[0.1] py-2.5 font-mono text-[11px] text-slate-600 transition-all hover:border-[#6366f1]/40 hover:text-[#818cf8]"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 py-2.5 font-mono text-[11px] text-slate-500 transition-all hover:border-[#6366f1]/60 hover:text-[#6366f1]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New session

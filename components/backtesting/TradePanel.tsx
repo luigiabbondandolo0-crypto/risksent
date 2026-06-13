@@ -116,7 +116,8 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
-          className="absolute bottom-12 left-0 right-0 z-20 border-t border-white/[0.08] bg-[#0b0b14] p-4 shadow-2xl"
+          className="absolute bottom-0 left-0 right-0 z-30 border-t p-4 shadow-lg"
+          style={{ background: "#FFFFFF", borderColor: "#E1E3EA", boxShadow: "0 -4px 24px rgba(0,0,0,0.08)" }}
         >
           <div className="mx-auto max-w-lg">
             {/* Header */}
@@ -127,8 +128,8 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
                   onClick={() => setDirection("BUY")}
                   className={`flex items-center gap-1.5 rounded-xl px-4 py-2 font-mono text-sm font-bold transition-all ${
                     direction === "BUY"
-                      ? "bg-[#00e676]/20 text-[#00e676] ring-1 ring-[#00e676]/40"
-                      : "border border-white/[0.08] text-slate-500 hover:text-slate-300"
+                      ? "bg-[#26a69a]/15 text-[#26a69a] ring-1 ring-[#26a69a]/40"
+                      : "border border-slate-200 text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   <TrendingUp className="h-3.5 w-3.5" />
@@ -139,15 +140,15 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
                   onClick={() => setDirection("SELL")}
                   className={`flex items-center gap-1.5 rounded-xl px-4 py-2 font-mono text-sm font-bold transition-all ${
                     direction === "SELL"
-                      ? "bg-[#ff3c3c]/20 text-[#ff3c3c] ring-1 ring-[#ff3c3c]/40"
-                      : "border border-white/[0.08] text-slate-500 hover:text-slate-300"
+                      ? "bg-[#ef5350]/15 text-[#ef5350] ring-1 ring-[#ef5350]/40"
+                      : "border border-slate-200 text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   <TrendingDown className="h-3.5 w-3.5" />
                   SELL
                 </button>
               </div>
-              <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-500 hover:text-slate-300">
+              <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -155,13 +156,13 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {/* Entry price */}
               <div>
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-slate-600">Entry</p>
-                <p className="font-mono text-sm font-semibold text-white">{fmtPrice(symbol, entryPrice)}</p>
+                <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">Entry</p>
+                <p className="font-mono text-sm font-semibold text-slate-900">{fmtPrice(symbol, entryPrice)}</p>
               </div>
 
               {/* Lot size */}
               <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-slate-600">Lot Size</label>
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-slate-500">Lot Size</label>
                 <input
                   type="number"
                   value={lotSize}
@@ -169,31 +170,31 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
                   min={0.01}
                   max={100}
                   step={0.01}
-                  className="w-full rounded-lg bg-white/[0.05] px-2.5 py-1.5 font-mono text-sm text-white outline-none ring-1 ring-white/[0.08] focus:ring-[#6366f1]/50"
+                  className="w-full rounded-lg bg-slate-50 px-2.5 py-1.5 font-mono text-sm text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-[#6366f1]/50"
                 />
               </div>
 
               {/* Stop Loss */}
               <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#ff3c3c]/70">Stop Loss</label>
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#ef5350]">Stop Loss</label>
                 <input
                   type="number"
                   value={slInput}
                   onChange={(e) => setSlInput(e.target.value)}
                   step={pipStep(symbol)}
-                  className="w-full rounded-lg bg-white/[0.05] px-2.5 py-1.5 font-mono text-sm text-white outline-none ring-1 ring-[#ff3c3c]/20 focus:ring-[#ff3c3c]/40"
+                  className="w-full rounded-lg bg-slate-50 px-2.5 py-1.5 font-mono text-sm text-slate-900 outline-none ring-1 ring-[#ef5350]/30 focus:ring-[#ef5350]/50"
                 />
               </div>
 
               {/* Take Profit */}
               <div>
-                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#00e676]/70">Take Profit</label>
+                <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-[#26a69a]">Take Profit</label>
                 <input
                   type="number"
                   value={tpInput}
                   onChange={(e) => setTpInput(e.target.value)}
                   step={pipStep(symbol)}
-                  className="w-full rounded-lg bg-white/[0.05] px-2.5 py-1.5 font-mono text-sm text-white outline-none ring-1 ring-[#00e676]/20 focus:ring-[#00e676]/40"
+                  className="w-full rounded-lg bg-slate-50 px-2.5 py-1.5 font-mono text-sm text-slate-900 outline-none ring-1 ring-[#26a69a]/30 focus:ring-[#26a69a]/50"
                 />
               </div>
             </div>
@@ -201,20 +202,20 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
             {/* R:R display */}
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-4 font-mono text-[11px]">
-                <span className="text-slate-600">R:R</span>
-                <span className={`font-semibold ${rr >= 2 ? "text-[#00e676]" : rr >= 1 ? "text-[#ff8c00]" : "text-slate-400"}`}>
+                <span className="text-slate-500">R:R</span>
+                <span className={`font-semibold ${rr >= 2 ? "text-[#26a69a]" : rr >= 1 ? "text-[#ff8c00]" : "text-slate-400"}`}>
                   {rr > 0 ? `1:${rr.toFixed(2)}` : "—"}
                 </span>
               </div>
-              {err && <p className="font-mono text-[11px] text-red-400">{err}</p>}
+              {err && <p className="font-mono text-[11px] text-red-500">{err}</p>}
               <button
                 type="button"
                 onClick={() => void place()}
                 disabled={loading || !currentCandle}
                 className={`rounded-xl px-6 py-2 font-mono text-sm font-bold transition-all disabled:opacity-50 ${
                   direction === "BUY"
-                    ? "bg-[#00e676]/90 text-black hover:bg-[#00e676]"
-                    : "bg-[#ff3c3c]/90 text-white hover:bg-[#ff3c3c]"
+                    ? "bg-[#26a69a] text-white hover:bg-[#1e8f85]"
+                    : "bg-[#ef5350] text-white hover:bg-[#d32f2f]"
                 }`}
               >
                 {loading ? "Placing…" : `Place ${direction}`}

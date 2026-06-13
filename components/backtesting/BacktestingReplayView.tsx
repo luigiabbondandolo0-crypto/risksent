@@ -102,7 +102,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
-  const [drawingMenu, setDrawingMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [drawingMenu, setDrawingMenu] = useState<{ id: string; kind: string; x: number; y: number } | null>(null);
   const [chartSettings, setChartSettings] = useState<ChartSettings>(DEFAULT_SETTINGS);
   const [chartObjects, setChartObjects] = useState<ChartObject[]>([]);
 
@@ -576,7 +576,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             settings={chartSettings}
             onCrosshairMove={setHoveredCandle}
             onContextMenu={(price, x, y) => { setDrawingMenu(null); setCtxMenu({ price, x, y }); }}
-            onDrawingContextMenu={(objId, x, y) => { setCtxMenu(null); setDrawingMenu({ id: objId, x, y }); }}
+            onDrawingContextMenu={(objId, kind, x, y) => { setCtxMenu(null); setDrawingMenu({ id: objId, kind, x, y }); }}
             onToolComplete={() => setActiveTool("cursor")}
             onPlacePosition={(dir, entry, sl, tp, lot) => {
               setTradePanel({ open: true, dir, presetSL: sl, presetTP: tp, presetLot: lot });
@@ -591,7 +591,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
 
       {/* ── Bottom panel — TradingView style ─────────────────────────────── */}
       <div
-        className="flex shrink-0 flex-col border-t"
+        className="relative flex shrink-0 flex-col border-t"
         style={{ height: 220, background: "#FFFFFF", borderColor: "#E1E3EA" }}
       >
         {/* Replay controls row */}
@@ -763,22 +763,23 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               />
             </div>
           )}
-
-          {session && (
-            <TradePanel
-              open={tradePanel.open}
-              defaultDirection={tradePanel.dir}
-              currentCandle={currentCandle}
-              symbol={session.symbol}
-              sessionId={id}
-              presetSL={tradePanel.presetSL}
-              presetTP={tradePanel.presetTP}
-              presetLot={tradePanel.presetLot}
-              onClose={() => setTradePanel((p) => ({ ...p, open: false }))}
-              onTradeOpened={() => { void loadSession(); }}
-            />
-          )}
         </div>
+
+        {/* Trade panel — outside overflow-hidden so animation is not clipped */}
+        {session && (
+          <TradePanel
+            open={tradePanel.open}
+            defaultDirection={tradePanel.dir}
+            currentCandle={currentCandle}
+            symbol={session.symbol}
+            sessionId={id}
+            presetSL={tradePanel.presetSL}
+            presetTP={tradePanel.presetTP}
+            presetLot={tradePanel.presetLot}
+            onClose={() => setTradePanel((p) => ({ ...p, open: false }))}
+            onTradeOpened={() => { void loadSession(); }}
+          />
+        )}
       </div>
 
       {/* ── Chart context menu ───────────────────────────────────────────── */}
@@ -808,6 +809,11 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           onClose={() => setDrawingMenu(null)}
           onRemove={() => { chartRef.current?.removeObject(drawingMenu.id); setDrawingMenu(null); }}
           onFocus={() => { chartRef.current?.focusObject(drawingMenu.id); setDrawingMenu(null); }}
+          onPlaceOrder={drawingMenu.kind === "pending" ? () => {
+            chartRef.current?.placePosition(drawingMenu.id);
+            setBottomTab("Trade");
+            setDrawingMenu(null);
+          } : undefined}
         />
       )}
       </div>

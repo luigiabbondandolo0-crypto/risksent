@@ -101,6 +101,7 @@ export type ReplayChartHandle = {
   listObjects: () => ChartObject[];
   removeObject: (id: string) => void;
   focusObject: (id: string) => void;
+  placePosition: (id: string) => void;
   undo: () => void;
   applySettings: (s: ChartSettings) => void;
   getState: () => PersistedState;
@@ -113,7 +114,7 @@ type Props = {
   settings?: ChartSettings;
   onCrosshairMove?: (data: CandleOhlc | null) => void;
   onContextMenu?: (price: number, clientX: number, clientY: number) => void;
-  onDrawingContextMenu?: (objectId: string, clientX: number, clientY: number) => void;
+  onDrawingContextMenu?: (objectId: string, kind: string, clientX: number, clientY: number) => void;
   onToolComplete?: () => void;
   onPlacePosition?: (dir: "BUY" | "SELL", entry: number, sl: number, tp: number, lotSize: number) => void;
   onUpdateTradeSLTP?: (tradeId: string, sl: number | null, tp: number | null) => void;
@@ -1118,7 +1119,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         // Hit-test drawing first
         const hit = hitAnyDrawing(mx, my);
         if (hit) {
-          drawCtxMenuCbRef.current?.(hit.id, e.clientX, e.clientY);
+          drawCtxMenuCbRef.current?.(hit.id, hit.kind, e.clientX, e.clientY);
           return;
         }
 
@@ -1321,6 +1322,11 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
           notifyObjects();
           notifyState();
         }
+      },
+
+      placePosition(id: string) {
+        const pp = pendingPositionsRef.current.find((p) => p.id === id);
+        if (pp) placePosCbRef.current?.(pp.dir, pp.entry, pp.sl, pp.tp, pp.lotSize);
       },
 
       focusObject(id: string) {

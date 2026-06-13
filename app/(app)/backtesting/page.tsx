@@ -120,7 +120,7 @@ export default function BacktestingPage() {
           <h1
             className="rs-page-title"
             style={{
-              background: "linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #6366f1 100%)",
+              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -173,7 +173,7 @@ export default function BacktestingPage() {
             <FlaskConical className="h-8 w-8 text-[#818cf8]" />
           </div>
           <div className="relative z-10">
-            <p className="font-display text-xl font-bold text-white">Start your first strategy</p>
+            <p className="font-display text-xl font-bold text-slate-900">Start your first strategy</p>
             <p className="mt-1.5 font-mono text-sm text-slate-500 max-w-xs mx-auto">
               Create a strategy to organise your backtesting sessions on any symbol and timeframe.
             </p>

@@ -17,7 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
   paused:    "bg-[#ff8c00]/12 text-[#ff8c00]",
 };
 
-export function SessionCard({ session, onDelete, sessionPathPrefix = "/app/backtesting" }: Props) {
+export function SessionCard({ session, onDelete, sessionPathPrefix = "/backtesting" }: Props) {
   const plSign = session.current_balance >= session.initial_balance ? "+" : "";
   const pl = session.current_balance - session.initial_balance;
   const plPct = session.initial_balance > 0 ? (pl / session.initial_balance) * 100 : 0;
@@ -39,7 +39,7 @@ export function SessionCard({ session, onDelete, sessionPathPrefix = "/app/backt
       <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
       {/* Symbol + TF */}
       <div className="flex flex-col gap-0.5 w-24 shrink-0">
-        <span className="font-display text-sm font-bold text-white leading-none">{session.symbol}</span>
+        <span className="font-display text-sm font-bold text-slate-900 leading-none">{session.symbol}</span>
         <span className="font-mono text-[10px] text-slate-500">{session.timeframe}</span>
       </div>
 
@@ -61,12 +61,12 @@ export function SessionCard({ session, onDelete, sessionPathPrefix = "/app/backt
 
       {/* Balance */}
       <div className="hidden lg:flex flex-col gap-0.5">
-        <span className="font-mono text-[11px] text-slate-400">${session.current_balance.toLocaleString()}</span>
+        <span className="font-mono text-[11px] text-slate-600">${session.current_balance.toLocaleString()}</span>
         <span className="font-mono text-[10px] text-slate-600">balance</span>
       </div>
 
       {/* Status */}
-      <span className={`ml-auto hidden sm:inline-flex rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium ${STATUS_STYLES[session.status] ?? "bg-white/[0.05] text-slate-500"}`}>
+      <span className={`ml-auto hidden sm:inline-flex rounded-full px-2.5 py-0.5 font-mono text-[10px] font-medium ${STATUS_STYLES[session.status] ?? "bg-slate-100 text-slate-500"}`}>
         {session.status}
       </span>
 
@@ -81,7 +81,7 @@ export function SessionCard({ session, onDelete, sessionPathPrefix = "/app/backt
         </Link>
         <Link
           href={`${sessionPathPrefix}/session/${session.id}/results`}
-          className="flex items-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-1.5 font-mono text-[11px] text-slate-400 transition-all hover:border-white/[0.15] hover:text-slate-200"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 font-mono text-[11px] text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
         >
           <LineChart className="h-3 w-3" />
           <span className="hidden sm:block">Results</span>
