@@ -102,7 +102,9 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no expl
     }
 
     const json = await res.json() as { content?: Array<{ text?: string }> };
-    const text = json.content?.[0]?.text ?? "";
+    const raw = json.content?.[0]?.text ?? "";
+    // Strip markdown code fences if present
+    const text = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
     const parsed = JSON.parse(text) as { score: number; explanation: string };
 
     if (typeof parsed.score !== "number" || typeof parsed.explanation !== "string") {

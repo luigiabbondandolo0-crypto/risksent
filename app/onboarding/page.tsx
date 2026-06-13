@@ -24,6 +24,7 @@ type MainGoal = "prop_firm" | "risk_management" | "win_rate" | "everything";
 
 type OnboardingState = {
   full_name: string;
+  timezone: string;
   experience_level: ExperienceLevel | null;
   main_goal: MainGoal | null;
   daily_dd_limit: number;
@@ -34,6 +35,52 @@ type OnboardingState = {
   broker_account: string;
   broker_password: string;
 };
+
+const ONBOARDING_TIMEZONES: { value: string; label: string }[] = [
+  { value: "UTC", label: "UTC" },
+  // Europe
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Rome", label: "Rome / Milan (CET)" },
+  { value: "Europe/Paris", label: "Paris" },
+  { value: "Europe/Berlin", label: "Berlin / Frankfurt" },
+  { value: "Europe/Zurich", label: "Zurich" },
+  { value: "Europe/Madrid", label: "Madrid" },
+  { value: "Europe/Amsterdam", label: "Amsterdam" },
+  { value: "Europe/Lisbon", label: "Lisbon" },
+  { value: "Europe/Warsaw", label: "Warsaw" },
+  { value: "Europe/Stockholm", label: "Stockholm" },
+  { value: "Europe/Athens", label: "Athens" },
+  { value: "Europe/Istanbul", label: "Istanbul" },
+  { value: "Europe/Moscow", label: "Moscow" },
+  // Africa & Middle East
+  { value: "Africa/Cairo", label: "Cairo" },
+  { value: "Africa/Johannesburg", label: "Johannesburg" },
+  { value: "Africa/Lagos", label: "Lagos" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Riyadh", label: "Riyadh / Amman / Baghdad" },
+  { value: "Asia/Tehran", label: "Tehran" },
+  // Asia
+  { value: "Asia/Kolkata", label: "Mumbai / New Delhi (IST)" },
+  { value: "Asia/Bangkok", label: "Bangkok / Hanoi" },
+  { value: "Asia/Singapore", label: "Singapore / Kuala Lumpur" },
+  { value: "Asia/Hong_Kong", label: "Hong Kong" },
+  { value: "Asia/Shanghai", label: "Shanghai / Beijing" },
+  { value: "Asia/Seoul", label: "Seoul" },
+  { value: "Asia/Tokyo", label: "Tokyo" },
+  // Australia & Pacific
+  { value: "Australia/Sydney", label: "Sydney / Melbourne" },
+  { value: "Pacific/Auckland", label: "Auckland" },
+  { value: "Pacific/Honolulu", label: "Honolulu" },
+  // Americas
+  { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires" },
+  { value: "America/New_York", label: "New York (ET)" },
+  { value: "America/Chicago", label: "Chicago (CT)" },
+  { value: "America/Denver", label: "Denver (MT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PT)" },
+  { value: "America/Toronto", label: "Toronto" },
+  { value: "America/Mexico_City", label: "Mexico City" },
+];
 
 // ─── Animation variants ──────────────────────────────────────────────────────
 
@@ -209,6 +256,23 @@ function Step1({
         onChange={(e) => setState({ full_name: e.target.value })}
         autoFocus
       />
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
+          Your timezone
+        </label>
+        <select
+          value={state.timezone}
+          onChange={(e) => setState({ timezone: e.target.value })}
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#ff3c3c]/60 focus:ring-2 focus:ring-[#ff3c3c]/20"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          {ONBOARDING_TIMEZONES.map((tz) => (
+            <option key={tz.value} value={tz.value}>{tz.label}</option>
+          ))}
+        </select>
+        <p className="text-[10px] text-slate-400">Used to display correct trade times throughout the app.</p>
+      </div>
 
       <div className="space-y-2">
         <p className="text-[11px] font-mono uppercase tracking-wider text-slate-500">
@@ -585,6 +649,9 @@ export default function OnboardingPage() {
 
   const [state, setStateRaw] = useState<OnboardingState>({
     full_name: "",
+    timezone: (() => {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
+    })(),
     experience_level: null,
     main_goal: null,
     daily_dd_limit: 5,
@@ -656,18 +723,29 @@ export default function OnboardingPage() {
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      await fetch("/api/onboarding/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: state.full_name || null,
-          experience_level: state.experience_level,
-          main_goal: state.main_goal,
-          daily_dd_limit: state.daily_dd_limit,
-          total_dd_limit: state.total_dd_limit,
-          onboarding_step: 5,
+      await Promise.all([
+        fetch("/api/onboarding/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            full_name: state.full_name || null,
+            experience_level: state.experience_level,
+            main_goal: state.main_goal,
+            daily_dd_limit: state.daily_dd_limit,
+            total_dd_limit: state.total_dd_limit,
+            onboarding_step: 5,
+          }),
         }),
-      });
+        // Save timezone to app_user profile so it's applied app-wide
+        fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: state.full_name || null,
+            preferenceTimezone: state.timezone || "UTC",
+          }),
+        }),
+      ]);
       await fetch("/api/onboarding/complete", { method: "POST" });
     } catch {
       // ignore

@@ -28,38 +28,87 @@ type Props = {
 const TIMEZONES: { value: string; label: string }[] = [
   { value: "local", label: "Local" },
   { value: "UTC", label: "UTC" },
+  // Europe
   { value: "Europe/London", label: "London (GMT/BST)" },
-  { value: "Europe/Rome", label: "Rome/Milan (CET)" },
+  { value: "Europe/Lisbon", label: "Lisbon" },
+  { value: "Europe/Dublin", label: "Dublin" },
   { value: "Europe/Paris", label: "Paris" },
+  { value: "Europe/Rome", label: "Rome/Milan (CET)" },
   { value: "Europe/Berlin", label: "Berlin/Frankfurt" },
   { value: "Europe/Zurich", label: "Zurich" },
   { value: "Europe/Madrid", label: "Madrid" },
   { value: "Europe/Amsterdam", label: "Amsterdam" },
+  { value: "Europe/Brussels", label: "Brussels" },
+  { value: "Europe/Vienna", label: "Vienna" },
+  { value: "Europe/Warsaw", label: "Warsaw" },
+  { value: "Europe/Prague", label: "Prague" },
+  { value: "Europe/Budapest", label: "Budapest" },
+  { value: "Europe/Bucharest", label: "Bucharest" },
+  { value: "Europe/Athens", label: "Athens" },
+  { value: "Europe/Helsinki", label: "Helsinki" },
+  { value: "Europe/Stockholm", label: "Stockholm" },
+  { value: "Europe/Oslo", label: "Oslo" },
+  { value: "Europe/Copenhagen", label: "Copenhagen" },
   { value: "Europe/Istanbul", label: "Istanbul" },
   { value: "Europe/Moscow", label: "Moscow" },
+  { value: "Europe/Kiev", label: "Kyiv" },
+  // Africa
   { value: "Africa/Cairo", label: "Cairo" },
+  { value: "Africa/Lagos", label: "Lagos" },
+  { value: "Africa/Nairobi", label: "Nairobi" },
   { value: "Africa/Johannesburg", label: "Johannesburg" },
-  { value: "Asia/Dubai", label: "Dubai" },
-  { value: "Asia/Kolkata", label: "Mumbai/New Delhi" },
-  { value: "Asia/Bangkok", label: "Bangkok" },
-  { value: "Asia/Singapore", label: "Singapore" },
-  { value: "Asia/Hong_Kong", label: "Hong Kong" },
-  { value: "Asia/Shanghai", label: "Shanghai/Beijing" },
-  { value: "Asia/Seoul", label: "Seoul" },
-  { value: "Asia/Tokyo", label: "Tokyo" },
-  { value: "Australia/Perth", label: "Perth" },
-  { value: "Australia/Sydney", label: "Sydney" },
-  { value: "Pacific/Auckland", label: "Auckland" },
-  { value: "America/Sao_Paulo", label: "São Paulo" },
-  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires" },
+  { value: "Africa/Casablanca", label: "Casablanca" },
+  // Middle East
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Riyadh", label: "Riyadh" },
+  { value: "Asia/Kuwait", label: "Kuwait" },
+  { value: "Asia/Qatar", label: "Qatar" },
+  { value: "Asia/Bahrain", label: "Bahrain" },
+  { value: "Asia/Jerusalem", label: "Jerusalem" },
+  { value: "Asia/Tehran", label: "Tehran" },
+  // Asia
+  { value: "Asia/Kolkata", label: "Mumbai/New Delhi (IST)" },
+  { value: "Asia/Karachi", label: "Karachi (PKT)" },
+  { value: "Asia/Dhaka", label: "Dhaka (BST)" },
+  { value: "Asia/Colombo", label: "Colombo" },
+  { value: "Asia/Kathmandu", label: "Kathmandu" },
+  { value: "Asia/Bangkok", label: "Bangkok (ICT)" },
+  { value: "Asia/Jakarta", label: "Jakarta (WIB)" },
+  { value: "Asia/Kuala_Lumpur", label: "Kuala Lumpur" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Asia/Hong_Kong", label: "Hong Kong (HKT)" },
+  { value: "Asia/Shanghai", label: "Shanghai/Beijing (CST)" },
+  { value: "Asia/Taipei", label: "Taipei" },
+  { value: "Asia/Seoul", label: "Seoul (KST)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Asia/Vladivostok", label: "Vladivostok" },
+  // Australia & Pacific
+  { value: "Australia/Perth", label: "Perth (AWST)" },
+  { value: "Australia/Darwin", label: "Darwin (ACST)" },
+  { value: "Australia/Adelaide", label: "Adelaide (ACST)" },
+  { value: "Australia/Brisbane", label: "Brisbane (AEST)" },
+  { value: "Australia/Sydney", label: "Sydney/Melbourne (AEDT)" },
+  { value: "Pacific/Auckland", label: "Auckland (NZST)" },
+  { value: "Pacific/Honolulu", label: "Honolulu (HST)" },
+  { value: "Pacific/Fiji", label: "Fiji" },
+  // Americas
+  { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (ART)" },
+  { value: "America/Santiago", label: "Santiago (CLT)" },
+  { value: "America/Lima", label: "Lima (PET)" },
+  { value: "America/Bogota", label: "Bogotá (COT)" },
+  { value: "America/Caracas", label: "Caracas (VET)" },
+  { value: "America/Mexico_City", label: "Mexico City (CST)" },
   { value: "America/New_York", label: "New York (ET)" },
   { value: "America/Chicago", label: "Chicago (CT)" },
   { value: "America/Denver", label: "Denver (MT)" },
+  { value: "America/Phoenix", label: "Phoenix (MST)" },
   { value: "America/Los_Angeles", label: "Los Angeles (PT)" },
-  { value: "America/Mexico_City", label: "Mexico City" },
+  { value: "America/Anchorage", label: "Anchorage (AKT)" },
   { value: "America/Toronto", label: "Toronto" },
   { value: "America/Vancouver", label: "Vancouver" },
-  { value: "Pacific/Honolulu", label: "Honolulu" },
+  { value: "America/Montreal", label: "Montréal" },
+  { value: "America/Halifax", label: "Halifax (AT)" },
 ];
 
 // Preset palette for candle colors
@@ -87,8 +136,6 @@ export function ChartContextMenu({
   const x = Math.min(clientX, window.innerWidth  - menuW - 8);
   const y = Math.min(clientY, window.innerHeight - menuH - 8);
 
-  // Close on click on the chart canvas/container (outside the menu).
-  // Any mousedown inside the menu keeps it open (so color swatches etc. don't close it).
   useEffect(() => {
     function onDown(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
@@ -124,26 +171,26 @@ export function ChartContextMenu({
         disabled={disabled}
         onClick={onClick}
         className={`flex w-full items-center gap-2.5 rounded px-3 py-1.5 text-left transition-colors disabled:opacity-40 ${
-          disabled ? "cursor-default" : "hover:bg-white/[0.07] active:bg-white/[0.12]"
+          disabled ? "cursor-default" : "hover:bg-slate-50 active:bg-slate-100"
         }`}
-        style={{ color: disabled ? undefined : (color ?? "#cbd5e1") }}
+        style={{ color: disabled ? undefined : (color ?? "#374151") }}
       >
-        <span className="shrink-0 opacity-70" style={{ color: color ?? "#94a3b8" }}>{icon}</span>
+        <span className="shrink-0 opacity-70" style={{ color: color ?? "#6B7280" }}>{icon}</span>
         <span className="flex-1 font-mono text-[12px]">{label}</span>
-        {sublabel && <span className="font-mono text-[11px] text-slate-600">{sublabel}</span>}
+        {sublabel && <span className="font-mono text-[11px] text-slate-500">{sublabel}</span>}
         {chevron && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
       </button>
     );
   }
 
-  function Sep() { return <div className="my-1 h-px bg-white/[0.06]" />; }
+  function Sep() { return <div className="my-1 h-px bg-slate-100" />; }
 
   function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
     return (
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`h-4 w-7 rounded-full transition-colors ${checked ? "bg-[#6366f1]" : "bg-white/[0.1]"}`}
+        className={`h-4 w-7 rounded-full transition-colors ${checked ? "bg-[#6366f1]" : "bg-slate-200"}`}
       >
         <span
           className={`block h-3 w-3 rounded-full bg-white transition-transform ${checked ? "translate-x-3.5" : "translate-x-0.5"}`}
@@ -152,7 +199,6 @@ export function ChartContextMenu({
     );
   }
 
-  // Custom color palette (no native picker → does not close menu on open)
   function PalettePicker({
     presets, value, onPick, onClose: onPickClose,
   }: {
@@ -163,11 +209,11 @@ export function ChartContextMenu({
   }) {
     const [hex, setHex] = useState(value);
     return (
-      <div className="absolute right-3 top-full z-10 mt-1 w-[188px] rounded-lg border border-white/[0.1] bg-[#0d0d1a] p-2 shadow-xl">
+      <div className="absolute right-3 top-full z-10 mt-1 w-[188px] rounded-lg border border-slate-200 bg-white p-2 shadow-xl">
         <div className="mb-1 flex items-center justify-between">
           <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">Color</span>
           <button type="button" onClick={onPickClose}
-            className="rounded p-0.5 text-slate-500 hover:bg-white/[0.05] hover:text-slate-300">
+            className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -177,7 +223,7 @@ export function ChartContextMenu({
               key={c}
               type="button"
               onClick={() => onPick(c)}
-              className={`h-6 w-6 rounded border ${value.toLowerCase() === c.toLowerCase() ? "border-white" : "border-white/[0.1]"}`}
+              className={`h-6 w-6 rounded border ${value.toLowerCase() === c.toLowerCase() ? "border-slate-800 ring-1 ring-slate-800" : "border-slate-200"}`}
               style={{ backgroundColor: c }}
               title={c}
             />
@@ -191,13 +237,13 @@ export function ChartContextMenu({
             onKeyDown={(e) => {
               if (e.key === "Enter" && /^#[0-9a-fA-F]{6}$/.test(hex)) onPick(hex);
             }}
-            className="flex-1 rounded border border-white/[0.08] bg-[#0b0b14] px-1.5 py-0.5 font-mono text-[10px] text-slate-200 outline-none"
+            className="flex-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-800 outline-none"
             placeholder="#RRGGBB"
           />
           <button
             type="button"
             onClick={() => { if (/^#[0-9a-fA-F]{6}$/.test(hex)) onPick(hex); }}
-            className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-[10px] text-slate-300 hover:bg-white/[0.1]"
+            className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700 hover:bg-slate-200"
           >
             Apply
           </button>
@@ -209,14 +255,14 @@ export function ChartContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 overflow-visible rounded-lg border border-white/[0.08] bg-[#0d0d1a] py-1.5 shadow-2xl"
+      className="fixed z-50 overflow-visible rounded-lg border border-slate-200 bg-white py-1.5 shadow-xl"
       style={{ left: x, top: y, width: menuW, maxHeight: menuH }}
     >
-      {/* Close button always visible */}
+      {/* Close button */}
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-1.5 top-1.5 z-20 rounded p-1 text-slate-500 hover:bg-white/[0.05] hover:text-slate-300"
+        className="absolute right-1.5 top-1.5 z-20 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
         title="Close (Esc)"
       >
         <X className="h-3.5 w-3.5" />
@@ -270,16 +316,16 @@ export function ChartContextMenu({
 
         {view === "objects" && (
           <>
-            <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-1.5">
+            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-1.5">
               <button type="button" onClick={() => setView("main")}
-                className="text-slate-500 hover:text-slate-300">
+                className="text-slate-400 hover:text-slate-700">
                 <ChevronRight className="h-3.5 w-3.5 rotate-180" />
               </button>
-              <span className="font-mono text-[12px] font-bold text-slate-300">Object tree</span>
+              <span className="font-mono text-[12px] font-bold text-slate-700">Object tree</span>
             </div>
 
             {objects.length === 0 && (
-              <p className="px-3 py-4 text-center font-mono text-[11px] text-slate-600">
+              <p className="px-3 py-4 text-center font-mono text-[11px] text-slate-500">
                 No drawings on chart
               </p>
             )}
@@ -287,7 +333,7 @@ export function ChartContextMenu({
             {objects.length > 0 && (
               <div>
                 {objects.map((o) => (
-                  <div key={o.id} className="group flex w-full items-center gap-2 rounded px-3 py-1.5 hover:bg-white/[0.05]">
+                  <div key={o.id} className="group flex w-full items-center gap-2 rounded px-3 py-1.5 hover:bg-slate-50">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{
@@ -301,12 +347,12 @@ export function ChartContextMenu({
                     />
                     <button type="button"
                       onClick={() => { onFocusObject(o.id); onClose(); }}
-                      className="flex-1 truncate text-left font-mono text-[11px] text-slate-300 hover:text-white">
+                      className="flex-1 truncate text-left font-mono text-[11px] text-slate-700 hover:text-slate-900">
                       {o.label}
                     </button>
                     <button type="button"
                       onClick={() => onRemoveObject(o.id)}
-                      className="rounded p-1 text-slate-500 opacity-0 hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+                      className="rounded p-1 text-slate-400 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
                       title="Remove drawing"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -320,24 +366,24 @@ export function ChartContextMenu({
 
         {view === "settings" && (
           <>
-            <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-1.5">
+            <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-1.5">
               <button type="button" onClick={() => { setView("main"); setColorPicker(null); }}
-                className="text-slate-500 hover:text-slate-300">
+                className="text-slate-400 hover:text-slate-700">
                 <ChevronRight className="h-3.5 w-3.5 rotate-180" />
               </button>
-              <span className="font-mono text-[12px] font-bold text-slate-300">Chart settings</span>
+              <span className="font-mono text-[12px] font-bold text-slate-700">Chart settings</span>
             </div>
 
             <div className="space-y-2 px-3 py-2">
               <div className="relative flex items-center justify-between">
-                <span className="font-mono text-[11px] text-slate-400">Up color</span>
+                <span className="font-mono text-[11px] text-slate-600">Up color</span>
                 <button
                   type="button"
                   onClick={() => setColorPicker(colorPicker === "up" ? null : "up")}
-                  className="flex items-center gap-2 rounded border border-white/[0.08] bg-white/[0.02] px-1.5 py-0.5 hover:bg-white/[0.05]"
+                  className="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 hover:bg-slate-100"
                 >
-                  <span className="h-3.5 w-3.5 rounded-sm border border-white/10" style={{ backgroundColor: settings.upColor }} />
-                  <span className="font-mono text-[10px] text-slate-400">{settings.upColor}</span>
+                  <span className="h-3.5 w-3.5 rounded-sm border border-slate-200" style={{ backgroundColor: settings.upColor }} />
+                  <span className="font-mono text-[10px] text-slate-600">{settings.upColor}</span>
                 </button>
                 {colorPicker === "up" && (
                   <PalettePicker
@@ -350,14 +396,14 @@ export function ChartContextMenu({
               </div>
 
               <div className="relative flex items-center justify-between">
-                <span className="font-mono text-[11px] text-slate-400">Down color</span>
+                <span className="font-mono text-[11px] text-slate-600">Down color</span>
                 <button
                   type="button"
                   onClick={() => setColorPicker(colorPicker === "down" ? null : "down")}
-                  className="flex items-center gap-2 rounded border border-white/[0.08] bg-white/[0.02] px-1.5 py-0.5 hover:bg-white/[0.05]"
+                  className="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 hover:bg-slate-100"
                 >
-                  <span className="h-3.5 w-3.5 rounded-sm border border-white/10" style={{ backgroundColor: settings.downColor }} />
-                  <span className="font-mono text-[10px] text-slate-400">{settings.downColor}</span>
+                  <span className="h-3.5 w-3.5 rounded-sm border border-slate-200" style={{ backgroundColor: settings.downColor }} />
+                  <span className="font-mono text-[10px] text-slate-600">{settings.downColor}</span>
                 </button>
                 {colorPicker === "down" && (
                   <PalettePicker
@@ -370,19 +416,19 @@ export function ChartContextMenu({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] text-slate-400">Wicks (ombre)</span>
+                <span className="font-mono text-[11px] text-slate-600">Wicks (ombre)</span>
                 <Toggle checked={settings.wickVisible} onChange={(v) => onSettingsChange({ ...settings, wickVisible: v })} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] text-slate-400">Body border</span>
+                <span className="font-mono text-[11px] text-slate-600">Body border</span>
                 <Toggle checked={settings.borderVisible} onChange={(v) => onSettingsChange({ ...settings, borderVisible: v })} />
               </div>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[11px] text-slate-400">Timezone</span>
+                <span className="font-mono text-[11px] text-slate-600">Timezone</span>
                 <select
                   value={settings.timezone}
                   onChange={(e) => onSettingsChange({ ...settings, timezone: e.target.value })}
-                  className="max-w-[168px] rounded border border-white/[0.08] bg-[#0b0b14] px-2 py-1 font-mono text-[11px] text-slate-200 outline-none"
+                  className="max-w-[168px] rounded border border-slate-200 bg-white px-2 py-1 font-mono text-[11px] text-slate-700 outline-none"
                 >
                   {TIMEZONES.map((tz) => (
                     <option key={tz.value} value={tz.value}>{tz.label}</option>

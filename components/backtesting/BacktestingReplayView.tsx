@@ -716,7 +716,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           )}
           <span
             className="hidden shrink-0 font-mono text-[10px] lg:block border-l pl-3"
-            style={{ borderColor: "#E1E3EA", color: "#CBD5E1" }}
+            style={{ borderColor: "#E1E3EA", color: "#64748B" }}
             title="Active timezone — change in right-click chart menu"
           >
             {chartSettings.timezone && chartSettings.timezone !== "local" ? chartSettings.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone}

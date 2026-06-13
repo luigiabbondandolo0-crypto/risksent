@@ -13,7 +13,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     fetch("/api/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { preferenceTimezone?: string } | null) => {
-        if (data?.preferenceTimezone && data.preferenceTimezone !== "UTC") {
+        if (data?.preferenceTimezone) {
           setPrefs({ timezone: data.preferenceTimezone });
         }
       })
