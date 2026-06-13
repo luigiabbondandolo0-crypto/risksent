@@ -36,6 +36,7 @@ const CLEAN_APP_PATHS = [
   "/settings",
   "/backtesting",
   "/dashboard",
+  "/profile",
 ];
 
 /**
