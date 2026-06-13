@@ -424,67 +424,66 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   return (
     <div
       className="relative -mx-4 -my-6 flex flex-col overflow-hidden sm:-mx-6 lg:-mx-8 lg:-my-8"
-      style={{ height: "calc(100dvh - 56px)", background: "#070710" }}
+      style={{ height: "calc(100dvh - 56px)", background: "#FFFFFF" }}
     >
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div
-          className="absolute -top-32 left-1/4 h-80 w-80 rounded-full opacity-[0.07] blur-3xl"
-          style={{ background: "radial-gradient(circle, #6366f1, transparent)" }}
-        />
-        <div
-          className="absolute bottom-0 right-0 h-64 w-64 rounded-full opacity-[0.05] blur-3xl"
-          style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }}
-        />
-        <div
-          className="absolute top-1/2 left-0 h-48 w-48 rounded-full opacity-[0.04] blur-3xl"
-          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
-        />
-      </div>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-      {/* ── Top bar ─────────────────────────────────────────────────────── */}
+      {/* ── Top bar — TradingView style ──────────────────────────────────── */}
       <div
-        className="flex h-12 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-[#0D0D18]/95 px-3 backdrop-blur-xl"
-        style={{ boxShadow: "0 0 24px rgba(99,102,241,0.07)" }}
+        className="flex h-11 shrink-0 items-center gap-0 border-b"
+        style={{ background: "#FFFFFF", borderColor: "#E1E3EA" }}
       >
+        {/* Back button */}
         <Link
           href={backHref}
-          className="flex items-center gap-1 shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
+          className="flex h-full items-center gap-1.5 border-r px-3 text-xs transition-colors hover:bg-[#F1F3F8]"
+          style={{ borderColor: "#E1E3EA", color: "#6B7280" }}
         >
           <ChevLeft />
           <span className="hidden font-mono text-[11px] sm:block">Lab</span>
         </Link>
-        <div className="h-4 w-px bg-white/[0.07] shrink-0" />
 
+        {/* Symbol */}
         {session && (
-          <span className="font-display text-sm font-bold text-white shrink-0">{session.symbol}</span>
+          <div
+            className="flex h-full items-center border-r px-3"
+            style={{ borderColor: "#E1E3EA" }}
+          >
+            <span className="font-[family-name:var(--font-display)] text-[13px] font-bold" style={{ color: "#131722" }}>
+              {session.symbol}
+            </span>
+          </div>
         )}
 
+        {/* OHLC */}
         {displayCandle && session && (
-          <>
-            <div className="h-4 w-px bg-white/[0.07] shrink-0" />
-            <div className="hidden items-center gap-2 font-mono text-[11px] md:flex">
-              <span>
-                <span className="text-slate-600">O </span>
-                <span className="text-slate-300">{fmtPrice(session.symbol, displayCandle.open)}</span>
-              </span>
-              <span>
-                <span className="text-slate-600">H </span>
-                <span className="text-[#26a69a]">{fmtPrice(session.symbol, displayCandle.high)}</span>
-              </span>
-              <span>
-                <span className="text-slate-600">L </span>
-                <span className="text-[#ef5350]">{fmtPrice(session.symbol, displayCandle.low)}</span>
-              </span>
-              <span>
-                <span className="text-slate-600">C </span>
-                <span className="font-semibold text-white">{fmtPrice(session.symbol, displayCandle.close)}</span>
-              </span>
-            </div>
-          </>
+          <div
+            className="hidden h-full items-center gap-3 border-r px-3 font-mono text-[11px] md:flex"
+            style={{ borderColor: "#E1E3EA" }}
+          >
+            <span>
+              <span style={{ color: "#9CA3AF" }}>O </span>
+              <span style={{ color: "#131722" }}>{fmtPrice(session.symbol, displayCandle.open)}</span>
+            </span>
+            <span>
+              <span style={{ color: "#9CA3AF" }}>H </span>
+              <span style={{ color: "#26a69a" }}>{fmtPrice(session.symbol, displayCandle.high)}</span>
+            </span>
+            <span>
+              <span style={{ color: "#9CA3AF" }}>L </span>
+              <span style={{ color: "#ef5350" }}>{fmtPrice(session.symbol, displayCandle.low)}</span>
+            </span>
+            <span>
+              <span style={{ color: "#9CA3AF" }}>C </span>
+              <span className="font-semibold" style={{ color: "#131722" }}>{fmtPrice(session.symbol, displayCandle.close)}</span>
+            </span>
+          </div>
         )}
 
-        <div className="h-4 w-px bg-white/[0.07] shrink-0" />
-        <div className="flex items-center gap-0.5">
+        {/* Timeframes */}
+        <div
+          className="flex h-full items-center border-r px-2"
+          style={{ borderColor: "#E1E3EA" }}
+        >
           {TIMEFRAMES.map((tf) => (
             <button
               key={tf}
@@ -492,36 +491,45 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               title={openTradeExists ? "Close open trades first" : undefined}
               disabled={openTradeExists}
               onClick={() => handleTfChange(tf)}
-              className={`rounded px-2 py-1 font-mono text-[11px] transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
-                tf === timeframe
-                  ? "text-white"
-                  : "text-slate-600 hover:bg-white/[0.07] hover:text-slate-300"
-              }`}
+              className="flex h-7 items-center rounded px-2 font-mono text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               style={
                 tf === timeframe
-                  ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }
-                  : undefined
+                  ? { background: "#2962FF18", color: "#2962FF", boxShadow: "inset 0 0 0 1px #2962FF30" }
+                  : { color: "#6B7280" }
               }
+              onMouseEnter={(e) => {
+                if (tf !== timeframe && !openTradeExists) (e.currentTarget as HTMLElement).style.background = "#F1F3F8";
+              }}
+              onMouseLeave={(e) => {
+                if (tf !== timeframe) (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}
             >
               {TIMEFRAME_LABELS[tf]}
             </button>
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-3 shrink-0">
+        {/* Right: balance + results */}
+        <div className="ml-auto flex h-full items-center gap-0">
           {session && (
-            <div className="text-right">
-              <div className="font-display text-sm font-bold text-white leading-tight">
-                ${session.current_balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </div>
-              <div className={`font-mono text-[10px] leading-tight ${isProfit ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
-                {isProfit ? "+" : ""}{pl.toFixed(2)}
+            <div
+              className="flex h-full items-center gap-2 border-l px-3"
+              style={{ borderColor: "#E1E3EA" }}
+            >
+              <div className="text-right">
+                <div className="font-[family-name:var(--font-display)] text-sm font-bold leading-tight" style={{ color: "#131722" }}>
+                  ${session.current_balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </div>
+                <div className={`font-mono text-[10px] leading-tight ${isProfit ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
+                  {isProfit ? "+" : ""}{pl.toFixed(2)}
+                </div>
               </div>
             </div>
           )}
           <Link
             href={resultsHref}
-            className="flex items-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-1.5 font-mono text-[11px] text-slate-400 transition-all hover:border-white/[0.15] hover:text-slate-200"
+            className="flex h-full items-center gap-1.5 border-l px-3 font-mono text-[11px] transition-colors hover:bg-[#F1F3F8]"
+            style={{ borderColor: "#E1E3EA", color: "#6B7280" }}
           >
             <BarChart2 className="h-3.5 w-3.5" />
             <span className="hidden sm:block">Results</span>
@@ -537,23 +545,24 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           onClearAll={() => { chartRef.current?.clearDrawings(); refreshObjects(); }}
         />
 
-        <div className="relative flex-1 min-w-0">
+        <div className="relative flex-1 min-w-0" style={{ background: "#FFFFFF" }}>
           {loadingOhlcv && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#070710]/80 backdrop-blur-sm">
-              <div className="flex items-center gap-3 font-mono text-sm text-slate-500">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#6366f1]" />
+            <div className="absolute inset-0 z-10 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(4px)" }}>
+              <div className="flex items-center gap-3 font-mono text-sm" style={{ color: "#6B7280" }}>
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "#2962FF" }} />
                 Loading candles…
               </div>
             </div>
           )}
           {ohlcvErr && !loadingOhlcv && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-red-500/20 bg-[#0d0d1a]/90 px-6 py-5 text-center">
-                <p className="font-mono text-sm text-red-400">{ohlcvErr}</p>
+              <div className="flex flex-col items-center gap-3 rounded-xl border px-6 py-5 text-center shadow-sm" style={{ background: "#FFFFFF", borderColor: "#E1E3EA" }}>
+                <p className="font-mono text-sm text-red-500">{ohlcvErr}</p>
                 <button
                   type="button"
                   onClick={() => session && void loadOhlcv(session, timeframe)}
-                  className="rounded-lg bg-white/[0.06] px-4 py-1.5 font-mono text-xs text-slate-300 transition hover:bg-white/[0.1]"
+                  className="rounded-lg border px-4 py-1.5 font-mono text-xs transition hover:bg-gray-50"
+                  style={{ borderColor: "#E1E3EA", color: "#6B7280" }}
                 >
                   Retry
                 </button>
@@ -580,25 +589,32 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
         </div>
       </div>
 
-      {/* ── Bottom panel ─────────────────────────────────────────────────── */}
+      {/* ── Bottom panel — TradingView style ─────────────────────────────── */}
       <div
-        className="flex shrink-0 flex-col border-t border-white/[0.08] bg-[#0D0D18]/90 backdrop-blur-xl"
-        style={{ height: 220, boxShadow: "0 -8px 32px rgba(0,0,0,0.35)" }}
+        className="flex shrink-0 flex-col border-t"
+        style={{ height: 220, background: "#FFFFFF", borderColor: "#E1E3EA" }}
       >
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/[0.06] bg-[#0D0D18]/80 px-4">
+        {/* Replay controls row */}
+        <div
+          className="flex h-16 shrink-0 items-center gap-3 border-b px-4"
+          style={{ background: "#FAFBFC", borderColor: "#E1E3EA" }}
+        >
           {/* Reset */}
           <TBtn title="Reset" onClick={reset} disabled={atStart}>
             <SkipBack className="h-3.5 w-3.5" />
           </TBtn>
 
-          {/* Core replay controls — hero size */}
-          <div className="flex items-center gap-2">
+          {/* Core replay controls */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               title="← Prev candle"
               onClick={stepBack}
               disabled={atStart}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition-all hover:border-[#6366f1]/40 hover:bg-[#6366f1]/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+              style={{ borderColor: "#E1E3EA", color: "#374151", background: "#FFFFFF" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F1F3F8"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFFFFF"; }}
             >
               <ChevLeft />
             </button>
@@ -606,7 +622,10 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               type="button"
               onClick={() => setPlaying((p) => !p)}
               disabled={!sessionCandles.length || atEnd}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#6366f1] text-white shadow-lg shadow-[#6366f1]/25 transition-all hover:bg-[#5254cc] hover:shadow-[#6366f1]/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-white shadow-md transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+              style={{ background: "#2962FF", boxShadow: "0 2px 8px rgba(41,98,255,0.3)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1E4BCC"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#2962FF"; }}
             >
               {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </button>
@@ -615,26 +634,27 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               title="Next candle →"
               onClick={stepForward}
               disabled={atEnd}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-300 transition-all hover:border-[#6366f1]/40 hover:bg-[#6366f1]/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+              style={{ borderColor: "#E1E3EA", color: "#374151", background: "#FFFFFF" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F1F3F8"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFFFFF"; }}
             >
               <ChevronRightIcon className="h-4 w-4" />
             </button>
           </div>
 
           {/* Speed */}
-          <div className="flex items-center gap-0.5 border-l border-white/[0.06] pl-3">
+          <div className="flex items-center gap-0.5 border-l pl-3" style={{ borderColor: "#E1E3EA" }}>
             {SPEEDS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setSpeed(s)}
-                className={`rounded px-2 py-0.5 font-mono text-[11px] transition-colors ${
-                  s === speed ? "text-white" : "text-slate-700 hover:text-slate-400"
-                }`}
+                className="rounded px-2 py-0.5 font-mono text-[11px] transition-colors"
                 style={
                   s === speed
-                    ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 10px rgba(99,102,241,0.18)" }
-                    : undefined
+                    ? { background: "#2962FF18", color: "#2962FF", boxShadow: "inset 0 0 0 1px #2962FF30" }
+                    : { color: "#9CA3AF" }
                 }
               >
                 {s}×
@@ -643,18 +663,21 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           </div>
 
           {/* Progress bar */}
-          <div className="flex min-w-0 flex-1 items-center gap-2 border-l border-white/[0.06] pl-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 border-l pl-3" style={{ borderColor: "#E1E3EA" }}>
             <div
               className="h-1 flex-1 min-w-0 cursor-pointer rounded-full"
-              style={{ background: `linear-gradient(to right, #6366f1 ${progress}%, rgba(255,255,255,0.06) ${progress}%)` }}
+              style={{ background: `linear-gradient(to right, #2962FF ${progress}%, #E1E3EA ${progress}%)` }}
             />
-            <span className="shrink-0 font-mono text-[11px] text-slate-700 tabular-nums">
-              {currentIndex + 1}<span className="text-slate-800">/{sessionCandles.length}</span>
+            <span className="shrink-0 font-mono text-[11px] tabular-nums" style={{ color: "#9CA3AF" }}>
+              {currentIndex + 1}<span style={{ color: "#CBD5E1" }}>/{sessionCandles.length}</span>
             </span>
           </div>
 
           {currentCandle && (
-            <span className="hidden shrink-0 font-mono text-[11px] text-slate-700 md:block border-l border-white/[0.06] pl-3">
+            <span
+              className="hidden shrink-0 font-mono text-[11px] md:block border-l pl-3"
+              style={{ borderColor: "#E1E3EA", color: "#9CA3AF" }}
+            >
               {new Date(currentCandle.time * 1000).toLocaleString(undefined, {
                 month: "short", day: "numeric", year: "numeric",
                 hour: "2-digit", minute: "2-digit",
@@ -664,24 +687,26 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           )}
         </div>
 
-        <div className="flex h-8 shrink-0 items-center gap-1 border-b border-white/[0.06] bg-[#0D0D18]/80 px-3">
+        {/* Tab bar + BUY/SELL */}
+        <div
+          className="flex h-8 shrink-0 items-center gap-1 border-b px-3"
+          style={{ background: "#FAFBFC", borderColor: "#E1E3EA" }}
+        >
           {BOTTOM_TABS.map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setBottomTab(tab)}
-              className={`rounded-lg px-3 py-1 font-mono text-[11px] transition-colors ${
-                tab === bottomTab ? "text-white" : "text-slate-600 hover:text-slate-400"
-              }`}
+              className="rounded px-3 py-1 font-mono text-[11px] transition-colors"
               style={
                 tab === bottomTab
-                  ? { background: "rgba(99,102,241,0.15)", boxShadow: "0 0 12px rgba(99,102,241,0.2)" }
-                  : undefined
+                  ? { background: "#2962FF18", color: "#2962FF", boxShadow: "inset 0 0 0 1px #2962FF30" }
+                  : { color: "#9CA3AF" }
               }
             >
               {tab}
               {tab === "Positions" && openTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-[#6366f1]/30 px-1.5 py-0.5 text-[9px] text-[#818cf8]">
+                <span className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px]" style={{ background: "#2962FF20", color: "#2962FF" }}>
                   {openTrades.length}
                 </span>
               )}
@@ -692,7 +717,10 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             <button
               type="button"
               onClick={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); }}
-              className="flex items-center gap-1 rounded-lg bg-[#26a69a]/15 px-3 py-1 font-mono text-[11px] font-bold text-[#26a69a] transition-all hover:bg-[#26a69a]/25"
+              className="flex items-center gap-1 rounded px-3 py-1 font-mono text-[11px] font-bold transition-colors"
+              style={{ background: "#26a69a18", color: "#26a69a", border: "1px solid #26a69a30" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#26a69a25"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#26a69a18"; }}
             >
               <TrendingUp className="h-3 w-3" />
               BUY
@@ -700,7 +728,10 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             <button
               type="button"
               onClick={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); }}
-              className="flex items-center gap-1 rounded-lg bg-[#ef5350]/15 px-3 py-1 font-mono text-[11px] font-bold text-[#ef5350] transition-all hover:bg-[#ef5350]/25"
+              className="flex items-center gap-1 rounded px-3 py-1 font-mono text-[11px] font-bold transition-colors"
+              style={{ background: "#ef535018", color: "#ef5350", border: "1px solid #ef535030" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef535025"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef535018"; }}
             >
               <TrendingDown className="h-3 w-3" />
               SELL
@@ -708,15 +739,16 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           </div>
         </div>
 
-        <div className="relative flex-1 overflow-hidden">
+        {/* Content area */}
+        <div className="relative flex-1 overflow-hidden" style={{ background: "#FFFFFF" }}>
           {bottomTab === "Trade" && (
             <div className="flex flex-col items-center justify-center h-full gap-2">
-              <p className="font-mono text-sm text-slate-600">
+              <p className="font-mono text-sm" style={{ color: "#9CA3AF" }}>
                 {currentCandle
                   ? `Mark: ${fmtPrice(session?.symbol ?? "", currentCandle.close)}`
                   : "No candle loaded"}
               </p>
-              <p className="font-mono text-[11px] text-slate-700">
+              <p className="font-mono text-[11px]" style={{ color: "#CBD5E1" }}>
                 B to buy · S to sell · Space / → for next candle · Ctrl+Z to undo
               </p>
             </div>
@@ -797,7 +829,10 @@ function TBtn({
       title={title}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-7 w-7 items-center justify-center rounded text-slate-600 transition-colors hover:bg-white/[0.06] hover:text-slate-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+      className="flex h-7 w-7 items-center justify-center rounded transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-25"
+      style={{ color: "#6B7280" }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#F1F3F8"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
     >
       {children}
     </button>

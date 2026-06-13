@@ -714,28 +714,28 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
 
       const chart = createChart(el, {
         layout: {
-          background: { type: ColorType.Solid, color: "#080809" },
-          textColor: "#94a3b8",
+          background: { type: ColorType.Solid, color: "#FFFFFF" },
+          textColor: "#131722",
           fontSize: 12,
           fontFamily: "'JetBrains Mono', monospace",
         },
         grid: {
-          vertLines: { color: "rgba(255,255,255,0.04)", style: LineStyle.Solid },
-          horzLines: { color: "rgba(255,255,255,0.04)", style: LineStyle.Solid },
+          vertLines: { color: "rgba(42,46,57,0.06)", style: LineStyle.Solid },
+          horzLines: { color: "rgba(42,46,57,0.06)", style: LineStyle.Solid },
         },
         crosshair: {
           mode: CrosshairMode.Normal,
-          vertLine: { color: "rgba(255,255,255,0.3)", width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#1e1e2e" },
-          horzLine: { color: "rgba(255,255,255,0.3)", width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#1e1e2e" },
+          vertLine: { color: "#9B9B9B", width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#363A45" },
+          horzLine: { color: "#9B9B9B", width: 1, style: LineStyle.Dashed, labelBackgroundColor: "#363A45" },
         },
         rightPriceScale: {
-          borderColor: "rgba(255,255,255,0.07)",
-          textColor: "#94a3b8",
+          borderColor: "#E1E3EA",
+          textColor: "#787B86",
           scaleMargins: { top: 0.1, bottom: 0.1 },
         },
         leftPriceScale: { visible: false },
         timeScale: {
-          borderColor: "rgba(255,255,255,0.07)",
+          borderColor: "#E1E3EA",
           timeVisible: true,
           secondsVisible: false,
           barSpacing: 8,
