@@ -93,7 +93,7 @@ export default function AffiliatePage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-56px)] flex-col items-center justify-center overflow-hidden px-4 py-16">
+    <div className="relative flex min-h-[calc(100vh-56px)] flex-col items-center justify-center overflow-hidden px-4 py-16 bg-[#09090b]">
 
       {/* Background dots */}
       {DOTS.map((d, i) => <Dot key={i} {...d} />)}

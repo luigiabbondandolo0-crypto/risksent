@@ -12,6 +12,22 @@ import { AppHeaderBar } from "@/components/AppHeaderBar";
 import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 import { BrandLogo, BrandWordmark } from "@/components/Brand";
 
+type AnnItem = {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "warning" | "success" | "error";
+};
+
+const ANN_COLORS: Record<string, { dot: string; text: string; bg: string; border: string }> = {
+  info:    { dot: "#2962FF", text: "#1d4ed8", bg: "rgba(41,98,255,0.07)",  border: "rgba(41,98,255,0.18)"  },
+  warning: { dot: "#d97706", text: "#92400e", bg: "rgba(217,119,6,0.07)",  border: "rgba(217,119,6,0.18)"  },
+  success: { dot: "#059669", text: "#065f46", bg: "rgba(5,150,105,0.07)",  border: "rgba(5,150,105,0.18)"  },
+  error:   { dot: "#dc2626", text: "#7f1d1d", bg: "rgba(220,38,38,0.07)",  border: "rgba(220,38,38,0.18)"  },
+};
+
+const LS_KEY = (id: string) => `rs_ann_dismissed_${id}`;
+
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
   { href: "/journaling", label: "Journaling" },
@@ -29,6 +45,8 @@ export function Topbar() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ann, setAnn] = useState<AnnItem | null>(null);
+  const [annDismissed, setAnnDismissed] = useState(false);
   const isLoginPage = pathname === "/login";
   const isAdminArea = pathname?.startsWith("/admin");
   const inApp = useIsAppShell(pathname);
@@ -51,6 +69,26 @@ export function Topbar() {
     };
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    fetch("/api/announcements")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { announcement?: AnnItem | null } | null) => {
+        const a = data?.announcement ?? null;
+        if (!a) return;
+        try { if (localStorage.getItem(LS_KEY(a.id))) return; } catch {}
+        setAnn(a);
+      })
+      .catch(() => {});
+  }, []);
+
+  function dismissAnn() {
+    if (!ann) return;
+    try { localStorage.setItem(LS_KEY(ann.id), "1"); } catch {}
+    setAnnDismissed(true);
+  }
+
+  const annColors = ann ? (ANN_COLORS[ann.type] ?? ANN_COLORS.info) : null;
 
   const logoHref = inApp ? "/dashboard" : "/";
 
@@ -75,6 +113,43 @@ export function Topbar() {
           >
             <BrandWordmark className="text-[clamp(14px,3.5vw,18px)]" />
           </Link>
+
+          {/* Inline announcement — app mode only */}
+          {inApp && ann && !annDismissed && annColors && (
+            <div className="hidden sm:flex flex-1 items-center justify-center px-4">
+              <div
+                className="flex items-center gap-2.5 rounded-xl px-4 py-2 text-[13px] font-medium"
+                style={{ background: annColors.bg, border: `1px solid ${annColors.border}` }}
+              >
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span
+                    className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+                    style={{ background: annColors.dot }}
+                  />
+                  <span
+                    className="relative inline-flex h-2 w-2 rounded-full"
+                    style={{ background: annColors.dot }}
+                  />
+                </span>
+                <p
+                  className="font-[family-name:var(--font-mono)] leading-none"
+                  style={{ color: annColors.text }}
+                >
+                  {ann.title && <strong className="mr-1.5">{ann.title}</strong>}
+                  {ann.message}
+                </p>
+                <button
+                  type="button"
+                  onClick={dismissAnn}
+                  aria-label="Dismiss"
+                  className="ml-1 rounded p-0.5 transition-opacity hover:opacity-60"
+                  style={{ color: annColors.dot }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Marketing nav — desktop */}
           {!inApp && (

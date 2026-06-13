@@ -17,17 +17,17 @@ type Announcement = {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  info: "text-blue-300 bg-blue-500/15 border-blue-500/30",
-  warning: "text-amber-300 bg-amber-500/15 border-amber-500/30",
-  success: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30",
-  error: "text-red-300 bg-red-500/15 border-red-500/30",
+  info: "text-blue-700 bg-blue-50 border-blue-200",
+  warning: "text-amber-700 bg-amber-50 border-amber-200",
+  success: "text-emerald-700 bg-emerald-50 border-emerald-200",
+  error: "text-red-700 bg-red-50 border-red-200",
 };
 
 const PLAN_COLORS: Record<string, string> = {
-  all: "text-slate-300 bg-slate-500/15",
-  free: "text-slate-400 bg-slate-600/15",
-  new_trader: "text-cyan-300 bg-cyan-500/15",
-  experienced: "text-amber-300 bg-amber-500/15",
+  all: "text-slate-600 bg-slate-100",
+  free: "text-slate-500 bg-slate-50",
+  new_trader: "text-cyan-700 bg-cyan-50",
+  experienced: "text-amber-700 bg-amber-50",
 };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -38,10 +38,10 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const TYPE_BANNER: Record<string, string> = {
-  info: "border-blue-500/20 bg-blue-500/10 text-blue-200",
-  warning: "border-amber-500/20 bg-amber-500/10 text-amber-200",
-  success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-200",
-  error: "border-red-500/20 bg-red-500/10 text-red-200",
+  info: "border-blue-200 bg-blue-50 text-blue-700",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  error: "border-red-200 bg-red-50 text-red-700",
 };
 
 const emptyForm = {
@@ -156,11 +156,11 @@ export default function AnnouncementsPage() {
 
   if (!isAdmin) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-400" />
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-500" />
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-200">Access denied</h2>
-          <p className="mt-1 text-sm text-slate-400">This page is only for administrators.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-700">Access denied</h2>
+          <p className="mt-1 text-sm text-slate-600">This page is only for administrators.</p>
         </div>
       </div>
     );
@@ -170,8 +170,8 @@ export default function AnnouncementsPage() {
     <div className="space-y-8 pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-            <Bell className="h-6 w-6 text-amber-400" />
+          <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+            <Bell className="h-6 w-6 text-amber-500" />
             Announcements
           </h1>
           <p className="mt-1 text-sm font-mono text-slate-500">
@@ -184,7 +184,7 @@ export default function AnnouncementsPage() {
             setShowForm((v) => !v);
             setFormError(null);
           }}
-          className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02]"
+          className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.02]"
           style={{ background: "linear-gradient(135deg, #6366f1, #fb923c)" }}
         >
           <Plus className="h-4 w-4" />
@@ -201,8 +201,8 @@ export default function AnnouncementsPage() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 space-y-4">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
                 New announcement
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -212,7 +212,7 @@ export default function AnnouncementsPage() {
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                     placeholder="Announcement title"
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400 font-mono"
                   />
                 </div>
                 <div>
@@ -220,7 +220,7 @@ export default function AnnouncementsPage() {
                   <select
                     value={form.type}
                     onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as typeof form.type }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none"
                   >
                     <option value="info">Info</option>
                     <option value="warning">Warning</option>
@@ -233,7 +233,7 @@ export default function AnnouncementsPage() {
                   <select
                     value={form.target_plan}
                     onChange={(e) => setForm((f) => ({ ...f, target_plan: e.target.value as typeof form.target_plan }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none"
                   >
                     <option value="all">All users</option>
                     <option value="free">Free only</option>
@@ -247,7 +247,7 @@ export default function AnnouncementsPage() {
                     type="datetime-local"
                     value={form.expires_at}
                     onChange={(e) => setForm((f) => ({ ...f, expires_at: e.target.value }))}
-                    className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-indigo-400 font-mono"
                   />
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function AnnouncementsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                   rows={3}
                   placeholder="Announcement message…"
-                  className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#6366f1] font-mono resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-400 font-mono resize-none"
                 />
               </div>
 
@@ -277,7 +277,7 @@ export default function AnnouncementsPage() {
 
               {formError && (
                 <p
-                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-mono text-red-200"
+                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-mono text-red-700"
                   role="alert"
                 >
                   {formError}
@@ -289,7 +289,7 @@ export default function AnnouncementsPage() {
                   type="button"
                   onClick={() => void handleCreate()}
                   disabled={submitting || !form.title.trim() || !form.message.trim()}
-                  className="rounded-xl px-5 py-2.5 text-sm font-bold text-black disabled:opacity-40"
+                  className="rounded-xl px-5 py-2.5 text-sm font-bold text-white disabled:opacity-40"
                   style={{ background: "linear-gradient(135deg, #6366f1, #fb923c)" }}
                 >
                   {submitting ? "Creating…" : "Create"}
@@ -301,7 +301,7 @@ export default function AnnouncementsPage() {
                     setForm(emptyForm);
                     setFormError(null);
                   }}
-                  className="rounded-xl border border-white/[0.1] px-5 py-2.5 text-sm text-slate-400 hover:text-slate-200"
+                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm text-slate-600 hover:text-slate-900"
                 >
                   Cancel
                 </button>
@@ -315,8 +315,8 @@ export default function AnnouncementsPage() {
       {loading ? (
         <div className="text-center py-12 text-sm font-mono text-slate-500">Loading announcements…</div>
       ) : announcements.length === 0 ? (
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-12 text-center">
-          <Bell className="mx-auto h-8 w-8 text-slate-600 mb-3" />
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
+          <Bell className="mx-auto h-8 w-8 text-slate-300 mb-3" />
           <p className="text-slate-500 text-sm font-mono">No announcements yet.</p>
         </div>
       ) : (
@@ -327,12 +327,12 @@ export default function AnnouncementsPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className={`rounded-2xl border p-5 transition-all ${ann.active ? "border-white/[0.07] bg-white/[0.02]" : "border-white/[0.04] bg-white/[0.01] opacity-60"}`}
+              className={`rounded-2xl border p-5 transition-all ${ann.active ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-60"}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <p className="font-semibold text-white">{ann.title}</p>
+                    <p className="font-semibold text-slate-900">{ann.title}</p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-mono uppercase ${TYPE_COLORS[ann.type] ?? ""}`}>
                       {ann.type}
                     </span>
@@ -340,13 +340,13 @@ export default function AnnouncementsPage() {
                       {PLAN_LABELS[ann.target_plan] ?? ann.target_plan}
                     </span>
                     {!ann.active && (
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-500">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-mono text-slate-500">
                         Inactive
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-slate-400 font-mono line-clamp-2">{ann.message}</p>
-                  <p className="mt-1 text-xs text-slate-600 font-mono">
+                  <p className="text-sm text-slate-600 font-mono line-clamp-2">{ann.message}</p>
+                  <p className="mt-1 text-xs text-slate-400 font-mono">
                     Created {new Date(ann.created_at).toLocaleDateString()}
                     {ann.expires_at && ` · Expires ${new Date(ann.expires_at).toLocaleDateString()}`}
                   </p>
@@ -355,15 +355,15 @@ export default function AnnouncementsPage() {
                   <button
                     type="button"
                     onClick={() => void toggleActive(ann.id, !ann.active)}
-                    className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-slate-400 transition-all hover:border-white/20 hover:text-slate-200"
+                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
                   >
-                    {ann.active ? <ToggleRight className="h-4 w-4 text-emerald-400" /> : <ToggleLeft className="h-4 w-4" />}
+                    {ann.active ? <ToggleRight className="h-4 w-4 text-emerald-500" /> : <ToggleLeft className="h-4 w-4" />}
                     {ann.active ? "Active" : "Inactive"}
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleDelete(ann.id)}
-                    className="rounded-lg border border-red-500/20 p-1.5 text-red-400 transition-all hover:border-red-500/40 hover:bg-red-500/10"
+                    className="rounded-lg border border-red-200 p-1.5 text-red-500 transition-all hover:border-red-300 hover:bg-red-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

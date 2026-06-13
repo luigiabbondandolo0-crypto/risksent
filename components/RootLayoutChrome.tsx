@@ -9,7 +9,6 @@ import { Footer } from "@/components/Footer";
 import { CookieConsentBanner } from "@/components/CookieConsent";
 import { AppDomainProvider, useIsAppShell } from "@/lib/AppDomainContext";
 import { UserPreferencesProvider } from "@/lib/UserPreferencesContext";
-import { AnnouncementBar } from "@/components/AnnouncementBar";
 
 /** Pages that own their full layout — no topbar, no footer */
 const CHROMELESS_PATHS = [
@@ -51,7 +50,6 @@ function RootLayoutChromeInner({ children }: { children: React.ReactNode }) {
       <>
         <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
         <ShellViewportLock>
-          <AnnouncementBar />
           <Topbar />
           <AppShell>{children}</AppShell>
         </ShellViewportLock>

@@ -180,13 +180,13 @@ export default function AdminPage() {
 
   if (!isAdmin || forbidden) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-400" />
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-500" />
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-200">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-700">
             Access denied
           </h2>
-          <p className="mt-1 text-sm text-slate-400">This page is only for administrators.</p>
+          <p className="mt-1 text-sm text-slate-600">This page is only for administrators.</p>
         </div>
       </div>
     );
@@ -194,26 +194,26 @@ export default function AdminPage() {
 
   if (serverError) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-400" />
+      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-6">
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-500" />
         <div>
-          <h2 className="text-lg font-semibold text-red-200">Server error</h2>
-          <p className="mt-1 break-all font-mono text-sm text-slate-400">{serverError}</p>
+          <h2 className="text-lg font-semibold text-red-700">Server error</h2>
+          <p className="mt-1 break-all font-mono text-sm text-slate-600">{serverError}</p>
         </div>
       </div>
     );
   }
 
   const dot = (ok: boolean) => (
-    <span className={`h-2 w-2 shrink-0 rounded-full ${ok ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "bg-red-400"}`} />
+    <span className={`h-2 w-2 shrink-0 rounded-full ${ok ? "bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "bg-red-500"}`} />
   );
 
   return (
     <div className="space-y-10 pb-16">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-            <Shield className="h-7 w-7 text-amber-400" />
+          <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+            <Shield className="h-7 w-7 text-amber-500" />
             Admin Dashboard
           </h1>
           <p className="mt-1 max-w-xl text-sm font-mono text-slate-500">
@@ -223,16 +223,16 @@ export default function AdminPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/trial-reminders"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-orange-500/40 hover:bg-orange-500/10"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-orange-200 hover:bg-orange-50"
           >
-            <Mail className="h-4 w-4 text-orange-400" />
+            <Mail className="h-4 w-4 text-orange-500" />
             Trial reminders
           </Link>
           <Link
             href="/admin/email-preview"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-indigo-500/40 hover:bg-indigo-500/10"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50"
           >
-            <Mail className="h-4 w-4 text-indigo-400" />
+            <Mail className="h-4 w-4 text-indigo-500" />
             Email preview
           </Link>
         </div>
@@ -272,16 +272,16 @@ export default function AdminPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5"
+              className="rounded-2xl border border-slate-200 bg-white p-5"
             >
               <div className="flex items-center gap-2 text-slate-500">
                 <c.icon className="h-4 w-4" />
                 <span className="text-[10px] font-mono uppercase tracking-wider">{c.label}</span>
               </div>
-              <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-white">
+              <p className="mt-3 font-[family-name:var(--font-display)] text-3xl font-bold text-slate-900">
                 {"displayZeroAs" in c && c.value === 0 ? c.displayZeroAs : c.value}
               </p>
-              <p className="mt-1 flex items-center gap-1 text-xs font-mono text-emerald-400/90">
+              <p className="mt-1 flex items-center gap-1 text-xs font-mono text-emerald-600">
                 <TrendingUp className="h-3 w-3" />
                 {c.hint}
               </p>
@@ -291,8 +291,8 @@ export default function AdminPage() {
       )}
 
       {health && (
-        <section className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
             Platform health
           </h2>
           <p className="mt-1 text-xs font-mono text-slate-500">
@@ -306,9 +306,9 @@ export default function AdminPage() {
             ].map(({ k, h: row }) => (
               <li
                 key={k}
-                className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3"
+                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
               >
-                <span className="flex items-center gap-2 text-sm text-slate-300">
+                <span className="flex items-center gap-2 text-sm text-slate-700">
                   {dot(row.ok)}
                   {k}
                 </span>
@@ -319,15 +319,15 @@ export default function AdminPage() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">
           Recent activity
         </h2>
         <ul className="mt-4 space-y-3">
           {recentActivity.map((u) => (
             <li
               key={u.id}
-              className="flex items-center gap-3 border-b border-white/[0.04] pb-3 text-sm last:border-0"
+              className="flex items-center gap-3 border-b border-slate-100 pb-3 text-sm last:border-0"
             >
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
@@ -336,7 +336,7 @@ export default function AdminPage() {
                 {emailInitials(u.email)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-slate-200">{u.email}</p>
+                <p className="truncate font-mono text-slate-700">{u.email}</p>
                 <p className="text-xs text-slate-500">Signed up</p>
               </div>
               <time className="shrink-0 text-xs font-mono text-slate-500">
@@ -349,9 +349,9 @@ export default function AdminPage() {
 
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-white">Users</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-slate-900">Users</h2>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
               onChange={(e) => {
@@ -359,15 +359,15 @@ export default function AdminPage() {
                 setPage(0);
               }}
               placeholder="Search email or role…"
-              className="w-full min-w-[200px] rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#6366f1] sm:w-72"
+              className="w-full min-w-[200px] rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-indigo-400 sm:w-72"
             />
           </div>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-slate-100 text-[10px] font-mono uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3">User</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Role</th>
@@ -380,7 +380,7 @@ export default function AdminPage() {
                 {slice.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-b border-white/[0.04] transition-colors last:border-0 hover:bg-white/[0.03]"
+                    className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50"
                   >
                     <td className="px-4 py-3">
                       <span
@@ -390,21 +390,21 @@ export default function AdminPage() {
                         {emailInitials(u.email)}
                       </span>
                     </td>
-                    <td className="max-w-[200px] truncate px-4 py-3 font-mono text-slate-300">{u.email}</td>
+                    <td className="max-w-[200px] truncate px-4 py-3 font-mono text-slate-700">{u.email}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           u.role === "admin"
-                            ? "bg-amber-500/20 text-amber-300"
+                            ? "bg-amber-50 text-amber-700"
                             : u.role === "trader"
-                              ? "bg-cyan-500/15 text-cyan-300"
-                              : "bg-slate-500/15 text-slate-400"
+                              ? "bg-cyan-50 text-cyan-700"
+                              : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-400">{u.accountsCount}</td>
+                    <td className="px-4 py-3 font-mono text-slate-600">{u.accountsCount}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                     </td>
@@ -414,7 +414,7 @@ export default function AdminPage() {
                           value={u.role}
                           onChange={(e) => void handleRoleChange(u.id, e.target.value)}
                           disabled={updatingRole === u.id}
-                          className="rounded-lg border border-white/[0.1] bg-[#0e0e12] px-2 py-1 text-xs text-slate-200 outline-none"
+                          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 outline-none"
                         >
                           {ROLES.map((role) => (
                             <option key={role} value={role}>
@@ -424,7 +424,7 @@ export default function AdminPage() {
                         </select>
                         <Link
                           href={`/profile`}
-                          className="text-xs font-mono text-cyan-400 hover:underline"
+                          className="text-xs font-mono text-indigo-500 hover:underline"
                         >
                           View
                         </Link>
@@ -439,12 +439,12 @@ export default function AdminPage() {
             <p className="px-4 py-8 text-center text-sm text-slate-500">No users match.</p>
           )}
           {filtered.length > PAGE_SIZE && (
-            <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-3">
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
               <button
                 type="button"
                 disabled={pageSafe <= 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="rounded-lg border border-white/[0.1] px-3 py-1 text-xs disabled:opacity-40"
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 disabled:opacity-40"
               >
                 Previous
               </button>
@@ -455,7 +455,7 @@ export default function AdminPage() {
                 type="button"
                 disabled={pageSafe >= pageCount - 1}
                 onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                className="rounded-lg border border-white/[0.1] px-3 py-1 text-xs disabled:opacity-40"
+                className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 disabled:opacity-40"
               >
                 Next
               </button>

@@ -41,16 +41,16 @@ const PLAN_PRICES: Record<string, number> = {
 };
 const PLAN_LABELS: Record<string, string> = { free: "Free", new_trader: "New Trader", experienced: "Experienced" };
 const PLAN_COLORS: Record<string, string> = {
-  free: "text-slate-400 bg-slate-500/15 border-slate-500/30",
-  new_trader: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
-  experienced: "text-amber-300 bg-amber-500/15 border-amber-500/30",
+  free: "text-slate-600 bg-slate-100 border-slate-200",
+  new_trader: "text-cyan-700 bg-cyan-50 border-cyan-200",
+  experienced: "text-amber-700 bg-amber-50 border-amber-200",
 };
 const STATUS_COLORS: Record<string, string> = {
-  active: "text-emerald-300 bg-emerald-500/15",
-  trialing: "text-cyan-300 bg-cyan-500/15",
-  past_due: "text-orange-300 bg-orange-500/15",
-  canceled: "text-red-300 bg-red-500/15",
-  incomplete: "text-slate-400 bg-slate-500/15",
+  active: "text-emerald-700 bg-emerald-50",
+  trialing: "text-cyan-700 bg-cyan-50",
+  past_due: "text-orange-700 bg-orange-50",
+  canceled: "text-red-700 bg-red-50",
+  incomplete: "text-slate-600 bg-slate-100",
 };
 
 function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
@@ -74,10 +74,10 @@ function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; pr
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string }[]; label?: string }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border px-3 py-2 text-xs font-mono" style={{ background: "rgba(12,12,14,0.95)", borderColor: "rgba(255,255,255,0.1)" }}>
-      <p className="text-slate-400 mb-1">{label}</p>
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono shadow-lg">
+      <p className="text-slate-500 mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-white">${p.value} {p.name}</p>
+        <p key={i} className="text-slate-900">${p.value} {p.name}</p>
       ))}
     </div>
   );
@@ -116,7 +116,6 @@ export default function RevenuePage() {
     }
   }
 
-  // Build MRR trend by grouping subscriptions by month created
   const mrrTrend = useMemo(() => {
     const monthMap = new Map<string, number>();
     for (const s of subscriptions) {
@@ -133,16 +132,15 @@ export default function RevenuePage() {
     });
   }, [subscriptions]);
 
-  // Plan distribution
   const planDist = useMemo(() => {
     const counts: Record<string, number> = { free: 0, new_trader: 0, experienced: 0 };
     for (const s of subscriptions) {
       counts[s.plan] = (counts[s.plan] ?? 0) + 1;
     }
     return [
-      { name: "Free", count: counts.free ?? 0, fill: "rgba(148,163,184,0.6)" },
-      { name: "New Trader", count: counts.new_trader ?? 0, fill: "rgba(34,211,238,0.6)" },
-      { name: "Experienced", count: counts.experienced ?? 0, fill: "rgba(245,158,11,0.6)" },
+      { name: "Free", count: counts.free ?? 0, fill: "rgba(100,116,139,0.6)" },
+      { name: "New Trader", count: counts.new_trader ?? 0, fill: "rgba(6,182,212,0.7)" },
+      { name: "Experienced", count: counts.experienced ?? 0, fill: "rgba(245,158,11,0.7)" },
     ];
   }, [subscriptions]);
 
@@ -151,11 +149,11 @@ export default function RevenuePage() {
   }
   if (!isAdmin) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-400" />
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-500" />
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-200">Access denied</h2>
-          <p className="mt-1 text-sm text-slate-400">This page is only for administrators.</p>
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-700">Access denied</h2>
+          <p className="mt-1 text-sm text-slate-600">This page is only for administrators.</p>
         </div>
       </div>
     );
@@ -164,8 +162,8 @@ export default function RevenuePage() {
   return (
     <div className="space-y-8 pb-16">
       <header>
-        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-          <DollarSign className="h-6 w-6 text-amber-400" />
+        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+          <DollarSign className="h-6 w-6 text-amber-500" />
           Revenue
         </h1>
         <p className="mt-1 text-sm font-mono text-slate-500">Subscription metrics and revenue analytics.</p>
@@ -174,17 +172,17 @@ export default function RevenuePage() {
       {/* Stats row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "MRR", value: mrr, prefix: "$", icon: DollarSign, color: "text-emerald-400" },
-          { label: "ARR", value: mrr * 12, prefix: "$", icon: TrendingUp, color: "text-cyan-400" },
-          { label: "Active subscribers", value: activeCount, prefix: "", icon: Users, color: "text-amber-400" },
-          { label: "Churn rate", value: churnRate, prefix: "", suffix: "%", icon: AlertCircle, color: "text-red-400" },
+          { label: "MRR", value: mrr, prefix: "$", icon: DollarSign, color: "text-emerald-600" },
+          { label: "ARR", value: mrr * 12, prefix: "$", icon: TrendingUp, color: "text-cyan-600" },
+          { label: "Active subscribers", value: activeCount, prefix: "", icon: Users, color: "text-amber-600" },
+          { label: "Churn rate", value: churnRate, prefix: "", suffix: "%", icon: AlertCircle, color: "text-red-600" },
         ].map((c, i) => (
           <motion.div
             key={c.label}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5"
+            className="rounded-2xl border border-slate-200 bg-white p-5"
           >
             <div className="flex items-center gap-2 text-slate-500">
               <c.icon className="h-4 w-4" />
@@ -199,31 +197,31 @@ export default function RevenuePage() {
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6">
-          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-white mb-4">MRR trend</h2>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-900 mb-4">MRR trend</h2>
           {mrrTrend.length === 0 ? (
             <p className="text-center text-sm text-slate-500 font-mono py-8">No data yet</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={mrrTrend}>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="month" tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${v}`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="mrr" name="MRR" stroke="#00e676" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="mrr" name="MRR" stroke="#059669" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6">
-          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-white mb-4">Plan distribution</h2>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-900 mb-4">Plan distribution</h2>
           {planDist.every((p) => p.count === 0) ? (
             <p className="text-center text-sm text-slate-500 font-mono py-8">No subscribers yet</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={planDist}>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid stroke="rgba(0,0,0,0.06)" vertical={false} />
                 <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#64748b", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
@@ -235,14 +233,14 @@ export default function RevenuePage() {
       </div>
 
       {/* Subscriptions table */}
-      <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02]">
-        <div className="p-5 border-b border-white/[0.06]">
-          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-white">Subscriptions</h2>
+      <div className="rounded-2xl border border-slate-200 bg-white">
+        <div className="p-5 border-b border-slate-100">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-slate-900">Subscriptions</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              <tr className="border-b border-slate-100 text-[10px] font-mono uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3">User</th>
                 <th className="px-4 py-3">Plan</th>
                 <th className="px-4 py-3">Status</th>
@@ -258,8 +256,8 @@ export default function RevenuePage() {
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500 font-mono">No subscriptions found.</td></tr>
               ) : (
                 subscriptions.map((s) => (
-                  <tr key={s.id} className="border-b border-white/[0.04] transition-colors last:border-0 hover:bg-white/[0.03]">
-                    <td className="max-w-[180px] truncate px-4 py-3 font-mono text-sm text-slate-300">{s.user_email}</td>
+                  <tr key={s.id} className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50">
+                    <td className="max-w-[180px] truncate px-4 py-3 font-mono text-sm text-slate-700">{s.user_email}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${PLAN_COLORS[s.plan] ?? ""}`}>
                         {PLAN_LABELS[s.plan] ?? s.plan}
@@ -270,7 +268,7 @@ export default function RevenuePage() {
                         {s.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-slate-300">${PLAN_PRICES[s.plan] ?? 0}/mo</td>
+                    <td className="px-4 py-3 font-mono text-slate-700">${PLAN_PRICES[s.plan] ?? 0}/mo</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">
                       {s.created_at ? new Date(s.created_at).toLocaleDateString() : "—"}
                     </td>

@@ -38,42 +38,42 @@ function planBadgeClasses(u: UserRow): { label: string; className: string } {
   if (u.role === "admin") {
     return {
       label: "Admin",
-      className: "text-violet-200 bg-violet-500/15 border-violet-500/35",
+      className: "text-violet-700 bg-violet-50 border-violet-200",
     };
   }
   if (u.subStatus === "trialing" || u.plan === "trial") {
     return {
       label: "Trial",
-      className: "text-amber-200 bg-amber-500/15 border-amber-500/35",
+      className: "text-amber-700 bg-amber-50 border-amber-200",
     };
   }
   if (u.role === "trader" && u.plan === "user") {
     return {
       label: "Trader",
-      className: "text-cyan-200 bg-cyan-500/15 border-cyan-500/30",
+      className: "text-cyan-700 bg-cyan-50 border-cyan-200",
     };
   }
   if (u.plan === "user") {
     return {
       label: "Demo",
-      className: "text-slate-400 bg-slate-500/15 border-slate-500/30",
+      className: "text-slate-600 bg-slate-100 border-slate-200",
     };
   }
   if (u.plan === "new_trader") {
     return {
       label: "New Trader",
-      className: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
+      className: "text-cyan-700 bg-cyan-50 border-cyan-200",
     };
   }
   if (u.plan === "experienced") {
     return {
       label: "Experienced",
-      className: "text-[#ff6b6b] bg-[#6366f1]/12 border-[#6366f1]/35",
+      className: "text-indigo-700 bg-indigo-50 border-indigo-200",
     };
   }
   return {
     label: "Demo",
-    className: "text-slate-400 bg-slate-500/15 border-slate-500/30",
+    className: "text-slate-600 bg-slate-100 border-slate-200",
   };
 }
 
@@ -228,13 +228,13 @@ export default function AdminUsersPage() {
   }
   if (!isAdmin) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-400" />
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+        <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-amber-500" />
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-200">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-amber-700">
             Access denied
           </h2>
-          <p className="mt-1 text-sm text-slate-400">This page is only for administrators.</p>
+          <p className="mt-1 text-sm text-slate-600">This page is only for administrators.</p>
         </div>
       </div>
     );
@@ -252,14 +252,14 @@ export default function AdminUsersPage() {
             exit={{ opacity: 0, y: -12 }}
             className={`fixed left-1/2 top-6 z-[100] flex -translate-x-1/2 items-center gap-2 rounded-xl border px-5 py-3 text-sm font-mono shadow-xl ${
               toast.ok
-                ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-200"
-                : "border-red-500/30 bg-red-500/15 text-red-200"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
             }`}
           >
             {toast.ok ? (
-              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-400" />
+              <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
             )}
             {toast.message}
           </motion.div>
@@ -267,8 +267,8 @@ export default function AdminUsersPage() {
       </AnimatePresence>
 
       <header>
-        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-white">
-          <Users className="h-6 w-6 text-amber-400" />
+        <h1 className="flex items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-bold text-slate-900">
+          <Users className="h-6 w-6 text-amber-500" />
           Users Management
         </h1>
         <p className="mt-1 text-sm font-mono text-slate-500">
@@ -279,7 +279,7 @@ export default function AdminUsersPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => {
@@ -287,7 +287,7 @@ export default function AdminUsersPage() {
               setPage(0);
             }}
             placeholder="Search by email, role, or plan…"
-            className="w-full rounded-xl border border-white/[0.1] bg-[#0e0e12] py-2.5 pl-9 pr-3 font-mono text-sm text-white outline-none focus:border-[#6366f1]"
+            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 font-mono text-sm text-slate-900 outline-none focus:border-indigo-400"
           />
         </div>
         <select
@@ -296,7 +296,7 @@ export default function AdminUsersPage() {
             setPlanFilter(e.target.value);
             setPage(0);
           }}
-          className="rounded-xl border border-white/[0.1] bg-[#0e0e12] px-3 py-2.5 text-sm text-white outline-none"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none"
         >
           <option value="all">All plans</option>
           <option value="admin">Admin</option>
@@ -308,11 +308,11 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06] text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              <tr className="border-b border-slate-100 text-[10px] font-mono uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3">User</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Plan</th>
@@ -344,7 +344,7 @@ export default function AdminUsersPage() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="border-b border-white/[0.04] transition-colors last:border-0 hover:bg-white/[0.03]"
+                      className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50"
                     >
                       <td className="px-4 py-3">
                         <span
@@ -354,7 +354,7 @@ export default function AdminUsersPage() {
                           {emailInitials(u.email)}
                         </span>
                       </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 font-mono text-slate-300">{u.email}</td>
+                      <td className="max-w-[200px] truncate px-4 py-3 font-mono text-slate-700">{u.email}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}
@@ -366,16 +366,16 @@ export default function AdminUsersPage() {
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             u.role === "admin"
-                              ? "bg-amber-500/20 text-amber-300"
+                              ? "bg-amber-50 text-amber-700"
                               : u.role === "trader"
-                                ? "bg-cyan-500/15 text-cyan-300"
-                                : "bg-slate-500/15 text-slate-400"
+                                ? "bg-cyan-50 text-cyan-700"
+                                : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-slate-400">{u.accountsCount}</td>
+                      <td className="px-4 py-3 font-mono text-slate-600">{u.accountsCount}</td>
                       <td className="px-4 py-3 font-mono text-xs text-slate-500">
                         {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                       </td>
@@ -387,23 +387,13 @@ export default function AdminUsersPage() {
                               void handlePlanChange(u.id, e.target.value as SelectablePlan)
                             }
                             disabled={updatingPlan === u.id}
-                            className="max-w-[200px] rounded-lg border border-white/[0.1] bg-[#0e0e12] px-2 py-1.5 text-xs text-slate-200 outline-none disabled:opacity-50"
+                            className="max-w-[200px] rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 outline-none disabled:opacity-50"
                           >
-                            <option value="user" className="bg-[#0e0e12] text-slate-400">
-                              user
-                            </option>
-                            <option value="trial" className="bg-[#0e0e12] text-amber-400">
-                              trial
-                            </option>
-                            <option value="new_trader" className="bg-[#0e0e12] text-cyan-400">
-                              new_trader
-                            </option>
-                            <option value="experienced" className="bg-[#0e0e12] text-red-400">
-                              experienced
-                            </option>
-                            <option value="admin" className="bg-[#0e0e12] text-amber-300">
-                              admin
-                            </option>
+                            <option value="user">user</option>
+                            <option value="trial">trial</option>
+                            <option value="new_trader">new_trader</option>
+                            <option value="experienced">experienced</option>
+                            <option value="admin">admin</option>
                           </select>
                           {updatingPlan === u.id && (
                             <span className="text-xs font-mono text-slate-500">Saving…</span>
@@ -420,12 +410,12 @@ export default function AdminUsersPage() {
 
         {/* Pagination */}
         {filtered.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between border-t border-white/[0.06] px-4 py-3">
+          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
             <button
               type="button"
               disabled={pageSafe <= 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="rounded-lg border border-white/[0.1] px-3 py-1 text-xs hover:border-white/20 disabled:opacity-40"
+              className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 hover:border-slate-300 disabled:opacity-40"
             >
               Previous
             </button>
@@ -436,7 +426,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={pageSafe >= pageCount - 1}
               onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              className="rounded-lg border border-white/[0.1] px-3 py-1 text-xs hover:border-white/20 disabled:opacity-40"
+              className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-700 hover:border-slate-300 disabled:opacity-40"
             >
               Next
             </button>
