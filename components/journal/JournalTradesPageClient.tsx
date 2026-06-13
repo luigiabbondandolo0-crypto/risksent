@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
+import { useUserTimezone } from "@/lib/UserPreferencesContext";
+import { fmtDateTimeShort } from "@/lib/fmtInTz";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { JournalTradeRow } from "@/lib/journal/journalTypes";
 import { jn } from "@/lib/journal/jnClasses";
@@ -28,6 +30,7 @@ export function JournalTradesPageClient({
   forceDemoSeed = false,
 }: JournalTradesPageClientProps) {
   const router = useRouter();
+  const userTz = useUserTimezone();
   const [trades, setTrades] = useState<JournalTradeRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -210,7 +213,7 @@ export function JournalTradesPageClient({
                     }}
                   >
                     <td className="px-4 py-3 font-mono text-xs text-slate-400">
-                      {format(parseISO(t.open_time), "MMM d, HH:mm")}
+                      {fmtDateTimeShort(t.open_time, userTz)}
                     </td>
                     <td className="px-4 py-3 font-semibold text-slate-900">{t.symbol}</td>
                     <td className="px-4 py-3">

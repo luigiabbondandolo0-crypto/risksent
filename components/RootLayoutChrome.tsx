@@ -8,6 +8,7 @@ import { CommandPalette, useCommandPalette } from "@/components/ui/command-palet
 import { Footer } from "@/components/Footer";
 import { CookieConsentBanner } from "@/components/CookieConsent";
 import { AppDomainProvider, useIsAppShell } from "@/lib/AppDomainContext";
+import { UserPreferencesProvider } from "@/lib/UserPreferencesContext";
 
 /** Pages that own their full layout — no topbar, no footer */
 const CHROMELESS_PATHS = [
@@ -80,7 +81,9 @@ export function RootLayoutChrome({
 }) {
   return (
     <AppDomainProvider isAppDomain={isAppDomain}>
-      <RootLayoutChromeInner>{children}</RootLayoutChromeInner>
+      <UserPreferencesProvider>
+        <RootLayoutChromeInner>{children}</RootLayoutChromeInner>
+      </UserPreferencesProvider>
     </AppDomainProvider>
   );
 }

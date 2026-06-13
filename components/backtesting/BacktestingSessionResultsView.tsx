@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid,
 } from "recharts";
-import { ChevronLeft, Play, Download, TrendingUp, TrendingDown, Minus, Brain, AlertTriangle, CheckCircle, Info } from "lucide-react";
+import { ChevronLeft, Play, Download, TrendingUp, TrendingDown, Minus, Brain, AlertTriangle, CheckCircle, Info, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { fmtPrice } from "@/lib/backtesting/symbolMap";
 import type { Session, Trade, SessionStats } from "@/lib/backtesting/types";
@@ -123,10 +124,33 @@ export function BacktestingSessionResultsView({
   session,
   trades,
   stats,
+  sessionId,
   backToLabHref,
   replayHref,
 }: BacktestingSessionResultsViewProps) {
   const closed = trades.filter((t) => t.status === "closed");
+
+  // ── AI Profitability Score ────────────────────────────────────────────────
+  const [scoreState, setScoreState] = useState<{
+    loading: boolean;
+    score: number | null;
+    explanation: string | null;
+    error: string | null;
+  }>({ loading: false, score: null, explanation: null, error: null });
+
+  function fetchScore() {
+    setScoreState({ loading: true, score: null, explanation: null, error: null });
+    fetch(`/api/backtesting/sessions/${sessionId}/score`)
+      .then((r) => r.json() as Promise<{ score?: number; explanation?: string; error?: string }>)
+      .then((data) => {
+        if (data.error) {
+          setScoreState({ loading: false, score: null, explanation: null, error: data.error });
+        } else {
+          setScoreState({ loading: false, score: data.score ?? null, explanation: data.explanation ?? null, error: null });
+        }
+      })
+      .catch(() => setScoreState({ loading: false, score: null, explanation: null, error: "Network error" }));
+  }
   const pl = session.current_balance - session.initial_balance;
   const plColor = pl >= 0 ? "text-[#26a69a]" : "text-[#ef5350]";
 
@@ -293,6 +317,90 @@ export function BacktestingSessionResultsView({
           sub={`Started $${session.initial_balance.toLocaleString()}`}
           valueColor="text-slate-900"
         />
+      </motion.div>
+
+      {/* AI Profitability Score */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.09, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="rs-card p-5"
+        style={{ background: "#FFFFFF", borderColor: "#E5E7EB" }}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#6366f1]/10">
+              <Sparkles className="h-4 w-4 text-[#6366f1]" />
+            </div>
+            <p className="font-display text-sm font-bold text-slate-900">AI Strategy Score</p>
+          </div>
+
+          {!scoreState.loading && scoreState.score === null && (
+            <button
+              type="button"
+              onClick={fetchScore}
+              disabled={closed.length === 0}
+              className="ml-auto flex items-center gap-1.5 rounded-xl bg-[#6366f1] px-4 py-2 font-mono text-[12px] font-semibold text-white transition-all hover:bg-[#4f46e5] disabled:opacity-40"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Evaluate strategy
+            </button>
+          )}
+
+          {scoreState.loading && (
+            <div className="ml-auto flex items-center gap-2 font-mono text-[12px] text-slate-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              AI is analyzing…
+            </div>
+          )}
+
+          {!scoreState.loading && scoreState.score !== null && (
+            <button
+              type="button"
+              onClick={fetchScore}
+              className="ml-auto font-mono text-[11px] text-slate-400 underline underline-offset-2 hover:text-slate-600"
+            >
+              Re-evaluate
+            </button>
+          )}
+        </div>
+
+        {scoreState.error && (
+          <p className="mt-3 font-mono text-[12px] text-red-500">{scoreState.error}</p>
+        )}
+
+        {!scoreState.loading && scoreState.score !== null && (
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+            {/* Score circle */}
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <div
+                className="flex h-24 w-24 items-center justify-center rounded-full border-4 font-display text-3xl font-extrabold tabular-nums"
+                style={{
+                  borderColor: scoreState.score >= 67 ? "#26a69a" : scoreState.score >= 40 ? "#ff8c00" : "#ef5350",
+                  color: scoreState.score >= 67 ? "#26a69a" : scoreState.score >= 40 ? "#ff8c00" : "#ef5350",
+                  background: scoreState.score >= 67 ? "rgba(38,166,154,0.07)" : scoreState.score >= 40 ? "rgba(255,140,0,0.07)" : "rgba(239,83,80,0.07)",
+                }}
+              >
+                {scoreState.score}
+              </div>
+              <p className="font-mono text-[10px] uppercase tracking-wider text-slate-400">out of 100</p>
+              <p
+                className="font-mono text-[11px] font-semibold"
+                style={{ color: scoreState.score >= 67 ? "#26a69a" : scoreState.score >= 40 ? "#ff8c00" : "#ef5350" }}
+              >
+                {scoreState.score >= 81 ? "Excellent" : scoreState.score >= 67 ? "Good" : scoreState.score >= 41 ? "Average" : scoreState.score >= 21 ? "Below average" : "Poor"}
+              </p>
+            </div>
+            {/* Explanation */}
+            <div className="flex-1 rounded-xl border p-4" style={{ borderColor: "#F1F3F8", background: "#FAFBFC" }}>
+              <p className="font-mono text-[12px] leading-relaxed text-slate-700">{scoreState.explanation}</p>
+            </div>
+          </div>
+        )}
+
+        {closed.length === 0 && (
+          <p className="mt-3 font-mono text-[12px] text-slate-400">Complete at least one trade to get an AI evaluation.</p>
+        )}
       </motion.div>
 
       {/* Charts */}

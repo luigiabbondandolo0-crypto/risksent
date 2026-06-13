@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Plus, Check, RefreshCw } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { jn } from "@/lib/journal/jnClasses";
+import { useUserTimezone } from "@/lib/UserPreferencesContext";
+import { fmtDateTimeShort } from "@/lib/fmtInTz";
 import type {
   JournalChecklistItem,
   JournalEmotion,
@@ -38,9 +40,9 @@ type Props = {
   onRulesChange?: (rules: JournalRule[]) => void;
 };
 
-function fmt(iso: string | null | undefined) {
+function fmt(iso: string | null | undefined, tz: string) {
   if (!iso) return "—";
-  return format(parseISO(iso), "MMM d, HH:mm");
+  return fmtDateTimeShort(iso, tz);
 }
 
 function plColor(pl: number | null) {
@@ -59,6 +61,7 @@ export function TradeReviewModal({
   onChecklistChange,
   onRulesChange,
 }: Props) {
+  const userTz = useUserTimezone();
   const [review, setReview] = useState<Partial<JournalTradeReview>>({
     strategy_id: null,
     checklist_results: {},
@@ -333,8 +336,8 @@ export function TradeReviewModal({
                 {/* Trade stats */}
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { label: "Open", value: fmt(trade.open_time) },
-                    { label: "Close", value: fmt(trade.close_time) },
+                    { label: "Open", value: fmt(trade.open_time, userTz) },
+                    { label: "Close", value: fmt(trade.close_time, userTz) },
                     {
                       label: "Entry",
                       value: trade.open_price?.toFixed(5) ?? "—",

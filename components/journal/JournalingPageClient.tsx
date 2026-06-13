@@ -40,6 +40,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
+import { useUserTimezone } from "@/lib/UserPreferencesContext";
+import { fmtTimeOnly } from "@/lib/fmtInTz";
 import { syncAllJournalMetaAccounts } from "@/lib/journal/metaApiAutoSyncClient";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
@@ -263,6 +265,7 @@ function TradeCard({
   onClick: () => void;
 }) {
   const net = trade.pl ?? 0;
+  const userTz = useUserTimezone();
   return (
     <motion.button
       type="button"
@@ -295,7 +298,7 @@ function TradeCard({
           </p>
           <p className="text-[10px] text-slate-600 font-mono">
             {trade.open_time
-              ? format(parseISO(trade.open_time), "HH:mm")
+              ? fmtTimeOnly(trade.open_time, userTz)
               : "—"}
           </p>
         </div>

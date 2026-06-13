@@ -22,6 +22,7 @@ import { DrawingContextMenu } from "@/components/backtesting/DrawingContextMenu"
 import { TradePanel } from "@/components/backtesting/TradePanel";
 import { OpenPositions } from "@/components/backtesting/OpenPositions";
 import { fmtPrice, calcPnl, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
+import { useUserTimezone } from "@/lib/UserPreferencesContext";
 import type { Session, Trade, Candle } from "@/lib/backtesting/types";
 import type { BtTimeframe } from "@/lib/backtesting/types";
 type SessionResponse = { session: Session; trades: Trade[] };
@@ -78,6 +79,7 @@ export type BacktestingReplayViewProps = {
 
 export function BacktestingReplayView({ sessionId, backHref, resultsHref }: BacktestingReplayViewProps) {
   const id = sessionId;
+  const userTz = useUserTimezone();
 
   const [session, setSession] = useState<Session | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -114,13 +116,17 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
 
   useEffect(() => { sessionRef.current = session; }, [session]);
 
-  // ── Load settings from localStorage ─────────────────────────────────────
+  // ── Load settings from localStorage (seed chart timezone from user profile if not overridden) ─
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
-      if (raw) setChartSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      const saved = raw ? (JSON.parse(raw) as Partial<ChartSettings>) : {};
+      // If user hasn't explicitly changed the chart timezone (still "local"), use their profile tz
+      const tz = (saved.timezone && saved.timezone !== "local") ? saved.timezone : userTz;
+      setChartSettings({ ...DEFAULT_SETTINGS, ...saved, timezone: tz });
     } catch { /* */ }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userTz]);
   useEffect(() => {
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(chartSettings)); } catch { /* */ }
   }, [chartSettings]);

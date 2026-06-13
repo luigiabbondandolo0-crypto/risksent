@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
+import { useUserTimezone } from "@/lib/UserPreferencesContext";
+import { fmtDateTimeLong, fmtDateShort } from "@/lib/fmtInTz";
 import { ChevronLeft, X, Star, RefreshCw, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type {
@@ -33,6 +35,7 @@ function netPl(t: JournalTradeRow) {
 type Props = { tradeId: string; linkBase?: string };
 
 export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling" }: Props) {
+  const userTz = useUserTimezone();
   const [trade, setTrade] = useState<JournalTradeRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
@@ -277,12 +280,12 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
             <dl className="mt-6 grid gap-3 sm:grid-cols-2 font-mono text-sm">
               <div>
                 <dt className={jn.label}>Open</dt>
-                <dd className="text-slate-700">{format(parseISO(trade.open_time), "PPpp")}</dd>
+                <dd className="text-slate-700">{fmtDateTimeLong(trade.open_time, userTz)}</dd>
               </div>
               <div>
                 <dt className={jn.label}>Close</dt>
                 <dd className="text-slate-700">
-                  {trade.close_time ? format(parseISO(trade.close_time), "PPpp") : "—"}
+                  {trade.close_time ? fmtDateTimeLong(trade.close_time, userTz) : "—"}
                 </dd>
               </div>
               <div>
@@ -655,7 +658,7 @@ export function JournalTradeDetailClient({ tradeId, linkBase = "/app/journaling"
                     href={`${linkBase}/trade/${r.id}`}
                     className="flex justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono hover:border-[#ff3c3c]/20"
                   >
-                    <span className="text-slate-400">{format(parseISO(r.close_time ?? r.open_time), "MMM d")}</span>
+                    <span className="text-slate-400">{fmtDateShort(r.close_time ?? r.open_time, userTz)}</span>
                     <span style={{ color: netPl(r) >= 0 ? jn.green : jn.accentRed }}>
                       {netPl(r) >= 0 ? "+" : ""}
                       {netPl(r).toFixed(0)}
