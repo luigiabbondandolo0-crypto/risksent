@@ -79,6 +79,7 @@ const APP_DOMAIN = process.env.APP_DOMAIN || "app.risksent.com";
 const APP_SUBDOMAIN_PATHS = [
   "/app",
   "/dashboard",
+  "/backtesting",
   "/login",
   "/signup",
   "/reset-password",
@@ -104,7 +105,6 @@ const CLEAN_APP_REWRITES: Array<[string, string]> = [
   ["/billing", "/app/billing"],
   ["/affiliate", "/app/affiliate"],
   ["/settings", "/app/settings"],
-  ["/backtesting", "/app/backtesting"],
 ];
 
 function getCleanAppRewrite(pathname: string): string | null {

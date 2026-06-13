@@ -63,16 +63,11 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: "/backtesting", destination: "/app/backtesting", permanent: false },
-      { source: "/backtesting/:path*", destination: "/app/backtesting/:path*", permanent: false },
+      // /app/backtesting → /backtesting: redirect old URL to clean URL (page lives at (app)/backtesting)
+      { source: "/app/backtesting", destination: "/backtesting", permanent: true },
+      { source: "/app/backtesting/:path*", destination: "/backtesting/:path*", permanent: true },
       { source: "/backtesting-lab", destination: "/backtest", permanent: false },
       { source: "/backtesting-lab/:path*", destination: "/backtest/:path*", permanent: false }
-    ];
-  },
-  async rewrites() {
-    return [
-      { source: "/app/backtesting", destination: "/backtesting" },
-      { source: "/app/backtesting/:path*", destination: "/backtesting/:path*" }
     ];
   }
 };
