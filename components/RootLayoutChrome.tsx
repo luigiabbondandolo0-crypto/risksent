@@ -63,7 +63,6 @@ function RootLayoutChromeInner({ children }: { children: React.ReactNode }) {
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
       <div className="flex min-w-0 w-full max-w-[100vw] flex-1 flex-col">
         <ScrollToTop />
-        <AnnouncementBar />
         <Topbar />
         <AppShell>{children}</AppShell>
         <Footer variant="marketing" />
