@@ -315,10 +315,10 @@ export default function ContactPage() {
                 </li>
                 <li>
                   <Link
-                    href="/changelog"
+                    href="/mission"
                     className="group inline-flex items-center gap-1.5 hover:text-white"
                   >
-                    Read the changelog{" "}
+                    Our mission{" "}
                     <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
                   </Link>
                 </li>

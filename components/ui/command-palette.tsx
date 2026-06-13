@@ -15,7 +15,6 @@ import {
   CreditCard,
   LogIn,
   ArrowRight,
-  FileText,
   Zap,
 } from "lucide-react";
 
@@ -41,7 +40,6 @@ const COMMANDS: CommandItem[] = [
   { id: "alerts",      label: "Live Alerts",   description: "Telegram notifications",icon: Bell,         href: "/live-alerts",    group: "Pages",    keywords: ["telegram","notify"] },
   { id: "ai-coach",    label: "AI Coach",      description: "Your trading edge",    icon: Brain,         href: "/ai-coach",       group: "Pages",    keywords: ["ai","coach","edge"] },
   { id: "pricing",     label: "Pricing",       description: "Plans & billing",      icon: CreditCard,    href: "/pricing",        group: "Pages",    keywords: ["plan","billing","subscription"] },
-  { id: "changelog",   label: "Changelog",     description: "What's new",           icon: FileText,      href: "/changelog",      group: "Pages",    keywords: ["release","update","new","version"] },
   { id: "signup",      label: "Start for free",description: "Create account",       icon: Zap,           href: "/signup",          group: "Actions", keywords: ["register","account","free"] },
   { id: "login",       label: "Log in",        description: "Sign in to dashboard", icon: LogIn,         href: "/login",           group: "Actions", keywords: ["sign","signin"] },
 ];

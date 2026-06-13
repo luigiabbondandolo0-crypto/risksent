@@ -14,7 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/ai-coach`,     lastModified: now, changeFrequency: "weekly",  priority: 0.7 },
     { url: `${base}/live-alerts`,  lastModified: now, changeFrequency: "weekly",  priority: 0.6 },
     { url: `${base}/info`,         lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${base}/changelog`,    lastModified: now, changeFrequency: "weekly",  priority: 0.5 },
     { url: `${base}/contact`,      lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
     { url: `${base}/support`,      lastModified: now, changeFrequency: "yearly",  priority: 0.4 },
     { url: `${base}/privacy`,      lastModified: now, changeFrequency: "yearly",  priority: 0.3 },

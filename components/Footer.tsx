@@ -33,15 +33,12 @@ const PRODUCT_LINKS: LinkItem[] = [
 const RESOURCES_LINKS: LinkItem[] = [
   { href: "/support", label: "Help center" },
   { href: "/contact", label: "Contact us" },
-  { href: "/changelog", label: "Changelog" },
-  { href: "/support#faq", label: "FAQ" },
-  { href: "/status", label: "System status" },
+  { href: "/pricing#faq", label: "FAQ" },
 ];
 
 const COMPANY_LINKS: LinkItem[] = [
   { href: "/mission", label: "Mission" },
   { href: "/pricing", label: "Plans" },
-  { href: "/changelog", label: "What’s new" },
   { href: "mailto:support@risksent.com", label: "support@risksent.com", external: true },
 ];
 

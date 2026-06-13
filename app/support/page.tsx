@@ -38,10 +38,10 @@ const CHANNELS = [
   },
   {
     icon: BookOpen,
-    title: "Changelog",
-    desc: "Every shipped improvement, fix and new feature. Subscribe for updates.",
-    cta: "View changelog",
-    href: "/changelog",
+    title: "Mission",
+    desc: "Who we are and why we built RiskSent.",
+    cta: "Read our mission",
+    href: "/mission",
   },
 ];
 
@@ -95,7 +95,7 @@ const FAQ = [
   },
   {
     q: "Which brokers and data feeds do you support?",
-    a: "MetaTrader 4 and 5 accounts via MetaApi, plus manual trade import via CSV and our API. More integrations are rolling out — see the changelog.",
+    a: "MetaTrader 4 and 5 accounts via MetaApi, plus manual trade import via CSV and our API. More integrations are rolling out.",
   },
   {
     q: "Can I use RiskSent for prop-firm accounts (FTMO, MyForexFunds, etc.)?",

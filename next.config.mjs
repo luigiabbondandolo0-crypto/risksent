@@ -67,7 +67,9 @@ const nextConfig = {
       { source: "/app/backtesting", destination: "/backtesting", permanent: true },
       { source: "/app/backtesting/:path*", destination: "/backtesting/:path*", permanent: true },
       { source: "/backtesting-lab", destination: "/backtest", permanent: false },
-      { source: "/backtesting-lab/:path*", destination: "/backtest/:path*", permanent: false }
+      { source: "/backtesting-lab/:path*", destination: "/backtest/:path*", permanent: false },
+      // Changelog removed — redirect to homepage
+      { source: "/changelog", destination: "/", permanent: true },
     ];
   }
 };
