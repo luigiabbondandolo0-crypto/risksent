@@ -22,6 +22,8 @@ type Props = {
   currentCandle: Candle | null;
   symbol: string;
   sessionId: string;
+  /** Session initial balance — used to compute risk-% lot presets */
+  initialBalance?: number;
   presetSL?: number;
   presetTP?: number;
   presetLot?: number;
@@ -31,7 +33,9 @@ type Props = {
   placeTradeOverride?: (body: PlaceTradeBody) => Promise<void>;
 };
 
-export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, presetSL, presetTP, presetLot, onClose, onTradeOpened, placeTradeOverride }: Props) {
+const RISK_PRESETS = [0.5, 1, 2] as const;
+
+export function TradePanel({ open, defaultDirection, currentCandle, symbol, sessionId, initialBalance, presetSL, presetTP, presetLot, onClose, onTradeOpened, placeTradeOverride }: Props) {
   const [direction, setDirection] = useState<"BUY" | "SELL">(defaultDirection);
   const [lotSize, setLotSize] = useState("0.10");
   const [slInput, setSlInput] = useState("");
@@ -152,6 +156,34 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {/* Risk % presets */}
+            {initialBalance != null && (
+              <div className="mb-3 flex items-center gap-1.5">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 mr-1">Risk</span>
+                {RISK_PRESETS.map((pct) => {
+                  const price = currentCandle?.close ?? 0;
+                  const slVal = parseFloat(slInput) || 0;
+                  const riskPerLot = slVal > 0 ? Math.abs(price - slVal) * 10000 : 0;
+                  const lots = riskPerLot > 0
+                    ? Math.max(0.01, parseFloat(((initialBalance * pct / 100) / riskPerLot).toFixed(2)))
+                    : null;
+                  return (
+                    <button
+                      key={pct}
+                      type="button"
+                      disabled={lots == null}
+                      onClick={() => { if (lots != null) setLotSize(String(lots)); }}
+                      className="rounded-lg border px-2.5 py-1 font-mono text-[11px] font-medium transition-all hover:border-[#6366f1]/50 hover:text-[#6366f1] disabled:opacity-30"
+                      style={{ borderColor: "#E1E3EA", color: "#6B7280" }}
+                      title={lots != null ? `${lots} lots` : "Set SL first"}
+                    >
+                      {pct}%
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {/* Entry price */}

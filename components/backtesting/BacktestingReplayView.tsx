@@ -28,7 +28,7 @@ import type { BtTimeframe } from "@/lib/backtesting/types";
 type SessionResponse = { session: Session; trades: Trade[] };
 type OhlcvResponse = { candles: Candle[]; error?: string };
 
-const BOTTOM_TABS = ["Trade", "Positions"] as const;
+const BOTTOM_TABS = ["Trade History", "Open Positions"] as const;
 type BottomTab = (typeof BOTTOM_TABS)[number];
 
 type ReplaySpeed = 1 | 2 | 5 | 10;
@@ -90,7 +90,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const [speed, setSpeed] = useState<ReplaySpeed>(1);
   const [loadingOhlcv, setLoadingOhlcv] = useState(false);
   const [ohlcvErr, setOhlcvErr] = useState<string | null>(null);
-  const [bottomTab, setBottomTab] = useState<BottomTab>("Trade");
+  const [bottomTab, setBottomTab] = useState<BottomTab>("Trade History");
   const [tradePanel, setTradePanel] = useState<{
     open: boolean;
     dir: "BUY" | "SELL";
@@ -332,8 +332,8 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
 
       if (e.code === "Space" || e.code === "ArrowRight") { e.preventDefault(); stepForward(); }
       if (e.code === "ArrowLeft") { e.preventDefault(); stepBack(); }
-      if (e.key.toLowerCase() === "b") { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); }
-      if (e.key.toLowerCase() === "s") { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); }
+      if (e.key.toLowerCase() === "b") { setTradePanel({ open: true, dir: "BUY" }); }
+      if (e.key.toLowerCase() === "s") { setTradePanel({ open: true, dir: "SELL" }); }
       if (e.code === "Escape") setTradePanel((p) => ({ ...p, open: false }));
     };
     window.addEventListener("keydown", onKey);
@@ -413,6 +413,13 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const displayCandle = hoveredCandle ?? (currentCandle ? currentCandle : null);
   const pl = session ? session.current_balance - session.initial_balance : 0;
   const isProfit = pl >= 0;
+
+  // Live floating P&L of the open trade
+  const floatingPL = openTrade && currentCandle
+    ? (currentCandle.close - openTrade.entry_price) *
+      (openTrade.direction === "BUY" ? 1 : -1) *
+      (openTrade.lot_size ?? 0.1) * 10000
+    : null;
   const atStart = currentIndex <= 0;
   const atEnd = currentIndex >= sessionCandles.length - 1;
   const openTradeExists = !!openTrade;
@@ -526,6 +533,28 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               </div>
             </div>
           )}
+          {/* Live floating P&L badge */}
+          {floatingPL !== null && (
+            <div
+              className="flex h-full items-center gap-1.5 border-l px-3"
+              style={{ borderColor: "#E1E3EA" }}
+            >
+              <div className="text-right">
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  Float
+                </div>
+                <div
+                  className="font-mono text-sm font-bold leading-tight tabular-nums"
+                  style={{ color: floatingPL >= 0 ? "#26a69a" : "#ef5350" }}
+                >
+                  {floatingPL >= 0 ? "+" : ""}{floatingPL.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          )}
           <Link
             href={resultsHref}
             className="flex h-full items-center gap-1.5 border-l px-3 font-mono text-[11px] transition-colors hover:bg-[#F1F3F8]"
@@ -580,7 +609,6 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             onToolComplete={() => setActiveTool("cursor")}
             onPlacePosition={(dir, entry, sl, tp, lot) => {
               setTradePanel({ open: true, dir, presetSL: sl, presetTP: tp, presetLot: lot });
-              setBottomTab("Trade");
             }}
             onUpdateTradeSLTP={(tradeId, sl, tp) => { void updateTradeSLTP(tradeId, sl, tp); }}
             onObjectsChange={refreshObjects}
@@ -705,7 +733,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               }
             >
               {tab}
-              {tab === "Positions" && openTrades.length > 0 && (
+              {tab === "Open Positions" && openTrades.length > 0 && (
                 <span className="ml-1.5 rounded-full px-1.5 py-0.5 text-[9px]" style={{ background: "#2962FF20", color: "#2962FF" }}>
                   {openTrades.length}
                 </span>
@@ -716,7 +744,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           <div className="ml-auto flex gap-1.5">
             <button
               type="button"
-              onClick={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); }}
+              onClick={() => { setTradePanel({ open: true, dir: "BUY" }); }}
               className="flex items-center gap-1 rounded px-3 py-1 font-mono text-[11px] font-bold transition-colors"
               style={{ background: "#26a69a18", color: "#26a69a", border: "1px solid #26a69a30" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#26a69a25"; }}
@@ -727,7 +755,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             </button>
             <button
               type="button"
-              onClick={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); }}
+              onClick={() => { setTradePanel({ open: true, dir: "SELL" }); }}
               className="flex items-center gap-1 rounded px-3 py-1 font-mono text-[11px] font-bold transition-colors"
               style={{ background: "#ef535018", color: "#ef5350", border: "1px solid #ef535030" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef535025"; }}
@@ -741,19 +769,12 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
 
         {/* Content area */}
         <div className="relative flex-1 overflow-hidden" style={{ background: "#FFFFFF" }}>
-          {bottomTab === "Trade" && (
-            <div className="flex flex-col items-center justify-center h-full gap-2">
-              <p className="font-mono text-sm" style={{ color: "#9CA3AF" }}>
-                {currentCandle
-                  ? `Mark: ${fmtPrice(session?.symbol ?? "", currentCandle.close)}`
-                  : "No candle loaded"}
-              </p>
-              <p className="font-mono text-[11px]" style={{ color: "#CBD5E1" }}>
-                B to buy · S to sell · Space / → for next candle · Ctrl+Z to undo
-              </p>
+          {bottomTab === "Trade History" && (
+            <div className="h-full overflow-y-auto px-4 py-2">
+              <TradeHistory trades={trades} symbol={session?.symbol ?? ""} />
             </div>
           )}
-          {bottomTab === "Positions" && (
+          {bottomTab === "Open Positions" && (
             <div className="h-full overflow-y-auto px-4 py-3">
               <OpenPositions
                 trades={trades}
@@ -773,6 +794,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             currentCandle={currentCandle}
             symbol={session.symbol}
             sessionId={id}
+            initialBalance={session.initial_balance}
             presetSL={tradePanel.presetSL}
             presetTP={tradePanel.presetTP}
             presetLot={tradePanel.presetLot}
@@ -792,8 +814,8 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           objects={chartObjects}
           settings={chartSettings}
           onClose={() => setCtxMenu(null)}
-          onBuy={() => { setTradePanel({ open: true, dir: "BUY" }); setBottomTab("Trade"); setCtxMenu(null); }}
-          onSell={() => { setTradePanel({ open: true, dir: "SELL" }); setBottomTab("Trade"); setCtxMenu(null); }}
+          onBuy={() => { setTradePanel({ open: true, dir: "BUY" }); setCtxMenu(null); }}
+          onSell={() => { setTradePanel({ open: true, dir: "SELL" }); setCtxMenu(null); }}
           onResetView={() => { chartRef.current?.resetView(); setCtxMenu(null); }}
           onFocusObject={(objId) => chartRef.current?.focusObject(objId)}
           onRemoveObject={(objId) => { chartRef.current?.removeObject(objId); }}
@@ -811,13 +833,60 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           onFocus={() => { chartRef.current?.focusObject(drawingMenu.id); setDrawingMenu(null); }}
           onPlaceOrder={drawingMenu.kind === "pending" ? () => {
             chartRef.current?.placePosition(drawingMenu.id);
-            setBottomTab("Trade");
             setDrawingMenu(null);
           } : undefined}
         />
       )}
       </div>
     </div>
+  );
+}
+
+function TradeHistory({ trades, symbol }: { trades: Trade[]; symbol: string }) {
+  const closed = trades.filter((t) => t.status !== "open").slice().reverse();
+  if (closed.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center py-6">
+        <p className="font-mono text-sm text-slate-400">No closed trades yet</p>
+      </div>
+    );
+  }
+  return (
+    <table className="w-full font-mono text-[11px]">
+      <thead>
+        <tr className="border-b text-left" style={{ borderColor: "#E1E3EA" }}>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">#</th>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">Dir</th>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">Entry</th>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">Exit</th>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">Lots</th>
+          <th className="pb-1.5 pr-3 font-medium text-slate-500">P&L</th>
+          <th className="pb-1.5 font-medium text-slate-500">R:R</th>
+        </tr>
+      </thead>
+      <tbody>
+        {closed.map((t, i) => {
+          const isWin = (t.pnl ?? 0) >= 0;
+          return (
+            <tr key={t.id} className="border-b" style={{ borderColor: "#F1F3F8" }}>
+              <td className="py-1.5 pr-3 text-slate-400">{closed.length - i}</td>
+              <td className="py-1.5 pr-3">
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.direction === "BUY" ? "bg-[#26a69a]/15 text-[#26a69a]" : "bg-[#ef5350]/15 text-[#ef5350]"}`}>
+                  {t.direction}
+                </span>
+              </td>
+              <td className="py-1.5 pr-3 text-slate-700">{fmtPrice(symbol, t.entry_price)}</td>
+              <td className="py-1.5 pr-3 text-slate-700">{t.exit_price != null ? fmtPrice(symbol, t.exit_price) : "—"}</td>
+              <td className="py-1.5 pr-3 text-slate-600">{t.lot_size}</td>
+              <td className={`py-1.5 pr-3 font-semibold tabular-nums ${isWin ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
+                {isWin ? "+" : ""}{(t.pnl ?? 0).toFixed(2)}
+              </td>
+              <td className="py-1.5 text-slate-500">{t.risk_reward != null ? `1:${t.risk_reward.toFixed(2)}` : "—"}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
