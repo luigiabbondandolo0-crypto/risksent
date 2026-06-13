@@ -714,6 +714,13 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               })}
             </span>
           )}
+          <span
+            className="hidden shrink-0 font-mono text-[10px] lg:block border-l pl-3"
+            style={{ borderColor: "#E1E3EA", color: "#CBD5E1" }}
+            title="Active timezone — change in right-click chart menu"
+          >
+            {chartSettings.timezone && chartSettings.timezone !== "local" ? chartSettings.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone}
+          </span>
         </div>
 
         {/* Tab bar + BUY/SELL */}
