@@ -56,8 +56,11 @@ export const metadata: Metadata = {
     creator: "@risksent",
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-32x32.png",
+    icon: [
+      { url: "/icon", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/icon",
     apple: "/apple-icon.png",
   },
   manifest: "/site.webmanifest",

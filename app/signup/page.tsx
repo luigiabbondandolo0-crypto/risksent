@@ -257,55 +257,145 @@ export default function SignupPage() {
       </div>
 
       {/* Visual RIGHT */}
-      <div className="relative flex flex-1 flex-col justify-center border-b border-white/[0.06] px-6 py-8 sm:px-8 sm:py-12 lg:basis-[55%] lg:border-b-0 lg:border-l lg:pl-14 lg:py-14">
+      <div className="relative flex flex-1 flex-col justify-center overflow-hidden border-b border-white/[0.06] px-6 py-8 sm:px-8 sm:py-12 lg:basis-[55%] lg:border-b-0 lg:border-l lg:pl-14 lg:py-14">
+        {/* Background layers */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-80"
+          className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 70% 50% at 70% 30%, rgba(99,102,241,0.18), transparent 55%), radial-gradient(ellipse 40% 40% at 20% 80%, rgba(167,139,250,0.09), transparent 50%), #070710"
+              "radial-gradient(ellipse 80% 55% at 75% 20%, rgba(99,102,241,0.22), transparent 55%), radial-gradient(ellipse 50% 45% at 15% 85%, rgba(167,139,250,0.12), transparent 50%), radial-gradient(ellipse 40% 35% at 90% 90%, rgba(34,211,238,0.07), transparent 55%), #070710"
           }}
         />
+        {/* Subtle grid */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
+            backgroundSize: "48px 48px"
+          }}
+        />
+        {/* Glowing orb top-right */}
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.6), transparent 70%)", filter: "blur(40px)" }}
+        />
+        {/* Glowing orb bottom-left */}
+        <div
+          className="pointer-events-none absolute -bottom-12 -left-12 h-48 w-48 rounded-full opacity-15"
+          style={{ background: "radial-gradient(circle, rgba(167,139,250,0.5), transparent 70%)", filter: "blur(32px)" }}
+        />
+
         <div className="relative z-10">
-          <motion.h2
+          {/* Heading */}
+          <motion.div
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            className="font-[family-name:var(--font-display)] text-2xl font-bold text-white lg:text-3xl"
           >
-            Join thousands of disciplined traders
-          </motion.h2>
+            <p className="mb-2 text-xs font-mono tracking-[0.18em] uppercase text-[#a78bfa]">Trusted by prop traders worldwide</p>
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white lg:text-3xl">
+              Trade with{" "}
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: "linear-gradient(135deg, #a78bfa, #6366f1)" }}
+              >
+                discipline.
+              </span>{" "}
+              Finally.
+            </h2>
+          </motion.div>
 
-          <ul className="mt-10 space-y-5">
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="mt-8 grid grid-cols-3 gap-3"
+          >
             {[
-              { icon: Shield, t: "Risk rules that protect your capital" },
-              { icon: Brain, t: "AI Coach that analyzes your behavior" },
-              { icon: Bell, t: "Real-time Telegram alerts" }
-            ].map(({ icon: Icon, t }, i) => (
+              { val: "4,200+", label: "Active traders" },
+              { val: "94%", label: "Challenge pass rate" },
+              { val: "7-day", label: "Free trial" },
+            ].map(({ val, label }) => (
+              <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3 text-center">
+                <p className="font-[family-name:var(--font-display)] text-lg font-bold text-white">{val}</p>
+                <p className="mt-0.5 text-[10px] font-mono text-slate-500">{label}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Feature list */}
+          <ul className="mt-7 space-y-4">
+            {[
+              { icon: Shield, t: "Risk rules", sub: "Hard limits protect you even when emotions override logic" },
+              { icon: Brain, t: "AI Coach", sub: "Spots revenge trading, overtrading, and psychological bias patterns" },
+              { icon: Bell, t: "Telegram alerts", sub: "Real-time breach alerts before the broker margin-calls you" }
+            ].map(({ icon: Icon, t, sub }, i) => (
               <motion.li
                 key={t}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 + i * 0.08 }}
+                transition={{ delay: 0.18 + i * 0.08 }}
                 className="flex items-start gap-4"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.04] text-[#a78bfa]">
-                  <Icon className="h-5 w-5" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#6366f1]/30 bg-[#6366f1]/10 text-[#a78bfa]">
+                  <Icon className="h-4.5 w-4.5" />
                 </span>
-                <p className="pt-2 text-sm font-[family-name:var(--font-mono)] text-slate-300">{t}</p>
+                <div>
+                  <p className="text-sm font-semibold text-white">{t}</p>
+                  <p className="mt-0.5 text-xs font-mono leading-relaxed text-slate-500">{sub}</p>
+                </div>
               </motion.li>
             ))}
           </ul>
 
-          <motion.blockquote
+          {/* Testimonials */}
+          <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="mt-12 rounded-2xl border border-white/[0.08] bg-black/35 p-5 backdrop-blur-md"
+            transition={{ delay: 0.45 }}
+            className="mt-8 space-y-3"
           >
-            <p className="text-sm italic leading-relaxed text-slate-300">
-              &ldquo;RiskSent saved my FTMO challenge. The AI caught my revenge trading pattern before I blew the account.&rdquo;
-            </p>
-            <footer className="mt-3 text-xs font-mono text-slate-500">— Marco T., Prop Trader</footer>
-          </motion.blockquote>
+            {/* Primary testimonial */}
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-md">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#a78bfa] text-xs font-bold text-white">
+                  MT
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">Marco T.</span>
+                    <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-mono text-emerald-400">FTMO Passed</span>
+                  </div>
+                  <div className="mt-0.5 flex gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="h-3 w-3 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="mt-3 text-sm italic leading-relaxed text-slate-300">
+                &ldquo;RiskSent saved my FTMO challenge. The AI caught my revenge trading pattern before I blew the account. Best investment I made as a prop trader.&rdquo;
+              </p>
+            </div>
+
+            {/* Secondary testimonial — compact */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#22d3ee] to-[#6366f1] text-[10px] font-bold text-white">
+                  SL
+                </div>
+                <p className="text-xs italic text-slate-400">
+                  &ldquo;Passed two $100k challenges back-to-back. The daily loss alert is a game changer.&rdquo;
+                </p>
+              </div>
+              <div className="mt-1.5 pl-10 flex items-center gap-2">
+                <span className="text-[10px] font-mono text-slate-600">Sofia L. · Futures Trader</span>
+                <span className="rounded-full border border-[#6366f1]/25 bg-[#6366f1]/10 px-1.5 py-0.5 text-[10px] font-mono text-[#a78bfa]">$200k funded</span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

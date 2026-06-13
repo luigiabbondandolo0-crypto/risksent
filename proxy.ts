@@ -104,6 +104,7 @@ const CLEAN_APP_REWRITES: Array<[string, string]> = [
   ["/billing", "/app/billing"],
   ["/affiliate", "/app/affiliate"],
   ["/settings", "/app/settings"],
+  ["/backtesting", "/app/backtesting"],
 ];
 
 function getCleanAppRewrite(pathname: string): string | null {

@@ -24,14 +24,36 @@ export function useIsAppDomain(): boolean {
 }
 
 /**
+ * Clean paths that rewrite to /app/* on the app subdomain.
+ * Must stay in sync with CLEAN_APP_REWRITES in proxy.ts.
+ */
+const CLEAN_APP_PATHS = [
+  "/journaling",
+  "/risk-manager",
+  "/ai-coach",
+  "/billing",
+  "/affiliate",
+  "/settings",
+  "/backtesting",
+  "/dashboard",
+];
+
+/**
  * Domain-aware shell check.
- * On app.risksent.com: /journaling, /risk-manager etc. → app shell (clean URL rewrites)
+ * On app.risksent.com: /journaling, /risk-manager etc. → app shell (clean URL rewrites).
+ *   usePathname() returns the clean URL (not the rewritten /app/* target), so we must
+ *   check both /app/* paths AND the clean path list.
  * On risksent.com:     only /app/*, /dashboard, /admin → app shell
  */
 export function useIsAppShell(pathname: string | null | undefined): boolean {
   const isAppDomain = useIsAppDomain();
   if (!pathname) return false;
-  if (isAppDomain) return isAppShellPath(pathname);
+  if (isAppDomain) {
+    return (
+      isAppShellPath(pathname) ||
+      CLEAN_APP_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
+    );
+  }
   // Main domain — only hard app paths get the shell
   return ["/app", "/admin", "/dashboard"].some(
     (p) => pathname === p || pathname.startsWith(p + "/")

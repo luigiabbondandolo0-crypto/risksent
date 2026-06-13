@@ -54,10 +54,10 @@ export function Topbar() {
 
   const logoHref = inApp ? "/dashboard" : "/";
 
-  // App topbar — light glass; marketing topbar — dark glass
+  // App topbar — light glass; marketing topbar — near-opaque dark
   const headerStyle = inApp
     ? { borderColor: "rgba(0,0,0,0.07)", background: "rgba(255,255,255,0.92)" }
-    : { borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.88)" };
+    : { borderColor: "rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.97)" };
 
   return (
     <>
