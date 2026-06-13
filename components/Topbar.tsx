@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react"; // X still used in mobile sidebar close
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { isNavActive, mobileNavItems, primaryNavItems } from "@/components/navConfig";
 import { useIsAppShell } from "@/lib/AppDomainContext";
@@ -26,7 +26,6 @@ const ANN_COLORS: Record<string, { dot: string; text: string; bg: string; border
   error:   { dot: "#dc2626", text: "#7f1d1d", bg: "rgba(220,38,38,0.07)",  border: "rgba(220,38,38,0.18)"  },
 };
 
-const LS_KEY = (id: string) => `rs_ann_dismissed_${id}`;
 
 const marketingNav = [
   { href: "/backtest", label: "Backtesting" },
@@ -46,7 +45,6 @@ export function Topbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ann, setAnn] = useState<AnnItem | null>(null);
-  const [annDismissed, setAnnDismissed] = useState(false);
   const isLoginPage = pathname === "/login";
   const isAdminArea = pathname?.startsWith("/admin");
   const inApp = useIsAppShell(pathname);
@@ -76,17 +74,10 @@ export function Topbar() {
       .then((data: { announcement?: AnnItem | null } | null) => {
         const a = data?.announcement ?? null;
         if (!a) return;
-        try { if (localStorage.getItem(LS_KEY(a.id))) return; } catch {}
         setAnn(a);
       })
       .catch(() => {});
   }, []);
-
-  function dismissAnn() {
-    if (!ann) return;
-    try { localStorage.setItem(LS_KEY(ann.id), "1"); } catch {}
-    setAnnDismissed(true);
-  }
 
   const annColors = ann ? (ANN_COLORS[ann.type] ?? ANN_COLORS.info) : null;
 
@@ -115,7 +106,7 @@ export function Topbar() {
           </Link>
 
           {/* Inline announcement — app mode only */}
-          {inApp && ann && !annDismissed && annColors && (
+          {inApp && ann && annColors && (
             <div className="hidden sm:flex flex-1 items-center justify-center px-4">
               <div
                 className="flex items-center gap-2.5 rounded-xl px-4 py-2 text-[13px] font-medium"
@@ -138,15 +129,6 @@ export function Topbar() {
                   {ann.title && <strong className="mr-1.5">{ann.title}</strong>}
                   {ann.message}
                 </p>
-                <button
-                  type="button"
-                  onClick={dismissAnn}
-                  aria-label="Dismiss"
-                  className="ml-1 rounded p-0.5 transition-opacity hover:opacity-60"
-                  style={{ color: annColors.dot }}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
               </div>
             </div>
           )}
