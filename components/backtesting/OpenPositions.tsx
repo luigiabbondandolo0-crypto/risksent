@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { fmtPrice } from "@/lib/backtesting/symbolMap";
+import { fmtPrice, calcPnl } from "@/lib/backtesting/symbolMap";
 import type { Trade, Candle } from "@/lib/backtesting/types";
 
 type Props = {
@@ -42,7 +42,7 @@ export function OpenPositions({ trades, currentCandle, onClose, closing }: Props
             const dirMult = t.direction === "BUY" ? 1 : -1;
             const diff = (current - t.entry_price) * dirMult;
             const isProfit = diff >= 0;
-            const plValue = diff * (t.lot_size ?? 0.1) * 10000;
+            const plValue = calcPnl(t.symbol, diff, t.lot_size ?? 0.1);
 
             return (
               <tr key={t.id} className="border-b" style={{ borderColor: "#F1F3F8" }}>

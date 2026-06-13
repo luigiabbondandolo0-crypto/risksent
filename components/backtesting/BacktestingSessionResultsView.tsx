@@ -165,6 +165,22 @@ export function BacktestingSessionResultsView({
     { name: "Losses", value: stats.losses, fill: "#ef5350" },
   ];
 
+  // Hourly breakdown
+  type HourData = { hour: number; label: string; total: number; wins: number; losses: number; pnl: number };
+  const hourlyMap = new Map<number, HourData>();
+  for (const t of closed) {
+    const h = new Date(t.entry_time).getHours();
+    if (!hourlyMap.has(h)) hourlyMap.set(h, { hour: h, label: `${h.toString().padStart(2, "0")}:00`, total: 0, wins: 0, losses: 0, pnl: 0 });
+    const d = hourlyMap.get(h)!;
+    d.total++;
+    d.pnl += t.pnl ?? 0;
+    if ((t.pnl ?? 0) >= 0) d.wins++;
+    else d.losses++;
+  }
+  const hourlyData = Array.from(hourlyMap.values()).sort((a, b) => a.hour - b.hour);
+  const bestHour = hourlyData.length > 0 ? hourlyData.reduce((a, b) => b.pnl > a.pnl ? b : a) : null;
+  const worstHour = hourlyData.length > 0 ? hourlyData.reduce((a, b) => b.pnl < a.pnl ? b : a) : null;
+
   // AI insights
   const insights = generateInsights(stats, closed);
 
@@ -353,6 +369,91 @@ export function BacktestingSessionResultsView({
           </ResponsiveContainer>
         </div>
       </motion.div>
+
+      {/* Hourly Profitability */}
+      {hourlyData.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="rs-card p-5"
+          style={{ background: "#FFFFFF", borderColor: "#E5E7EB" }}
+        >
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <p className="font-display text-sm font-bold text-slate-900">Hourly Profitability</p>
+            <div className="flex gap-4 font-mono text-[11px]">
+              {bestHour && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#26a69a]" />
+                  <span className="text-slate-500">Best:</span>
+                  <span className="font-semibold text-[#26a69a]">{bestHour.label} (+${bestHour.pnl.toFixed(0)})</span>
+                </span>
+              )}
+              {worstHour && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#ef5350]" />
+                  <span className="text-slate-500">Worst:</span>
+                  <span className="font-semibold text-[#ef5350]">{worstHour.label} (${worstHour.pnl.toFixed(0)})</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bar chart */}
+          <ResponsiveContainer width="100%" height={140}>
+            <BarChart data={hourlyData} margin={{ left: -10, right: 8, top: 4, bottom: 0 }}>
+              <CartesianGrid stroke={TV.grid} strokeDasharray="0" />
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: TV.axis, fontFamily: "var(--font-mono)" }} />
+              <YAxis tick={{ fontSize: 10, fill: TV.axis, fontFamily: "var(--font-mono)" }} />
+              <Tooltip
+                contentStyle={{ background: TV.tip.bg, border: `1px solid ${TV.tip.border}`, borderRadius: 8, fontFamily: "var(--font-mono)", fontSize: 11 }}
+                itemStyle={{ color: "#131722" }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(v: number, _name: string, props: any) => {
+                  const d = props?.payload as HourData | undefined;
+                  return [`${v >= 0 ? "+" : ""}$${v.toFixed(2)} · ${d?.total ?? 0} trades (${d?.wins ?? 0}W/${d?.losses ?? 0}L)`, "P&L"];
+                }}
+              />
+              <ReferenceLine y={0} stroke="#E1E3EA" />
+              <Bar dataKey="pnl" radius={[3, 3, 0, 0]}>
+                {hourlyData.map((d, i) => <Cell key={i} fill={d.pnl >= 0 ? "#26a69a" : "#ef5350"} fillOpacity={0.85} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+
+          {/* Table */}
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full font-mono text-[11px]">
+              <thead>
+                <tr className="border-b text-left" style={{ borderColor: "#F1F3F8" }}>
+                  {["Hour", "Total", "Wins", "Losses", "Win%", "P&L"].map((h) => (
+                    <th key={h} className="pb-1.5 pr-4 font-medium text-slate-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {hourlyData.map((d) => {
+                  const wr = d.total > 0 ? (d.wins / d.total) * 100 : 0;
+                  return (
+                    <tr key={d.hour} className="border-b" style={{ borderColor: "#F9FAFB" }}>
+                      <td className="py-1.5 pr-4 font-semibold text-slate-700">{d.label}</td>
+                      <td className="py-1.5 pr-4 text-slate-600">{d.total}</td>
+                      <td className="py-1.5 pr-4 text-[#26a69a]">{d.wins}</td>
+                      <td className="py-1.5 pr-4 text-[#ef5350]">{d.losses}</td>
+                      <td className={`py-1.5 pr-4 font-semibold tabular-nums ${wr >= 50 ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
+                        {wr.toFixed(0)}%
+                      </td>
+                      <td className={`py-1.5 font-semibold tabular-nums ${d.pnl >= 0 ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
+                        {d.pnl >= 0 ? "+" : ""}${d.pnl.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      )}
 
       {/* AI Coach */}
       {insights.length > 0 && (

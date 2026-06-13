@@ -66,6 +66,17 @@ export function calcPnl(symbol: string, priceDiff: number, lotSize: number): num
   return calcPips(s, priceDiff) * 10 * lotSize;
 }
 
+/**
+ * Lot size required to risk `riskAmount` USD with a given SL distance.
+ * Uses calcPnl internally so instrument-specific contract sizes are correct.
+ */
+export function calcLotSize(symbol: string, riskAmount: number, slDistance: number): number {
+  if (slDistance <= 0) return 0.01;
+  const pnlPerLot = calcPnl(symbol, slDistance, 1);
+  if (pnlPerLot <= 0) return 0.01;
+  return Math.max(0.01, parseFloat((riskAmount / pnlPerLot).toFixed(2)));
+}
+
 /** Pip size for display. */
 export function pipSize(symbol: string): number {
   const s = symbol.toUpperCase();

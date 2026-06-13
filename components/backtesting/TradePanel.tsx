@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, TrendingUp, TrendingDown } from "lucide-react";
-import { fmtPrice } from "@/lib/backtesting/symbolMap";
+import { fmtPrice, calcLotSize } from "@/lib/backtesting/symbolMap";
 import type { Candle } from "@/lib/backtesting/types";
 
 type PlaceTradeBody = {
@@ -164,9 +164,10 @@ export function TradePanel({ open, defaultDirection, currentCandle, symbol, sess
                 {RISK_PRESETS.map((pct) => {
                   const price = currentCandle?.close ?? 0;
                   const slVal = parseFloat(slInput) || 0;
-                  const riskPerLot = slVal > 0 ? Math.abs(price - slVal) * 10000 : 0;
-                  const lots = riskPerLot > 0
-                    ? Math.max(0.01, parseFloat(((initialBalance * pct / 100) / riskPerLot).toFixed(2)))
+                  const slDistance = slVal > 0 ? Math.abs(price - slVal) : 0;
+                  const riskAmount = initialBalance * pct / 100;
+                  const lots = slDistance > 0
+                    ? calcLotSize(symbol, riskAmount, slDistance)
                     : null;
                   return (
                     <button

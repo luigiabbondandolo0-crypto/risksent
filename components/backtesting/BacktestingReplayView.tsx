@@ -21,7 +21,7 @@ import { ChartContextMenu } from "@/components/backtesting/ChartContextMenu";
 import { DrawingContextMenu } from "@/components/backtesting/DrawingContextMenu";
 import { TradePanel } from "@/components/backtesting/TradePanel";
 import { OpenPositions } from "@/components/backtesting/OpenPositions";
-import { fmtPrice, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
+import { fmtPrice, calcPnl, TIMEFRAMES, TIMEFRAME_LABELS } from "@/lib/backtesting/symbolMap";
 import type { Session, Trade, Candle } from "@/lib/backtesting/types";
 import type { BtTimeframe } from "@/lib/backtesting/types";
 type SessionResponse = { session: Session; trades: Trade[] };
@@ -415,10 +415,12 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const isProfit = pl >= 0;
 
   // Live floating P&L of the open trade
-  const floatingPL = openTrade && currentCandle
-    ? (currentCandle.close - openTrade.entry_price) *
-      (openTrade.direction === "BUY" ? 1 : -1) *
-      (openTrade.lot_size ?? 0.1) * 10000
+  const floatingPL = openTrade && currentCandle && session
+    ? calcPnl(
+        session.symbol,
+        (currentCandle.close - openTrade.entry_price) * (openTrade.direction === "BUY" ? 1 : -1),
+        openTrade.lot_size ?? 0.1,
+      )
     : null;
   const atStart = currentIndex <= 0;
   const atEnd = currentIndex >= sessionCandles.length - 1;
@@ -608,6 +610,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
             }}
             onUpdateTradeSLTP={(tradeId, sl, tp) => { void updateTradeSLTP(tradeId, sl, tp); }}
             onTradeEntryContextMenu={(x, y) => { setCtxMenu(null); setDrawingMenu(null); setCloseMenu({ x, y, step: 1 }); }}
+            onCloseTradeAtMarket={(x, y) => { setCtxMenu(null); setDrawingMenu(null); setCloseMenu({ x, y, step: 1 }); }}
             onObjectsChange={refreshObjects}
             onStateChange={saveDrawings}
           />

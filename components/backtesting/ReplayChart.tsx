@@ -121,6 +121,7 @@ type Props = {
   onObjectsChange?: () => void;
   onStateChange?: () => void;
   onTradeEntryContextMenu?: (clientX: number, clientY: number) => void;
+  onCloseTradeAtMarket?: (clientX: number, clientY: number) => void;
 };
 
 function getPriceFormat(symbol: string): { precision: number; minMove: number } {
@@ -191,6 +192,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       onObjectsChange,
       onStateChange,
       onTradeEntryContextMenu,
+      onCloseTradeAtMarket,
     },
     ref,
   ) {
@@ -218,6 +220,10 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
     const symbolRef = useRef(symbol);
 
     const [textInput, setTextInput] = useState<{ x: number; y: number; pos: ChartPoint } | null>(null);
+    const [entryBtnY, setEntryBtnY] = useState<number | null>(null);
+
+    // Stable ref so layout-effect closure can call it without re-running
+    const setEntryBtnYStable = useRef(setEntryBtnY);
 
     const activeToolRef    = useRef(activeTool);
     const crosshairCbRef   = useRef(onCrosshairMove);
@@ -1158,7 +1164,14 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       };
       el.addEventListener("contextmenu", onCtx);
 
-      const onRangeChange = () => redrawCanvas();
+      const syncEntryBtn = () => {
+        const sr = seriesRef.current;
+        const ot = openTradeRef.current;
+        if (!sr || !ot) { setEntryBtnYStable.current(null); return; }
+        const y = sr.priceToCoordinate(ot.entry_price);
+        setEntryBtnYStable.current(y != null ? Number(y) : null);
+      };
+      const onRangeChange = () => { redrawCanvas(); syncEntryBtn(); };
       chart.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
 
       const ro = new ResizeObserver(() => {
@@ -1276,7 +1289,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         if (refs.sl)    { try { sr.removePriceLine(refs.sl); }    catch { /* */ } refs.sl = null; }
         if (refs.tp)    { try { sr.removePriceLine(refs.tp); }    catch { /* */ } refs.tp = null; }
         openTradeRef.current = trade;
-        if (!trade) return;
+        if (!trade) { setEntryBtnYStable.current(null); return; }
         refs.entry = sr.createPriceLine({ price: trade.entry_price, color: "#ff8c00", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "Entry", axisLabelVisible: true });
         if (trade.stop_loss != null) {
           refs.sl = sr.createPriceLine({ price: trade.stop_loss, color: "#ef5350", lineWidth: 2, lineStyle: LineStyle.Dashed, title: "SL (drag)", axisLabelVisible: true });
@@ -1284,6 +1297,11 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         if (trade.take_profit != null) {
           refs.tp = sr.createPriceLine({ price: trade.take_profit, color: "#26a69a", lineWidth: 2, lineStyle: LineStyle.Dashed, title: "TP (drag)", axisLabelVisible: true });
         }
+        // Update close-button position after price scale settles
+        setTimeout(() => {
+          const y = sr.priceToCoordinate(trade.entry_price);
+          setEntryBtnYStable.current(y != null ? Number(y) : null);
+        }, 50);
       },
 
       clearTradeLines() {
@@ -1294,6 +1312,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
           if (refs[key]) { try { sr.removePriceLine(refs[key]!); } catch { /* */ } refs[key] = null; }
         }
         openTradeRef.current = null;
+        setEntryBtnYStable.current(null);
       },
 
       clearDrawings() {
@@ -1485,6 +1504,17 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
             }}
             onBlur={(e) => commitText(e.currentTarget.value)}
           />
+        )}
+        {entryBtnY !== null && onCloseTradeAtMarket && (
+          <button
+            type="button"
+            onClick={(e) => onCloseTradeAtMarket(e.clientX, e.clientY)}
+            title="Close trade at market"
+            className="absolute z-20 flex items-center justify-center rounded font-bold text-white transition-opacity hover:opacity-80"
+            style={{ right: 4, top: entryBtnY - 10, width: 20, height: 20, background: "#ef5350", fontSize: 14, lineHeight: 1, cursor: "pointer" }}
+          >
+            ×
+          </button>
         )}
       </div>
     );
