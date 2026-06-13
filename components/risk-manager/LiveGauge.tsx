@@ -10,21 +10,21 @@ function colorsForStatus(status: RiskGaugeStatus): { stroke: string; glow: strin
   switch (status) {
     case "danger":
       return {
-        stroke: "#f87171",
-        glow: "drop-shadow(0 0 10px rgba(248,113,113,0.85))",
-        blob: "#f87171"
+        stroke: "#dc2626",
+        glow: "drop-shadow(0 0 6px rgba(220,38,38,0.5))",
+        blob: "#ef4444"
       };
     case "watch":
       return {
-        stroke: "#f59e0b",
-        glow: "drop-shadow(0 0 8px rgba(245,158,11,0.75))",
+        stroke: "#d97706",
+        glow: "drop-shadow(0 0 6px rgba(217,119,6,0.5))",
         blob: "#f59e0b"
       };
     default:
       return {
-        stroke: "#4ade80",
-        glow: "drop-shadow(0 0 8px rgba(74,222,128,0.55))",
-        blob: "#4ade80"
+        stroke: "#059669",
+        glow: "drop-shadow(0 0 6px rgba(5,150,105,0.45))",
+        blob: "#10b981"
       };
   }
 }
@@ -74,12 +74,12 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
       style={
         status === "danger"
           ? {
-              boxShadow:
-                "0 0 0 1px rgba(248,113,113,0.28), 0 0 28px rgba(248,113,113,0.12), 0 0 24px rgba(248,113,113,0.08)",
+              borderColor: "rgba(220,38,38,0.35)",
+              boxShadow: "0 0 0 1px rgba(220,38,38,0.15), 0 4px 16px rgba(220,38,38,0.08)",
             }
           : status === "watch"
-            ? { boxShadow: "0 0 0 1px rgba(245,158,11,0.2), 0 0 24px rgba(245,158,11,0.08)" }
-            : { boxShadow: "0 0 0 1px rgba(74,222,128,0.2), 0 0 24px rgba(74,222,128,0.08)" }
+            ? { borderColor: "rgba(217,119,6,0.35)", boxShadow: "0 0 0 1px rgba(217,119,6,0.15), 0 4px 16px rgba(217,119,6,0.08)" }
+            : { borderColor: "rgba(5,150,105,0.35)", boxShadow: "0 0 0 1px rgba(5,150,105,0.15), 0 4px 16px rgba(5,150,105,0.08)" }
       }
     >
       <div
@@ -95,7 +95,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"
             fill="none"
-            stroke="#e2e8f0"
+            stroke="#cbd5e1"
             strokeWidth="10"
             strokeLinecap="round"
           />
@@ -106,7 +106,7 @@ export function LiveGauge({ limit, label, unit, status, ratio, valueDisplay }: L
             strokeWidth="10"
             strokeLinecap="round"
             strokeDasharray={`${(animatedPct / 100) * ARC} ${ARC}`}
-            opacity={0.12}
+            opacity={0.18}
           />
           <path
             d="M 10 45 A 40 40 0 0 1 90 45"

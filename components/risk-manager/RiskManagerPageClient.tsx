@@ -692,7 +692,7 @@ export function RiskManagerPageClient({
         />
         <div
           className="absolute bottom-1/4 left-0 h-64 w-64 rounded-full opacity-[0.04] blur-3xl"
-          style={{ background: "radial-gradient(circle, #4ade80, transparent)" }}
+          style={{ background: "radial-gradient(circle, #10b981, transparent)" }}
         />
       </div>
       <AnimatePresence>

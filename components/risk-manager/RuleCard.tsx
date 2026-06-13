@@ -5,15 +5,15 @@ import { motion } from "framer-motion";
 import type { RiskGaugeStatus } from "@/lib/risk/riskTypes";
 
 const borderFor: Record<RiskGaugeStatus, string> = {
-  safe: "rgba(74,222,128,0.45)",
-  watch: "rgba(245,158,11,0.5)",
-  danger: "rgba(248,113,113,0.55)"
+  safe: "rgba(5,150,105,0.45)",
+  watch: "rgba(217,119,6,0.5)",
+  danger: "rgba(220,38,38,0.55)"
 };
 
 const blobFor: Record<RiskGaugeStatus, string> = {
-  safe: "#4ade80",
-  watch: "#f59e0b",
-  danger: "#f87171"
+  safe: "#059669",
+  watch: "#d97706",
+  danger: "#dc2626"
 };
 
 export type RuleCardProps = {
@@ -34,7 +34,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
       transition={{ type: "spring", stiffness: 400, damping: 28 }}
       className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5"
       style={{
-        boxShadow: `0 0 0 1px ${borderFor[status]}, 0 0 24px ${status === "danger" ? "rgba(248,113,113,0.09)" : status === "watch" ? "rgba(245,158,11,0.09)" : "rgba(74,222,128,0.09)"}, 0 8px 32px -12px rgba(0,0,0,0.55)`,
+        boxShadow: `0 0 0 1px ${borderFor[status]}, 0 4px 16px ${status === "danger" ? "rgba(220,38,38,0.08)" : status === "watch" ? "rgba(217,119,6,0.08)" : "rgba(5,150,105,0.08)"}, 0 2px 8px rgba(0,0,0,0.06)`,
         transition: "box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1)"
       }}
     >
@@ -76,7 +76,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
             <motion.span
               className="h-2 w-2 rounded-full"
               style={{
-                background: status === "safe" ? "#4ade80" : status === "watch" ? "#f59e0b" : "#f87171"
+                background: status === "safe" ? "#059669" : status === "watch" ? "#d97706" : "#dc2626"
               }}
               animate={status !== "safe" ? {
                 opacity: [1, 0.3, 1],
@@ -87,7 +87,7 @@ export function RuleCard({ icon: Icon, label, description, value, onChange, stat
             <p className="rs-kpi-label">
               <span
                 style={{
-                  color: status === "safe" ? "#4ade80" : status === "watch" ? "#f59e0b" : "#f87171"
+                  color: status === "safe" ? "#059669" : status === "watch" ? "#d97706" : "#dc2626"
                 }}
               >
                 {status === "safe" ? "Safe" : status === "watch" ? "Watch" : "High risk"}

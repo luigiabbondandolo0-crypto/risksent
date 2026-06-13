@@ -56,7 +56,7 @@ export function ViolationTimeline({ violations }: { violations: ViolationItem[] 
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#00e676]/30 bg-[#00e676]/10 text-2xl text-[#00e676]"
+          className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-2xl text-emerald-600"
         >
           ✓
         </motion.div>
