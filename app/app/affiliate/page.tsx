@@ -11,7 +11,7 @@ function Dot({ x, y, size, opacity, delay }: { x: string; y: string; size: numbe
   return (
     <motion.div
       className="absolute rounded-full pointer-events-none"
-      style={{ left: x, top: y, width: size, height: size, background: `rgba(255,140,0,${opacity})` }}
+      style={{ left: x, top: y, width: size, height: size, background: `rgba(99,102,241,${opacity})` }}
       animate={{ y: [0, -18, 0], opacity: [opacity, opacity * 1.8, opacity] }}
       transition={{ duration: 4 + delay, repeat: Infinity, ease: "easeInOut", delay }}
     />
@@ -19,13 +19,13 @@ function Dot({ x, y, size, opacity, delay }: { x: string; y: string; size: numbe
 }
 
 const DOTS = [
-  { x: "8%",  y: "20%", size: 4,  opacity: 0.18, delay: 0   },
-  { x: "18%", y: "70%", size: 3,  opacity: 0.12, delay: 0.8 },
-  { x: "75%", y: "15%", size: 5,  opacity: 0.14, delay: 1.3 },
-  { x: "85%", y: "60%", size: 3,  opacity: 0.20, delay: 0.4 },
-  { x: "55%", y: "82%", size: 4,  opacity: 0.10, delay: 2.1 },
-  { x: "30%", y: "88%", size: 2,  opacity: 0.15, delay: 1.7 },
-  { x: "92%", y: "35%", size: 3,  opacity: 0.11, delay: 0.6 },
+  { x: "8%",  y: "20%", size: 4,  opacity: 0.15, delay: 0   },
+  { x: "18%", y: "70%", size: 3,  opacity: 0.10, delay: 0.8 },
+  { x: "75%", y: "15%", size: 5,  opacity: 0.12, delay: 1.3 },
+  { x: "85%", y: "60%", size: 3,  opacity: 0.18, delay: 0.4 },
+  { x: "55%", y: "82%", size: 4,  opacity: 0.08, delay: 2.1 },
+  { x: "30%", y: "88%", size: 2,  opacity: 0.12, delay: 1.7 },
+  { x: "92%", y: "35%", size: 3,  opacity: 0.09, delay: 0.6 },
 ];
 
 /* ─── Orbiting ring ─── */
@@ -93,14 +93,14 @@ export default function AffiliatePage() {
   }
 
   return (
-    <div className="relative flex min-h-[calc(100vh-56px)] flex-col items-center justify-center overflow-hidden px-4 py-16 bg-[#09090b]">
+    <div className="relative flex min-h-[calc(100vh-56px)] flex-col items-center justify-center overflow-hidden px-4 py-16 bg-[#F8FAFC]">
 
       {/* Background dots */}
       {DOTS.map((d, i) => <Dot key={i} {...d} />)}
 
       {/* Background radial glow */}
       <div className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(255,140,0,0.06) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(ellipse 60% 55% at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 70%)" }} />
 
       <motion.div
         variants={stagger}
@@ -112,7 +112,7 @@ export default function AffiliatePage() {
         <motion.div variants={fadeUp} className="mb-8 flex justify-center">
           <span
             className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em]"
-            style={{ borderColor: "rgba(255,140,0,0.3)", background: "rgba(255,140,0,0.07)", color: "#ff8c00" }}
+            style={{ borderColor: "rgba(99,102,241,0.25)", background: "rgba(99,102,241,0.07)", color: "#6366f1" }}
           >
             Affiliate Program
           </span>
@@ -122,15 +122,15 @@ export default function AffiliatePage() {
         <motion.div variants={fadeUp} className="mb-8 flex justify-center">
           <div className="relative flex items-center justify-center" style={{ width: 120, height: 120 }}>
             {/* Orbit circles (decorative) */}
-            <div className="absolute rounded-full border border-white/[0.06]"
+            <div className="absolute rounded-full border border-slate-200"
               style={{ width: 100, height: 100 }} />
-            <div className="absolute rounded-full border border-white/[0.04]"
+            <div className="absolute rounded-full border border-slate-100"
               style={{ width: 120, height: 120 }} />
 
             {/* Orbiting dots */}
-            <OrbitRing radius={50} duration={5} dotColor="#ff8c00" dotSize={5} />
-            <OrbitRing radius={60} duration={8} dotColor="rgba(255,60,60,0.7)" dotSize={4} reverse />
-            <OrbitRing radius={42} duration={11} dotColor="rgba(0,230,118,0.6)" dotSize={3} />
+            <OrbitRing radius={50} duration={5} dotColor="#6366f1" dotSize={5} />
+            <OrbitRing radius={60} duration={8} dotColor="rgba(79,70,229,0.7)" dotSize={4} reverse />
+            <OrbitRing radius={42} duration={11} dotColor="rgba(16,185,129,0.7)" dotSize={3} />
 
             {/* Center icon box */}
             <motion.div
@@ -138,12 +138,12 @@ export default function AffiliatePage() {
               transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
               className="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl"
               style={{
-                background: "linear-gradient(135deg, rgba(255,60,60,0.18), rgba(255,140,0,0.18))",
-                border: "1px solid rgba(255,140,0,0.3)",
-                boxShadow: "0 0 32px rgba(255,140,0,0.15)",
+                background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.12))",
+                border: "1px solid rgba(99,102,241,0.25)",
+                boxShadow: "0 0 32px rgba(99,102,241,0.12)",
               }}
             >
-              <Gift className="h-7 w-7" style={{ color: "#ff8c00" }} />
+              <Gift className="h-7 w-7 text-indigo-600" />
             </motion.div>
           </div>
         </motion.div>
@@ -151,14 +151,14 @@ export default function AffiliatePage() {
         {/* Headline */}
         <motion.h1
           variants={fadeUp}
-          className="mb-3 text-4xl font-black tracking-tight text-white sm:text-5xl"
+          className="mb-3 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl"
           style={{ fontFamily: "var(--font-display)", lineHeight: 1 }}
         >
           Earn with<br />
-          <span style={{ color: "#ff8c00" }}>RiskSent</span>
+          <span className="text-indigo-600">RiskSent</span>
         </motion.h1>
 
-        <motion.p variants={fadeUp} className="mb-3 text-[13px] leading-relaxed text-slate-400"
+        <motion.p variants={fadeUp} className="mb-3 text-[13px] leading-relaxed text-slate-500"
           style={{ fontFamily: "'JetBrains Mono', monospace" }}>
           Share RiskSent. Earn recurring commission on every subscription.
         </motion.p>
@@ -171,10 +171,10 @@ export default function AffiliatePage() {
             { label: "Payout", value: "Monthly" },
           ].map(stat => (
             <div key={stat.label} className="flex flex-col items-center">
-              <span className="text-[17px] font-black tracking-tight" style={{ color: "#ff8c00", fontFamily: "var(--font-display)" }}>
+              <span className="text-[17px] font-black tracking-tight text-indigo-600" style={{ fontFamily: "var(--font-display)" }}>
                 {stat.value}
               </span>
-              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-slate-600">{stat.label}</span>
+              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-slate-400">{stat.label}</span>
             </div>
           ))}
         </motion.div>
@@ -183,9 +183,9 @@ export default function AffiliatePage() {
         <motion.div variants={fadeUp} className="mb-6 flex justify-center">
           <span
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.15em]"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}
+            style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)", color: "#64748b" }}
           >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-400" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-400" />
             Program launching soon
           </span>
         </motion.div>
@@ -197,7 +197,7 @@ export default function AffiliatePage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="rounded-xl border px-5 py-4 text-sm font-semibold"
-              style={{ borderColor: "rgba(0,230,118,0.25)", background: "rgba(0,230,118,0.06)", color: "#00e676" }}
+              style={{ borderColor: "rgba(16,185,129,0.25)", background: "rgba(16,185,129,0.06)", color: "#059669" }}
             >
               You&apos;re on the waitlist — we&apos;ll notify you at launch.
             </motion.div>
@@ -209,14 +209,13 @@ export default function AffiliatePage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="min-w-0 flex-1 rounded-xl border bg-transparent px-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none transition-colors focus:border-white/20"
-                style={{ borderColor: "rgba(255,255,255,0.1)" }}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-black transition-all hover:scale-[1.02] disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #ff3c3c, #ff8c00)" }}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.02] disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
               >
                 {loading ? "…" : <><span>Notify me</span><ArrowRight className="h-3.5 w-3.5" /></>}
               </button>
