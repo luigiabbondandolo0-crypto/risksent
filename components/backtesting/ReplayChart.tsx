@@ -120,6 +120,7 @@ type Props = {
   onUpdateTradeSLTP?: (tradeId: string, sl: number | null, tp: number | null) => void;
   onObjectsChange?: () => void;
   onStateChange?: () => void;
+  onTradeEntryContextMenu?: (clientX: number, clientY: number) => void;
 };
 
 function getPriceFormat(symbol: string): { precision: number; minMove: number } {
@@ -189,6 +190,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
       onUpdateTradeSLTP,
       onObjectsChange,
       onStateChange,
+      onTradeEntryContextMenu,
     },
     ref,
   ) {
@@ -226,6 +228,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
     const updateSltpCbRef  = useRef(onUpdateTradeSLTP);
     const objectsChangeCbRef = useRef(onObjectsChange);
     const stateChangeCbRef = useRef(onStateChange);
+    const tradeEntryCtxCbRef = useRef(onTradeEntryContextMenu);
     const settingsRef      = useRef(settings);
 
     useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
@@ -235,6 +238,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
     useEffect(() => { toolCompleteCbRef.current = onToolComplete; }, [onToolComplete]);
     useEffect(() => { placePosCbRef.current = onPlacePosition; }, [onPlacePosition]);
     useEffect(() => { updateSltpCbRef.current = onUpdateTradeSLTP; }, [onUpdateTradeSLTP]);
+    useEffect(() => { tradeEntryCtxCbRef.current = onTradeEntryContextMenu; }, [onTradeEntryContextMenu]);
     useEffect(() => { objectsChangeCbRef.current = onObjectsChange; }, [onObjectsChange]);
     useEffect(() => { stateChangeCbRef.current = onStateChange; }, [onStateChange]);
     useEffect(() => { symbolRef.current = symbol; }, [symbol]);
@@ -395,21 +399,31 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         ctx.beginPath(); ctx.moveTo(xL, yEntry); ctx.lineTo(xR, yEntry); ctx.stroke();
         ctx.setLineDash([]);
 
-        const drawHandle = (x: number, y: number, color: string) => {
+        const drawHandle = (x: number, y: number, color: string, stroke = "#ffffff") => {
           ctx.fillStyle = color;
-          ctx.strokeStyle = "#0a0a12";
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.rect(x - 5, y - 5, 10, 10);
           ctx.fill();
           ctx.stroke();
         };
+        // Left handles — price adjustment (colored per price level)
         drawHandle(xL, yTP, "#26a69a");
-        drawHandle(xR, yTP, "#26a69a");
         drawHandle(xL, ySL, "#ef5350");
-        drawHandle(xR, ySL, "#ef5350");
         drawHandle(xL, yEntry, "#ff8c00");
-        drawHandle(xR, yEntry, "#ff8c00");
+        // Right handles — width resize (indigo, distinct arrow-like appearance)
+        drawHandle(xR, yTP, "#6366f1");
+        drawHandle(xR, ySL, "#6366f1");
+        drawHandle(xR, yEntry, "#6366f1");
+        // Small ↔ arrow hint on right-edge center handle
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 8px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("↔", xR, yEntry);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
 
         // Labels in points (pips)
         const slPts = Math.abs(calcPips(sym, pp.entry - pp.sl));
@@ -517,7 +531,7 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
     }
 
     function hitPending(mx: number, my: number): { id: string; part: "tp" | "sl" | "entry" | "edgeL" | "edgeR" | "body" } | null {
-      const R = 9;
+      const R = 10;
       for (const pp of pendingPositionsRef.current) {
         const px1 = toPx({ price: pp.entry, logical: pp.logicalLeft });
         const px2 = toPx({ price: pp.entry, logical: pp.logicalRight });
@@ -529,14 +543,20 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         const slY = toPx({ price: pp.sl, logical: pp.logicalLeft })?.y ?? null;
         if (tpY == null || slY == null) continue;
 
-        // Handles (priority)
-        if (dist(mx, my, xL, tpY) < R || dist(mx, my, xR, tpY) < R) return { id: pp.id, part: "tp" };
-        if (dist(mx, my, xL, slY) < R || dist(mx, my, xR, slY) < R) return { id: pp.id, part: "sl" };
-        if (dist(mx, my, xL, yEntry) < R || dist(mx, my, xR, yEntry) < R) return { id: pp.id, part: "entry" };
-
         const top = Math.min(tpY, slY);
         const bot = Math.max(tpY, slY);
-        // Horizontal edges of box → pending-edgeL / R (resize width)
+
+        // RIGHT-side handles → width resize (edgeR)
+        if (dist(mx, my, xR, tpY) < R) return { id: pp.id, part: "edgeR" };
+        if (dist(mx, my, xR, slY) < R) return { id: pp.id, part: "edgeR" };
+        if (dist(mx, my, xR, yEntry) < R) return { id: pp.id, part: "edgeR" };
+
+        // LEFT-side handles → price adjustment
+        if (dist(mx, my, xL, tpY) < R) return { id: pp.id, part: "tp" };
+        if (dist(mx, my, xL, slY) < R) return { id: pp.id, part: "sl" };
+        if (dist(mx, my, xL, yEntry) < R) return { id: pp.id, part: "entry" };
+
+        // Edge strips (fallback for mid-edge hits)
         if (my >= top && my <= bot) {
           if (Math.abs(mx - xL) < 6) return { id: pp.id, part: "edgeL" };
           if (Math.abs(mx - xR) < 6) return { id: pp.id, part: "edgeR" };
@@ -1115,6 +1135,16 @@ export const ReplayChart = forwardRef<ReplayChartHandle, Props>(
         const rect  = el.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
+
+        // Hit-test entry price line first (close-trade shortcut)
+        const ot = openTradeRef.current;
+        if (ot) {
+          const entryY = sr.priceToCoordinate(ot.entry_price);
+          if (entryY != null && Math.abs(Number(entryY) - my) < 7) {
+            tradeEntryCtxCbRef.current?.(e.clientX, e.clientY);
+            return;
+          }
+        }
 
         // Hit-test drawing first
         const hit = hitAnyDrawing(mx, my);

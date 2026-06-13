@@ -9,7 +9,6 @@ import {
 import Link from "next/link";
 import {
   BarChart2,
-  SkipBack,
   ChevronRight as ChevronRightIcon,
   Play,
   Pause,
@@ -103,6 +102,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
   const [hoveredCandle, setHoveredCandle] = useState<CandleOhlc | null>(null);
   const [ctxMenu, setCtxMenu] = useState<{ price: number; x: number; y: number } | null>(null);
   const [drawingMenu, setDrawingMenu] = useState<{ id: string; kind: string; x: number; y: number } | null>(null);
+  const [closeMenu, setCloseMenu] = useState<{ x: number; y: number; step: 1 | 2 } | null>(null);
   const [chartSettings, setChartSettings] = useState<ChartSettings>(DEFAULT_SETTINGS);
   const [chartObjects, setChartObjects] = useState<ChartObject[]>([]);
 
@@ -520,39 +520,35 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
         <div className="ml-auto flex h-full items-center gap-0">
           {session && (
             <div
-              className="flex h-full items-center gap-2 border-l px-3"
+              className="flex h-full items-center gap-3 border-l px-4"
               style={{ borderColor: "#E1E3EA" }}
             >
-              <div className="text-right">
-                <div className="font-[family-name:var(--font-display)] text-sm font-bold leading-tight" style={{ color: "#131722" }}>
+              {/* Balance */}
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider" style={{ color: "#9CA3AF" }}>Balance</div>
+                <div className="font-[family-name:var(--font-display)] text-sm font-extrabold leading-tight tabular-nums" style={{ color: "#131722" }}>
                   ${session.current_balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                 </div>
-                <div className={`font-mono text-[10px] leading-tight ${isProfit ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
+              </div>
+              {/* Realized P&L */}
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider" style={{ color: "#9CA3AF" }}>P&L</div>
+                <div className={`font-mono text-sm font-bold leading-tight tabular-nums ${isProfit ? "text-[#26a69a]" : "text-[#ef5350]"}`}>
                   {isProfit ? "+" : ""}{pl.toFixed(2)}
                 </div>
               </div>
-            </div>
-          )}
-          {/* Live floating P&L badge */}
-          {floatingPL !== null && (
-            <div
-              className="flex h-full items-center gap-1.5 border-l px-3"
-              style={{ borderColor: "#E1E3EA" }}
-            >
-              <div className="text-right">
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider"
-                  style={{ color: "#9CA3AF" }}
-                >
-                  Float
+              {/* Floating P&L */}
+              {floatingPL !== null && (
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider" style={{ color: "#9CA3AF" }}>Float</div>
+                  <div
+                    className="font-mono text-sm font-bold leading-tight tabular-nums"
+                    style={{ color: floatingPL >= 0 ? "#26a69a" : "#ef5350" }}
+                  >
+                    {floatingPL >= 0 ? "+" : ""}{floatingPL.toFixed(2)}
+                  </div>
                 </div>
-                <div
-                  className="font-mono text-sm font-bold leading-tight tabular-nums"
-                  style={{ color: floatingPL >= 0 ? "#26a69a" : "#ef5350" }}
-                >
-                  {floatingPL >= 0 ? "+" : ""}{floatingPL.toFixed(2)}
-                </div>
-              </div>
+              )}
             </div>
           )}
           <Link
@@ -611,6 +607,7 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
               setTradePanel({ open: true, dir, presetSL: sl, presetTP: tp, presetLot: lot });
             }}
             onUpdateTradeSLTP={(tradeId, sl, tp) => { void updateTradeSLTP(tradeId, sl, tp); }}
+            onTradeEntryContextMenu={(x, y) => { setCtxMenu(null); setDrawingMenu(null); setCloseMenu({ x, y, step: 1 }); }}
             onObjectsChange={refreshObjects}
             onStateChange={saveDrawings}
           />
@@ -627,11 +624,6 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           className="flex h-16 shrink-0 items-center gap-3 border-b px-4"
           style={{ background: "#FAFBFC", borderColor: "#E1E3EA" }}
         >
-          {/* Reset */}
-          <TBtn title="Reset" onClick={reset} disabled={atStart}>
-            <SkipBack className="h-3.5 w-3.5" />
-          </TBtn>
-
           {/* Core replay controls */}
           <div className="flex items-center gap-1.5">
             <button
@@ -837,7 +829,107 @@ export function BacktestingReplayView({ sessionId, backHref, resultsHref }: Back
           } : undefined}
         />
       )}
+      {/* ── Close-trade confirm menu ─────────────────────────────────────── */}
+      {closeMenu && openTrade && (
+        <CloseTradeMenu
+          clientX={closeMenu.x}
+          clientY={closeMenu.y}
+          step={closeMenu.step}
+          price={currentCandle?.close ?? openTrade.entry_price}
+          symbol={session?.symbol ?? ""}
+          direction={openTrade.direction}
+          onClose={() => setCloseMenu(null)}
+          onConfirmStep1={() => setCloseMenu((m) => m ? { ...m, step: 2 } : null)}
+          onConfirm={() => {
+            if (!currentCandle) return;
+            setCloseMenu(null);
+            void closeTrade(openTrade.id, currentCandle.close, new Date(currentCandle.time * 1000).toISOString());
+          }}
+        />
+      )}
       </div>
+    </div>
+  );
+}
+
+function CloseTradeMenu({
+  clientX, clientY, step, price, symbol, direction, onClose, onConfirmStep1, onConfirm,
+}: {
+  clientX: number; clientY: number; step: 1 | 2;
+  price: number; symbol: string; direction: string;
+  onClose: () => void; onConfirmStep1: () => void; onConfirm: () => void;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuW = 220;
+  const menuH = step === 1 ? 80 : 112;
+  const x = Math.min(clientX, window.innerWidth - menuW - 8);
+  const y = Math.min(clientY, window.innerHeight - menuH - 8);
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose();
+    }
+    function onKey(e: KeyboardEvent) { if (e.code === "Escape") onClose(); }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-[60] rounded-lg border shadow-lg"
+      style={{ left: x, top: y, width: menuW, background: "#FFFFFF", borderColor: "#E1E3EA" }}
+    >
+      {/* Header */}
+      <div className="border-b px-3 py-2" style={{ borderColor: "#F1F3F8" }}>
+        <p className="font-mono text-[11px] font-semibold" style={{ color: "#131722" }}>
+          Close {direction} @ {fmtPrice(symbol, price)}
+        </p>
+        <p className="font-mono text-[10px] text-slate-400">Entry line</p>
+      </div>
+
+      {step === 1 && (
+        <div className="px-3 py-2">
+          <button
+            type="button"
+            onClick={onConfirmStep1}
+            className="w-full rounded-lg py-1.5 font-mono text-[12px] font-bold text-white transition-colors"
+            style={{ background: "#ef5350" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#d32f2f"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef5350"; }}
+          >
+            Close trade
+          </button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="px-3 py-2 space-y-1.5">
+          <p className="font-mono text-[11px] text-slate-500 text-center">Are you sure?</p>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="w-full rounded-lg py-1.5 font-mono text-[12px] font-bold text-white transition-colors"
+            style={{ background: "#ef5350" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#d32f2f"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#ef5350"; }}
+          >
+            Confirm close
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-lg border py-1.5 font-mono text-[12px] text-slate-600 transition-colors hover:bg-slate-50"
+            style={{ borderColor: "#E1E3EA" }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
