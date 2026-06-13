@@ -138,6 +138,17 @@ export default async function RootLayout({
                   description: DESCRIPTION,
                   url: "https://risksent.com",
                 },
+                {
+                  "@type": "ItemList",
+                  name: "RiskSent Navigation",
+                  itemListElement: [
+                    { "@type": "SiteLinksSearchBox", target: "https://risksent.com" },
+                    { "@type": "ListItem", position: 1, name: "Home", url: "https://risksent.com/" },
+                    { "@type": "ListItem", position: 2, name: "Pricing", url: "https://risksent.com/pricing" },
+                    { "@type": "ListItem", position: 3, name: "Mission", url: "https://risksent.com/mission" },
+                    { "@type": "ListItem", position: 4, name: "FAQ", url: "https://risksent.com/pricing#faq" },
+                  ],
+                },
               ],
             }),
           }}
