@@ -3,88 +3,96 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
-/**
- * Slim dismissible announcement bar shown above the topbar.
- *
- * Content is driven by the env var NEXT_PUBLIC_ANNOUNCEMENT.
- * Format:  "DISMISS_KEY|Message text here"
- *   - DISMISS_KEY: a short unique id (e.g. "promo-june-2025"). When you change the
- *     message change the key too so already-dismissed users see it again.
- *   - Message text: any plain text shown centered in the bar.
- *
- * Example .env:
- *   NEXT_PUBLIC_ANNOUNCEMENT=promo-june-2025|🎉 Summer deal — 20% off all plans. Use code SUMMER20 at checkout.
- *
- * Leave the var empty (or unset) to hide the bar entirely.
- */
+type Announcement = {
+  id: string;
+  title: string;
+  message: string;
+  type: "info" | "warning" | "success" | "error";
+};
 
-const RAW = process.env.NEXT_PUBLIC_ANNOUNCEMENT ?? "";
+const LS_KEY = (id: string) => `rs_ann_dismissed_${id}`;
 
-function parse(raw: string): { key: string; text: string } | null {
-  if (!raw.trim()) return null;
-  const sep = raw.indexOf("|");
-  if (sep === -1) return { key: raw.trim(), text: raw.trim() };
-  const key = raw.slice(0, sep).trim();
-  const text = raw.slice(sep + 1).trim();
-  if (!key || !text) return null;
-  return { key, text };
-}
-
-const ANNOUNCEMENT = parse(RAW);
-const LS_KEY = (key: string) => `rs_ann_dismissed_${key}`;
+const TYPE_STYLES: Record<string, { bar: string; dot: string; glow: string }> = {
+  info: {
+    bar: "from-[#0a0a18] via-[#0d0f2a] to-[#080818]",
+    dot: "#2962FF",
+    glow: "rgba(41,98,255,0.5)",
+  },
+  warning: {
+    bar: "from-[#150f00] via-[#1f1500] to-[#100a00]",
+    dot: "#f59e0b",
+    glow: "rgba(245,158,11,0.5)",
+  },
+  success: {
+    bar: "from-[#001a0a] via-[#001f0d] to-[#00100a]",
+    dot: "#059669",
+    glow: "rgba(5,150,105,0.5)",
+  },
+  error: {
+    bar: "from-[#1a0505] via-[#2d0f0f] to-[#0f0505]",
+    dot: "#ff3c3c",
+    glow: "rgba(255,60,60,0.5)",
+  },
+};
 
 export function AnnouncementBar() {
+  const [ann, setAnn] = useState<Announcement | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!ANNOUNCEMENT) return;
-    try {
-      const dismissed = localStorage.getItem(LS_KEY(ANNOUNCEMENT.key));
-      if (!dismissed) setVisible(true);
-    } catch {
-      setVisible(true);
-    }
+    fetch("/api/announcements")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { announcement?: Announcement | null } | null) => {
+        const a = data?.announcement ?? null;
+        if (!a) return;
+        try {
+          if (localStorage.getItem(LS_KEY(a.id))) return;
+        } catch { /* */ }
+        setAnn(a);
+        setVisible(true);
+      })
+      .catch(() => {});
   }, []);
 
-  if (!visible || !ANNOUNCEMENT) return null;
+  if (!visible || !ann) return null;
 
   function dismiss() {
-    if (!ANNOUNCEMENT) return;
-    try { localStorage.setItem(LS_KEY(ANNOUNCEMENT.key), "1"); } catch { /* */ }
+    if (!ann) return;
+    try { localStorage.setItem(LS_KEY(ann.id), "1"); } catch { /* */ }
     setVisible(false);
   }
 
+  const style = TYPE_STYLES[ann.type] ?? TYPE_STYLES.info;
+
   return (
     <div
-      className="relative flex w-full items-center justify-center gap-3 px-10 py-2 text-center"
-      style={{
-        background: "linear-gradient(90deg, #1a0a0a 0%, #2d0f0f 35%, #1a0505 65%, #0f0a1a 100%)",
-        borderBottom: "1px solid rgba(255,60,60,0.2)",
-      }}
+      className={`relative flex w-full items-center justify-center gap-3 bg-gradient-to-r px-10 py-2 text-center ${style.bar}`}
+      style={{ borderBottom: `1px solid ${style.dot}30` }}
     >
-      {/* Red glow accent line at top */}
+      {/* Top glow line */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, #ff3c3c80, #ff8c0060, transparent)" }}
+        style={{ background: `linear-gradient(90deg, transparent, ${style.glow}, transparent)` }}
       />
 
       {/* Pulse dot */}
       <span className="relative flex h-2 w-2 shrink-0">
         <span
           className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-          style={{ background: "#ff3c3c" }}
+          style={{ background: style.dot }}
         />
         <span
           className="relative inline-flex h-2 w-2 rounded-full"
-          style={{ background: "#ff5c5c" }}
+          style={{ background: style.dot }}
         />
       </span>
 
       <p
         className="font-[family-name:var(--font-mono)] text-[12px] font-medium leading-none tracking-wide text-white/90"
-        style={{ textShadow: "0 0 20px rgba(255,60,60,0.3)" }}
+        style={{ textShadow: `0 0 20px ${style.glow}` }}
       >
-        {ANNOUNCEMENT.text}
+        {ann.title && <strong className="mr-1.5">{ann.title}</strong>}
+        {ann.message}
       </p>
 
       <button
