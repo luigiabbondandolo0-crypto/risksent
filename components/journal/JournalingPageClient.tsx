@@ -466,6 +466,55 @@ function TodayTab({
     show: { opacity: 1, x: 0 },
   };
 
+  // ── Analytics ──
+  const todayPl = todayTrades.reduce((s, t) => s + (t.pl ?? 0), 0);
+  const todayWins = todayTrades.filter((t) => (t.pl ?? 0) > 0).length;
+  const todayWinRate =
+    todayTrades.length > 0
+      ? Math.round((todayWins / todayTrades.length) * 100)
+      : null;
+  const rrTrades = todayTrades.filter(
+    (t) => t.risk_reward != null && t.risk_reward > 0
+  );
+  const avgRR =
+    rrTrades.length > 0
+      ? rrTrades.reduce((s, t) => s + (t.risk_reward ?? 0), 0) / rrTrades.length
+      : null;
+
+  // Sanity score: composite of checklist %, rules %, win rate (if trades exist)
+  const clScore = checklistTotal > 0 ? checklistCompleted / checklistTotal : null;
+  const rlScore = rulesTotal > 0 ? rulesActive / rulesTotal : null;
+  const wrScore = todayTrades.length > 0 ? todayWins / todayTrades.length : null;
+  const sanityParts = [clScore, rlScore, wrScore].filter(
+    (s): s is number => s !== null
+  );
+  const sanityScore =
+    sanityParts.length > 0
+      ? Math.round(
+          (sanityParts.reduce((a, b) => a + b, 0) / sanityParts.length) * 100
+        )
+      : null;
+  const sanityLabel =
+    sanityScore == null
+      ? "—"
+      : sanityScore >= 80
+        ? "Excellent"
+        : sanityScore >= 60
+          ? "Good"
+          : sanityScore >= 40
+            ? "Fair"
+            : "Weak";
+  const sanityColor =
+    sanityScore == null
+      ? "#94a3b8"
+      : sanityScore >= 80
+        ? "#16a34a"
+        : sanityScore >= 60
+          ? "#6366f1"
+          : sanityScore >= 40
+            ? "#f59e0b"
+            : "#dc2626";
+
   return (
     <motion.div
       key="today"
@@ -473,353 +522,147 @@ function TodayTab({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.25 }}
-      className="relative rounded-2xl p-4 lg:p-6"
-      style={{ background: "rgba(255,255,255,0.9)", border: "1px solid rgba(99,102,241,0.1)" }}
+      className="relative space-y-5"
     >
+      {/* Settings shortcut */}
       <Link
         {...settingsLinkProps}
         title="Manage checklist, rules & strategies"
-        className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-900 lg:right-5 lg:top-5"
+        className="absolute right-0 top-0 z-20 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
         aria-label="Journal settings"
       >
         <Settings2 className="h-4 w-4" />
       </Link>
 
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,40fr)_minmax(0,35fr)_minmax(0,25fr)] lg:gap-5 lg:pr-10">
-        {/* LEFT — Daily Briefing */}
-        <motion.div
-          className="flex min-w-0 flex-col gap-4"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0 }}
-        >
-          <div className="space-y-2">
-            <p className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              {format(new Date(), "EEEE, MMMM d")}
+      {/* ── Analytics strip ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 pr-11 sm:pr-12">
+        {[
+          {
+            label: "Trades today",
+            value: todayTrades.length > 0 ? String(todayTrades.length) : "—",
+            sub:
+              todayTrades.length > 0
+                ? `${todayPl >= 0 ? "+" : ""}${todayPl.toFixed(2)}`
+                : "No trades yet",
+            color: "#6366f1",
+            glow: "rgba(99,102,241,0.08)",
+            border: "rgba(99,102,241,0.18)",
+          },
+          {
+            label: "Win rate",
+            value: todayWinRate != null ? `${todayWinRate}%` : "—",
+            sub:
+              todayTrades.length > 0
+                ? `${todayWins}W / ${todayTrades.length - todayWins}L`
+                : "No trades yet",
+            color:
+              todayWinRate == null
+                ? "#94a3b8"
+                : todayWinRate >= 50
+                  ? "#16a34a"
+                  : "#dc2626",
+            glow:
+              todayWinRate == null
+                ? "rgba(148,163,184,0.06)"
+                : todayWinRate >= 50
+                  ? "rgba(74,222,128,0.08)"
+                  : "rgba(248,113,113,0.08)",
+            border:
+              todayWinRate == null
+                ? "rgba(148,163,184,0.2)"
+                : todayWinRate >= 50
+                  ? "rgba(74,222,128,0.22)"
+                  : "rgba(248,113,113,0.22)",
+          },
+          {
+            label: "Avg R:R",
+            value: avgRR != null ? `${avgRR.toFixed(2)}` : "—",
+            sub: avgRR != null ? `${rrTrades.length} trade${rrTrades.length !== 1 ? "s" : ""} with RR` : "No RR data",
+            color: avgRR == null ? "#94a3b8" : avgRR >= 1.5 ? "#16a34a" : avgRR >= 1 ? "#f59e0b" : "#dc2626",
+            glow: "rgba(56,189,248,0.07)",
+            border: "rgba(56,189,248,0.18)",
+          },
+          {
+            label: "Sanity score",
+            value: sanityScore != null ? `${sanityScore}` : "—",
+            sub: sanityLabel,
+            color: sanityColor,
+            glow: `${sanityColor}14`,
+            border: `${sanityColor}30`,
+          },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, duration: 0.35 }}
+            className="relative overflow-hidden rounded-2xl p-4"
+            style={{
+              background: stat.glow,
+              border: `1px solid ${stat.border}`,
+              boxShadow: `0 0 20px ${stat.glow}`,
+            }}
+          >
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">
+              {stat.label}
             </p>
-            <motion.p
-              className="text-sm leading-relaxed text-slate-400"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+            <p
+              className="font-display text-2xl font-black tracking-tight"
+              style={{ color: stat.color }}
             >
-              {quote}
-            </motion.p>
-          </div>
-
-          {/* Pre-trade checklist */}
-          <div
-            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
-            style={{
-              background: "rgba(99,102,241,0.04)",
-              borderColor: "rgba(99,102,241,0.2)",
-              boxShadow: "0 0 24px rgba(99,102,241,0.08)",
-            }}
-          >
-            <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-25 blur-2xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-800">
-                Pre-trade checklist
-              </h3>
-              <Link
-                {...settingsLinkProps}
-                className="text-slate-500 transition hover:text-slate-300"
-                aria-label="Checklist settings"
-              >
-                <Settings2 className="h-4 w-4" />
-              </Link>
-            </div>
-            {checklistTotal === 0 ? (
-              <p className="text-sm text-slate-500">
-                No checklist yet.{" "}
-                <Link
-                  {...settingsLinkProps}
-                  className="font-mono text-[#ff8c00] hover:underline"
-                >
-                  Add items →
-                </Link>
-              </p>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                    <span>
-                      {checklistCompleted}/{checklistTotal} completed
-                    </span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: progressColor }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${checklistPct}%` }}
-                      transition={{ type: "spring", stiffness: 120, damping: 22 }}
-                    />
-                  </div>
-                </div>
-                <motion.ul
-                  className="space-y-2"
-                  variants={checklistVariants}
-                  initial="hidden"
-                  animate="show"
-                >
-                  {sortedChecklist.map((item) => {
-                    const yes = checklistDoneMap[item.id] === true;
-                    return (
-                      <motion.li key={item.id} variants={checklistItemVariants}>
-                        <motion.button
-                          type="button"
-                          whileTap={{ scale: 0.97 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 28 }}
-                          onClick={() =>
-                            updateSession({
-                              checklist_done: {
-                                ...checklistDoneMap,
-                                [item.id]: !yes,
-                              },
-                            })
-                          }
-                          className="flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left transition-colors hover:bg-slate-100"
-                        >
-                          <span
-                            className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border-2 font-mono text-xs"
-                            style={{
-                              borderColor: yes ? "#00e676" : "#ff3c3c",
-                              color: yes ? "#00e676" : "#ff3c3c",
-                              background: yes
-                                ? "rgba(0,230,118,0.1)"
-                                : "rgba(255,60,60,0.08)",
-                            }}
-                          >
-                            {yes ? (
-                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                            ) : (
-                              <X className="h-3.5 w-3.5" strokeWidth={3} />
-                            )}
-                          </span>
-                          <span
-                            className={`text-sm text-slate-700 ${
-                              yes ? "line-through decoration-slate-400" : ""
-                            }`}
-                          >
-                            {item.text}
-                          </span>
-                        </motion.button>
-                      </motion.li>
-                    );
-                  })}
-                </motion.ul>
-              </>
-            )}
-          </div>
-
-          {/* Today&apos;s rules */}
-          <div
-            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
-            style={{
-              background: "rgba(245,158,11,0.03)",
-              borderColor: "rgba(245,158,11,0.18)",
-              boxShadow: "0 0 22px rgba(245,158,11,0.07)",
-            }}
-          >
-            <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }} />
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-800">
-                Today&apos;s rules
-              </h3>
-              <Link
-                {...settingsLinkProps}
-                className="text-slate-500 transition hover:text-slate-300"
-                aria-label="Rules settings"
-              >
-                <Settings2 className="h-4 w-4" />
-              </Link>
-            </div>
-            {rulesTotal === 0 ? (
-              <p className="text-sm text-slate-500">
-                No rules set.{" "}
-                <Link
-                  {...settingsLinkProps}
-                  className="font-mono text-[#ff8c00] hover:underline"
-                >
-                  Add rules →
-                </Link>
-              </p>
-            ) : (
-              <>
-                <p className="text-[11px] font-mono text-slate-500">
-                  {rulesActive}/{rulesTotal} rules active
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {sortedRules.map((rule) => {
-                    const yes = rulesFollowedMap[rule.id] === true;
-                    return (
-                      <motion.button
-                        key={rule.id}
-                        type="button"
-                        layout
-                        onClick={() =>
-                          updateSession({
-                            rules_followed: {
-                              ...rulesFollowedMap,
-                              [rule.id]: !yes,
-                            },
-                          })
-                        }
-                        className="inline-flex max-w-full items-center gap-2 rounded-full border-2 px-3 py-1.5 text-left text-xs font-medium transition-colors duration-200"
-                        style={{
-                          borderColor: yes ? "#00e676" : "#ff3c3c",
-                          color: yes ? "#00e676" : "#ff3c3c",
-                          background: yes
-                            ? "rgba(0,230,118,0.08)"
-                            : "rgba(255,60,60,0.06)",
-                        }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        {yes ? (
-                          <Check className="h-3.5 w-3.5 flex-shrink-0" />
-                        ) : (
-                          <X className="h-3.5 w-3.5 flex-shrink-0" />
-                        )}
-                        <span className="truncate">{rule.text}</span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Bias + key levels + watchlist */}
-          <div
-            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
-            style={{
-              background: "rgba(56,189,248,0.03)",
-              borderColor: "rgba(56,189,248,0.18)",
-              boxShadow: "0 0 22px rgba(56,189,248,0.07)",
-            }}
-          >
-            <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #38bdf8, transparent)" }} />
-            <p className={jn.label}>Market bias</p>
-            <div className="flex gap-1.5">
-              <BiasButton
-                label="Bullish"
-                compact
-                active={session.bias === "Bullish"}
-                color="#00e676"
-                onClick={() =>
-                  onBiasChange(session.bias === "Bullish" ? null : "Bullish")
-                }
-              />
-              <BiasButton
-                label="Neutral"
-                compact
-                active={session.bias === "Neutral"}
-                color="#64748b"
-                onClick={() =>
-                  onBiasChange(session.bias === "Neutral" ? null : "Neutral")
-                }
-              />
-              <BiasButton
-                label="Bearish"
-                compact
-                active={session.bias === "Bearish"}
-                color="#ff3c3c"
-                onClick={() =>
-                  onBiasChange(session.bias === "Bearish" ? null : "Bearish")
-                }
-              />
-            </div>
-            <div>
-              <p className={jn.label}>Key levels</p>
-              <textarea
-                className={`${jn.input} mt-1 resize-none`}
-                style={{ minHeight: "4.5rem" }}
-                rows={3}
-                placeholder="Major S/R, session highs/lows…"
-                value={session.key_levels ?? ""}
-                onChange={(e) => onKeyLevelsChange(e.target.value)}
-                readOnly={isMock}
-              />
-            </div>
-            <div>
-              <p className={jn.label}>Watchlist</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {(session.watchlist ?? []).map((sym) => (
-                  <span
-                    key={sym}
-                    className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-mono text-slate-700"
-                  >
-                    {sym}
-                    {!isMock && (
-                      <button
-                        type="button"
-                        className="text-slate-600 hover:text-slate-300"
-                        onClick={() => removeSymbol(sym)}
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    )}
-                  </span>
-                ))}
+              {stat.value}
+            </p>
+            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+              {stat.sub}
+            </p>
+            {/* Sanity score mini bar */}
+            {stat.label === "Sanity score" && sanityScore != null && (
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-200">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: sanityColor }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${sanityScore}%` }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.3 }}
+                />
               </div>
-              {!isMock && (
-                <div className="mt-2 flex gap-2">
-                  <input
-                    className={`${jn.input} text-xs`}
-                    placeholder="Symbol + Enter…"
-                    value={watchInput}
-                    onChange={(e) =>
-                      setWatchInput(e.target.value.toUpperCase())
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && addSymbol()}
-                  />
-                  <button
-                    type="button"
-                    className={jn.btnGhost}
-                    onClick={addSymbol}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
+            )}
+          </motion.div>
+        ))}
+      </div>
 
-        {/* CENTER — Session notes */}
+      {/* ── Main grid ── */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+
+        {/* LEFT — Chart analysis + Agenda */}
         <motion.div
-          className="flex min-w-0 flex-col gap-4"
+          className="flex flex-col gap-4"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
         >
+          {/* Chart hero */}
           <div
             className={`${jn.card} relative flex flex-col gap-4 overflow-hidden`}
             style={{
-              background: "rgba(167,139,250,0.03)",
-              borderColor: "rgba(167,139,250,0.18)",
-              boxShadow: "0 0 28px rgba(167,139,250,0.08)",
+              borderColor: "rgba(99,102,241,0.18)",
+              boxShadow: "0 0 32px rgba(99,102,241,0.07)",
             }}
           >
-            <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }} />
+            <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full opacity-15 blur-3xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-slate-800">Session notes</h2>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Today&apos;s analysis
+                </h2>
+                <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                  Upload your chart setup
+                </p>
+              </div>
               <SavedIndicator saving={saving} saved={saved} />
             </div>
-            <textarea
-              className={`${jn.input} min-h-[200px] resize-y`}
-              placeholder="Free-form session notes…"
-              value={session.notes ?? ""}
-              onChange={(e) => onNotesChange(e.target.value)}
-              onBlur={(e) =>
-                onFlushSessionSave({ notes: e.target.value })
-              }
-              readOnly={isMock}
-            />
-            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
-              Screenshots
-            </p>
+
+            {/* Hidden file input */}
             <input
               ref={fileRef}
               type="file"
@@ -831,113 +674,263 @@ function TodayTab({
                 e.target.value = "";
               }}
             />
-            <div
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+
+            {/* Images or upload prompt */}
+            {(session.images ?? []).length > 0 ? (
+              <div className="flex flex-col gap-4">
+                {(session.images ?? []).slice(0, JOURNAL_IMAGE_MAX).map((url) => (
+                  <JournalScreenshotTile
+                    key={url}
+                    url={url}
+                    removeDisabled={isMock}
+                    onRemove={isMock ? undefined : () => removeImage(url)}
+                  />
+                ))}
+                {(session.images ?? []).length < JOURNAL_IMAGE_MAX && !isMock && (
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-3 text-xs font-mono text-slate-400 hover:border-[#6366f1]/50 hover:text-[#6366f1] transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add another chart
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileRef.current?.click();
+                  }
+                }}
+                onDragEnter={() => setDragOver(true)}
+                onDragLeave={() => setDragOver(false)}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
                   e.preventDefault();
-                  fileRef.current?.click();
-                }
-              }}
-              onDragEnter={() => setDragOver(true)}
-              onDragLeave={() => setDragOver(false)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(false);
-                void processImageFiles(e.dataTransfer.files);
-              }}
-              onClick={() => !isMock && fileRef.current?.click()}
-              className={`mt-2 flex min-h-[104px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center font-mono transition-colors ${
-                dragOver
-                  ? "border-[#ff8c00]/60 bg-amber-50 text-amber-800"
-                  : "border-slate-300 bg-slate-100 text-slate-700"
-              } ${isMock ? "pointer-events-none opacity-50" : ""}`}
-            >
-              <span className="text-sm font-medium">
-                {uploading
-                  ? "Uploading…"
-                  : "Drop screenshots here or click to upload"}
-              </span>
-              <span className="mt-1 text-[11px] text-slate-400">
-                PNG, JPG — max {JOURNAL_IMAGE_MAX} images
-              </span>
-            </div>
-            {(session.images ?? []).length > 0 && (
-              <div className="mt-5 flex flex-col gap-6">
-                {(session.images ?? [])
-                  .slice(0, JOURNAL_IMAGE_MAX)
-                  .map((url) => (
-                    <JournalScreenshotTile
-                      key={url}
-                      url={url}
-                      removeDisabled={isMock}
-                      onRemove={
-                        isMock ? undefined : () => removeImage(url)
-                      }
-                    />
-                  ))}
+                  setDragOver(false);
+                  void processImageFiles(e.dataTransfer.files);
+                }}
+                onClick={() => !isMock && fileRef.current?.click()}
+                className={`flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition-all ${
+                  dragOver
+                    ? "border-[#6366f1]/60 bg-indigo-50"
+                    : "border-slate-200 bg-slate-50/50 hover:border-[#6366f1]/40 hover:bg-indigo-50/30"
+                } ${isMock ? "pointer-events-none opacity-50" : ""}`}
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <TrendingUp className="h-6 w-6 text-slate-400" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {uploading ? "Uploading…" : "Drop your chart here"}
+                  </p>
+                  <p className="mt-1 text-[11px] font-mono text-slate-400">
+                    or click to browse · PNG, JPG · max {JOURNAL_IMAGE_MAX}
+                  </p>
+                </div>
               </div>
             )}
           </div>
-        </motion.div>
 
-        {/* RIGHT — Today&apos;s trades */}
-        <motion.div
-          className="flex min-w-0 flex-col gap-4"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.2 }}
-        >
+          {/* Agenda */}
           <div
-            className={`${jn.card} relative flex flex-col overflow-hidden`}
+            className={`${jn.card} relative flex flex-col gap-3 overflow-hidden`}
             style={{
-              background: "rgba(74,222,128,0.03)",
-              borderColor: "rgba(74,222,128,0.18)",
-              boxShadow: "0 0 24px rgba(74,222,128,0.07)",
+              borderColor: "rgba(167,139,250,0.18)",
+              boxShadow: "0 0 24px rgba(167,139,250,0.07)",
             }}
           >
-            <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-800">
-                Today&apos;s Trades
-              </h2>
+            <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 rounded-full opacity-15 blur-2xl" style={{ background: "radial-gradient(circle, #a78bfa, transparent)" }} />
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Agenda &amp; Operational Plan
+                </h2>
+                <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                  Setup ideas, trade plan, key observations
+                </p>
+              </div>
+              <SavedIndicator saving={saving} saved={saved} />
+            </div>
+            <textarea
+              className={`${jn.input} min-h-[160px] resize-y`}
+              placeholder={"Operational plan for today...\n\nSetup: waiting for EURUSD breakout above 1.0850\nIdea: London session, 4H structure confirmed\nKey level: 1.0820 invalidation"}
+              value={session.notes ?? ""}
+              onChange={(e) => onNotesChange(e.target.value)}
+              onBlur={(e) => onFlushSessionSave({ notes: e.target.value })}
+              readOnly={isMock}
+            />
+          </div>
+        </motion.div>
+
+        {/* RIGHT — Checklist + Rules + Trades */}
+        <motion.div
+          className="flex flex-col gap-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.12 }}
+        >
+          {/* Pre-trade checklist */}
+          <div
+            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
+            style={{
+              background: "rgba(99,102,241,0.03)",
+              borderColor: "rgba(99,102,241,0.2)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.07)",
+            }}
+          >
+            <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-slate-800">Pre-trade checklist</h3>
+              <Link {...settingsLinkProps} className="text-slate-400 transition hover:text-slate-600" aria-label="Checklist settings">
+                <Settings2 className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            {checklistTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No checklist yet.{" "}
+                <Link {...settingsLinkProps} className="font-mono text-[#6366f1] hover:underline">
+                  Add items →
+                </Link>
+              </p>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                    <span>{checklistCompleted}/{checklistTotal} done</span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-slate-200">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: progressColor }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${checklistPct}%` }}
+                      transition={{ type: "spring", stiffness: 120, damping: 22 }}
+                    />
+                  </div>
+                </div>
+                <motion.ul className="space-y-1.5" variants={checklistVariants} initial="hidden" animate="show">
+                  {sortedChecklist.map((item) => {
+                    const yes = checklistDoneMap[item.id] === true;
+                    return (
+                      <motion.li key={item.id} variants={checklistItemVariants}>
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => updateSession({ checklist_done: { ...checklistDoneMap, [item.id]: !yes } })}
+                          className="flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors"
+                          style={{
+                            borderColor: yes ? "rgba(74,222,128,0.3)" : "rgba(0,0,0,0.06)",
+                            background: yes ? "rgba(74,222,128,0.06)" : "rgba(0,0,0,0.01)",
+                          }}
+                        >
+                          <span
+                            className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md"
+                            style={{
+                              background: yes ? "#4ade80" : "rgba(0,0,0,0.07)",
+                            }}
+                          >
+                            {yes && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                          </span>
+                          <span className={`text-xs font-mono ${yes ? "text-slate-400 line-through" : "text-slate-700"}`}>
+                            {item.text}
+                          </span>
+                        </motion.button>
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              </>
+            )}
+          </div>
+
+          {/* Rules */}
+          <div
+            className={`${jn.cardSm} relative space-y-3 overflow-hidden`}
+            style={{
+              background: "rgba(245,158,11,0.02)",
+              borderColor: "rgba(245,158,11,0.18)",
+              boxShadow: "0 0 18px rgba(245,158,11,0.06)",
+            }}
+          >
+            <div className="pointer-events-none absolute right-0 top-0 h-14 w-14 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #f59e0b, transparent)" }} />
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-slate-800">Today&apos;s rules</h3>
+              <Link {...settingsLinkProps} className="text-slate-400 transition hover:text-slate-600" aria-label="Rules settings">
+                <Settings2 className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            {rulesTotal === 0 ? (
+              <p className="text-sm text-slate-500">
+                No rules set.{" "}
+                <Link {...settingsLinkProps} className="font-mono text-[#6366f1] hover:underline">
+                  Add rules →
+                </Link>
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {sortedRules.map((rule) => {
+                  const yes = rulesFollowedMap[rule.id] === true;
+                  return (
+                    <motion.button
+                      key={rule.id}
+                      type="button"
+                      layout
+                      onClick={() => updateSession({ rules_followed: { ...rulesFollowedMap, [rule.id]: !yes } })}
+                      className="flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-xs font-mono transition-colors"
+                      style={{
+                        borderColor: yes ? "rgba(74,222,128,0.3)" : "rgba(248,113,113,0.2)",
+                        background: yes ? "rgba(74,222,128,0.06)" : "rgba(248,113,113,0.04)",
+                        color: yes ? "#16a34a" : "#dc2626",
+                      }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {yes ? <Check className="h-3.5 w-3.5 flex-shrink-0" /> : <X className="h-3.5 w-3.5 flex-shrink-0" />}
+                      <span className="truncate">{rule.text}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Trades */}
+          <div
+            className={`${jn.cardSm} relative flex flex-col gap-3 overflow-hidden`}
+            style={{
+              background: "rgba(74,222,128,0.02)",
+              borderColor: "rgba(74,222,128,0.18)",
+              boxShadow: "0 0 18px rgba(74,222,128,0.06)",
+            }}
+          >
+            <div className="pointer-events-none absolute right-0 top-0 h-14 w-14 rounded-full opacity-20 blur-2xl" style={{ background: "radial-gradient(circle, #4ade80, transparent)" }} />
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-800">Today&apos;s trades</h3>
               <button
                 type="button"
                 className={jn.btnGhost}
                 disabled={syncing}
                 onClick={onSync}
-                style={{ padding: "6px 10px", fontSize: "12px" }}
+                style={{ padding: "4px 10px", fontSize: "12px" }}
               >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`}
-                />
+                <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
                 Sync
               </button>
             </div>
-
             {todayTrades.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
-                  <Sun className="h-5 w-5 text-slate-600" />
-                </div>
-                <p className="text-sm text-slate-500">No trades today yet</p>
-                <p className="mt-1 text-xs text-slate-700">
-                  They&apos;ll appear here after sync
-                </p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Sun className="h-8 w-8 text-slate-200 mb-2" />
+                <p className="text-xs font-mono text-slate-400">No trades yet today</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {todayTrades.map((trade) => (
-                  <TradeCard
-                    key={trade.id}
-                    trade={trade}
-                    onClick={() => onTradeClick(trade)}
-                  />
+                  <TradeCard key={trade.id} trade={trade} onClick={() => onTradeClick(trade)} />
                 ))}
               </div>
             )}
