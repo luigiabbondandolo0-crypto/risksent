@@ -24,6 +24,11 @@ import {
   BarChart2,
   Search,
   Sparkles,
+  ArrowRight,
+  Clock,
+  BookOpen,
+  Award,
+  Trophy,
 } from "lucide-react";
 import {
   format,
@@ -1822,6 +1827,488 @@ function TradesTab({
   );
 }
 
+// ─── Start Day Screen ─────────────────────────────────────────────────────────
+const START_PARTICLES = [
+  { top: 12, left: 8,  color: "#6366f1", dur: 2.5, delay: 0 },
+  { top: 22, left: 82, color: "#38bdf8", dur: 3.0, delay: 0.5 },
+  { top: 68, left: 12, color: "#4ade80", dur: 2.8, delay: 1.0 },
+  { top: 78, left: 72, color: "#6366f1", dur: 3.2, delay: 0.3 },
+  { top: 38, left: 88, color: "#818cf8", dur: 2.2, delay: 0.8 },
+  { top: 52, left: 4,  color: "#38bdf8", dur: 3.5, delay: 1.2 },
+  { top: 8,  left: 52, color: "#4ade80", dur: 2.6, delay: 0.6 },
+  { top: 85, left: 38, color: "#6366f1", dur: 2.9, delay: 1.5 },
+  { top: 33, left: 48, color: "#818cf8", dur: 2.3, delay: 0.2 },
+  { top: 58, left: 62, color: "#38bdf8", dur: 3.1, delay: 0.9 },
+  { top: 18, left: 35, color: "#4ade80", dur: 2.7, delay: 1.3 },
+  { top: 72, left: 55, color: "#6366f1", dur: 3.3, delay: 0.4 },
+];
+
+function StartDayScreen({ onStart }: { onStart: () => void }) {
+  const [time, setTime] = useState(new Date());
+  const [starting, setStarting] = useState(false);
+  const [quote] = useState(() => MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]!);
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleStart = () => {
+    setStarting(true);
+    setTimeout(onStart, 500);
+  };
+
+  return (
+    <motion.div
+      key="start-day"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="relative flex min-h-[72vh] flex-col items-center justify-center overflow-hidden rounded-3xl"
+      style={{ background: "linear-gradient(145deg, #070712 0%, #0c0c1e 50%, #070712 100%)", border: "1px solid rgba(99,102,241,0.15)" }}
+    >
+      <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        style={{
+          backgroundImage: "linear-gradient(rgba(99,102,241,1) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,1) 1px, transparent 1px)",
+          backgroundSize: "36px 36px",
+        }} />
+      <div className="pointer-events-none absolute inset-0">
+        <motion.div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)" }}
+          animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 65%)" }} />
+        <div className="absolute top-0 left-1/4 h-60 w-60 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(74,222,128,0.05) 0%, transparent 65%)" }} />
+      </div>
+      {START_PARTICLES.map((p, i) => (
+        <motion.div
+          key={i}
+          className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
+          style={{ background: p.color, top: `${p.top}%`, left: `${p.left}%`, boxShadow: `0 0 6px ${p.color}` }}
+          animate={{ y: [0, -12, 0], opacity: [0.25, 0.9, 0.25] }}
+          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
+        />
+      ))}
+      <div className="relative z-10 flex flex-col items-center gap-6 px-8 text-center">
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-500"
+        >
+          {format(time, "EEEE, MMMM d")}
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div
+            className="font-display font-black tabular-nums leading-none"
+            style={{
+              fontSize: "clamp(64px, 14vw, 108px)",
+              background: "linear-gradient(135deg, #6366f1 0%, #818cf8 40%, #38bdf8 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              letterSpacing: "-0.04em",
+              filter: "drop-shadow(0 0 40px rgba(99,102,241,0.4))",
+            }}
+          >
+            {format(time, "HH:mm")}
+            <span style={{ fontSize: "0.3em", WebkitTextFillColor: "#475569", filter: "none" }}>
+              :{format(time, "ss")}
+            </span>
+          </div>
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.6 }}
+          className="max-w-sm text-sm font-mono leading-relaxed text-slate-400"
+        >
+          &ldquo;{quote}&rdquo;
+        </motion.p>
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 20, scale: 0.92 }}
+          animate={starting
+            ? { opacity: 0, scale: 1.12, y: -20 }
+            : { opacity: 1, y: 0, scale: 1 }
+          }
+          transition={starting
+            ? { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+            : { delay: 0.75, duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+          }
+          whileHover={!starting ? { scale: 1.05, boxShadow: "0 0 70px rgba(99,102,241,0.55)" } : {}}
+          whileTap={!starting ? { scale: 0.97 } : {}}
+          onClick={handleStart}
+          className="inline-flex items-center gap-3 rounded-2xl px-10 py-5 text-base font-bold text-white"
+          style={{
+            background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
+            boxShadow: "0 0 40px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
+          }}
+        >
+          <Sun className="h-5 w-5" />
+          Start your day
+          <ArrowRight className="h-4 w-4" />
+        </motion.button>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.95, duration: 0.5 }}
+          className="text-[11px] font-mono text-slate-600"
+        >
+          Pre-market prep · Checklist · Notes · Strategy
+        </motion.p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Past Grid ─────────────────────────────────────────────────────────────────
+
+type PastDay = {
+  date: string;
+  trades: JournalTradeRow[];
+  pl: number;
+  wins: number;
+  winRate: number;
+  screenshot: string | null;
+};
+
+function buildPastDays(allTrades: JournalTradeRow[]): PastDay[] {
+  const today = getTodayStr();
+  const map: Record<string, JournalTradeRow[]> = {};
+  allTrades.forEach(t => {
+    if (!t.close_time || t.status !== "closed") return;
+    const d = localYmdFromIso(t.close_time);
+    if (!d || d === today) return;
+    if (!map[d]) map[d] = [];
+    map[d].push(t);
+  });
+  return Object.entries(map)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, trades]) => {
+      const pl = trades.reduce((s, t) => s + (t.pl ?? 0), 0);
+      const wins = trades.filter(t => (t.pl ?? 0) > 0).length;
+      const winRate = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0;
+      const screenshot = trades.find(t => t.screenshot_url)?.screenshot_url ?? null;
+      return { date, trades, pl, wins, winRate, screenshot };
+    });
+}
+
+function PastDayCard({ day, currency, onClick, index }: { day: PastDay; currency: string; onClick: () => void; index: number; }) {
+  const isWin = day.pl >= 0;
+  const accent = isWin ? "#4ade80" : "#f87171";
+  const accentBg = isWin ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)";
+  const accentBorder = isWin ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)";
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.04, 0.5), duration: 0.35, ease: "easeOut" }}
+      whileHover={{ y: -5, boxShadow: `0 12px 40px ${accentBg}` }}
+      whileTap={{ scale: 0.98 }}
+      className="group relative overflow-hidden rounded-2xl text-left w-full"
+      style={{ background: "rgba(255,255,255,0.9)", border: `1px solid ${accentBorder}`, backdropFilter: "blur(12px)", boxShadow: `0 2px 16px ${accentBg}` }}
+    >
+      <div className="relative h-28 overflow-hidden rounded-t-2xl">
+        {day.screenshot ? (
+          <img src={day.screenshot} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ opacity: 0.85 }} />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accentBg} 0%, rgba(99,102,241,0.05) 100%)` }}>
+            <BarChart2 className="h-8 w-8 text-slate-300" />
+          </div>
+        )}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(255,255,255,0.95) 100%)" }} />
+        <div className="absolute top-2 left-2 rounded-lg px-2 py-1 text-[10px] font-mono font-bold backdrop-blur-sm" style={{ background: "rgba(10,10,20,0.75)", color: "#e2e8f0" }}>
+          {format(parseISO(day.date), "EEE, MMM d")}
+        </div>
+        <div className="absolute top-2 right-2 rounded-lg px-2 py-1 text-[11px] font-mono font-bold" style={{ background: accentBg, color: accent, border: `1px solid ${accentBorder}`, backdropFilter: "blur(8px)" }}>
+          {fmtDayPl(day.pl, currency)}
+        </div>
+      </div>
+      <div className="px-3 pb-3 pt-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-slate-500">{day.trades.length} trade{day.trades.length !== 1 ? "s" : ""}</span>
+          <span className="h-3 w-px bg-slate-200" />
+          <span className="text-[11px] font-mono font-semibold" style={{ color: day.winRate >= 50 ? "#16a34a" : "#dc2626" }}>WR {day.winRate}%</span>
+        </div>
+        <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+      </div>
+    </motion.button>
+  );
+}
+
+function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const grade = score >= 85 ? "A" : score >= 70 ? "B" : score >= 55 ? "C" : "D";
+  const gradeColor = score >= 85 ? "#4ade80" : score >= 70 ? "#6366f1" : score >= 55 ? "#f59e0b" : "#f87171";
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={6} />
+        <motion.circle cx={size/2} cy={size/2} r={r} fill="none" stroke={gradeColor} strokeWidth={6} strokeLinecap="round"
+          strokeDasharray={circ}
+          initial={{ strokeDashoffset: circ }}
+          animate={{ strokeDashoffset: circ - (score / 100) * circ }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+          style={{ filter: `drop-shadow(0 0 6px ${gradeColor}80)` }}
+        />
+      </svg>
+      <span className="absolute text-base font-black font-mono" style={{ color: gradeColor }}>{grade}</span>
+    </div>
+  );
+}
+
+function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, rules, currency, onClose }: {
+  day: PastDay; session: Partial<JournalSession> | null; loading: boolean;
+  checklist: JournalChecklistItem[]; rules: JournalRule[]; currency: string; onClose: () => void;
+}) {
+  const checklistDone = (session?.checklist_done ?? {}) as Record<string, boolean>;
+  const rulesFollowed = (session?.rules_followed ?? {}) as Record<string, boolean>;
+  const clTotal = checklist.length;
+  const clDone = checklist.filter(c => checklistDone[c.id]).length;
+  const rlTotal = rules.length;
+  const rlDone = rules.filter(r => rulesFollowed[r.id]).length;
+  const score = clTotal + rlTotal > 0 ? Math.round(((clDone / Math.max(clTotal, 1)) + (rlDone / Math.max(rlTotal, 1))) / 2 * 100) : 0;
+  const isWin = day.pl >= 0;
+  const accent = isWin ? "#4ade80" : "#f87171";
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="past-modal-backdrop"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+        style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
+        onClick={onClose}
+      >
+        <motion.div
+          key="past-modal-panel"
+          initial={{ opacity: 0, y: 40, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.97 }}
+          transition={{ type: "spring", damping: 26, stiffness: 360 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl"
+          style={{ background: "rgba(255,255,255,0.98)", border: "1px solid rgba(99,102,241,0.15)", boxShadow: "0 24px 80px rgba(0,0,0,0.18)" }}
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 rounded-t-3xl"
+            style={{ background: "rgba(255,255,255,0.95)", borderBottom: "1px solid rgba(0,0,0,0.06)", backdropFilter: "blur(16px)" }}>
+            <div>
+              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400">Journal recap</p>
+              <h2 className="font-display text-lg font-bold text-slate-900">{format(parseISO(day.date), "EEEE, MMMM d, yyyy")}</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {(clTotal + rlTotal > 0) && <ScoreRing score={score} />}
+              <button type="button" onClick={onClose} className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          {sessionLoading ? (
+            <div className="p-6 space-y-3 animate-pulse">
+              {[1,2,3].map(i => <div key={i} className="h-16 bg-slate-100 rounded-xl" />)}
+            </div>
+          ) : (
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "P&L", value: fmtDayPl(day.pl, currency), color: accent },
+                  { label: "Trades", value: String(day.trades.length), color: "#6366f1" },
+                  { label: "Win rate", value: `${day.winRate}%`, color: day.winRate >= 50 ? "#4ade80" : "#f87171" },
+                ].map(s => (
+                  <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                    <p className="text-base font-black font-mono" style={{ color: s.color }}>{s.value}</p>
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+              {(session?.bias || (session?.watchlist && session.watchlist.length > 0)) && (
+                <div className="flex flex-wrap gap-2 items-center">
+                  {session?.bias && (
+                    <span className="rounded-full px-3 py-1 text-xs font-mono font-semibold"
+                      style={{
+                        color: session.bias === "Bullish" ? "#16a34a" : session.bias === "Bearish" ? "#dc2626" : "#64748b",
+                        background: session.bias === "Bullish" ? "rgba(74,222,128,0.12)" : session.bias === "Bearish" ? "rgba(248,113,113,0.1)" : "rgba(148,163,184,0.1)",
+                        border: `1px solid ${session.bias === "Bullish" ? "rgba(74,222,128,0.3)" : session.bias === "Bearish" ? "rgba(248,113,113,0.25)" : "rgba(148,163,184,0.2)"}`,
+                      }}>{session.bias}</span>
+                  )}
+                  {session?.watchlist?.map(sym => (
+                    <span key={sym} className="rounded-full px-2.5 py-1 text-xs font-mono font-semibold text-slate-600 bg-slate-100 border border-slate-200">{sym}</span>
+                  ))}
+                </div>
+              )}
+              {session?.notes && (
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Agenda</p>
+                  <div className="rounded-2xl p-4" style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-mono">{session.notes}</p>
+                  </div>
+                </div>
+              )}
+              {session?.key_levels && (
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Key levels</p>
+                  <p className="text-sm text-slate-600 font-mono leading-relaxed whitespace-pre-wrap">{session.key_levels}</p>
+                </div>
+              )}
+              {session?.images && session.images.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Charts</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {session.images.map((url, i) => (
+                      <img key={i} src={url} alt="" className="w-full rounded-xl object-cover" style={{ maxHeight: 160 }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {checklist.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Pre-trade checklist ({clDone}/{clTotal})</p>
+                  <div className="space-y-1.5">
+                    {[...checklist].sort((a, b) => a.order_index - b.order_index).map(item => {
+                      const done = checklistDone[item.id] === true;
+                      return (
+                        <div key={item.id} className="flex items-center gap-2.5 rounded-xl px-3 py-2"
+                          style={{ background: done ? "rgba(74,222,128,0.07)" : "rgba(0,0,0,0.02)", border: `1px solid ${done ? "rgba(74,222,128,0.2)" : "rgba(0,0,0,0.05)"}` }}>
+                          <div className="flex-shrink-0 h-4 w-4 rounded-md flex items-center justify-center" style={{ background: done ? "#4ade80" : "rgba(0,0,0,0.08)" }}>
+                            {done && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+                          </div>
+                          <span className={`text-sm font-mono ${done ? "text-slate-700" : "text-slate-400 line-through"}`}>{item.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {rules.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Rules ({rlDone}/{rlTotal} followed)</p>
+                  <div className="space-y-1.5">
+                    {[...rules].sort((a, b) => a.order_index - b.order_index).map(rule => {
+                      const followed = rulesFollowed[rule.id] === true;
+                      return (
+                        <div key={rule.id} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                          <span className="text-sm font-mono text-slate-600">{rule.text}</span>
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0"
+                            style={{ color: followed ? "#16a34a" : "#dc2626", background: followed ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.1)" }}>
+                            {followed ? "YES" : "NO"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Trades</p>
+                <div className="space-y-1.5">
+                  {day.trades.map(t => {
+                    const net = t.pl ?? 0;
+                    return (
+                      <div key={t.id} className="flex items-center justify-between rounded-xl px-3 py-2.5 border border-slate-100 bg-slate-50">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-md px-2 py-0.5 text-[10px] font-bold font-mono"
+                            style={t.direction === "BUY" ? { background: "rgba(74,222,128,0.12)", color: "#16a34a" } : { background: "rgba(248,113,113,0.12)", color: "#dc2626" }}>
+                            {t.direction}
+                          </span>
+                          <span className="text-sm font-semibold text-slate-800">{t.symbol}</span>
+                          {t.setup_tags?.map(tag => <span key={tag} className="hidden sm:inline text-[10px] font-mono text-slate-400 px-1.5 py-0.5 rounded bg-slate-100">{tag}</span>)}
+                        </div>
+                        <p className="text-sm font-bold font-mono" style={{ color: net >= 0 ? "#16a34a" : "#dc2626" }}>
+                          {net >= 0 ? "+" : ""}{net.toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {!session && !sessionLoading && (
+                <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                  <BookOpen className="h-6 w-6 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm font-mono text-slate-400">No journal notes for this day</p>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function PastGrid({ allTrades, currency, checklist, rules, isMock }: {
+  allTrades: JournalTradeRow[]; currency: string; checklist: JournalChecklistItem[]; rules: JournalRule[]; isMock: boolean;
+}) {
+  const [selectedDay, setSelectedDay] = useState<PastDay | null>(null);
+  const [pastDaySession, setPastDaySession] = useState<Partial<JournalSession> | null>(null);
+  const [pastDayLoading, setPastDayLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDay || isMock) { setPastDaySession(null); return; }
+    setPastDayLoading(true);
+    fetch(`/api/journal/sessions?date=${selectedDay.date}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => setPastDaySession(j?.session ?? null))
+      .catch(() => setPastDaySession(null))
+      .finally(() => setPastDayLoading(false));
+  }, [selectedDay, isMock]);
+
+  const pastDays = useMemo(() => buildPastDays(allTrades), [allTrades]);
+  const grouped = useMemo(() => {
+    const months: Record<string, PastDay[]> = {};
+    pastDays.forEach(d => {
+      const m = format(parseISO(d.date), "MMMM yyyy");
+      if (!months[m]) months[m] = [];
+      months[m].push(d);
+    });
+    return Object.entries(months);
+  }, [pastDays]);
+
+  if (pastDays.length === 0) {
+    return (
+      <motion.div key="past-empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.25 }} className="flex flex-col items-center justify-center py-24 text-center">
+        <BarChart2 className="h-10 w-10 text-slate-200 mb-4" />
+        <p className="font-display text-xl font-bold text-slate-300 mb-1">No past trades yet</p>
+        <p className="text-sm font-mono text-slate-400">Your trading history will appear here</p>
+      </motion.div>
+    );
+  }
+
+  let cardIdx = 0;
+  return (
+    <motion.div key="past" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.25 }} className="space-y-8">
+      {grouped.map(([monthLabel, days]) => (
+        <div key={monthLabel}>
+          <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-slate-400 mb-3">{monthLabel}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {days.map(day => <PastDayCard key={day.date} day={day} currency={currency} onClick={() => setSelectedDay(day)} index={cardIdx++} />)}
+          </div>
+        </div>
+      ))}
+      {selectedDay && (
+        <PastDayDetailModal
+          day={selectedDay} session={pastDaySession} loading={pastDayLoading}
+          checklist={checklist} rules={rules} currency={currency}
+          onClose={() => { setSelectedDay(null); setPastDaySession(null); }}
+        />
+      )}
+    </motion.div>
+  );
+}
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState({ onConnected }: { onConnected: () => void }) {
@@ -1887,7 +2374,8 @@ export function JournalingPageClient({
     "all"
   );
   const [addAccountOpen, setAddAccountOpen] = useState(false);
-  const [tab, setTab] = useState<"today" | "calendar" | "trades">("today");
+  const [tab, setTab] = useState<"today" | "past">("today");
+  const [dayStarted, setDayStarted] = useState(false);
   const [loading, setLoading] = useState(!isMock);
   const [syncing, setSyncing] = useState(false);
 
@@ -1921,12 +2409,11 @@ export function JournalingPageClient({
 
   useEffect(() => {
     const t = searchParams.get("tab");
-    if (t === "calendar" || t === "history") setTab("calendar");
-    else if (t === "trades") setTab("trades");
+    if (t === "past" || t === "calendar" || t === "history") setTab("past");
     else setTab("today");
   }, [searchParams]);
 
-  const goTab = (next: "today" | "calendar" | "trades") => {
+  const goTab = (next: "today" | "past") => {
     setTab(next);
     if (next === "today") {
       router.replace(pathname, { scroll: false });
@@ -2058,6 +2545,14 @@ export function JournalingPageClient({
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (loading) return;
+    const hasSessionData = !!(session.bias || session.notes?.trim() ||
+      Object.values(session.checklist_done ?? {}).some(v => v));
+    const hasTrades = todayTrades.length > 0;
+    if (hasSessionData || hasTrades) setDayStarted(true);
+  }, [loading, session, todayTrades]);
+
   // Auto-save session with 800ms debounce
   const scheduleSessionSave = useCallback(
     (patch: Partial<JournalSession>) => {
@@ -2175,7 +2670,7 @@ export function JournalingPageClient({
             Journal
           </h1>
           <p className="mt-1.5 max-w-xl text-sm font-mono text-slate-400">
-            Today&apos;s session, calendar, and trade history.
+            Daily prep · Trading history · Performance recap
           </p>
         </div>
 
@@ -2236,8 +2731,7 @@ export function JournalingPageClient({
           {(
             [
               { id: "today" as const, label: "Today", Icon: Sun },
-              { id: "calendar" as const, label: "Calendar", Icon: CalendarDays },
-              { id: "trades" as const, label: "Trades", Icon: BarChart2 },
+              { id: "past" as const, label: "Past", Icon: CalendarDays },
             ] as const
           ).map(({ id: tid, label, Icon }) => (
             <button
@@ -2274,7 +2768,9 @@ export function JournalingPageClient({
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {tab === "today" ? (
+          {tab === "today" && !dayStarted ? (
+            <StartDayScreen key="start-day" onStart={() => setDayStarted(true)} />
+          ) : tab === "today" && dayStarted ? (
             <TodayTab
               key="today"
               session={session}
@@ -2295,25 +2791,18 @@ export function JournalingPageClient({
               syncing={syncing}
               isMock={isMock}
             />
-          ) : tab === "calendar" ? (
-            <CalendarTab
-              key="calendar"
+          ) : (
+            <PastGrid
+              key="past"
               allTrades={allTrades}
               currency={
                 selectedAccountId === "all"
                   ? (accounts[0]?.currency ?? "USD")
                   : (accounts.find((a) => a.id === selectedAccountId)?.currency ?? "USD")
               }
+              checklist={checklist}
+              rules={rules}
               isMock={isMock}
-              mockUseAppRoutes={mockUseAppRoutes}
-            />
-          ) : (
-            <TradesTab
-              key="trades"
-              allTrades={allTrades}
-              isMock={isMock}
-              mockUseAppRoutes={mockUseAppRoutes}
-              basePath={journalTradeBase}
             />
           )}
         </AnimatePresence>
