@@ -1866,31 +1866,39 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
       exit={{ opacity: 0, scale: 1.04, filter: "blur(8px)" }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="relative flex min-h-[72vh] flex-col items-center justify-center overflow-hidden rounded-3xl"
-      style={{ background: "linear-gradient(145deg, #070712 0%, #0c0c1e 50%, #070712 100%)", border: "1px solid rgba(99,102,241,0.15)" }}
+      style={{
+        background: "linear-gradient(145deg, #f8f9ff 0%, #f0f1ff 50%, #f8f9ff 100%)",
+        border: "1px solid rgba(99,102,241,0.18)",
+        boxShadow: "0 0 60px rgba(99,102,241,0.06)",
+      }}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
+      {/* Subtle dot grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.5]"
         style={{
-          backgroundImage: "linear-gradient(rgba(99,102,241,1) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,1) 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
+          backgroundImage: "radial-gradient(circle, rgba(99,102,241,0.18) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%)",
         }} />
+      {/* Ambient glows */}
       <div className="pointer-events-none absolute inset-0">
         <motion.div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 65%)" }}
-          animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 65%)" }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
-        <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 65%)" }} />
-        <div className="absolute top-0 left-1/4 h-60 w-60 rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(74,222,128,0.05) 0%, transparent 65%)" }} />
+        <div className="absolute bottom-0 right-1/4 h-72 w-72 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.07) 0%, transparent 65%)" }} />
+        <div className="absolute top-0 left-1/4 h-56 w-56 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 65%)" }} />
       </div>
+      {/* Particles — softer on light bg */}
       {START_PARTICLES.map((p, i) => (
         <motion.div
           key={i}
           className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
-          style={{ background: p.color, top: `${p.top}%`, left: `${p.left}%`, boxShadow: `0 0 6px ${p.color}` }}
-          animate={{ y: [0, -12, 0], opacity: [0.25, 0.9, 0.25] }}
+          style={{ background: p.color, top: `${p.top}%`, left: `${p.left}%`, opacity: 0.35 }}
+          animate={{ y: [0, -10, 0], opacity: [0.2, 0.55, 0.2] }}
           transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
         />
       ))}
@@ -1899,7 +1907,7 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5 }}
-          className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-500"
+          className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400"
         >
           {format(time, "EEEE, MMMM d")}
         </motion.p>
@@ -1912,16 +1920,15 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
             className="font-display font-black tabular-nums leading-none"
             style={{
               fontSize: "clamp(64px, 14vw, 108px)",
-              background: "linear-gradient(135deg, #6366f1 0%, #818cf8 40%, #38bdf8 100%)",
+              background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
               letterSpacing: "-0.04em",
-              filter: "drop-shadow(0 0 40px rgba(99,102,241,0.4))",
             }}
           >
             {format(time, "HH:mm")}
-            <span style={{ fontSize: "0.3em", WebkitTextFillColor: "#475569", filter: "none" }}>
+            <span style={{ fontSize: "0.3em", WebkitTextFillColor: "#94a3b8", filter: "none" }}>
               :{format(time, "ss")}
             </span>
           </div>
@@ -1930,7 +1937,7 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.55, duration: 0.6 }}
-          className="max-w-sm text-sm font-mono leading-relaxed text-slate-400"
+          className="max-w-sm text-sm font-mono leading-relaxed text-slate-500"
         >
           &ldquo;{quote}&rdquo;
         </motion.p>
@@ -1945,13 +1952,13 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
             ? { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
             : { delay: 0.75, duration: 0.5, ease: [0.22, 1, 0.36, 1] }
           }
-          whileHover={!starting ? { scale: 1.05, boxShadow: "0 0 70px rgba(99,102,241,0.55)" } : {}}
+          whileHover={!starting ? { scale: 1.04, boxShadow: "0 8px 40px rgba(99,102,241,0.35)" } : {}}
           whileTap={!starting ? { scale: 0.97 } : {}}
           onClick={handleStart}
           className="inline-flex items-center gap-3 rounded-2xl px-10 py-5 text-base font-bold text-white"
           style={{
-            background: "linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%)",
-            boxShadow: "0 0 40px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.12)",
+            background: "linear-gradient(135deg, #4338ca 0%, #6366f1 100%)",
+            boxShadow: "0 4px 24px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
           }}
         >
           <Sun className="h-5 w-5" />
@@ -1962,7 +1969,7 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
-          className="text-[11px] font-mono text-slate-600"
+          className="text-[11px] font-mono text-slate-400"
         >
           Pre-market prep · Checklist · Notes · Strategy
         </motion.p>
