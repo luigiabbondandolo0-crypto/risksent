@@ -2513,7 +2513,7 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
               </div>
 
               {/* ── AI Recap ── */}
-              <div>
+              {day.trades.length > 0 && <div>
                 <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">AI Recap</p>
                 {aiLoading ? (
                   <div className="rounded-2xl p-4 space-y-2 animate-pulse" style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.12)" }}>
@@ -2535,7 +2535,7 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
                     Generate recap
                   </button>
                 )}
-              </div>
+              </div>}
 
               {!session && !sessionLoading && (
                 <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)" }}>
