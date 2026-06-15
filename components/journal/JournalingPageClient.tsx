@@ -2155,10 +2155,16 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
   );
 }
 
-function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, rules, currency, onClose }: {
+function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, rules, currency, accountBalance, isMock, onClose }: {
   day: PastDay; session: Partial<JournalSession> | null; loading: boolean;
-  checklist: JournalChecklistItem[]; rules: JournalRule[]; currency: string; onClose: () => void;
+  checklist: JournalChecklistItem[]; rules: JournalRule[]; currency: string;
+  accountBalance: number; isMock: boolean; onClose: () => void;
 }) {
+  const [selectedTrade, setSelectedTrade] = useState<JournalTradeRow | null>(null);
+  const [aiRecap, setAiRecap] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const tz = useUserTimezone();
+
   const checklistDone = (session?.checklist_done ?? {}) as Record<string, boolean>;
   const rulesFollowed = (session?.rules_followed ?? {}) as Record<string, boolean>;
   const clTotal = checklist.length;
@@ -2169,6 +2175,29 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
   const isWin = day.pl >= 0;
   const accent = isWin ? "#4ade80" : "#f87171";
 
+  async function handleGenerateRecap() {
+    if (isMock || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/journal/ai-recap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: day.date,
+          trades: day.trades,
+          session: session ?? null,
+          currency,
+        }),
+      });
+      const j = await res.json();
+      if (j.recap) setAiRecap(j.recap);
+    } catch {
+      // silently fail
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
     <AnimatePresence>
       <motion.div
@@ -2177,16 +2206,169 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
         transition={{ duration: 0.2 }}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
         style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)" }}
-        onClick={onClose}
+        onClick={selectedTrade ? undefined : onClose}
       >
         <motion.div
           key="past-modal-panel"
           initial={{ opacity: 0, y: 40, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 24, scale: 0.97 }}
           transition={{ type: "spring", damping: 26, stiffness: 360 }}
           onClick={e => e.stopPropagation()}
-          className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl"
+          className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl"
           style={{ background: "rgba(255,255,255,0.98)", border: "1px solid rgba(99,102,241,0.15)", boxShadow: "0 24px 80px rgba(0,0,0,0.18)" }}
         >
+          {/* ── Trade detail slide-in ── */}
+          <AnimatePresence>
+            {selectedTrade && (
+              <motion.div
+                key="trade-detail"
+                initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                className="absolute inset-0 z-20 overflow-y-auto rounded-3xl"
+                style={{ background: "rgba(255,255,255,0.99)" }}
+              >
+                {/* header */}
+                <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-4 rounded-t-3xl"
+                  style={{ background: "rgba(255,255,255,0.95)", borderBottom: "1px solid rgba(0,0,0,0.06)", backdropFilter: "blur(16px)" }}>
+                  <button type="button" onClick={() => setSelectedTrade(null)}
+                    className="h-8 w-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div>
+                    <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400">Trade detail</p>
+                    <h2 className="font-display text-lg font-bold text-slate-900">{selectedTrade.symbol}</h2>
+                  </div>
+                </div>
+                {/* body */}
+                <div className="p-5 space-y-4">
+                  {/* Direction badge + net P&L */}
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-lg px-3 py-1 text-sm font-bold font-mono"
+                      style={selectedTrade.direction === "BUY"
+                        ? { background: "rgba(74,222,128,0.12)", color: "#16a34a", border: "1px solid rgba(74,222,128,0.3)" }
+                        : { background: "rgba(248,113,113,0.12)", color: "#dc2626", border: "1px solid rgba(248,113,113,0.3)" }}>
+                      {selectedTrade.direction}
+                    </span>
+                    <div className="text-right">
+                      <p className="text-xl font-black font-mono" style={{ color: (selectedTrade.pl ?? 0) >= 0 ? "#16a34a" : "#dc2626" }}>
+                        {(selectedTrade.pl ?? 0) >= 0 ? "+" : ""}{(selectedTrade.pl ?? 0).toFixed(2)} {currency}
+                      </p>
+                      <p className="text-xs font-mono text-slate-400">
+                        {((selectedTrade.pl ?? 0) / accountBalance * 100).toFixed(2)}% of balance
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Times */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Open</p>
+                      <p className="text-sm font-mono text-slate-700">{selectedTrade.open_time ? fmtInTz(selectedTrade.open_time, tz, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) : "—"}</p>
+                    </div>
+                    <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Close</p>
+                      <p className="text-sm font-mono text-slate-700">{selectedTrade.close_time ? fmtInTz(selectedTrade.close_time, tz, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) : "—"}</p>
+                    </div>
+                  </div>
+
+                  {/* Prices */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Open price</p>
+                      <p className="text-sm font-mono font-semibold text-slate-800">{selectedTrade.open_price ?? "—"}</p>
+                    </div>
+                    <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Close price</p>
+                      <p className="text-sm font-mono font-semibold text-slate-800">{selectedTrade.close_price ?? "—"}</p>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Lot size", value: selectedTrade.lot_size != null ? String(selectedTrade.lot_size) : "—" },
+                      { label: "Pips", value: selectedTrade.pips != null ? String(selectedTrade.pips) : "—" },
+                      { label: "R:R", value: selectedTrade.risk_reward != null ? String(selectedTrade.risk_reward) : "—" },
+                    ].map(s => (
+                      <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.1)" }}>
+                        <p className="text-sm font-black font-mono text-indigo-700">{s.value}</p>
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* SL / TP */}
+                  {(selectedTrade.stop_loss != null || selectedTrade.take_profit != null) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedTrade.stop_loss != null && (
+                        <div className="rounded-xl p-3" style={{ background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.15)" }}>
+                          <p className="text-[10px] font-mono uppercase tracking-widest text-red-400 mb-1">Stop loss</p>
+                          <p className="text-sm font-mono font-semibold text-slate-800">{selectedTrade.stop_loss}</p>
+                        </div>
+                      )}
+                      {selectedTrade.take_profit != null && (
+                        <div className="rounded-xl p-3" style={{ background: "rgba(74,222,128,0.05)", border: "1px solid rgba(74,222,128,0.2)" }}>
+                          <p className="text-[10px] font-mono uppercase tracking-widest text-green-600 mb-1">Take profit</p>
+                          <p className="text-sm font-mono font-semibold text-slate-800">{selectedTrade.take_profit}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Commission + Swap */}
+                  {(selectedTrade.commission != null || selectedTrade.swap != null) && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedTrade.commission != null && (
+                        <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                          <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Commission</p>
+                          <p className="text-sm font-mono text-slate-700">{selectedTrade.commission.toFixed(2)}</p>
+                        </div>
+                      )}
+                      {selectedTrade.swap != null && (
+                        <div className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                          <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-1">Swap</p>
+                          <p className="text-sm font-mono text-slate-700">{selectedTrade.swap.toFixed(2)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Setup tags */}
+                  {selectedTrade.setup_tags && selectedTrade.setup_tags.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Setup tags</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedTrade.setup_tags.map(tag => (
+                          <span key={tag} className="rounded-full px-2.5 py-1 text-xs font-mono font-semibold text-indigo-700"
+                            style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.18)" }}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {selectedTrade.notes && (
+                    <div>
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Notes</p>
+                      <div className="rounded-2xl p-4" style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                        <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-mono">{selectedTrade.notes}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Screenshot */}
+                  {selectedTrade.screenshot_url && (
+                    <div>
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">Screenshot</p>
+                      <img src={selectedTrade.screenshot_url} alt="Trade screenshot" className="w-full rounded-2xl object-cover" style={{ maxHeight: 240 }} />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Day summary (scrollable) ── */}
+          <div className="overflow-y-auto max-h-[90vh]">
           <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 rounded-t-3xl"
             style={{ background: "rgba(255,255,255,0.95)", borderBottom: "1px solid rgba(0,0,0,0.06)", backdropFilter: "blur(16px)" }}>
             <div>
@@ -2300,8 +2482,14 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
                 <div className="space-y-1.5">
                   {day.trades.map(t => {
                     const net = t.pl ?? 0;
+                    const pct = accountBalance > 0 ? (net / accountBalance * 100).toFixed(2) : "0.00";
                     return (
-                      <div key={t.id} className="flex items-center justify-between rounded-xl px-3 py-2.5 border border-slate-100 bg-slate-50">
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setSelectedTrade(t)}
+                        className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 border border-slate-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-100 transition-colors text-left"
+                      >
                         <div className="flex items-center gap-2">
                           <span className="rounded-md px-2 py-0.5 text-[10px] font-bold font-mono"
                             style={t.direction === "BUY" ? { background: "rgba(74,222,128,0.12)", color: "#16a34a" } : { background: "rgba(248,113,113,0.12)", color: "#dc2626" }}>
@@ -2310,14 +2498,45 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
                           <span className="text-sm font-semibold text-slate-800">{t.symbol}</span>
                           {t.setup_tags?.map(tag => <span key={tag} className="hidden sm:inline text-[10px] font-mono text-slate-400 px-1.5 py-0.5 rounded bg-slate-100">{tag}</span>)}
                         </div>
-                        <p className="text-sm font-bold font-mono" style={{ color: net >= 0 ? "#16a34a" : "#dc2626" }}>
-                          {net >= 0 ? "+" : ""}{net.toFixed(2)}
-                        </p>
-                      </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold font-mono" style={{ color: net >= 0 ? "#16a34a" : "#dc2626" }}>
+                            {net >= 0 ? "+" : ""}{net.toFixed(2)}
+                          </p>
+                          <p className="text-[10px] font-mono" style={{ color: net >= 0 ? "#16a34a" : "#dc2626", opacity: 0.7 }}>
+                            {net >= 0 ? "+" : ""}{pct}%
+                          </p>
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
               </div>
+
+              {/* ── AI Recap ── */}
+              <div>
+                <p className="text-[11px] font-mono uppercase tracking-widest text-slate-400 mb-2">AI Recap</p>
+                {aiLoading ? (
+                  <div className="rounded-2xl p-4 space-y-2 animate-pulse" style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                    {[1, 2, 3].map(i => <div key={i} className="h-3 rounded-full bg-indigo-100" style={{ width: i === 3 ? "60%" : "100%" }} />)}
+                  </div>
+                ) : aiRecap ? (
+                  <div className="rounded-2xl p-4" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)" }}>
+                    <p className="text-sm text-indigo-900 leading-relaxed font-mono whitespace-pre-wrap">{aiRecap}</p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleGenerateRecap}
+                    disabled={isMock || aiLoading}
+                    className="flex items-center gap-2 rounded-2xl px-4 py-3 w-full justify-center text-sm font-mono font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.18)", color: "#6366f1" }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Generate recap
+                  </button>
+                )}
+              </div>
+
               {!session && !sessionLoading && (
                 <div className="rounded-2xl p-6 text-center" style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.05)" }}>
                   <BookOpen className="h-6 w-6 text-slate-300 mx-auto mb-2" />
@@ -2326,14 +2545,15 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
               )}
             </div>
           )}
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
   );
 }
 
-function PastGrid({ allTrades, allSessions, currency, checklist, rules, isMock }: {
-  allTrades: JournalTradeRow[]; allSessions: PastSessionSummary[]; currency: string; checklist: JournalChecklistItem[]; rules: JournalRule[]; isMock: boolean;
+function PastGrid({ allTrades, allSessions, currency, checklist, rules, isMock, accountBalance }: {
+  allTrades: JournalTradeRow[]; allSessions: PastSessionSummary[]; currency: string; checklist: JournalChecklistItem[]; rules: JournalRule[]; isMock: boolean; accountBalance: number;
 }) {
   const [selectedDay, setSelectedDay] = useState<PastDay | null>(null);
   const [pastDaySession, setPastDaySession] = useState<Partial<JournalSession> | null>(null);
@@ -2387,6 +2607,7 @@ function PastGrid({ allTrades, allSessions, currency, checklist, rules, isMock }
         <PastDayDetailModal
           day={selectedDay} session={pastDaySession} loading={pastDayLoading}
           checklist={checklist} rules={rules} currency={currency}
+          accountBalance={accountBalance} isMock={isMock}
           onClose={() => { setSelectedDay(null); setPastDaySession(null); }}
         />
       )}
@@ -2893,6 +3114,9 @@ export function JournalingPageClient({
               checklist={checklist}
               rules={rules}
               isMock={isMock}
+              accountBalance={
+                accounts.find(a => a.id === selectedAccountId)?.current_balance ?? accounts[0]?.current_balance ?? 10000
+              }
             />
           )}
         </AnimatePresence>
