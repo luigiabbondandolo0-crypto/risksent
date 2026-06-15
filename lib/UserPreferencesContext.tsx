@@ -9,7 +9,7 @@ const UserPreferencesContext = createContext<UserPrefs>({ timezone: "local" });
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<UserPrefs>({ timezone: "local" });
 
-  useEffect(() => {
+  const fetchPrefs = () => {
     fetch("/api/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { preferenceTimezone?: string } | null) => {
@@ -18,6 +18,14 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchPrefs();
+    const onVisible = () => { if (document.visibilityState === "visible") fetchPrefs(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
