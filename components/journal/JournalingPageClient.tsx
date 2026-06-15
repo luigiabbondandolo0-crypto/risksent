@@ -2067,8 +2067,11 @@ function buildPastDays(allTrades: JournalTradeRow[], allSessions: PastSessionSum
       const pl = trades.reduce((s, t) => s + (t.pl ?? 0), 0);
       const wins = trades.filter(t => (t.pl ?? 0) > 0).length;
       const winRate = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0;
-      const screenshot = trades.find(t => t.screenshot_url)?.screenshot_url ?? null;
+      const tradeScreenshot = trades.find(t => t.screenshot_url)?.screenshot_url ?? null;
       const sess = sessionMap.get(date);
+      const sessImgs = Array.isArray(sess?.images) ? (sess!.images as unknown[]) : [];
+      const sessionScreenshot = sessImgs.length > 0 && typeof sessImgs[0] === "string" ? sessImgs[0] : null;
+      const screenshot = tradeScreenshot ?? sessionScreenshot;
       return { date, trades, pl, wins, winRate, screenshot, hasSession: !!sess && sessionHasData(sess), sessionBias: sess?.bias ?? null };
     });
 }
