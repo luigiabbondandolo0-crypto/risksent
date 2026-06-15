@@ -13,6 +13,23 @@ export async function GET(req: NextRequest) {
   }
 
   const dateParam = req.nextUrl.searchParams.get("date");
+  const allParam = req.nextUrl.searchParams.get("all");
+
+  // ?all=true — return all past sessions for this user (excluding today)
+  if (allParam === "true") {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from("journal_session")
+      .select("session_date,bias,notes,key_levels,images,watchlist,checklist_done,rules_followed")
+      .eq("user_id", user.id)
+      .lt("session_date", today)
+      .order("session_date", { ascending: false });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ sessions: data ?? [] });
+  }
+
   const sessionDate = dateParam ?? new Date().toISOString().slice(0, 10);
 
   const { data, error } = await supabase

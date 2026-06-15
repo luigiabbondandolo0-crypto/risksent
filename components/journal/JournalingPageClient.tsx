@@ -46,7 +46,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { jn } from "@/lib/journal/jnClasses";
 import { fmtDayPl } from "@/lib/journal/fmtDayPl";
 import { useUserTimezone } from "@/lib/UserPreferencesContext";
-import { fmtTimeOnly } from "@/lib/fmtInTz";
+import { fmtInTz, fmtTimeOnly } from "@/lib/fmtInTz";
 import { syncAllJournalMetaAccounts } from "@/lib/journal/metaApiAutoSyncClient";
 import { GlobalAccountSelector } from "@/components/shared/GlobalAccountSelector";
 import { AddAccountModal } from "@/components/journal/AddAccountModal";
@@ -1971,7 +1971,63 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
   );
 }
 
+// ─── Live Clock ───────────────────────────────────────────────────────────────
+
+function LiveClock() {
+  const userTz = useUserTimezone();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const datePart = fmtInTz(now, userTz, { weekday: "long", month: "long", day: "numeric" });
+  const timePart = fmtInTz(now, userTz, { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const tzLabel = userTz && userTz !== "local" ? userTz.replace(/_/g, " ") : Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, " ");
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+      <span className="text-[12px] font-mono text-slate-500">
+        <span className="text-slate-700 font-semibold">{datePart}</span>
+        <span className="mx-1.5 text-slate-300">·</span>
+        <span className="tabular-nums text-[#6366f1] font-bold">{timePart}</span>
+        <span className="mx-1.5 text-slate-300">·</span>
+        <span className="text-slate-400 text-[10px]">{tzLabel}</span>
+      </span>
+    </div>
+  );
+}
+
 // ─── Past Grid ─────────────────────────────────────────────────────────────────
+
+type PastSessionSummary = {
+  session_date: string;
+  bias: string | null;
+  notes: string | null;
+  key_levels: string | null;
+  images: unknown;
+  watchlist: unknown;
+  checklist_done: unknown;
+  rules_followed: unknown;
+};
+
+function sessionHasData(s: PastSessionSummary): boolean {
+  if (s.bias) return true;
+  if (s.notes?.trim()) return true;
+  if (s.key_levels?.trim()) return true;
+  const imgs = Array.isArray(s.images) ? s.images : [];
+  if (imgs.length > 0) return true;
+  const wl = Array.isArray(s.watchlist) ? s.watchlist : [];
+  if (wl.length > 0) return true;
+  const cl = s.checklist_done && typeof s.checklist_done === "object" && !Array.isArray(s.checklist_done)
+    ? Object.values(s.checklist_done as Record<string, boolean>) : [];
+  if (cl.some(v => v)) return true;
+  const rl = s.rules_followed && typeof s.rules_followed === "object" && !Array.isArray(s.rules_followed)
+    ? Object.values(s.rules_followed as Record<string, boolean>) : [];
+  if (rl.some(v => v)) return true;
+  return false;
+}
 
 type PastDay = {
   date: string;
@@ -1980,9 +2036,11 @@ type PastDay = {
   wins: number;
   winRate: number;
   screenshot: string | null;
+  hasSession: boolean;
+  sessionBias: string | null;
 };
 
-function buildPastDays(allTrades: JournalTradeRow[]): PastDay[] {
+function buildPastDays(allTrades: JournalTradeRow[], allSessions: PastSessionSummary[]): PastDay[] {
   const today = getTodayStr();
   const map: Record<string, JournalTradeRow[]> = {};
   allTrades.forEach(t => {
@@ -1992,6 +2050,16 @@ function buildPastDays(allTrades: JournalTradeRow[]): PastDay[] {
     if (!map[d]) map[d] = [];
     map[d].push(t);
   });
+
+  // Merge in session-only days
+  allSessions.forEach(s => {
+    if (!s.session_date || s.session_date === today) return;
+    if (!sessionHasData(s)) return;
+    if (!map[s.session_date]) map[s.session_date] = [];
+  });
+
+  const sessionMap = new Map(allSessions.map(s => [s.session_date, s]));
+
   return Object.entries(map)
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, trades]) => {
@@ -1999,15 +2067,16 @@ function buildPastDays(allTrades: JournalTradeRow[]): PastDay[] {
       const wins = trades.filter(t => (t.pl ?? 0) > 0).length;
       const winRate = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0;
       const screenshot = trades.find(t => t.screenshot_url)?.screenshot_url ?? null;
-      return { date, trades, pl, wins, winRate, screenshot };
+      const sess = sessionMap.get(date);
+      return { date, trades, pl, wins, winRate, screenshot, hasSession: !!sess && sessionHasData(sess), sessionBias: sess?.bias ?? null };
     });
 }
 
 function PastDayCard({ day, currency, onClick, index }: { day: PastDay; currency: string; onClick: () => void; index: number; }) {
-  const isWin = day.pl >= 0;
-  const accent = isWin ? "#4ade80" : "#f87171";
-  const accentBg = isWin ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)";
-  const accentBorder = isWin ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)";
+  const noTrades = day.trades.length === 0;
+  const accent = noTrades ? "#6366f1" : day.pl >= 0 ? "#4ade80" : "#f87171";
+  const accentBg = noTrades ? "rgba(99,102,241,0.08)" : day.pl >= 0 ? "rgba(74,222,128,0.1)" : "rgba(248,113,113,0.1)";
+  const accentBorder = noTrades ? "rgba(99,102,241,0.2)" : day.pl >= 0 ? "rgba(74,222,128,0.22)" : "rgba(248,113,113,0.22)";
   return (
     <motion.button
       type="button"
@@ -2025,23 +2094,35 @@ function PastDayCard({ day, currency, onClick, index }: { day: PastDay; currency
           <img src={day.screenshot} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ opacity: 0.85 }} />
         ) : (
           <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accentBg} 0%, rgba(99,102,241,0.05) 100%)` }}>
-            <BarChart2 className="h-8 w-8 text-slate-300" />
+            {noTrades
+              ? <BookOpen className="h-8 w-8" style={{ color: "#818cf8", opacity: 0.7 }} />
+              : <BarChart2 className="h-8 w-8 text-slate-300" />}
           </div>
         )}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(255,255,255,0.95) 100%)" }} />
         <div className="absolute top-2 left-2 rounded-lg px-2 py-1 text-[10px] font-mono font-bold backdrop-blur-sm" style={{ background: "rgba(10,10,20,0.75)", color: "#e2e8f0" }}>
           {format(parseISO(day.date), "EEE, MMM d")}
         </div>
-        <div className="absolute top-2 right-2 rounded-lg px-2 py-1 text-[11px] font-mono font-bold" style={{ background: accentBg, color: accent, border: `1px solid ${accentBorder}`, backdropFilter: "blur(8px)" }}>
-          {fmtDayPl(day.pl, currency)}
-        </div>
+        {noTrades ? (
+          <div className="absolute top-2 right-2 rounded-lg px-2 py-1 text-[10px] font-mono font-bold" style={{ background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.25)", backdropFilter: "blur(8px)" }}>
+            {day.sessionBias ?? "Analysis"}
+          </div>
+        ) : (
+          <div className="absolute top-2 right-2 rounded-lg px-2 py-1 text-[11px] font-mono font-bold" style={{ background: accentBg, color: accent, border: `1px solid ${accentBorder}`, backdropFilter: "blur(8px)" }}>
+            {fmtDayPl(day.pl, currency)}
+          </div>
+        )}
       </div>
       <div className="px-3 pb-3 pt-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-slate-500">{day.trades.length} trade{day.trades.length !== 1 ? "s" : ""}</span>
-          <span className="h-3 w-px bg-slate-200" />
-          <span className="text-[11px] font-mono font-semibold" style={{ color: day.winRate >= 50 ? "#16a34a" : "#dc2626" }}>WR {day.winRate}%</span>
-        </div>
+        {noTrades ? (
+          <span className="text-[11px] font-mono text-[#6366f1]">Analysis only · no trades</span>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono text-slate-500">{day.trades.length} trade{day.trades.length !== 1 ? "s" : ""}</span>
+            <span className="h-3 w-px bg-slate-200" />
+            <span className="text-[11px] font-mono font-semibold" style={{ color: day.winRate >= 50 ? "#16a34a" : "#dc2626" }}>WR {day.winRate}%</span>
+          </div>
+        )}
         <ChevronRight className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
       </div>
     </motion.button>
@@ -2247,8 +2328,8 @@ function PastDayDetailModal({ day, session, loading: sessionLoading, checklist, 
   );
 }
 
-function PastGrid({ allTrades, currency, checklist, rules, isMock }: {
-  allTrades: JournalTradeRow[]; currency: string; checklist: JournalChecklistItem[]; rules: JournalRule[]; isMock: boolean;
+function PastGrid({ allTrades, allSessions, currency, checklist, rules, isMock }: {
+  allTrades: JournalTradeRow[]; allSessions: PastSessionSummary[]; currency: string; checklist: JournalChecklistItem[]; rules: JournalRule[]; isMock: boolean;
 }) {
   const [selectedDay, setSelectedDay] = useState<PastDay | null>(null);
   const [pastDaySession, setPastDaySession] = useState<Partial<JournalSession> | null>(null);
@@ -2264,7 +2345,7 @@ function PastGrid({ allTrades, currency, checklist, rules, isMock }: {
       .finally(() => setPastDayLoading(false));
   }, [selectedDay, isMock]);
 
-  const pastDays = useMemo(() => buildPastDays(allTrades), [allTrades]);
+  const pastDays = useMemo(() => buildPastDays(allTrades, allSessions), [allTrades, allSessions]);
   const grouped = useMemo(() => {
     const months: Record<string, PastDay[]> = {};
     pastDays.forEach(d => {
@@ -2280,7 +2361,7 @@ function PastGrid({ allTrades, currency, checklist, rules, isMock }: {
       <motion.div key="past-empty" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.25 }} className="flex flex-col items-center justify-center py-24 text-center">
         <BarChart2 className="h-10 w-10 text-slate-200 mb-4" />
-        <p className="font-display text-xl font-bold text-slate-300 mb-1">No past trades yet</p>
+        <p className="font-display text-xl font-bold text-slate-300 mb-1">No past days yet</p>
         <p className="text-sm font-mono text-slate-400">Your trading history will appear here</p>
       </motion.div>
     );
@@ -2392,6 +2473,7 @@ export function JournalingPageClient({
   // Trades
   const [todayTrades, setTodayTrades] = useState<JournalTradeRow[]>([]);
   const [allTrades, setAllTrades] = useState<JournalTradeRow[]>([]);
+  const [allSessions, setAllSessions] = useState<PastSessionSummary[]>([]);
 
   // Review modal
   const [reviewTrade, setReviewTrade] = useState<JournalTradeRow | null>(null);
@@ -2442,7 +2524,7 @@ export function JournalingPageClient({
       const sinceClose = localYearsAgoStartIso(3);
 
       // Fire all independent fetches in parallel — don't wait for accounts before fetching other data
-      const [aRes, sRes, tTodayRes, strRes, clRes, rRes] = await Promise.all([
+      const [aRes, sRes, tTodayRes, strRes, clRes, rRes, allSessRes] = await Promise.all([
         fetch("/api/journal/accounts"),
         fetch(`/api/journal/sessions?date=${today}`),
         fetch(
@@ -2451,6 +2533,7 @@ export function JournalingPageClient({
         fetch("/api/journal/strategies"),
         fetch("/api/journal/checklist"),
         fetch("/api/journal/rules"),
+        fetch("/api/journal/sessions?all=true"),
       ]);
 
       let accs: JournalAccountPublic[] = [];
@@ -2524,6 +2607,10 @@ export function JournalingPageClient({
         if (p > 100) break;
       }
       setAllTrades(allClosed);
+      if (allSessRes.ok) {
+        const j = await allSessRes.json();
+        setAllSessions(j.sessions ?? []);
+      }
       if (strRes.ok) {
         const j = await strRes.json();
         setStrategies(j.strategies ?? []);
@@ -2669,9 +2756,7 @@ export function JournalingPageClient({
           >
             Journal
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm font-mono text-slate-400">
-            Daily prep · Trading history · Performance recap
-          </p>
+          <LiveClock />
         </div>
 
         {/* Account selector — center */}
@@ -2795,6 +2880,7 @@ export function JournalingPageClient({
             <PastGrid
               key="past"
               allTrades={allTrades}
+              allSessions={allSessions}
               currency={
                 selectedAccountId === "all"
                   ? (accounts[0]?.currency ?? "USD")
