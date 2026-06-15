@@ -1840,6 +1840,7 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
   const [time, setTime] = useState(new Date());
   const [starting, setStarting] = useState(false);
   const [quote] = useState(() => MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]!);
+  const userTz = useUserTimezone();
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -1902,7 +1903,7 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
           transition={{ delay: 0.15, duration: 0.5 }}
           className="text-[11px] font-mono uppercase tracking-[0.3em] text-slate-400"
         >
-          {format(time, "EEEE, MMMM d")}
+          {fmtInTz(time, userTz, { weekday: "long", month: "long", day: "numeric" })}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1920,9 +1921,9 @@ function StartDayScreen({ onStart }: { onStart: () => void }) {
               letterSpacing: "-0.04em",
             }}
           >
-            {format(time, "HH:mm")}
+            {fmtInTz(time, userTz, { hour: "2-digit", minute: "2-digit", hour12: false })}
             <span style={{ fontSize: "0.3em", WebkitTextFillColor: "#94a3b8", filter: "none" }}>
-              :{format(time, "ss")}
+              :{fmtInTz(time, userTz, { second: "2-digit", hour12: false })}
             </span>
           </div>
         </motion.div>
