@@ -701,8 +701,7 @@ export async function runRiskCheckForAccount(params: {
       }
     }
     if (f.type === "revenge_trading") {
-      if (f.tier === "exceeded") canonicalRule = ruleType = "revenge_trading_exceeded";
-      else canonicalRule = ruleType = "revenge_trading";
+      canonicalRule = ruleType = "revenge_trading";
     }
 
     const { current, limit } = buildCurrentLimit(f.type, alertData);

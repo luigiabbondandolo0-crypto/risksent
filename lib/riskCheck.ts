@@ -207,28 +207,18 @@ export function getRiskFindings(
     }
   }
 
-  // --- Revenge trading — two tiers: reached (>= threshold) + exceeded (> threshold) ---
-  // Each fires once per UTC day independently via tier-specific rule types.
+  // --- Revenge trading — single alert when consecutive losses >= threshold ---
   const threshold = rules.revenge_threshold_trades;
   if (threshold > 0 && consecutiveLossesAtEnd >= threshold) {
+    const level: RiskLevel = consecutiveLossesAtEnd > threshold ? "alto" : "medio";
     findings.push({
       type: "revenge_trading",
-      level: "medio",
+      level,
       tier: "reached",
-      message: `${consecutiveLossesAtEnd} consecutive losses reached threshold ${threshold}. Possible revenge trading.`,
-      advice: getRevengeAdvice("medio", consecutiveLossesAtEnd, threshold),
-      severity: "medium"
+      message: `${consecutiveLossesAtEnd} consecutive losses — revenge trading pattern detected. Stop trading now.`,
+      advice: getRevengeAdvice(level, consecutiveLossesAtEnd, threshold),
+      severity: "high"
     });
-    if (consecutiveLossesAtEnd > threshold) {
-      findings.push({
-        type: "revenge_trading",
-        level: "alto",
-        tier: "exceeded",
-        message: `${consecutiveLossesAtEnd} consecutive losses exceeded threshold ${threshold}. Stop trading now.`,
-        advice: getRevengeAdvice("alto", consecutiveLossesAtEnd, threshold),
-        severity: "high"
-      });
-    }
   }
 
   // --- Consecutive losses (softer signal, below revenge threshold to avoid duplication) ---

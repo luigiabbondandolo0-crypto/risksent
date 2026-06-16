@@ -26,6 +26,13 @@ function startOfUtcDay(): string {
   return d.toISOString();
 }
 
+function startOfPreviousUtcDay(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
 function ruleCategory(ruleType: string): "live" | "static" | "daily" | "once_daily" {
   const c = canonicalAlertRuleType(ruleType);
   switch (c) {
@@ -162,7 +169,25 @@ export async function hasRecentRuleNotification(
   vq = journalAccountId ? vq.eq("account_id", journalAccountId) : vq.is("account_id", null);
   const { data: vrows } = await vq;
 
-  if (!vrows || vrows.length === 0) return false;
+  if (!vrows || vrows.length === 0) {
+    // Nothing found in today's window. For once_daily rules, also check yesterday:
+    // if the same violation fired yesterday the condition is carrying over from the
+    // previous day (e.g. midnight UTC reset while condition still active) — suppress.
+    if (category === "once_daily") {
+      let yq = supabase
+        .from("risk_violations")
+        .select("id")
+        .eq("user_id", userId)
+        .in("rule_type", aliases)
+        .gte("created_at", startOfPreviousUtcDay())
+        .lt("created_at", startOfUtcDay())
+        .limit(1);
+      yq = journalAccountId ? yq.eq("account_id", journalAccountId) : yq.is("account_id", null);
+      const { data: yrows } = await yq;
+      if (yrows && yrows.length > 0) return true; // carry-over violation, suppress midnight re-fire
+    }
+    return false;
+  }
 
   // "once_daily": fired today → always skip, no worsening re-notify.
   if (category === "once_daily") return true;
