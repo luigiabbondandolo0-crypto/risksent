@@ -222,11 +222,12 @@ function buildStatsForRisk(balance: number, orders: ClosedOrder[]): StatsForRisk
   }
   const highestDdPct = maxDdPct > 0 ? maxDdPct : null;
 
-  const byCloseDesc = [...sorted].sort(
-    (a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime()
-  );
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  const todayClosedDesc = [...sorted]
+    .filter(o => o.closeTime.slice(0, 10) === todayUtc)
+    .sort((a, b) => new Date(b.closeTime).getTime() - new Date(a.closeTime).getTime());
   let consecutiveLossesAtEnd = 0;
-  for (const o of byCloseDesc) {
+  for (const o of todayClosedDesc) {
     if (o.profit < 0) consecutiveLossesAtEnd++;
     else break;
   }
